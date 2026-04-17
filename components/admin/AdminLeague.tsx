@@ -4,20 +4,21 @@ import { supabase } from "@/lib/supabase";
 
 interface AdminLeagueProps {
   showToast: (msg: string, type?: "success" | "error") => void;
+  categoria: string;
 }
 
-export default function AdminLeague({ showToast }: AdminLeagueProps) {
+export default function AdminLeague({ showToast, categoria }: AdminLeagueProps) {
   const [equipos, setEquipos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchEquipos();
-  }, []);
+  }, [categoria]);
 
   async function fetchEquipos() {
-    // Traemos los equipos ordenados por nombre para que la tabla sea predecible
-    const { data } = await supabase.from("equipos").select("*").order("nombre", { ascending: true });
+    const { data } = await supabase.from("equipos").select("*").eq("categoria", categoria).order("nombre", { ascending: true });
     if (data) setEquipos(data);
+    else setEquipos([]);
   }
 
   const handleInputChange = (id: string, field: string, value: string) => {
