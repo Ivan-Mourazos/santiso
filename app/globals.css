@@ -20,6 +20,11 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+a {
+  text-decoration: none !important;
+  color: inherit;
+}
+
 html,
 body {
   min-height: 100%;
@@ -54,3 +59,217 @@ body {
 .bg-primary { background: var(--primary); }
 .bg-secondary { background: var(--secondary); }
 .text-red { color: #ef4444; }
+
+/* Admin Dashboard Shared Styles */
+.admin-grid { display: flex; flex-direction: column; gap: 4rem; margin-top: 3rem; padding-bottom: 5rem; width: 100%; }
+.card { background: var(--secondary); padding: 3rem; border-radius: 1.5rem; border: 1px solid var(--border); width: 100%; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+.admin-form { display: block; width: 100%; margin-top: 1.5rem; }
+
+.form-grid-3 { 
+  display: grid; 
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 1.5rem; 
+  width: 100%; 
+  margin-bottom: 1.5rem;
+}
+
+.form-grid-4 { 
+  display: grid; 
+  grid-template-columns: 1.5fr 0.5fr 1fr 1fr; 
+  gap: 1.5rem; 
+  width: 100%; 
+  margin-bottom: 1.5rem;
+}
+
+.input-group { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.6rem; 
+  width: 100%;
+}
+
+.input-group label { 
+  display: block;
+  font-size: 0.7rem; 
+  font-weight: 800; 
+  text-transform: uppercase; 
+  color: var(--primary); 
+  letter-spacing: 1px; 
+  margin: 0;
+}
+
+input, select, textarea { 
+  display: block;
+  width: 100%;
+  padding: 0.8rem 1rem; 
+  border-radius: 0.6rem; 
+  border: 1px solid var(--border); 
+  background: #000; 
+  color: white; 
+  font-family: inherit; 
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: var(--primary);
+  outline: none;
+  background: rgba(250, 204, 21, 0.02);
+}
+
+.btn-primary { 
+  background: var(--primary); 
+  color: black; 
+  border: none; 
+  font-weight: 800; 
+  border-radius: 0.6rem; 
+  cursor: pointer; 
+  padding: 0.8rem 1.5rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s; 
+  height: 100%;
+}
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 5px 15px rgba(250, 204, 21, 0.2); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.table-responsive { overflow-x: auto; width: 100%; }
+.admin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.admin-table th { text-align: left; padding: 1.2rem 1rem; border-bottom: 2px solid var(--border); color: #666; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+.admin-table td { padding: 1.2rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+
+.btn-delete { background: rgba(220, 38, 38, 0.05); color: #ef4444; border: 1px solid rgba(220, 38, 38, 0.1); padding: 0.6rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; }
+.btn-delete:hover { background: #dc2626; color: white; border-color: #dc2626; }
+
+.file-input-label { 
+  display: flex !important; 
+  align-items: center !important; 
+  justify-content: center !important; 
+  gap: 12px !important; 
+  background: rgba(255,255,255,0.02) !important; 
+  border: 1px solid rgba(255,255,255,0.1) !important; 
+  border-radius: 0.6rem !important; 
+  cursor: pointer !important; 
+  color: #a3a3a3 !important; 
+  font-weight: 850 !important; 
+  text-transform: uppercase !important; 
+  font-size: 0.7rem !important; 
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  height: 48px !important;
+  width: 100% !important;
+  padding: 0 1.5rem !important;
+  user-select: none !important;
+}
+.file-input-label:hover { 
+  border-color: var(--primary) !important; 
+  background: rgba(250, 204, 21, 0.05) !important; 
+  color: white !important;
+  transform: translateY(-1px);
+}
+.file-input-label svg {
+  flex-shrink: 0;
+  color: var(--primary);
+  opacity: 0.8;
+}
+.file-input-label:hover svg {
+  opacity: 1;
+  transform: scale(1.1);
+}
+.hidden-input { display: none; }
+
+.form-grid-3, .form-grid-4 { 
+  display: grid; 
+  gap: 1.5rem; 
+  width: 100%; 
+  margin-bottom: 1.5rem;
+  align-items: flex-end; /* ALINEACIÓN BASE PERFECTA */
+}
+
+.form-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.form-grid-4 { grid-template-columns: 1.5fr 1fr 1fr 0.8fr; }
+
+/* UD Accordion System */
+.ud-accordion-list { display: flex; flex-direction: column; gap: 1.2rem; margin-top: 1rem; width: 100%; }
+.ud-accordion-item { 
+  background: rgba(255, 255, 255, 0.03) !important; 
+  border: 1px solid rgba(255, 255, 255, 0.1) !important; 
+  border-radius: 1.5rem; 
+  overflow: hidden; 
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+  width: 100%;
+}
+.ud-accordion-item.active { 
+  border-color: var(--primary) !important; 
+  background: rgba(250, 204, 21, 0.05) !important; 
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4); 
+}
+
+.ud-accordion-header { 
+  width: 100% !important; 
+  display: flex !important; 
+  align-items: center !important; 
+  justify-content: space-between !important; 
+  padding: 1.5rem 2rem !important; 
+  background: transparent !important; 
+  border: none !important; 
+  cursor: pointer !important; 
+  color: white !important;
+  text-align: left !important;
+  outline: none !important;
+  font-family: inherit;
+}
+.ud-accordion-header:hover { background: rgba(255, 255, 255, 0.05) !important; }
+
+.ud-accordion-title-wrap { 
+  display: flex !important; 
+  align-items: center !important; 
+  gap: 1.5rem !important; 
+  pointer-events: none;
+}
+
+.ud-accordion-title { 
+  font-size: 1.3rem !important; 
+  font-weight: 850 !important; 
+  letter-spacing: -0.5px !important; 
+  color: white !important;
+  margin: 0 !important;
+}
+
+.ud-accordion-icon { 
+  width: 50px !important; 
+  height: 50px !important; 
+  min-width: 50px !important;
+  display: flex !important; 
+  align-items: center !important; 
+  justify-content: center !important; 
+  background: #000 !important; 
+  border-radius: 12px !important; 
+  color: var(--primary) !important; 
+  border: 1px solid rgba(255, 255, 255, 0.1) !important; 
+  transition: all 0.3s;
+}
+.ud-accordion-item.active .ud-accordion-icon {
+  background: var(--primary) !important;
+  color: black !important;
+  border-color: var(--primary) !important;
+}
+
+.ud-chevron { 
+  transition: transform 0.5s cubic-bezier(0.68, -0.6, 0.32, 1.6) !important; 
+  color: #666 !important; 
+  min-width: 24px !important;
+}
+.ud-accordion-item.active .ud-chevron { transform: rotate(180deg) !important; color: var(--primary) !important; }
+
+.ud-accordion-content { 
+  padding: 0.5rem 2rem 2.5rem 2rem !important; 
+  animation: udAccordionFadeIn 0.5s ease-out; 
+  width: 100%;
+}
+
+@keyframes udAccordionFadeIn {
+  from { opacity: 0; transform: translateY(-15px); }
+  to { opacity: 1; transform: translateY(0); }
+}

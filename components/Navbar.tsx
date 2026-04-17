@@ -14,9 +14,9 @@ export default function Navbar() {
   return (
     <nav className="navbar-wrapper">
       <div className="navbar container">
-        <Link href="/" className="logo-text" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {escudo && <img src={escudo} alt="Escudo UD Santiso" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />}
-          <span>UD <span className="text-primary">SANTISO</span></span>
+        <Link href="/" className="logo-text" style={{ display: 'flex', alignItems: 'center', gap: '15px', textDecoration: 'none' }}>
+          {escudo && escudo !== "" && <img src={escudo} alt="Escudo UD Santiso" style={{ width: '60px', height: '60px', minWidth: '60px', objectFit: 'contain' }} />}
+          <span style={{ fontSize: '1.5rem', fontWeight: 900 }}>UD <span className="text-primary">SANTISO</span></span>
         </Link>
         <div className="nav-links">
           <Link href="/">Inicio</Link>

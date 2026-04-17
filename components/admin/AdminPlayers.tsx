@@ -1,0 +1,134 @@
+"use client";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { processAndUploadImage } from "@/lib/image-utils";
+import { v4 as uuidv4 } from "uuid";
+
+interface AdminPlayersProps {
+  showToast: (msg: string, type?: "success" | "error") => void;
+  categoria: string;
+}
+
+export default function AdminPlayers({ showToast, categoria }: AdminPlayersProps) {
+  const [jugadores, setJugadores] = useState<any[]>([]);
+  const [nombre, setNombre] = useState("");
+  const [dorsal, setDorsal] = useState("");
+  const [posicion, setPosicion] = useState("");
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchJugadores();
+  }, [categoria]);
+
+  async function fetchJugadores() {
+    const { data } = await supabase.from("jugadores").select("*").eq("categoria", categoria).order("dorsal", { ascending: true });
+    if (data) setJugadores(data);
+  }
+
+  async function handleAddJugador(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    
+    let foto_url = "";
+    if (fotoFile) {
+      const processed = await processAndUploadImage(fotoFile);
+      if (processed) {
+        const fileName = `jugadores/${uuidv4()}.webp`;
+        const { data, error } = await supabase.storage.from("fotos").upload(fileName, processed);
+        if (data) {
+          const { data: pUrl } = supabase.storage.from("fotos").getPublicUrl(fileName);
+          foto_url = pUrl.publicUrl;
+        }
+      }
+    }
+
+    const { error } = await supabase.from("jugadores").insert([{ 
+      nombre, dorsal: parseInt(dorsal), posicion, foto_url, categoria 
+    }]);
+
+    if (!error) {
+      setNombre(""); setDorsal(""); setPosicion(""); setFotoFile(null);
+      fetchJugadores();
+      showToast("Jugador añadido correctamente");
+    }
+    setLoading(false);
+  }
+
+  async function handleDeleteJugador(id: string) {
+    if (!confirm("¿Borrar jugador?")) return;
+    await supabase.from("jugadores").delete().eq("id", id);
+    fetchJugadores();
+    showToast("Jugador eliminado");
+  }
+
+  return (
+    <div className="card glass">
+      <h3>Plantilla {categoria}</h3>
+      <form onSubmit={handleAddJugador} className="admin-form">
+        <div className="form-grid-4">
+          <div className="input-group">
+            <label>Nombre del Jugador</label>
+            <input type="text" placeholder="Ej: Ivan Mourazos" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+          </div>
+          <div className="input-group">
+            <label>Dorsal</label>
+            <input type="number" placeholder="10" value={dorsal} onChange={(e) => setDorsal(e.target.value)} required />
+          </div>
+          <div className="input-group">
+            <label>Posición</label>
+            <select value={posicion} onChange={(e) => setPosicion(e.target.value)} required>
+              <option value="">Selección...</option>
+              <option value="Portero">Portero</option>
+              <option value="Defensa">Defensa</option>
+              <option value="Centrocampista">Centrocampista</option>
+              <option value="Delantero">Delantero</option>
+            </select>
+          </div>
+          <div className="input-group">
+            <label>Foto (Recorte 1:1)</label>
+            <div className="file-input-group">
+              <label className="file-input-label">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                {fotoFile ? fotoFile.name.substring(0, 10) + "..." : "Subir Foto"}
+                <input type="file" className="hidden-input" accept="image/*" onChange={(e) => setFotoFile(e.target.files?.[0] || null)} />
+              </label>
+            </div>
+          </div>
+        </div>
+        <button type="submit" className="btn btn-primary" disabled={loading} style={{ padding: '0.8rem 2rem' }}>
+          {loading ? "Añadiendo..." : "Añadir Jugador"}
+        </button>
+      </form>
+
+      <div className="table-responsive">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Dorsal</th>
+              <th>Nombre</th>
+              <th>Posición</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {jugadores.map(j => (
+              <tr key={j.id}>
+                <td style={{ fontWeight: 900, color: 'var(--primary)' }}>#{j.dorsal}</td>
+                <td style={{ fontWeight: 700 }}>{j.nombre}</td>
+                <td><span className="badge-posicion">{j.posicion}</span></td>
+                <td>
+                  <button onClick={() => handleDeleteJugador(j.id)} className="btn-delete">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
