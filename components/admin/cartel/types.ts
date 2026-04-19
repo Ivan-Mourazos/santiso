@@ -18,8 +18,8 @@ export type TemplateId = typeof TEMPLATES[number]["id"];
 export interface FormState {
   // Shared
   categoria:      string;
-  textoLateral:   string;
-  xuntaIsLeft:    boolean;
+  jugadorXOffset: number;
+  showCarouselIndicator: boolean;
   // Partido / Resumo / Cronoloxia
   competicion:    string;
   jornada:        string;
@@ -46,10 +46,34 @@ export interface FormState {
   suplentes:      Player[];
 }
 
+export interface NextMatch {
+  rival: string;
+  rivalEscudoUrl: string;
+  fecha: string;
+  hora: string;
+  categoria: string;
+  santisoSide: "left" | "right";
+}
+
 export interface AssetUrls {
   fondo:    string;
   xunta:    string;
   rfgf:     string;
+  xuntaIsLeft: boolean;
   santiso:  string;
   sponsors: string[];
 }
+
+export const COMPETICIONS: Record<string, string[]> = {
+  "Senior": [
+    "Terceira Galicia - Santiago - Grupo 4",
+    "Terceira Galicia - Santiago - Fase Copa - Grupo 4"
+  ],
+  "Veteranos": [
+    "División Da Honra - Veteranos - Santiago",
+    "Veteranos Copa - Santiago"
+  ],
+  "Femenino": [
+    "Segunda División Galega - Grupo 2"
+  ]
+};

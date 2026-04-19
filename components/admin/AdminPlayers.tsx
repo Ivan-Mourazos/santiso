@@ -6,10 +6,11 @@ import { v4 as uuidv4 } from "uuid";
 
 interface AdminPlayersProps {
   showToast: (msg: string, type?: "success" | "error") => void;
+  showConfirm: (msg: string, onConfirm: () => void) => void;
   categoria: string;
 }
 
-export default function AdminPlayers({ showToast, categoria }: AdminPlayersProps) {
+export default function AdminPlayers({ showToast, showConfirm, categoria }: AdminPlayersProps) {
   const [jugadores, setJugadores] = useState<any[]>([]);
   const [nombre, setNombre] = useState("");
   const [dorsal, setDorsal] = useState("");
@@ -57,10 +58,11 @@ export default function AdminPlayers({ showToast, categoria }: AdminPlayersProps
   }
 
   async function handleDeleteJugador(id: string) {
-    if (!confirm("¿Borrar jugador?")) return;
-    await supabase.from("jugadores").delete().eq("id", id);
-    fetchJugadores();
-    showToast("Jugador eliminado");
+    showConfirm("¿Borrar jugador?", async () => {
+      await supabase.from("jugadores").delete().eq("id", id);
+      fetchJugadores();
+      showToast("Jugador eliminado");
+    });
   }
 
   return (

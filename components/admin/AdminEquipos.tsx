@@ -6,10 +6,11 @@ import { v4 as uuidv4 } from "uuid";
 
 interface AdminEquiposProps {
   showToast: (msg: string, type?: "success" | "error") => void;
+  showConfirm: (msg: string, onConfirm: () => void) => void;
   categoria: string;
 }
 
-export default function AdminEquipos({ showToast, categoria }: AdminEquiposProps) {
+export default function AdminEquipos({ showToast, showConfirm, categoria }: AdminEquiposProps) {
   const [equipos, setEquipos] = useState<any[]>([]);
   const [nombreEquipo, setNombreEquipo] = useState("");
   const [escudoEquipo, setEscudoEquipo] = useState<File | null>(null);
@@ -98,10 +99,11 @@ export default function AdminEquipos({ showToast, categoria }: AdminEquiposProps
   }
 
   async function handleDeleteEquipo(id: string) {
-    if (!confirm("¿Borrar este equipo de la librería?")) return;
-    await supabase.from("equipos").delete().eq("id", id);
-    fetchEquipos();
-    showToast("Equipo eliminado");
+    showConfirm("¿Borrar este equipo de la librería?", async () => {
+      await supabase.from("equipos").delete().eq("id", id);
+      fetchEquipos();
+      showToast("Equipo eliminado");
+    });
   }
 
   return (

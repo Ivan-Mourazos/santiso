@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import {
   W, H,
   loadImg,
-  drawBackground, drawBars, drawTopLogos, drawSponsorBar,
+  drawBackground, drawTopLogos, drawSponsorBar,
   drawPartido, drawResumo, drawCronoloxia, drawProximos, drawNoso11,
 } from "@/lib/cartel-draw";
 
@@ -41,23 +41,17 @@ export default function GeneradorCartel() {
     updateMatch,
   } = useCartelForm();
 
-  const [tipo, setTipo] = useRef<string>("partido").current; // Placeholder, we use state for tipo
-  // Wait, I need to manage 'tipo' state here to pass to hooks
-  // I'll adjust the hook/state slightly to match the orchestrator role.
+  const [tipo, setTipo] = require("react").useState("partido");
+  const assetUrls = useCartelAssets(tipo);
 
-  // Actually, I'll keep 'tipo' state here for now as it drives asset loading.
-  const [tipoState, setTipoState] = require("react").useState("partido");
-  const assetUrls = useCartelAssets(tipoState);
-
-  // Load equipos on category change
+  // Load ALL equipos once
   useEffect(() => {
     supabase
       .from("equipos")
-      .select("id, nombre, escudo_url")
-      .eq("categoria", form.categoria)
+      .select("id, nombre, escudo_url, categoria")
       .order("nombre", { ascending: true })
       .then(({ data }) => setEquipos(data || []));
-  }, [form.categoria, setEquipos]);
+  }, [setEquipos]);
 
   // ── Canvas draw ─────────────────────────────────────────────────────────────
   const drawCanvas = useCallback(async () => {
@@ -83,7 +77,14 @@ export default function GeneradorCartel() {
     };
 
     const rivalImg   = await loadImg(form.rivalEscudoUrl);
-    const jugadorImg = tipoState === "noso11" ? await loadImg(form.jugadorFotoUrl) : null;
+    const jugadorImg = tipo === "noso11" ? await loadImg(form.jugadorFotoUrl) : null;
+
+    // Load multiple rival shields for Próximos
+    const matchRivalImgs: (HTMLImageElement | null)[] = [];
+    if (tipo === "proximos") {
+      const results = await Promise.all(form.matches.map(m => loadImg(m.rivalEscudoUrl)));
+      matchRivalImgs.push(...results);
+    }
 
     ctx.clearRect(0, 0, W * RENDER_SCALE, H * RENDER_SCALE);
     ctx.save();
@@ -91,8 +92,7 @@ export default function GeneradorCartel() {
     
     // 1. Foundation
     drawBackground(ctx, assets.fondo);
-    drawBars(ctx, form.textoLateral);
-    drawTopLogos(ctx, assets.xunta, assets.rfgf, form.xuntaIsLeft);
+    drawTopLogos(ctx, assets.xunta, assets.rfgf, assetUrls.xuntaIsLeft);
     drawSponsorBar(ctx, assets.sponsors);
 
     // 2. Templates
@@ -103,13 +103,17 @@ export default function GeneradorCartel() {
       rivalEscudoUrl: form.rivalEscudoUrl,
     };
 
-    switch (tipoState) {
+    switch (tipo) {
       case "partido":
         drawPartido(ctx, baseP, rivalImg, assets.santiso);
         break;
       case "resumo":
-        drawResumo(ctx, { ...baseP, golesLocal: form.golesLocal, golesRival: form.golesRival },
-          rivalImg, assets.santiso);
+        drawResumo(ctx, { 
+          ...baseP, 
+          golesLocal: form.golesLocal, 
+          golesRival: form.golesRival,
+          showCarouselIndicator: form.showCarouselIndicator 
+        }, rivalImg, assets.santiso);
         break;
       case "cronoloxia":
         drawCronoloxia(ctx, {
@@ -121,18 +125,23 @@ export default function GeneradorCartel() {
         }, rivalImg, assets.santiso);
         break;
       case "proximos":
-        drawProximos(ctx, { categoriasText: form.categoriasText, matches: form.matches }, assets.santiso);
+        drawProximos(ctx, {
+          categoriasText: form.categoriasText,
+          matches: form.matches,
+          categoria: form.categoria,
+        }, assets, assetUrls.xuntaIsLeft, matchRivalImgs);
         break;
       case "noso11":
         drawNoso11(ctx, {
           categoria: form.categoria, fecha: form.fecha, estadio: form.estadio,
           titulares: form.titulares, suplentes: form.suplentes,
           jugadorFotoUrl: form.jugadorFotoUrl,
-        }, jugadorImg);
+          jugadorXOffset: form.jugadorXOffset,
+        }, jugadorImg, assets, assetUrls.xuntaIsLeft);
         break;
     }
     ctx.restore();
-  }, [tipoState, form, assetUrls]);
+  }, [tipo, form, assetUrls]);
 
   useEffect(() => { drawCanvas(); }, [drawCanvas]);
 
@@ -143,9 +152,9 @@ export default function GeneradorCartel() {
     const url = canvas.toDataURL("image/png");
     const a = document.createElement("a");
     a.href = url;
-    const slug = tipoState === "partido" || tipoState === "resumo"
+    const slug = tipo === "partido" || tipo === "resumo"
       ? `jornada-${form.jornada}${form.rivalNombre ? `-vs-${form.rivalNombre.toLowerCase().replace(/\s+/g, "-")}` : ""}`
-      : tipoState;
+      : tipo;
     a.download = `cartel-${slug}.png`;
     document.body.appendChild(a);
     a.click();
@@ -170,13 +179,13 @@ export default function GeneradorCartel() {
 
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "2rem", flexWrap: "wrap" }}>
           {TEMPLATES.map(t => (
-            <button key={t.id} onClick={() => setTipoState(t.id)}
+            <button key={t.id} onClick={() => setTipo(t.id)}
               style={{
                 padding: "0.55rem 1.1rem", borderRadius: "0.6rem", fontFamily: "inherit",
                 fontWeight: 800, fontSize: "0.82rem", cursor: "pointer",
-                border: tipoState === t.id ? "none" : "1px solid var(--border)",
-                background: tipoState === t.id ? "var(--primary)" : "rgba(255,255,255,0.04)",
-                color: tipoState === t.id ? "#000" : "#aaa",
+                border: tipo === t.id ? "none" : "1px solid var(--border)",
+                background: tipo === t.id ? "var(--primary)" : "rgba(255,255,255,0.04)",
+                color: tipo === t.id ? "#000" : "#aaa",
                 transition: "all 0.2s",
               }}>
               {t.emoji} {t.label}
@@ -187,28 +196,16 @@ export default function GeneradorCartel() {
         <div className="gen-layout">
           <div className="gen-form card glass">
 
-            {/* Categoria (shared) */}
-            {tipoState !== "proximos" && (
-              <div className="input-group" style={{ marginBottom: "1rem" }}>
-                <label>Categoría</label>
-                <select value={form.categoria} onChange={e => set("categoria", e.target.value)}>
-                  <option value="Senior">Sénior</option>
-                  <option value="Femenino">Femenino</option>
-                  <option value="Veteranos">Veteranos</option>
-                </select>
-              </div>
-            )}
-
             {/* Template-specific fields */}
-            {tipoState === "partido"    && <FormPartido form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} />}
-            {tipoState === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} />}
-            {tipoState === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} />}
-            {tipoState === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} />}
-            {tipoState === "noso11"     && <FormNoso11 form={form} set={set} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} />}
+            {tipo === "partido"    && <FormPartido form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} />}
+            {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} />}
+            {tipo === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} />}
+            {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} />}
+            {tipo === "noso11"     && <FormNoso11 form={form} set={set} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} />}
 
             {/* Santiso side (shared) */}
-            {(tipoState === "partido" || tipoState === "resumo" || tipoState === "cronoloxia") && (
-              <div className="input-group" style={{ marginBottom: "1rem" }}>
+            {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
+              <div className="input-group" style={{ marginBottom: "1rem", marginTop: "2.5rem" }}>
                 <label>Santiso en el cartel</label>
                 <div style={{ display: "flex", gap: "0.6rem" }}>
                   <Toggle label="← Izquierda" active={form.santisoSide === "left"} onClick={() => set("santisoSide", "left")} />
@@ -217,24 +214,9 @@ export default function GeneradorCartel() {
               </div>
             )}
 
-            {/* Logo positions (shared) */}
-            <div className="input-group" style={{ marginBottom: "1rem" }}>
-              <label>Posición logotipos superiores</label>
-              <div style={{ display: "flex", gap: "0.6rem" }}>
-                <Toggle label="Xunta →izq / RFGF →dcha" active={form.xuntaIsLeft} onClick={() => set("xuntaIsLeft", true)} />
-                <Toggle label="RFGF →izq / Xunta →dcha" active={!form.xuntaIsLeft} onClick={() => set("xuntaIsLeft", false)} />
-              </div>
-            </div>
-
-            {/* Texto lateral (shared) */}
-            <div className="input-group" style={{ marginBottom: "1.5rem" }}>
-              <label>Texto barras laterales</label>
-              <input type="text" value={form.textoLateral}
-                onChange={e => set("textoLateral", e.target.value)} />
-            </div>
 
             <button className="btn-primary" onClick={handleDownload}
-              style={{ width: "100%", height: 54, fontSize: "1rem",
+              style={{ width: "100%", height: 54, fontSize: "1rem", marginTop: "2.5rem",
                        display: "flex", alignItems: "center", justifyContent: "center", gap: "0.6rem" }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />

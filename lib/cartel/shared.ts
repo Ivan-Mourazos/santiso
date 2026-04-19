@@ -38,12 +38,20 @@ export function drawBackground(
   ctx.fillRect(0, 0, W, H);
 }
 
-/** Category-specific semi-transparent colour overlay. */
-export function drawCategoryTint(ctx: CanvasRenderingContext2D, categoria: string) {
-  const c = CAT_TINT[categoria];
-  if (!c) return;
-  ctx.fillStyle = c;
-  ctx.fillRect(0, 0, W, H);
+/** Giant subtle club shield texture */
+export function drawWatermark(ctx: CanvasRenderingContext2D, imgSantiso: HTMLImageElement | null) {
+  if (!imgSantiso) return;
+  ctx.save();
+  ctx.globalAlpha = 0.025; // More subtle for better contrast
+  const wSize = 920;
+  // Positioned slightly off-center vertically to sit behind the main content area
+  ctx.drawImage(imgSantiso, CX - wSize / 2, 760 - wSize / 2, wSize, wSize);
+  ctx.restore();
+}
+
+/** Category-specific semi-transparent colour overlay. Disabled. */
+export function drawCategoryTint(_ctx: CanvasRenderingContext2D, _categoria: string) {
+  // Disabled per user request
 }
 
 // ─── Bars ─────────────────────────────────────────────────────────────────────
@@ -123,28 +131,29 @@ export function drawTopLogos(
 // ─── Sponsor bar ──────────────────────────────────────────────────────────────
 
 export function drawSponsorBar(ctx: CanvasRenderingContext2D, sponsors: HTMLImageElement[]) {
-  const SP_Y  = 1232;
-  const SP_H  = 123;
+  const SP_Y  = 1160;
+  const SP_H  = 160;
   const SLOTS = 5;
   const slotW = CW / SLOTS;
 
-  // Top separator
-  ctx.strokeStyle = "rgba(255,255,255,0.14)";
-  ctx.lineWidth   = 1;
+  // Golden separator
+  const sepY = SP_Y - 12;
+  const sepGrad = ctx.createLinearGradient(CL, 0, CR, 0);
+  sepGrad.addColorStop(0,   "rgba(201,164,32,0)");
+  sepGrad.addColorStop(0.2, "rgba(201,164,32,0.55)");
+  sepGrad.addColorStop(0.8, "rgba(201,164,32,0.55)");
+  sepGrad.addColorStop(1,   "rgba(201,164,32,0)");
+  ctx.strokeStyle = sepGrad;
+  ctx.lineWidth   = 1.5;
   ctx.beginPath();
-  ctx.moveTo(CL, SP_Y - 12);
-  ctx.lineTo(CR, SP_Y - 12);
+  ctx.moveTo(CL, sepY);
+  ctx.lineTo(CR, sepY);
   ctx.stroke();
 
   for (let i = 0; i < SLOTS; i++) {
     const img    = sponsors[i];
     const slotCX = CL + slotW * i + slotW / 2;
     const slotX  = CL + slotW * i;
-
-    // Dark pill background behind each logo slot
-    ctx.fillStyle = "rgba(0,0,0,0.38)";
-    rr(ctx, slotX + 6, SP_Y + 8, slotW - 12, SP_H - 16, 10);
-    ctx.fill();
 
     if (img) {
       const ratio = img.naturalWidth / img.naturalHeight;

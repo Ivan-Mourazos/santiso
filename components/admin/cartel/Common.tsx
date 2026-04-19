@@ -14,6 +14,17 @@ export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children
   </p>
 );
 
+export const CategorySelector: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
+  <div className="input-group" style={{ marginBottom: "1.5rem" }}>
+    <label>Categoría</label>
+    <select value={value} onChange={e => onChange(e.target.value)}>
+      <option value="Senior">Senior</option>
+      <option value="Femenino">Femenino</option>
+      <option value="Veteranos">Veteranos</option>
+    </select>
+  </div>
+);
+
 export const Toggle: React.FC<{ label: string; active: boolean; onClick: () => void }> = ({ label, active, onClick }) => (
   <button onClick={onClick} style={{
     flex: 1, padding: "0.7rem", borderRadius: "0.5rem",

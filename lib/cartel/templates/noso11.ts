@@ -3,9 +3,10 @@
  * Template 5: O Noso 11
  */
 
-import { W, H, BAR_W, GOLD, GREEN_TXT } from "../constants";
-import { fmtDate, drawShield, fitFont } from "../primitives";
-import type { Player } from "../types";
+import { W, H, BAR_W, GOLD, GREEN_TXT, CL, CR } from "../constants";
+import { fmtDate, drawShield, fitFont, rr } from "../primitives";
+import type { Player, CartelAssets } from "../types";
+import { drawTopLogos, drawSponsorBar, drawCategoryTint, drawWatermark } from "../shared";
 
 export interface Noso11Form {
   categoria:  string;
@@ -14,75 +15,85 @@ export interface Noso11Form {
   titulares:  Player[];
   suplentes:  Player[];
   jugadorFotoUrl: string;
+  jugadorXOffset: number; // 0 to 1, def 0.5
 }
 
 export function drawNoso11(
   ctx: CanvasRenderingContext2D,
   f: Noso11Form,
-  imgJugador: HTMLImageElement | null
+  imgJugador: HTMLImageElement | null,
+  assets: CartelAssets,
+  xuntaIsLeft: boolean
 ) {
   const { categoria, fecha, estadio, titulares, suplentes } = f;
 
   // ── Left photo column ─────────────────────────────────────────────────────
-  const PHOTO_W = 430;
+  const PHOTO_W = 465; // Equalized half-width
   const PHOTO_X = BAR_W;
 
   if (imgJugador) {
-    // Dark strip so PNG transparent pixels don't show background texture too much
-    ctx.fillStyle = "#080808";
+    // Column shading
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
     ctx.fillRect(PHOTO_X, 0, PHOTO_W, H);
 
     const iAR = imgJugador.naturalWidth / imgJugador.naturalHeight;
-    const tAR = PHOTO_W / (H - 80);
+    const PHOTO_START_Y = 180;
+    const tAR = PHOTO_W / (H - PHOTO_START_Y);
     let sx, sy, sw, sh;
-    if (iAR > tAR) { sh = imgJugador.naturalHeight; sw = sh * tAR; sx = (imgJugador.naturalWidth - sw) / 2; sy = 0; }
-    else            { sw = imgJugador.naturalWidth;  sh = sw / tAR; sx = 0; sy = 0; }
-    ctx.drawImage(imgJugador, sx, sy, sw, sh, PHOTO_X, 60, PHOTO_W, H - 80);
-
-    // Fades
-    const fadeR = ctx.createLinearGradient(PHOTO_X + PHOTO_W * 0.55, 0, PHOTO_X + PHOTO_W, 0);
-    fadeR.addColorStop(0, "rgba(0,0,0,0)");
-    fadeR.addColorStop(1, "rgba(0,0,0,0.97)");
-    ctx.fillStyle = fadeR;
-    ctx.fillRect(PHOTO_X, 60, PHOTO_W, H - 80);
-
-    const fadeB = ctx.createLinearGradient(0, H * 0.72, 0, H - 80);
-    fadeB.addColorStop(0, "rgba(0,0,0,0)");
-    fadeB.addColorStop(1, "rgba(0,0,0,0.9)");
-    ctx.fillStyle = fadeB;
-    ctx.fillRect(PHOTO_X, 60, PHOTO_W, H - 80);
-  } else {
-    const emptyG = ctx.createLinearGradient(PHOTO_X, 0, PHOTO_X + PHOTO_W, 0);
-    emptyG.addColorStop(0, "rgba(0,0,0,0.65)");
-    emptyG.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = emptyG;
-    ctx.fillRect(PHOTO_X, 0, PHOTO_W, H);
-
+    
+    const xOff = 1 - (f.jugadorXOffset ?? 0.5);
+    if (iAR > tAR) { 
+      sh = imgJugador.naturalHeight; sw = sh * tAR; sx = (imgJugador.naturalWidth - sw) * xOff; sy = 0; 
+    } else { 
+      sw = imgJugador.naturalWidth; sh = sw / tAR; sx = 0; sy = (imgJugador.naturalHeight - sh) / 2; 
+    }
+    
+    // STRICT CLIPPING - Cut exactly at the column edge
+    const CLIP_W = PHOTO_W;
     ctx.save();
-    ctx.globalAlpha = 0.12;
-    ctx.fillStyle   = "#ffffff";
-    ctx.font        = "900 120px 'Outfit'";
-    ctx.textAlign   = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("👤", PHOTO_X + PHOTO_W / 2, H / 2);
+    ctx.beginPath();
+    ctx.rect(PHOTO_X, 0, CLIP_W, H); 
+    ctx.clip();
+    ctx.drawImage(imgJugador, sx, sy, sw, sh, PHOTO_X, PHOTO_START_Y, PHOTO_W, H - PHOTO_START_Y); 
     ctx.restore();
   }
 
   // ── Right side: player list ───────────────────────────────────────────────
-  const LIST_X = BAR_W + PHOTO_W + 18;
-  const LIST_W = W - LIST_X - BAR_W - 10;
+  const GAP = 30;
+  const LIST_X = PHOTO_X + PHOTO_W + GAP; // 555
+  const LIST_W = 465; // Perfect symmetry
 
-  // Venue + Date header
-  const infoText = estadio ? `${estadio.toUpperCase()}   ${fmtDate(fecha, true)}` : fmtDate(fecha, true);
-  ctx.fillStyle    = "#888";
+  // Unified shading for the right column
+  ctx.fillStyle = "rgba(0,0,0,0.55)";
+  ctx.fillRect(LIST_X - (GAP/2), 0, LIST_W + (GAP/2 + BAR_W), H);
+
+  // Draw logos
+  drawTopLogos(ctx, assets.xunta, assets.rfgf, xuntaIsLeft);
+  drawSponsorBar(ctx, assets.sponsors);
+
+  // 0. Background Watermark
+  drawWatermark(ctx, assets.santiso);
+
+  // Header: Stadium (Far Left) + Date (Right)
+  const venue = estadio.toUpperCase();
+  const dateStr = fmtDate(fecha, true);
+
+  // Stadium - Below Xunta (Left)
+  ctx.fillStyle    = "#bbb";
   ctx.font         = "700 18px 'Outfit'";
   ctx.textAlign    = "left";
   ctx.textBaseline = "alphabetic";
-  ctx.fillText(infoText, LIST_X, 152);
+  ctx.fillText(venue, CL, 152);
+
+  // Date - Right (Golden)
+  ctx.fillStyle    = GOLD;
+  ctx.textAlign    = "right";
+  ctx.fillText(dateStr, LIST_X + LIST_W, 152);
 
   // "O NOSO 11"
   ctx.fillStyle = GREEN_TXT;
   ctx.font      = "900 80px 'Outfit'";
+  ctx.textAlign = "left";
   ctx.fillText("O NOSO", LIST_X, 262);
   ctx.fillText("11", LIST_X, 348);
 
@@ -123,11 +134,15 @@ export function drawNoso11(
     }
 
     // Name
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.85)";
+    ctx.shadowBlur  = 6;
     ctx.fillStyle    = "#ffffff";
     ctx.font         = "800 24px 'Outfit'";
     ctx.textAlign    = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(p.nome.toUpperCase(), nameX, midY);
+    ctx.restore();
   });
 
   // "NO BANCO" separator
@@ -165,4 +180,6 @@ export function drawNoso11(
     ctx.font         = "700 20px 'Outfit'";
     ctx.fillText(p.nome.toUpperCase(), LIST_X + 52, midY);
   });
+
+  drawCategoryTint(ctx, categoria);
 }

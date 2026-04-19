@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
-import type { FormState, TemplateId } from "./types";
+import { COMPETICIONS, type FormState, type TemplateId } from "./types";
 import type { Player, CronEvent, NextMatch } from "@/lib/cartel-draw";
 
 function mkPlayer(): Player {
@@ -15,14 +15,12 @@ function mkEvent(): CronEvent {
   return { id: uuidv4(), minuto: "", tipo: "gol", equipo: "local", jugador: "" };
 }
 function mkMatch(): NextMatch {
-  return { rival: "", fecha: "", hora: "18:00", categoria: "Senior" };
+  return { rival: "", rivalEscudoUrl: "", fecha: "", hora: "18:00", categoria: "Senior", santisoSide: "right" };
 }
 
 const DEFAULT_FORM: FormState = {
   categoria:      "Senior",
-  textoLateral:   "GRAZAS POLO VOSO APOIO",
-  xuntaIsLeft:    true,
-  competicion:    "TERCEIRA FUTGAL – FASE COPA – GRUPO 4",
+  competicion:    COMPETICIONS["Senior"][0],
   jornada:        "1",
   rivalNombre:    "",
   rivalEscudoUrl: "",
@@ -36,9 +34,11 @@ const DEFAULT_FORM: FormState = {
   localSponsor:   "",
   rivalSponsor:   "",
   events:         [],
-  categoriasText: "FEMININO – SÉNIOR – VETERANOS",
+  categoriasText: "FEMENINO – SENIOR – VETERANOS",
   matches:        Array.from({ length: 3 }, mkMatch),
   jugadorFotoUrl: "",
+  jugadorXOffset: 0.5,
+  showCarouselIndicator: true,
   titulares:      Array.from({ length: 11 }, mkPlayer),
   suplentes:      Array.from({ length: 5 },  mkPlayer),
 };
@@ -54,7 +54,14 @@ export function useCartelForm() {
   }, []);
 
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
-    setForm(p => ({ ...p, [k]: v }));
+    setForm(p => {
+      const next = { ...p, [k]: v };
+      // Sync competition if category changes
+      if (k === "categoria" && typeof v === "string") {
+        next.competicion = COMPETICIONS[v]?.[0] || "";
+      }
+      return next;
+    });
   }
 
   function handleRivalSelect(nombre: string) {

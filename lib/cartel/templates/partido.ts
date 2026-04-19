@@ -5,7 +5,7 @@
 
 import { CX, CL, CR, CW, GOLD, GREEN_D } from "../constants";
 import { rr, fitFont, fmtDate, drawShield, shieldPlaceholder, drawVsBadge, drawTeamName, drawCategoryBadge } from "../primitives";
-import { drawCategoryTint, getSantisoName } from "../shared";
+import { drawCategoryTint, getSantisoName, drawWatermark } from "../shared";
 
 export interface PartidoForm {
   categoria:    string;
@@ -28,35 +28,43 @@ export function drawPartido(
   const { categoria, competicion, jornada, rivalNombre, fecha, hora, lugar, santisoSide } = f;
   const santisoName = getSantisoName(categoria);
 
+  // 0. Background Watermark
+  drawWatermark(ctx, imgSantiso);
+
   // Category colour tint on background
   drawCategoryTint(ctx, categoria);
 
-  // Competition subtitle
+  // 1. Headers — Competition and Match Day
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.85)";
+  ctx.shadowBlur  = 8;
   ctx.fillStyle    = "#aaaaaa";
   ctx.font         = "700 25px 'Outfit', sans-serif";
   ctx.textAlign    = "center";
   ctx.textBaseline = "alphabetic";
   ctx.fillText(competicion.toUpperCase(), CX, 169);
 
-  // Category badge
   drawCategoryBadge(ctx, categoria, 195);
+  ctx.restore();
 
-  // "XORNADA" label
+  // "XORNADA" label with shadow
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.9)";
+  ctx.shadowBlur  = 10;
   ctx.fillStyle    = GOLD;
   ctx.textAlign    = "center";
   ctx.textBaseline = "alphabetic";
   fitFont(ctx, "XORNADA", CW * 0.86, 112, 60, "900");
   ctx.fillText("XORNADA", CX, 390);
 
-  // Jornada number — with white stroke for depth
+  // Jornada number — with white stroke for depth & shadow
   fitFont(ctx, jornada, CW * 0.74, 182, 80, "900");
-  ctx.save();
   ctx.strokeStyle = "rgba(255,255,255,0.12)";
   ctx.lineWidth   = 6;
   ctx.lineJoin    = "round";
   ctx.strokeText(jornada, CX, 578);
-  ctx.restore();
   ctx.fillText(jornada, CX, 578);
+  ctx.restore();
 
   // Shields
   const SY = 730, SS = 215, OFF = 242;
@@ -74,48 +82,72 @@ export function drawPartido(
   if (rightImg) drawShield(ctx, rightImg, rCX, SY, SS, santisoSide === "right");
   else          shieldPlaceholder(ctx, rCX, SY, SS / 2);
 
-  // Team names
+  // Team names with shadow
   const NY = SY + SS / 2 + 52;
-  drawTeamName(ctx, leftName,  lCX, NY, 290, santisoSide === "left");
-  drawTeamName(ctx, rightName, rCX, NY, 290, santisoSide === "right");
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.85)";
+  ctx.shadowBlur  = 12;
+  drawTeamName(ctx, leftName,  lCX, NY, 310, santisoSide === "left");
+  drawTeamName(ctx, rightName, rCX, NY, 310, santisoSide === "right");
+  ctx.restore();
 
-  // ── Info boxes ──────────────────────────────────────────────────────────────
-  const BOX_Y = 946, BOX_H = 72, BOX_R = 20, GAP = 16;
+  // ── Info boxes (REDESIGNED: GLASS PREMIUM) ──────────────────────────────────
+  const BOX_Y = 920, BOX_H = 92, BOX_R = 24, GAP = 18;
   const HW    = (CW - GAP) / 2;
 
-  // Date box
-  ctx.fillStyle   = "rgba(0,0,0,0.65)";
-  rr(ctx, CL, BOX_Y, HW, BOX_H, BOX_R); ctx.fill();
-  ctx.strokeStyle = "rgba(250,204,21,0.2)"; ctx.lineWidth = 1;
-  rr(ctx, CL, BOX_Y, HW, BOX_H, BOX_R); ctx.stroke();
-  ctx.fillStyle    = "#fff";
+  function drawGlassBox(x: number, y: number, w: number, h: number, isAccent = false) {
+    ctx.save();
+    // Soft outer glow/shadow
+    ctx.shadowColor = "rgba(0,0,0,0.4)";
+    ctx.shadowBlur  = 20;
+    
+    // Gradient or semi-trans black
+    ctx.fillStyle = isAccent ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.78)";
+    rr(ctx, x, y, w, h, BOX_R);
+    ctx.fill();
+
+    // Top edge highlight (Glass effect)
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 1.5;
+    rr(ctx, x, y, w, h, BOX_R);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Row 1: Date & Time
+  drawGlassBox(CL, BOX_Y, HW, BOX_H);
+  drawGlassBox(CL + HW + GAP, BOX_Y, HW, BOX_H, true); // Subtle accent for time
+
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.8)";
+  ctx.shadowBlur  = 6;
   ctx.textAlign    = "center";
   ctx.textBaseline = "middle";
-  fitFont(ctx, fmtDate(fecha), HW - 20, 30, 18, "800");
+
+  // Date Text
+  ctx.fillStyle = "#ffffff";
+  fitFont(ctx, fmtDate(fecha), HW - 30, 30, 20, "800");
   ctx.fillText(fmtDate(fecha), CL + HW / 2, BOX_Y + BOX_H / 2);
 
-  // Time box (green background = brand accent)
-  const rxX = CL + HW + GAP;
-  ctx.fillStyle = GREEN_D;
-  rr(ctx, rxX, BOX_Y, HW, BOX_H, BOX_R); ctx.fill();
-  ctx.strokeStyle = "rgba(250,204,21,0.35)";
-  rr(ctx, rxX, BOX_Y, HW, BOX_H, BOX_R); ctx.stroke();
-  ctx.fillStyle    = GOLD;
-  ctx.font         = "800 36px 'Outfit', sans-serif";
-  ctx.textAlign    = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(hora ? `${hora}H` : "00:00H", rxX + HW / 2, BOX_Y + BOX_H / 2);
+  // Time Text
+  ctx.fillStyle = GOLD;
+  ctx.font = "900 38px 'Outfit', sans-serif";
+  ctx.fillText(hora ? `${hora}H` : "00:00H", CL + HW + GAP + HW / 2, BOX_Y + BOX_H / 2);
+  ctx.restore();
 
-  // Venue box
-  const VY = BOX_Y + BOX_H + 14;
-  ctx.fillStyle   = "rgba(0,0,0,0.65)";
-  rr(ctx, CL, VY, CW, BOX_H, BOX_R); ctx.fill();
-  ctx.strokeStyle = "rgba(250,204,21,0.18)";
-  rr(ctx, CL, VY, CW, BOX_H, BOX_R); ctx.stroke();
-  const venTxt = lugar ? `🏟  ${lugar.toUpperCase()}` : "🏟  CAMPO A DEFINIR";
-  ctx.fillStyle    = "#fff";
+  // Row 2: Venue
+  const VY = BOX_Y + BOX_H + 20;
+  drawGlassBox(CL, VY, CW, BOX_H);
+
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.8)";
+  ctx.shadowBlur  = 6;
+  ctx.fillStyle    = "#ffffff";
   ctx.textAlign    = "center";
   ctx.textBaseline = "middle";
-  fitFont(ctx, venTxt, CW - 48, 29, 16, "800");
+  const venTxt = lugar ? `🏟  ${lugar.toUpperCase()}` : "🏟  CAMPO A DEFINIR";
+  fitFont(ctx, venTxt, CW - 60, 32, 18, "800");
   ctx.fillText(venTxt, CX, VY + BOX_H / 2);
+  ctx.restore();
 }

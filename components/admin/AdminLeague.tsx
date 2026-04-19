@@ -4,10 +4,11 @@ import { supabase } from "@/lib/supabase";
 
 interface AdminLeagueProps {
   showToast: (msg: string, type?: "success" | "error") => void;
+  showConfirm: (msg: string, onConfirm: () => void) => void;
   categoria: string;
 }
 
-export default function AdminLeague({ showToast, categoria }: AdminLeagueProps) {
+export default function AdminLeague({ showToast, showConfirm, categoria }: AdminLeagueProps) {
   const [equipos, setEquipos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 

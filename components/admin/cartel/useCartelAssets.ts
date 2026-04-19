@@ -11,6 +11,7 @@ const DEFAULT_URLS: AssetUrls = {
   fondo: "/fondo-cartel.png",
   xunta: "",
   rfgf: "",
+  xuntaIsLeft: true,
   santiso: "",
   sponsors: [],
 };
@@ -39,10 +40,14 @@ export function useCartelAssets(tipo: TemplateId) {
                            .sort((a, b) => (a.orden || 0) - (b.orden || 0))
                            .map(r => r.url);
 
+      const configRow = rows.find(r => r.tipo === "config" && r.subtipo === "logo_order");
+      const xuntaIsLeft = configRow ? configRow.nombre === "xunta_left" : true;
+
       setAssetUrls({
         fondo:    fondoRow?.url || "/fondo-cartel.png",
         xunta,
         rfgf,
+        xuntaIsLeft,
         santiso:  santisoUrl,
         sponsors,
       });

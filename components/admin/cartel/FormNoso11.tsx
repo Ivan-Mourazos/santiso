@@ -5,7 +5,7 @@
 
 import React from "react";
 import type { FormState } from "./types";
-import { SectionLabel } from "./Common";
+import { SectionLabel, CategorySelector } from "./Common";
 import type { Player } from "@/lib/cartel-draw";
 
 interface Props {
@@ -21,6 +21,7 @@ export const FormNoso11: React.FC<Props> = ({
 }) => {
   return (
     <>
+      <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group"><label>Fecha</label>
           <input type="date" value={form.fecha} onChange={e => set("fecha", e.target.value)} />
@@ -41,6 +42,18 @@ export const FormNoso11: React.FC<Props> = ({
           <input type="file" className="hidden-input" accept="image/*"
             onChange={e => { if (e.target.files?.[0]) handleJugadorFile(e.target.files[0]); }} />
         </label>
+      </div>
+
+      <div className="input-group" style={{ marginBottom: "1.2rem" }}>
+        <label>Ajustar encuadre (si se corta el brazo)</label>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <span style={{ fontSize: "0.7rem", color: "#666" }}>Izq</span>
+          <input type="range" min="0" max="1" step="0.01" 
+                 value={form.jugadorXOffset} 
+                 onChange={e => set("jugadorXOffset", parseFloat(e.target.value))}
+                 style={{ flex: 1, accentColor: "var(--primary)" }} />
+          <span style={{ fontSize: "0.7rem", color: "#666" }}>Der</span>
+        </div>
       </div>
 
       <SectionLabel>Titulares (11)</SectionLabel>

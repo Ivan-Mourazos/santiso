@@ -5,9 +5,10 @@ import { processAndUploadImage } from "@/lib/image-utils";
 
 interface AdminShieldProps {
   showToast: (msg: string, type?: "success" | "error") => void;
+  showConfirm: (msg: string, onConfirm: () => void) => void;
 }
 
-export default function AdminShield({ showToast }: AdminShieldProps) {
+export default function AdminShield({ showToast, showConfirm }: AdminShieldProps) {
   const [clubShield, setClubShield] = useState<string | null>(null);
   const [tempShieldFile, setTempShieldFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);

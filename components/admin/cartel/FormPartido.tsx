@@ -4,7 +4,8 @@
  */
 
 import React from "react";
-import type { FormState } from "./types";
+import { COMPETICIONS, type FormState } from "./types";
+import { CategorySelector } from "./Common";
 
 interface Props {
   form: FormState;
@@ -50,19 +51,38 @@ export const RivalSelector = ({
 export const FormPartido: React.FC<Props> = ({ form, set, equipos, handleRivalSelect, handleRivalFile }) => {
   return (
     <>
+      <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
+      
+      <div className="input-group" style={{ marginBottom: "1rem" }}>
+        <label>Competición</label>
+        <select value={form.competicion} onChange={e => set("competicion", e.target.value)}>
+          <option value="">— Seleccionar —</option>
+          {(COMPETICIONS[form.categoria] || []).map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group">
-          <label>Nº Xornada</label>
-          <input type="text" inputMode="numeric" pattern="[0-9]*" value={form.jornada} onChange={e => set("jornada", e.target.value)} />
+          <label>Fecha</label>
+          <input type="date" value={form.fecha} onChange={e => set("fecha", e.target.value)} />
         </div>
         <div className="input-group">
           <label>Hora</label>
           <input type="time" value={form.hora} onChange={e => set("hora", e.target.value)} />
         </div>
       </div>
-      <div className="input-group" style={{ marginBottom: "1rem" }}>
-        <label>Competición</label>
-        <input type="text" value={form.competicion} onChange={e => set("competicion", e.target.value)} />
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+        <div className="input-group">
+          <label>Nº Xornada</label>
+          <input type="text" inputMode="numeric" pattern="[0-9]*" value={form.jornada} onChange={e => set("jornada", e.target.value)} />
+        </div>
+        <div className="input-group">
+          <label>Estadio / Campo</label>
+          <input type="text" placeholder="Municipal As Cancelas" value={form.lugar} onChange={e => set("lugar", e.target.value)} />
+        </div>
       </div>
 
       <RivalSelector
@@ -71,17 +91,6 @@ export const FormPartido: React.FC<Props> = ({ form, set, equipos, handleRivalSe
         handleRivalSelect={handleRivalSelect}
         handleRivalFile={handleRivalFile}
       />
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-        <div className="input-group">
-          <label>Fecha</label>
-          <input type="date" value={form.fecha} onChange={e => set("fecha", e.target.value)} />
-        </div>
-        <div className="input-group">
-          <label>Estadio / Campo</label>
-          <input type="text" placeholder="Municipal As Cancelas" value={form.lugar} onChange={e => set("lugar", e.target.value)} />
-        </div>
-      </div>
     </>
   );
 };

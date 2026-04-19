@@ -24,7 +24,7 @@ export const GREEN_TXT = "#3a8a34";
 
 // ─── Category tint colors ─────────────────────────────────────────────────────
 export const CAT_TINT: Record<string, string> = {
-  Senior:    "rgba(27,74,24,0.14)",
-  Femenino:  "rgba(80,20,80,0.14)",
-  Veteranos: "rgba(20,40,100,0.14)",
+  Senior:    "rgba(27,74,24,0.08)",
+  Femenino:  "rgba(80,20,80,0.08)",
+  Veteranos: "rgba(20,40,100,0.08)",
 };

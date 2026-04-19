@@ -6,6 +6,7 @@
 import React from "react";
 import type { FormState } from "./types";
 import { RivalSelector } from "./FormPartido";
+import { CategorySelector } from "./Common";
 import type { CronEvent } from "@/lib/cartel-draw";
 
 interface Props {
@@ -25,6 +26,7 @@ export const FormCronoloxia: React.FC<Props> = ({
 }) => {
   return (
     <>
+      <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group"><label>Fecha</label>
           <input type="date" value={form.fecha} onChange={e => set("fecha", e.target.value)} />
@@ -42,14 +44,6 @@ export const FormCronoloxia: React.FC<Props> = ({
         handleRivalFile={handleRivalFile}
       />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-        <div className="input-group"><label>Patrocinador Santiso</label>
-          <input type="text" placeholder="SOLAINA" value={form.localSponsor} onChange={e => set("localSponsor", e.target.value)} />
-        </div>
-        <div className="input-group"><label>Patrocinador Rival</label>
-          <input type="text" placeholder="HOSPEDAJE J.REY" value={form.rivalSponsor} onChange={e => set("rivalSponsor", e.target.value)} />
-        </div>
-      </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group"><label>Goles Santiso</label>
           <input type="text" inputMode="numeric" pattern="[0-9]*" value={form.golesLocal} onChange={e => set("golesLocal", e.target.value)} />

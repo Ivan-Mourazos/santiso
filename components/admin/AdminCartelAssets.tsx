@@ -16,6 +16,7 @@ interface Asset {
 
 interface Props {
   showToast: (msg: string, type?: "success" | "error") => void;
+  showConfirm: (msg: string, onConfirm: () => void) => void;
 }
 
 /** Strips accents + invalid storage-key characters → safe slug */
@@ -45,7 +46,7 @@ const TEMPLATE_LABELS: Record<string, string> = {
   noso11:     "O Noso 11",
 };
 
-export default function AdminCartelAssets({ showToast }: Props) {
+export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
   const [assets, setAssets]   = useState<Asset[]>([]);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
@@ -101,10 +102,11 @@ export default function AdminCartelAssets({ showToast }: Props) {
   }
 
   async function deleteAsset(id: string) {
-    if (!confirm("¿Borrar este activo?")) return;
-    await supabase.from("cartel_assets").delete().eq("id", id);
-    showToast("Activo eliminado");
-    fetchAssets();
+    showConfirm("¿Borrar este activo del generador?", async () => {
+      await supabase.from("cartel_assets").delete().eq("id", id);
+      showToast("Activo eliminado");
+      fetchAssets();
+    });
   }
 
   async function moveOrder(id: string, dir: -1 | 1) {
@@ -181,6 +183,37 @@ export default function AdminCartelAssets({ showToast }: Props) {
       <p style={{ color: "#a3a3a3", fontSize: "0.85rem", marginTop: "0.25rem" }}>
         Sube aquí los logos y fondos. El generador los carga automáticamente.
       </p>
+
+      {/* ── Configuración global ─────────────────────────────────────────── */}
+      {sectionTitle("Configuración de Cabecera")}
+      <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", background: "rgba(255,255,255,0.03)", padding: "1rem", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontWeight: 800, fontSize: "0.9rem", color: "white", margin: 0 }}>Posición de logotipos</p>
+          <p style={{ fontSize: "0.72rem", color: "#666", margin: "2px 0 0" }}>Determina qué logo va a la izquierda (Xunta o RFGF).</p>
+        </div>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button 
+            onClick={() => {
+              const nombre = "xunta_left";
+              const existing = assets.find(a => a.tipo === "config" && a.subtipo === "logo_order");
+              if (existing) supabase.from("cartel_assets").update({ nombre }).eq("id", existing.id).then(() => fetchAssets());
+              else supabase.from("cartel_assets").insert([{ tipo: "config", subtipo: "logo_order", nombre, url: "", orden: 0 }]).then(() => fetchAssets());
+            }}
+            style={ assets.find(a => a.tipo === "config" && a.subtipo === "logo_order")?.nombre !== "rfgf_left" ? activeBtnStyle : inactiveBtnStyle }>
+            Xunta Izquierda
+          </button>
+          <button 
+            onClick={() => {
+              const nombre = "rfgf_left";
+              const existing = assets.find(a => a.tipo === "config" && a.subtipo === "logo_order");
+              if (existing) supabase.from("cartel_assets").update({ nombre }).eq("id", existing.id).then(() => fetchAssets());
+              else supabase.from("cartel_assets").insert([{ tipo: "config", subtipo: "logo_order", nombre, url: "", orden: 0 }]).then(() => fetchAssets());
+            }}
+            style={ assets.find(a => a.tipo === "config" && a.subtipo === "logo_order")?.nombre === "rfgf_left" ? activeBtnStyle : inactiveBtnStyle }>
+            RFGF Izquierda
+          </button>
+        </div>
+      </div>
 
       {/* ── Logos institucionales ──────────────────────────────────────────── */}
       {sectionTitle("Logos Institucionales")}
@@ -277,4 +310,14 @@ const arrowBtn: React.CSSProperties = {
   cursor: "pointer",
   fontWeight: 800,
   fontSize: "0.9rem",
+};
+
+const activeBtnStyle: React.CSSProperties = {
+  padding: "0.5rem 1rem", borderRadius: "0.5rem", border: "none",
+  background: "var(--primary)", color: "#000", fontWeight: 800, cursor: "pointer", fontSize: "0.75rem"
+};
+
+const inactiveBtnStyle: React.CSSProperties = {
+  padding: "0.5rem 1rem", borderRadius: "0.5rem", border: "1px solid var(--border)",
+  background: "rgba(255,255,255,0.04)", color: "#aaa", fontWeight: 800, cursor: "pointer", fontSize: "0.75rem"
 };

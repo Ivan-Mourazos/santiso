@@ -13,10 +13,15 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<string | null>("identidad");
   const [categoria, setCategoria] = useState("Senior");
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string, onConfirm: () => void } | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const showConfirm = (message: string, onConfirm: () => void) => {
+    setConfirmDialog({ message, onConfirm });
   };
 
   const toggleSection = (id: string) => {
@@ -25,9 +30,18 @@ export default function AdminPage() {
 
   const AccordionItem = ({ id, title, icon, children }: { id: string, title: string, icon: React.ReactNode, children: React.ReactNode }) => {
     const isOpen = activeSection === id;
+    const itemRef = require("react").useRef<HTMLDivElement>(null);
+
+    require("react").useEffect(() => {
+      if (isOpen && itemRef.current) {
+        setTimeout(() => {
+          itemRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }, [isOpen]);
     
     return (
-      <div className={`ud-accordion-item ${isOpen ? 'active' : ''}`}>
+      <div ref={itemRef} className={`ud-accordion-item ${isOpen ? 'active' : ''}`} style={{ scrollMarginTop: '2rem' }}>
         <button className="ud-accordion-header" onClick={() => toggleSection(id)}>
           <div className="ud-accordion-title-wrap">
             <span className="ud-accordion-icon">{icon}</span>
@@ -92,7 +106,7 @@ export default function AdminPage() {
               title="Identidad del Club" 
               icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
             >
-              <AdminShield showToast={showToast} />
+              <AdminShield showToast={showToast} showConfirm={showConfirm} />
             </AccordionItem>
 
             <AccordionItem 
@@ -100,7 +114,7 @@ export default function AdminPage() {
               title="Patrocinadores" 
               icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>}
             >
-              <AdminSponsors showToast={showToast} />
+              <AdminSponsors showToast={showToast} showConfirm={showConfirm} />
             </AccordionItem>
 
             <AccordionItem 
@@ -108,7 +122,7 @@ export default function AdminPage() {
               title="Librería de Equipos" 
               icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
             >
-              <AdminEquipos showToast={showToast} categoria={categoria} />
+              <AdminEquipos showToast={showToast} showConfirm={showConfirm} categoria={categoria} />
             </AccordionItem>
 
             <AccordionItem 
@@ -116,7 +130,7 @@ export default function AdminPage() {
               title="Clasificación de Liga" 
               icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>}
             >
-              <AdminLeague showToast={showToast} categoria={categoria} />
+              <AdminLeague showToast={showToast} showConfirm={showConfirm} categoria={categoria} />
             </AccordionItem>
 
             <AccordionItem 
@@ -124,7 +138,7 @@ export default function AdminPage() {
               title="Gestión de Plantilla" 
               icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
             >
-              <AdminPlayers showToast={showToast} categoria={categoria} />
+              <AdminPlayers showToast={showToast} showConfirm={showConfirm} categoria={categoria} />
             </AccordionItem>
 
             <AccordionItem 
@@ -132,7 +146,7 @@ export default function AdminPage() {
               title="Calendario y Resultados" 
               icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
             >
-              <AdminMatches showToast={showToast} categoria={categoria} />
+              <AdminMatches showToast={showToast} showConfirm={showConfirm} categoria={categoria} />
             </AccordionItem>
 
             <AccordionItem
@@ -140,11 +154,33 @@ export default function AdminPage() {
               title="Activos del Generador de Carteles"
               icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>}
             >
-              <AdminCartelAssets showToast={showToast} />
+              <AdminCartelAssets showToast={showToast} showConfirm={showConfirm} />
             </AccordionItem>
           </div>
         </section>
       </div>
+
+      {/* Modal de Confirmación Personalizado */}
+      {confirmDialog && (
+        <div className="confirm-overlay">
+          <div className="confirm-modal glass scale-in">
+            <div className="confirm-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#facc15" strokeWidth="2">
+                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+            </div>
+            <h3>¿Estás seguro?</h3>
+            <p>{confirmDialog.message}</p>
+            <div className="confirm-actions">
+              <button className="btn-cancel" onClick={() => setConfirmDialog(null)}>Cancelar</button>
+              <button className="btn-confirm" onClick={() => {
+                confirmDialog.onConfirm();
+                setConfirmDialog(null);
+              }}>Aceptar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notificaciones Toast */}
       {toast && (
@@ -184,6 +220,40 @@ export default function AdminPage() {
         @keyframes slideIn {
           from { transform: translateX(100%) scale(0.9); opacity: 0; }
           to { transform: translateX(0) scale(1); opacity: 1; }
+        }
+
+        /* Confirm Modal Styles */
+        .confirm-overlay {
+          position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+          display: flex; align-items: center; justify-content: center;
+          z-index: 10000; padding: 2rem;
+        }
+        .confirm-modal {
+          max-width: 400px; width: 100%; border: 1px solid rgba(250, 204, 21, 0.2);
+          padding: 2.5rem; border-radius: 1.5rem; text-align: center;
+        }
+        .confirm-icon { margin-bottom: 1.5rem; }
+        .confirm-modal h3 { font-size: 1.5rem; font-weight: 900; margin-bottom: 0.75rem; color: white; }
+        .confirm-modal p { color: #aaa; font-size: 1rem; margin-bottom: 2rem; line-height: 1.5; }
+        .confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .btn-cancel {
+          background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+          color: white; padding: 0.8rem; border-radius: 0.8rem; font-weight: 700;
+          cursor: pointer; transition: all 0.2s;
+        }
+        .btn-cancel:hover { background: rgba(255,255,255,0.1); }
+        .btn-confirm {
+          background: var(--primary); border: none; color: black;
+          padding: 0.8rem; border-radius: 0.8rem; font-weight: 800;
+          cursor: pointer; transition: all 0.2s;
+        }
+        .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(250, 204, 21, 0.3); }
+
+        .scale-in { animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes scaleIn {
+          from { transform: scale(0.9); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
         }
 
         .btn-back { color: var(--primary); font-weight: bold; text-decoration: none; }

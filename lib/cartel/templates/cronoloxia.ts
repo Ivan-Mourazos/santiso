@@ -5,7 +5,7 @@
 
 import { CX, CW, GREEN_TXT, GOLD } from "../constants";
 import { fitFont, fmtDate, drawShield, shieldPlaceholder, drawEventIcon } from "../primitives";
-import { getSantisoName, drawCategoryTint } from "../shared";
+import { getSantisoName, drawCategoryTint, drawWatermark } from "../shared";
 import type { CronEvent } from "../types";
 
 export interface CronoloxiaForm {
@@ -32,6 +32,9 @@ export function drawCronoloxia(
 
   // Category tint
   drawCategoryTint(ctx, categoria);
+
+  // 0. Background Watermark
+  drawWatermark(ctx, imgSantiso);
 
   // Stadium + Date header
   ctx.fillStyle    = "#cccccc";
@@ -101,9 +104,9 @@ export function drawCronoloxia(
   }
 
   // Vertical separator — drawn first so events render on top
-  const SEP_TOP = 615, SEP_BOT = 1230;
-  ctx.strokeStyle = "rgba(220,180,40,0.45)";
-  ctx.lineWidth   = 2.5;
+  const SEP_TOP = 660, SEP_BOT = 1130;
+  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+  ctx.lineWidth   = 1.5;
   ctx.beginPath();
   ctx.moveTo(CX, SEP_TOP);
   ctx.lineTo(CX, SEP_BOT);
@@ -137,12 +140,16 @@ export function drawCronoloxia(
     ctx.textAlign    = "right";
     ctx.textBaseline = "middle";
     ctx.fillText(`${ev.minuto}'`, CX - MARGIN - ICON_SIZE - 8, y);
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.85)";
+    ctx.shadowBlur  = 8;
     ctx.fillStyle    = "#ffffff";
     ctx.font         = "800 20px 'Outfit', sans-serif";
     ctx.textAlign    = "right";
     const maxW = CW / 2 - MARGIN - ICON_SIZE - 30;
     fitFont(ctx, ev.jugador.toUpperCase(), maxW, 20, 12, "800");
     ctx.fillText(ev.jugador.toUpperCase(), CX - MARGIN - ICON_SIZE - 40, y);
+    ctx.restore();
   });
 
   // Draw right events (rival, left-aligned from center)
@@ -154,11 +161,16 @@ export function drawCronoloxia(
     ctx.textAlign    = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(`${ev.minuto}'`, CX + MARGIN + ICON_SIZE + 8, y);
+
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.85)";
+    ctx.shadowBlur  = 8;
     ctx.fillStyle    = "#ffffff";
     ctx.font         = "800 20px 'Outfit', sans-serif";
     ctx.textAlign    = "left";
     const maxW = CW / 2 - MARGIN - ICON_SIZE - 30;
     fitFont(ctx, ev.jugador.toUpperCase(), maxW, 20, 12, "800");
     ctx.fillText(ev.jugador.toUpperCase(), CX + MARGIN + ICON_SIZE + 40, y);
+    ctx.restore();
   });
 }

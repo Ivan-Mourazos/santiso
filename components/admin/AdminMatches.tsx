@@ -4,10 +4,11 @@ import { supabase } from "@/lib/supabase";
 
 interface AdminMatchesProps {
   showToast: (msg: string, type?: "success" | "error") => void;
+  showConfirm: (msg: string, onConfirm: () => void) => void;
   categoria: string;
 }
 
-export default function AdminMatches({ showToast, categoria }: AdminMatchesProps) {
+export default function AdminMatches({ showToast, showConfirm, categoria }: AdminMatchesProps) {
   const [partidos, setPartidos] = useState<any[]>([]);
   const [rival, setRival] = useState("");
   const [fecha, setFecha] = useState("");
@@ -31,12 +32,13 @@ export default function AdminMatches({ showToast, categoria }: AdminMatchesProps
   }
 
   const handleDeletePartido = async (id: string) => {
-    if (!confirm("¿Borrar este partido del calendario?")) return;
-    const { error } = await supabase.from("partidos").delete().eq("id", id);
-    if (!error) {
-      showToast("Partido eliminado");
-      fetchPartidos();
-    }
+    showConfirm("¿Borrar este partido del calendario?", async () => {
+      const { error } = await supabase.from("partidos").delete().eq("id", id);
+      if (!error) {
+        showToast("Partido eliminado");
+        fetchPartidos();
+      }
+    });
   };
 
   async function handleAddPartido(e: React.FormEvent) {
@@ -150,7 +152,6 @@ export default function AdminMatches({ showToast, categoria }: AdminMatchesProps
               <div>
                 <select className="status-select" value={p.estado} onChange={(e) => handleStatusChange(p.id, e.target.value)}>
                   <option value="programado">📅 Programado</option>
-                  <option value="en_juego">⚽ En Juego</option>
                   <option value="finalizado">🏁 Finalizado</option>
                 </select>
               </div>

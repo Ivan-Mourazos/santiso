@@ -6,9 +6,10 @@ import { v4 as uuidv4 } from "uuid";
 
 interface AdminSponsorsProps {
   showToast: (msg: string, type?: "success" | "error") => void;
+  showConfirm: (msg: string, onConfirm: () => void) => void;
 }
 
-export default function AdminSponsors({ showToast }: AdminSponsorsProps) {
+export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsProps) {
   const [patrocinadores, setPatrocinadores] = useState<any[]>([]);
   const [nombreSponsor, setNombreSponsor] = useState("");
   const [logoSponsor, setLogoSponsor] = useState<File | null>(null);
@@ -62,10 +63,11 @@ export default function AdminSponsors({ showToast }: AdminSponsorsProps) {
   }
 
   async function handleDeleteSponsor(id: string) {
-    if (!confirm("¿Borrar este patrocinador?")) return;
-    await supabase.from("patrocinadores").delete().eq("id", id);
-    fetchPatrocinadores();
-    showToast("Patrocinador eliminado");
+    showConfirm("¿Borrar este patrocinador?", async () => {
+      await supabase.from("patrocinadores").delete().eq("id", id);
+      fetchPatrocinadores();
+      showToast("Patrocinador eliminado");
+    });
   }
 
   return (
