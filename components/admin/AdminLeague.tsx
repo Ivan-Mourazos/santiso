@@ -87,13 +87,13 @@ export default function AdminLeague({ showToast, categoria }: AdminLeagueProps) 
               <tr key={eq.id}>
                 <td>{eq.escudo_url && eq.escudo_url !== "" && <img src={eq.escudo_url} alt="" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />}</td>
                 <td style={{ fontWeight: 700 }}>{eq.nombre}</td>
-                <td><input type="number" value={eq.pts} onChange={(e) => handleInputChange(eq.id, 'pts', e.target.value)} /></td>
-                <td><input type="number" value={eq.pj} onChange={(e) => handleInputChange(eq.id, 'pj', e.target.value)} /></td>
-                <td><input type="number" value={eq.pg} onChange={(e) => handleInputChange(eq.id, 'pg', e.target.value)} /></td>
-                <td><input type="number" value={eq.pe} onChange={(e) => handleInputChange(eq.id, 'pe', e.target.value)} /></td>
-                <td><input type="number" value={eq.pp} onChange={(e) => handleInputChange(eq.id, 'pp', e.target.value)} /></td>
-                <td><input type="number" value={eq.gf} onChange={(e) => handleInputChange(eq.id, 'gf', e.target.value)} /></td>
-                <td><input type="number" value={eq.gc} onChange={(e) => handleInputChange(eq.id, 'gc', e.target.value)} /></td>
+                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pts} onChange={(e) => handleInputChange(eq.id, 'pts', e.target.value)} /></td>
+                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pj}  onChange={(e) => handleInputChange(eq.id, 'pj',  e.target.value)} /></td>
+                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pg}  onChange={(e) => handleInputChange(eq.id, 'pg',  e.target.value)} /></td>
+                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pe}  onChange={(e) => handleInputChange(eq.id, 'pe',  e.target.value)} /></td>
+                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pp}  onChange={(e) => handleInputChange(eq.id, 'pp',  e.target.value)} /></td>
+                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.gf}  onChange={(e) => handleInputChange(eq.id, 'gf',  e.target.value)} /></td>
+                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.gc}  onChange={(e) => handleInputChange(eq.id, 'gc',  e.target.value)} /></td>
                 <td style={{ fontWeight: 800, color: (eq.gf - eq.gc) >= 0 ? '#10b981' : '#ef4444' }}>
                   {eq.gf - eq.gc}
                 </td>

@@ -7,6 +7,7 @@ import AdminSponsors from "@/components/admin/AdminSponsors";
 import AdminLeague from "@/components/admin/AdminLeague";
 import AdminPlayers from "@/components/admin/AdminPlayers";
 import AdminMatches from "@/components/admin/AdminMatches";
+import AdminCartelAssets from "@/components/admin/AdminCartelAssets";
 
 export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<string | null>("identidad");
@@ -48,7 +49,29 @@ export default function AdminPage() {
       <div className="container">
         <header className="admin-header">
           <div>
-            <Link href="/" className="btn-back">← Volver a la Web</Link>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <Link href="/" className="btn-back">← Volver a la Web</Link>
+              <Link
+                href="/admin/cartel"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  background: 'rgba(250, 204, 21, 0.08)',
+                  border: '1px solid rgba(250, 204, 21, 0.25)',
+                  color: 'var(--primary)',
+                  padding: '0.4rem 1rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                Generador de Carteles
+              </Link>
+            </div>
             <h1 className="hero-title" style={{ fontSize: '3rem', margin: '0.5rem 0' }}>Panel de <span className="text-primary">Control</span></h1>
             <p className="admin-subtitle">Gestiona la identidad, plantilla y calendario del UD Santiso.</p>
           </div>
@@ -110,6 +133,14 @@ export default function AdminPage() {
               icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
             >
               <AdminMatches showToast={showToast} categoria={categoria} />
+            </AccordionItem>
+
+            <AccordionItem
+              id="cartel-assets"
+              title="Activos del Generador de Carteles"
+              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>}
+            >
+              <AdminCartelAssets showToast={showToast} />
             </AccordionItem>
           </div>
         </section>

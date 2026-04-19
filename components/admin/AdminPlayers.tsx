@@ -74,7 +74,7 @@ export default function AdminPlayers({ showToast, categoria }: AdminPlayersProps
           </div>
           <div className="input-group">
             <label>Dorsal</label>
-            <input type="number" placeholder="10" value={dorsal} onChange={(e) => setDorsal(e.target.value)} required />
+            <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="10" value={dorsal} onChange={(e) => setDorsal(e.target.value)} required />
           </div>
           <div className="input-group">
             <label>Posición</label>

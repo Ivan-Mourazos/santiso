@@ -142,9 +142,9 @@ export default function AdminMatches({ showToast, categoria }: AdminMatchesProps
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                <input type="number" className="score-input" value={p.goles_local || 0} onChange={(e) => handleScoreChange(p.id, 'goles_local', e.target.value)} />
+                <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input" value={p.goles_local ?? 0} onChange={(e) => handleScoreChange(p.id, 'goles_local', e.target.value)} />
                 <span style={{ fontWeight: 900, color: '#444' }}>-</span>
-                <input type="number" className="score-input" value={p.goles_rival || 0} onChange={(e) => handleScoreChange(p.id, 'goles_rival', e.target.value)} />
+                <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input" value={p.goles_rival ?? 0} onChange={(e) => handleScoreChange(p.id, 'goles_rival', e.target.value)} />
               </div>
 
               <div>

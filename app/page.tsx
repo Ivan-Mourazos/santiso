@@ -7,6 +7,7 @@ interface Jugador {
   nombre: string;
   dorsal: number;
   posicion: string;
+  foto_url: string | null;
 }
 
 export default function Home() {
