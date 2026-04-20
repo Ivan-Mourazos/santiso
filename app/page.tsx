@@ -24,14 +24,21 @@ export default function Home() {
       const { data: pData } = await supabase.from("jugadores").select("*").order("dorsal", { ascending: true });
       if (pData) setJugadores(pData);
 
-      // Fetch Próximo Partido
+      // Fetch Próximo Partido (Buscamos el más cercano a hoy)
       const { data: mData } = await supabase
-        .from("partidos")
-        .select("*")
-        .gte("fecha", new Date().toISOString().split('T')[0])
-        .order("fecha", { ascending: true });
+        .from("partidos_liga")
+        .select(`
+          *,
+          local:equipo_local_id (nombre, escudo_url),
+          visitante:equipo_visitante_id (nombre, escudo_url)
+        `)
+        .gte("fecha", new Date().toISOString())
+        .order("fecha", { ascending: true })
+        .limit(1);
       
       if (mData && mData.length > 0) {
+        // Encontramos quién es el rival (el que no es UD Santiso)
+        // O simplemente mapeamos según la posición local/visitante
         setProximoPartido(mData[0]);
       }
 
@@ -75,12 +82,12 @@ export default function Home() {
             {proximoPartido ? (
               <div className="match-display">
                 <div className="team-box">
-                  {escudo && escudo !== "" ? (
-                    <img src={escudo} alt="UD Santiso" className="team-logo-large" />
+                  {proximoPartido.local?.escudo_url ? (
+                    <img src={proximoPartido.local.escudo_url} alt={proximoPartido.local.nombre} className="team-logo-large" />
                   ) : (
-                    <div className="team-badge-large">UD</div>
+                    <div className="team-badge-large">{proximoPartido.local?.nombre?.[0] || 'L'}</div>
                   )}
-                  <span>UD Santiso</span>
+                  <span>{proximoPartido.local?.nombre || 'Local'}</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
                   {proximoPartido.estado === 'en_juego' && (
@@ -114,12 +121,12 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="team-box">
-                  {proximoPartido.rival_escudo_url ? (
-                    <img src={proximoPartido.rival_escudo_url} alt={proximoPartido.rival} className="team-logo-large" />
+                  {proximoPartido.visitante?.escudo_url ? (
+                    <img src={proximoPartido.visitante.escudo_url} alt={proximoPartido.visitante.nombre} className="team-logo-large" />
                   ) : (
-                    <div className="team-badge-large bg-muted">?</div>
+                    <div className="team-badge-large bg-muted">{proximoPartido.visitante?.nombre?.[0] || 'V'}</div>
                   )}
-                  <span>{proximoPartido.rival}</span>
+                  <span>{proximoPartido.visitante?.nombre || 'Visitante'}</span>
                 </div>
               </div>
             ) : (

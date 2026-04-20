@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { generateProximosText, generateResultadoText } from "@/lib/cartel/instagram";
 import {
   W, H,
   loadImg,
@@ -39,9 +40,13 @@ export default function GeneradorCartel() {
     updateEvent,
     removeEvent,
     updateMatch,
+    dbMatches,
+    loadMatchFromDb,
+    resetForm,
   } = useCartelForm();
 
-  const [tipo, setTipo] = require("react").useState("partido");
+  const [tipo, setTipo] = useState<string>("partido");
+  const [copied, setCopied] = useState(false);
   const assetUrls = useCartelAssets(tipo);
 
   // Load ALL equipos once
@@ -137,6 +142,9 @@ export default function GeneradorCartel() {
           titulares: form.titulares, suplentes: form.suplentes,
           jugadorFotoUrl: form.jugadorFotoUrl,
           jugadorXOffset: form.jugadorXOffset,
+          jugadorYOffset: form.jugadorYOffset,
+          jugadorZoom:    form.jugadorZoom,
+          noso11Flip:     form.noso11Flip,
         }, jugadorImg, assets, assetUrls.xuntaIsLeft);
         break;
     }
@@ -160,6 +168,41 @@ export default function GeneradorCartel() {
     a.click();
     document.body.removeChild(a);
   }
+
+  // ── Instagram Text ──────────────────────────────────────────────────────────
+  const instagramText = useMemo(() => {
+    if (tipo === "proximos") {
+      return generateProximosText({ matches: form.matches.map(m => ({
+        ...m,
+        lugar: (m as any).lugar || form.lugar,
+        estadio: form.estadio,
+      })) });
+    }
+    if (tipo === "resumo" || tipo === "cronoloxia" || tipo === "noso11") {
+      return generateResultadoText({
+        categoria:   form.categoria,
+        competicion: form.competicion,
+        jornada:     form.jornada,
+        fecha:       form.fecha,
+        estadio:     form.estadio || form.lugar,
+        rivalNombre: form.rivalNombre,
+        golesLocal:  form.golesLocal,
+        golesRival:  form.golesRival,
+        santisoSide: form.santisoSide,
+        events:      form.events,
+      });
+    }
+    return null;
+  }, [tipo, form]);
+
+  function handleCopyInstagram() {
+    if (!instagramText) return;
+    navigator.clipboard.writeText(instagramText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
 
   return (
     <main style={{ minHeight: "100vh", background: "#000", padding: "2rem 0 5rem" }}>
@@ -197,10 +240,10 @@ export default function GeneradorCartel() {
           <div className="gen-form card glass">
 
             {/* Template-specific fields */}
-            {tipo === "partido"    && <FormPartido form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} />}
-            {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} />}
-            {tipo === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} />}
-            {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} />}
+            {tipo === "partido"    && <FormPartido form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} />}
+            {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} />}
+            {tipo === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} />}
+            {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} dbMatches={dbMatches} />}
             {tipo === "noso11"     && <FormNoso11 form={form} set={set} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} />}
 
             {/* Santiso side (shared) */}
@@ -215,14 +258,53 @@ export default function GeneradorCartel() {
             )}
 
 
-            <button className="btn-primary" onClick={handleDownload}
-              style={{ width: "100%", height: 54, fontSize: "1rem", marginTop: "2.5rem",
-                       display: "flex", alignItems: "center", justifyContent: "center", gap: "0.6rem" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-              </svg>
-              Descargar 2K PNG (2160 × 2700)
-            </button>
+            <div style={{ display: "flex", gap: "0.6rem", marginTop: "2.5rem" }}>
+              <button className="btn-primary" onClick={handleDownload}
+                style={{ flex: 1, height: 54, fontSize: "1rem",
+                         display: "flex", alignItems: "center", justifyContent: "center", gap: "0.6rem" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                </svg>
+                Descargar 2K PNG
+              </button>
+              <button onClick={resetForm}
+                title="Limpiar todos los campos"
+                style={{ height: 54, padding: "0 1.2rem", borderRadius: "var(--radius)",
+                         background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)",
+                         color: "#888", fontFamily: "inherit", fontWeight: 800, fontSize: "0.82rem",
+                         cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem",
+                         transition: "all 0.2s" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "#e55")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#888")}>
+                🗑️ Limpiar
+              </button>
+            </div>
+
+            {/* Instagram Text Panel */}
+            {instagramText && (
+              <div style={{ marginTop: "2rem", padding: "1.2rem", background: "rgba(255,255,255,0.03)",
+                            border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem" }}>
+                  <p style={{ fontSize: "0.7rem", fontWeight: 800, textTransform: "uppercase",
+                              letterSpacing: "1.5px", color: "var(--primary)", margin: 0 }}>
+                    📱 Texto para Instagram
+                  </p>
+                  <button onClick={handleCopyInstagram}
+                    style={{ padding: "0.35rem 0.9rem", borderRadius: "0.5rem", cursor: "pointer",
+                             fontFamily: "inherit", fontWeight: 800, fontSize: "0.75rem",
+                             background: copied ? "#22c55e" : "rgba(255,255,255,0.08)",
+                             color: copied ? "#000" : "#fff",
+                             border: "1px solid var(--border)", transition: "all 0.2s" }}>
+                    {copied ? "✅ Copiado!" : "📋 Copiar"}
+                  </button>
+                </div>
+                <textarea readOnly value={instagramText}
+                  style={{ width: "100%", minHeight: "240px", background: "transparent",
+                           border: "none", color: "#ccc", fontFamily: "monospace",
+                           fontSize: "0.75rem", lineHeight: 1.7, resize: "vertical",
+                           outline: "none", cursor: "text" }} />
+              </div>
+            )}
           </div>
 
           <div className="gen-preview">

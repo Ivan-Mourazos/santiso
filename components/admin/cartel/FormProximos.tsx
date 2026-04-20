@@ -13,12 +13,43 @@ interface Props {
   set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
   updateMatch: (i: number, patch: Partial<NextMatch>) => void;
   equipos: { id: string; nombre: string; escudo_url: string }[];
+  dbMatches: any[];
 }
 
-export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos }) => {
+export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos, dbMatches }) => {
+  const handleAutoFill = () => {
+    // Filtrar partidos que aún no han ocurrido (o los más recientes programados)
+    const upcoming = [...dbMatches]
+      .filter(m => m.estado === "programado")
+      .reverse() // Asumiendo que vienen por fecha desc en useCartelForm
+      .slice(0, 3);
+    
+    upcoming.forEach((match, index) => {
+      const isSantisoLocal = match.local.nombre.toLowerCase().includes("santiso");
+      const rival = isSantisoLocal ? match.visitante : match.local;
+      updateMatch(index, {
+        rival: rival.nombre,
+        rivalEscudoUrl: rival.escudo_url,
+        fecha: match.fecha ? match.fecha.split("T")[0] : "",
+        hora: match.fecha ? match.fecha.split("T")[1].substring(0, 5) : "18:00",
+        categoria: match.categoria,
+        santisoSide: isSantisoLocal ? "left" : "right"
+      });
+    });
+  };
+
   return (
     <>
-<SectionLabel>Configurar los 3 partidos</SectionLabel>
+      <div style={{ marginBottom: "1.5rem" }}>
+        <button 
+          onClick={handleAutoFill}
+          className="btn-primary"
+          style={{ width: "100%", background: "rgba(250, 204, 21, 0.1)", border: "1px dashed var(--primary)", color: "var(--primary)", padding: "0.8rem" }}
+        >
+          ⚡ Autocompletado inteligente (3 partidos)
+        </button>
+      </div>
+      <SectionLabel>Configurar los 3 partidos</SectionLabel>
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {form.matches.map((m, i) => (
           <div key={i} style={{

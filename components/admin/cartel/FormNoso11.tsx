@@ -5,7 +5,7 @@
 
 import React from "react";
 import type { FormState } from "./types";
-import { SectionLabel, CategorySelector } from "./Common";
+import { SectionLabel, CategorySelector, Toggle } from "./Common";
 import type { Player } from "@/lib/cartel-draw";
 
 interface Props {
@@ -31,7 +31,23 @@ export const FormNoso11: React.FC<Props> = ({
             value={form.estadio} onChange={e => set("estadio", e.target.value)} />
         </div>
       </div>
-      
+
+      <div className="input-group" style={{ marginBottom: "1.2rem" }}>
+        <label>Disposición del cartel (Simetría)</label>
+        <div style={{ display: "flex", gap: "0.6rem" }}>
+          <Toggle 
+            label="← Estándar (Foto Izq)" 
+            active={!form.noso11Flip} 
+            onClick={() => set("noso11Flip", false)} 
+          />
+          <Toggle 
+            label="Invertido (Foto Der) →" 
+            active={!!form.noso11Flip} 
+            onClick={() => set("noso11Flip", true)} 
+          />
+        </div>
+      </div>
+
       <div className="input-group" style={{ marginBottom: "1.2rem" }}>
         <label>Foto jugador destacado (izquierda del cartel)</label>
         <label className="file-input-label">
@@ -44,15 +60,46 @@ export const FormNoso11: React.FC<Props> = ({
         </label>
       </div>
 
-      <div className="input-group" style={{ marginBottom: "1.2rem" }}>
-        <label>Ajustar encuadre (si se corta el brazo)</label>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <span style={{ fontSize: "0.7rem", color: "#666" }}>Izq</span>
-          <input type="range" min="0" max="1" step="0.01" 
-                 value={form.jugadorXOffset} 
-                 onChange={e => set("jugadorXOffset", parseFloat(e.target.value))}
-                 style={{ flex: 1, accentColor: "var(--primary)" }} />
-          <span style={{ fontSize: "0.7rem", color: "#666" }}>Der</span>
+      <div className="input-group" style={{ marginBottom: "1.2rem", background: "rgba(255,255,255,0.03)", padding: "1rem", borderRadius: "10px", border: "1px solid var(--border)" }}>
+        <label style={{ color: "var(--primary)", fontSize: "0.75rem", marginBottom: "1rem", display: "block" }}>🎯 Ajustes de encuadre avanzados</label>
+        
+        {/* Horizontal */}
+        <div style={{ marginBottom: "1rem" }}>
+          <label style={{ fontSize: "0.7rem", opacity: 0.8, marginBottom: "0.4rem", display: "block" }}>Desplazamiento Horizontal</label>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <span style={{ fontSize: "0.65rem", color: "#666" }}>Izq</span>
+            <input type="range" min="0" max="1" step="0.01" 
+                   value={form.jugadorXOffset} 
+                   onChange={e => set("jugadorXOffset", parseFloat(e.target.value))}
+                   style={{ flex: 1, accentColor: "var(--primary)" }} />
+            <span style={{ fontSize: "0.65rem", color: "#666" }}>Der</span>
+          </div>
+        </div>
+
+        {/* Vertical */}
+        <div style={{ marginBottom: "1rem" }}>
+          <label style={{ fontSize: "0.7rem", opacity: 0.8, marginBottom: "0.4rem", display: "block" }}>Desplazamiento Vertical</label>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <span style={{ fontSize: "0.65rem", color: "#666" }}>Arriba</span>
+            <input type="range" min="0" max="1" step="0.01" 
+                   value={form.jugadorYOffset} 
+                   onChange={e => set("jugadorYOffset", parseFloat(e.target.value))}
+                   style={{ flex: 1, accentColor: "var(--primary)" }} />
+            <span style={{ fontSize: "0.65rem", color: "#666" }}>Abajo</span>
+          </div>
+        </div>
+
+        {/* Zoom */}
+        <div>
+          <label style={{ fontSize: "0.7rem", opacity: 0.8, marginBottom: "0.4rem", display: "block" }}>Zoom / Escala</label>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <span style={{ fontSize: "0.65rem", color: "#666" }}>Alejar (0.5x)</span>
+            <input type="range" min="0.5" max="4" step="0.01" 
+                   value={form.jugadorZoom} 
+                   onChange={e => set("jugadorZoom", parseFloat(e.target.value))}
+                   style={{ flex: 1, accentColor: "var(--primary)" }} />
+            <span style={{ fontSize: "0.65rem", color: "#666" }}>Acercar (4x)</span>
+          </div>
         </div>
       </div>
 

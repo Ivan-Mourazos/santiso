@@ -14,7 +14,7 @@ export default function ClasificacionPage() {
   async function fetchClasificacion() {
     setLoading(true);
     const { data } = await supabase
-      .from("equipos")
+      .from("vista_clasificacion")
       .select("*")
       .eq("categoria", categoria)
       .order("pts", { ascending: false })
@@ -111,7 +111,7 @@ export default function ClasificacionPage() {
                     {equipos.map((eq, index) => {
                       const info = getPositionInfo(index, categoria, equipos.length);
                       return (
-                        <tr key={eq.id} className={`${index < 3 ? "top-rank" : ""} ${info ? info.class : ""}`}>
+                        <tr key={eq.equipo_id} className={`${index < 3 ? "top-rank" : ""} ${info ? info.class : ""}`}>
                           <td className="rank-num">
                             <div className="rank-content">
                               {index + 1}

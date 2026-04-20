@@ -154,20 +154,69 @@ export function drawEventIcon(
   size = 28
 ) {
   ctx.save();
-  if (tipo === "gol") {
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#222";
-    ctx.beginPath();
-    ctx.arc(cx, cy, size * 0.18, 0, Math.PI * 2);
-    ctx.fill();
-  } else {
-    ctx.fillStyle = tipo === "amarela" ? "#FFD700" : "#e53535";
+  const r = size / 2;
+
+  if (tipo === "gol" || tipo === "penalti" || tipo === "propia") {
+    if (tipo === "penalti") {
+      // Dibujar porteria de fondo para penalti (un poco más grande)
+      ctx.font = `${size * 1.1}px 'Outfit', sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.globalAlpha = 0.8;
+      ctx.fillText("🥅", cx, cy - 2);
+      ctx.globalAlpha = 1.0;
+      // Balon encima (mucho más pequeño para que se vea la porteria)
+      ctx.font = `${size * 0.45}px 'Outfit', sans-serif`;
+      ctx.fillText("⚽", cx, cy + 5);
+    } else if (tipo === "propia") {
+      // Balon rojo para propia
+      ctx.fillStyle = "#e53535"; // Rojo
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // Dibujar lineas de balon en blanco para que destaque sobre el rojo
+      ctx.strokeStyle = "rgba(255,255,255,0.4)";
+      const pr = r * 0.4;
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const ang = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+        ctx.lineTo(cx + pr * Math.cos(ang), cy + pr * Math.sin(ang));
+      }
+      ctx.closePath();
+      ctx.stroke();
+    } else {
+      // Gol normal
+      ctx.font = `${size * 0.9}px 'Outfit', sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("⚽", cx, cy);
+    }
+  } else if (tipo === "amarela") {
+    ctx.fillStyle = "#FFD700";
     const cw = size * 0.72, ch = size * 0.92;
     rr(ctx, cx - cw / 2, cy - ch / 2, cw, ch, 4);
     ctx.fill();
+  } else if (tipo === "vermella") {
+    ctx.fillStyle = "#e53535";
+    const cw = size * 0.72, ch = size * 0.92;
+    rr(ctx, cx - cw / 2, cy - ch / 2, cw, ch, 4);
+    ctx.fill();
+  } else if (tipo === "doble_amarela") {
+    // Dos amarillas solapadas
+    const cw = size * 0.6, ch = size * 0.8;
+    ctx.fillStyle = "#FFD700";
+    // Primera (atras)
+    rr(ctx, cx - cw / 2 + 3, cy - ch / 2 - 3, cw, ch, 4);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.3)";
+    ctx.stroke();
+    // Segunda (adelante)
+    rr(ctx, cx - cw / 2 - 3, cy - ch / 2 + 3, cw, ch, 4);
+    ctx.fill();
+    ctx.stroke();
   }
   ctx.restore();
 }

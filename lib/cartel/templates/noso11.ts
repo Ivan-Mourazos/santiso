@@ -3,7 +3,7 @@
  * Template 5: O Noso 11
  */
 
-import { W, H, BAR_W, GOLD, GREEN_TXT, CL, CR } from "../constants";
+import { W, H, BAR_W, CX, GOLD, GREEN_TXT, CL, CR } from "../constants";
 import { fmtDate, drawShield, fitFont, rr } from "../primitives";
 import type { Player, CartelAssets } from "../types";
 import { drawTopLogos, drawSponsorBar, drawCategoryTint, drawWatermark } from "../shared";
@@ -12,10 +12,13 @@ export interface Noso11Form {
   categoria:  string;
   fecha:      string;
   estadio:    string;
-  titulares:  Player[];
-  suplentes:  Player[];
+  titulares:      Player[];
+  suplentes:      Player[];
   jugadorFotoUrl: string;
-  jugadorXOffset: number; // 0 to 1, def 0.5
+  jugadorXOffset: number;
+  jugadorYOffset: number;
+  jugadorZoom:    number;
+  noso11Flip?:    boolean;
 }
 
 export function drawNoso11(
@@ -27,26 +30,43 @@ export function drawNoso11(
 ) {
   const { categoria, fecha, estadio, titulares, suplentes } = f;
 
-  // ── Left photo column ─────────────────────────────────────────────────────
-  const PHOTO_W = 465; // Equalized half-width
-  const PHOTO_X = BAR_W;
+  // ── Layout Proportions ──────────────────────────────────────────────────
+  // Photo stops 16px before center (invisible breathing gap)
+  const GAP      = 16;
+  const PHOTO_W  = CX - BAR_W - GAP;  // 464: stops before center
+  const LIST_X_BASE = CX + GAP;        // starts 16px after center
+  const LIST_W   = W - BAR_W - LIST_X_BASE; // 464
+
+  const PHOTO_X = f.noso11Flip ? LIST_X_BASE : BAR_W;
+  const LIST_X  = f.noso11Flip ? BAR_W : LIST_X_BASE;
 
   if (imgJugador) {
-    // Column shading
+    // Column shading - Must cover from the outer edge to the center
     ctx.fillStyle = "rgba(0,0,0,0.55)";
-    ctx.fillRect(PHOTO_X, 0, PHOTO_W, H);
+    ctx.fillRect(PHOTO_X === BAR_W ? 0 : CX, 0, PHOTO_W + BAR_W, H);
 
+    const zoom = f.jugadorZoom || 1.0;
     const iAR = imgJugador.naturalWidth / imgJugador.naturalHeight;
     const PHOTO_START_Y = 180;
     const tAR = PHOTO_W / (H - PHOTO_START_Y);
-    let sx, sy, sw, sh;
+    
+    let sw_base, sh_base;
+    if (iAR > tAR) { 
+      sh_base = imgJugador.naturalHeight; 
+      sw_base = sh_base * tAR; 
+    } else { 
+      sw_base = imgJugador.naturalWidth; 
+      sh_base = sw_base / tAR; 
+    }
+
+    const sw = sw_base / zoom;
+    const sh = sh_base / zoom;
     
     const xOff = 1 - (f.jugadorXOffset ?? 0.5);
-    if (iAR > tAR) { 
-      sh = imgJugador.naturalHeight; sw = sh * tAR; sx = (imgJugador.naturalWidth - sw) * xOff; sy = 0; 
-    } else { 
-      sw = imgJugador.naturalWidth; sh = sw / tAR; sx = 0; sy = (imgJugador.naturalHeight - sh) / 2; 
-    }
+    const yOff = f.jugadorYOffset ?? 0.5;
+
+    const sx = (imgJugador.naturalWidth - sw) * xOff;
+    const sy = (imgJugador.naturalHeight - sh) * yOff;
     
     // STRICT CLIPPING - Cut exactly at the column edge
     const CLIP_W = PHOTO_W;
@@ -58,14 +78,12 @@ export function drawNoso11(
     ctx.restore();
   }
 
-  // ── Right side: player list ───────────────────────────────────────────────
-  const GAP = 30;
-  const LIST_X = PHOTO_X + PHOTO_W + GAP; // 555
-  const LIST_W = 465; // Perfect symmetry
-
-  // Unified shading for the right column
+  // Unified shading for the player list column + the invisible gap
+  // The gap (CX-GAP to CX+GAP) gets same shading so it blends, photo still clips before it
+  const shadingStartX = f.noso11Flip ? 0 : (CX - GAP);
+  const shadingW      = f.noso11Flip ? (CX + GAP) : (W - (CX - GAP));
   ctx.fillStyle = "rgba(0,0,0,0.55)";
-  ctx.fillRect(LIST_X - (GAP/2), 0, LIST_W + (GAP/2 + BAR_W), H);
+  ctx.fillRect(shadingStartX, 0, shadingW, H);
 
   // Draw logos
   drawTopLogos(ctx, assets.xunta, assets.rfgf, xuntaIsLeft);
@@ -74,28 +92,27 @@ export function drawNoso11(
   // 0. Background Watermark
   drawWatermark(ctx, assets.santiso);
 
-  // Header: Stadium (Far Left) + Date (Right)
-  const venue = estadio.toUpperCase();
-  const dateStr = fmtDate(fecha, true);
-
-  // Stadium - Below Xunta (Left)
-  ctx.fillStyle    = "#bbb";
-  ctx.font         = "700 18px 'Outfit'";
-  ctx.textAlign    = "left";
+  // Unified Header: Stadium · Date (Above the golden line, centered)
+  ctx.save();
+  ctx.textAlign    = "center";
   ctx.textBaseline = "alphabetic";
-  ctx.fillText(venue, CL, 152);
-
-  // Date - Right (Golden)
-  ctx.fillStyle    = GOLD;
-  ctx.textAlign    = "right";
-  ctx.fillText(dateStr, LIST_X + LIST_W, 152);
+  const venuePart = estadio ? `${estadio.toUpperCase()}` : "ESTADIO A DEFINIR";
+  const dateStr = fmtDate(fecha, true);
+  const headerTxt = `${venuePart}  ·  ${dateStr}`;
+  
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 18px 'Outfit', sans-serif";
+  fitFont(ctx, headerTxt, W - 140, 18, 14, "800");
+  ctx.fillText(headerTxt, W / 2, 165);
+  ctx.restore();
 
   // "O NOSO 11"
   ctx.fillStyle = GREEN_TXT;
   ctx.font      = "900 80px 'Outfit'";
   ctx.textAlign = "left";
-  ctx.fillText("O NOSO", LIST_X, 262);
-  ctx.fillText("11", LIST_X, 348);
+  const titleX = LIST_X + 20; // Add small padding from the edge/split
+  ctx.fillText("O NOSO", titleX, 262);
+  ctx.fillText("11", titleX, 348);
 
   // Titulares with alternating backgrounds (Recommended Improvement)
   const START_Y = 385;
@@ -158,9 +175,11 @@ export function drawNoso11(
   ctx.lineTo(LIST_X + LIST_W, BANCO_Y + 6);
   ctx.stroke();
 
-  // Suplentes
+  // Suplentes — must not cross sponsor bar golden line (starts at ~1148)
+  const SUP_MAX_Y  = 1140;
   const SUP_START  = BANCO_Y + 28;
-  const SUP_ROW_H  = Math.min(56, (1230 - SUP_START) / Math.max(suplentes.length, 1));
+  const SUP_AVAIL  = Math.max(SUP_MAX_Y - SUP_START, 40);
+  const SUP_ROW_H  = Math.min(52, SUP_AVAIL / Math.max(suplentes.length, 1));
   suplentes.forEach((p, i) => {
     const y = SUP_START + i * SUP_ROW_H;
     const midY = y + SUP_ROW_H / 2;

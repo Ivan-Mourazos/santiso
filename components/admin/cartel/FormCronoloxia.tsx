@@ -6,7 +6,7 @@
 import React from "react";
 import type { FormState } from "./types";
 import { RivalSelector } from "./FormPartido";
-import { CategorySelector } from "./Common";
+import { CategorySelector, MatchSelector } from "./Common";
 import type { CronEvent } from "@/lib/cartel-draw";
 
 interface Props {
@@ -18,14 +18,17 @@ interface Props {
   addEvent: () => void;
   updateEvent: (i: number, patch: Partial<CronEvent>) => void;
   removeEvent: (id: string) => void;
+  dbMatches: any[];
+  loadMatchFromDb: (m: any) => void;
 }
 
 export const FormCronoloxia: React.FC<Props> = ({
   form, set, equipos, handleRivalSelect, handleRivalFile,
-  addEvent, updateEvent, removeEvent
+  addEvent, updateEvent, removeEvent, dbMatches, loadMatchFromDb
 }) => {
   return (
     <>
+      <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} />
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group"><label>Fecha</label>
@@ -40,6 +43,7 @@ export const FormCronoloxia: React.FC<Props> = ({
       <RivalSelector
         rivalNombre={form.rivalNombre}
         equipos={equipos}
+        categoria={form.categoria}
         handleRivalSelect={handleRivalSelect}
         handleRivalFile={handleRivalFile}
       />
@@ -77,7 +81,10 @@ export const FormCronoloxia: React.FC<Props> = ({
             </select>
             <select value={ev.tipo} onChange={e => updateEvent(i, { tipo: e.target.value as CronEvent["tipo"] })}>
               <option value="gol">⚽ Gol</option>
+              <option value="penalti">🥅 Penalti</option>
+              <option value="propia">🔴 Gol en Propia</option>
               <option value="amarela">🟨 Amarela</option>
+              <option value="doble_amarela">🟨🟨 Doble Amarela</option>
               <option value="vermella">🟥 Vermella</option>
             </select>
             <input type="text" placeholder="Jugador" value={ev.jugador}

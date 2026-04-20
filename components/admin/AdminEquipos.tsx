@@ -111,7 +111,7 @@ export default function AdminEquipos({ showToast, showConfirm, categoria }: Admi
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
           <h3>Librería de Equipos ({categoria})</h3>
-          <p style={{ color: '#a3a3a3', fontSize: '0.85rem' }}>Gestiona los clubes rivales y sus escudos para esta categoría.</p>
+          <p style={{ color: '#a3a3a3', fontSize: '0.85rem' }}>Gestiona los clubes rivales y sus escudos. No necesitas meter aquí tus propios puntos, se calculan solos.</p>
         </div>
         {editingId && (
           <button onClick={resetForm} className="btn-delete" style={{ padding: '0.4rem 1rem' }}>Cancelar Edición</button>

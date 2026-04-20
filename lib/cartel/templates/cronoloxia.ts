@@ -4,7 +4,7 @@
  */
 
 import { CX, CW, GREEN_TXT, GOLD } from "../constants";
-import { fitFont, fmtDate, drawShield, shieldPlaceholder, drawEventIcon } from "../primitives";
+import { rr, fitFont, fmtDate, drawShield, shieldPlaceholder, drawEventIcon } from "../primitives";
 import { getSantisoName, drawCategoryTint, drawWatermark } from "../shared";
 import type { CronEvent } from "../types";
 
@@ -36,24 +36,26 @@ export function drawCronoloxia(
   // 0. Background Watermark
   drawWatermark(ctx, imgSantiso);
 
-  // Stadium + Date header
-  ctx.fillStyle    = "#cccccc";
-  ctx.font         = "700 22px 'Outfit', sans-serif";
+  // Stadium + Date header (Above the golden line, which is at ~173)
+  ctx.save();
   ctx.textAlign    = "center";
   ctx.textBaseline = "alphabetic";
-  const headerTxt = estadio
-    ? `${estadio.toUpperCase()}   ·   ${fmtDate(fecha, true)}`
-    : fmtDate(fecha, true);
-  fitFont(ctx, headerTxt, CW - 20, 22, 14, "700");
-  ctx.fillStyle = "#aaaaaa";
-  ctx.fillText(headerTxt, CX, 152);
+  const stadiumPart = estadio ? `${estadio.toUpperCase()}` : "ESTADIO A DEFINIR";
+  const datePart = fmtDate(fecha, true);
+  const headerTxt = `${stadiumPart}  ·  ${datePart}`;
+  
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 20px 'Outfit', sans-serif";
+  fitFont(ctx, headerTxt, CW - 40, 20, 14, "800");
+  ctx.fillText(headerTxt, CX, 165);
+  ctx.restore();
 
   // "CRONOLOXÍA" in green
   ctx.fillStyle    = GREEN_TXT;
   ctx.textAlign    = "center";
   ctx.textBaseline = "alphabetic";
   fitFont(ctx, "CRONOLOXÍA", CW * 0.9, 118, 60, "900");
-  ctx.fillText("CRONOLOXÍA", CX, 300);
+  ctx.fillText("CRONOLOXÍA", CX, 305);
 
   // Compact shield row
   const SY = 420, SS = 155, OFF = 215;
@@ -104,7 +106,7 @@ export function drawCronoloxia(
   }
 
   // Vertical separator — drawn first so events render on top
-  const SEP_TOP = 660, SEP_BOT = 1130;
+  const SEP_TOP = 590, SEP_BOT = 1110;
   ctx.strokeStyle = "rgba(255,255,255,0.35)";
   ctx.lineWidth   = 1.5;
   ctx.beginPath();
@@ -113,17 +115,28 @@ export function drawCronoloxia(
   ctx.stroke();
   ctx.lineWidth = 1;   // reset
 
-  // Events
-  const localEvts  = events.filter(e => e.equipo === "local")
+  // Events — swap columns based on santisoSide
+  // "local" equipo always follows santisoSide (Santiso is always drawn on its side)
+  const santisoEvts = events.filter(e => e.equipo === "local")
                             .sort((a, b) => +a.minuto - +b.minuto);
-  const rivalEvts  = events.filter(e => e.equipo === "rival")
+  const rivalEvts   = events.filter(e => e.equipo === "rival")
                             .sort((a, b) => +a.minuto - +b.minuto);
-  const maxRows    = Math.max(localEvts.length, rivalEvts.length, 1);
+
+  // Left column = Santiso if santisoSide==="left", otherwise Rival
+  const leftEvts  = santisoSide === "left" ? santisoEvts : rivalEvts;
+  const rightEvts = santisoSide === "left" ? rivalEvts   : santisoEvts;
+
+  const maxRows    = Math.max(leftEvts.length, rightEvts.length, 1);
   const EVT_H      = Math.min(58, (SEP_BOT - SEP_TOP - 10) / maxRows);
   const ICON_SIZE  = 28;
   const MARGIN     = 22;
 
-  // Column headers
+  const santisoShortName = getSantisoName(categoria).split(" ").slice(0, 2).join(" ");
+  const rivalShortName   = (rivalNombre || "RIVAL").split(" ").slice(0, 2).join(" ").toUpperCase();
+  const leftLabel  = santisoSide === "left" ? "LOCAL" : "RIVAL";
+  const rightLabel = santisoSide === "left" ? "RIVAL" : "LOCAL";
+
+  // Column headers — always fixed: LOCAL left, RIVAL right
   ctx.fillStyle    = "#555";
   ctx.font         = "700 13px 'Outfit', sans-serif";
   ctx.textAlign    = "right";
@@ -131,8 +144,8 @@ export function drawCronoloxia(
   ctx.textAlign = "left";
   ctx.fillText("RIVAL", CX + MARGIN + ICON_SIZE + 8, SEP_TOP - 8);
 
-  // Draw left events (local, right-aligned to center)
-  localEvts.forEach((ev, i) => {
+  // Draw left events (right-aligned toward center)
+  leftEvts.forEach((ev, i) => {
     const y = SEP_TOP + i * EVT_H + EVT_H / 2;
     drawEventIcon(ctx, ev.tipo, CX - MARGIN - ICON_SIZE / 2, y, ICON_SIZE);
     ctx.fillStyle    = "#aaa";
@@ -152,8 +165,8 @@ export function drawCronoloxia(
     ctx.restore();
   });
 
-  // Draw right events (rival, left-aligned from center)
-  rivalEvts.forEach((ev, i) => {
+  // Draw right events (left-aligned from center)
+  rightEvts.forEach((ev, i) => {
     const y = SEP_TOP + i * EVT_H + EVT_H / 2;
     drawEventIcon(ctx, ev.tipo, CX + MARGIN + ICON_SIZE / 2, y, ICON_SIZE);
     ctx.fillStyle    = "#aaa";

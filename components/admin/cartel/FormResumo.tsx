@@ -6,7 +6,7 @@
 import React from "react";
 import type { FormState } from "./types";
 import { FormPartido } from "./FormPartido";
-import { SectionLabel } from "./Common";
+import { SectionLabel, MatchSelector } from "./Common";
 
 interface Props {
   form: FormState;
@@ -14,12 +14,15 @@ interface Props {
   equipos: { id: string; nombre: string; escudo_url: string }[];
   handleRivalSelect: (nombre: string) => void;
   handleRivalFile: (file: File) => void;
+  dbMatches: any[];
+  loadMatchFromDb: (m: any) => void;
 }
 
-export const FormResumo: React.FC<Props> = (props) => {
-  const { form, set } = props;
+export const FormResumo = (props: Props) => {
+  const { form, set, dbMatches, loadMatchFromDb } = props;
   return (
     <>
+      <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} />
       <FormPartido {...props} />
       <SectionLabel>Resultado</SectionLabel>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>

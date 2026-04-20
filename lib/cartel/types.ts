@@ -14,7 +14,7 @@ export interface CartelAssets {
 export interface CronEvent {
   id:      string;
   minuto:  string;
-  tipo:    "gol" | "amarela" | "vermella";
+  tipo:    "gol" | "amarela" | "vermella" | "penalti" | "doble_amarela" | "propia";
   equipo:  "local" | "rival";
   jugador: string;
 }

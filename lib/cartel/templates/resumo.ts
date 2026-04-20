@@ -3,8 +3,8 @@
  * Template 2: Resumo da Xornada
  */
 
-import { CX, CW, GOLD, GREEN_TXT } from "../constants";
-import { fitFont, fmtDate, drawShield, shieldPlaceholder, drawTeamName, drawCategoryBadge } from "../primitives";
+import { CX, CW, GOLD } from "../constants";
+import { rr, fitFont, fmtDate, drawShield, shieldPlaceholder, drawTeamName, drawCategoryBadge } from "../primitives";
 import { drawCategoryTint, getSantisoName, drawWatermark } from "../shared";
 import type { PartidoForm } from "./partido";
 
@@ -52,18 +52,62 @@ export function drawResumo(
   fitFont(ctx, "XORNADA", CW * 0.88, 102, 50, "900");
   ctx.fillText("XORNADA", CX, 492);
 
-  ctx.fillStyle = "#ffffff"; // Brighter white for date
-  ctx.font      = "700 26px 'Outfit', sans-serif";
-  ctx.fillText(fmtDate(fecha, true), CX, 534);
+  // ── Info Section (REDESIGNED: GLASS PREMIUM) ──────────────────────────────────
+  const BOX_H = 82, BOX_R = 18, GAP = 15;
+  const MY = 525; // Base Y for info section
+  
+  function drawGlassBox(x: number, y: number, w: number, h: number, isAccent = false) {
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.5)";
+    ctx.shadowBlur  = 15;
+    ctx.fillStyle = isAccent ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.72)";
+    rr(ctx, x, y, w, h, BOX_R);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 1.2;
+    rr(ctx, x, y, w, h, BOX_R);
+    ctx.stroke();
+    ctx.restore();
+  }
 
-  // Estadio + Hora — Switched to WHITE for better contrast
-  const infoTxt = `${lugar ? `🏟  ${lugar.toUpperCase()}` : "🏟  CAMPO A DEFINIR"}${hora ? `   ·   ${hora}H` : ""}`;
-  ctx.font      = "800 20px 'Outfit', sans-serif";
-  ctx.fillText(infoTxt, CX, 568);
+  // Draw Date & Venue/Time block
+  const boxW = CW * 0.94;
+  const boxX = CX - boxW / 2;
+  drawGlassBox(boxX, MY, boxW, BOX_H);
+
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.9)";
+  ctx.shadowBlur  = 6;
+  ctx.textAlign    = "center";
+  ctx.textBaseline = "middle";
+
+  // Date (Left-ish)
+  ctx.fillStyle = "#ffffff";
+  const dateStr = fmtDate(fecha, true);
+  ctx.font = "900 24px 'Outfit', sans-serif";
+  
+  // Stadium & Time (Right-ish) - Separated by a yellow dot
+  const stadiumStr = lugar ? lugar.toUpperCase() : "CAMPO A DEFINIR";
+  const timeStr = hora ? `${hora}H` : "";
+  const sep = "  •  ";
+  
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 21px 'Outfit', sans-serif";
+  const venueText = `🏟  ${stadiumStr}${timeStr ? `${sep}${timeStr}` : ""}`;
+  
+  // We draw them stacked slightly or inline if fits
+  // Let's do a two-line approach within the box for maximum clarity
+  ctx.fillText(dateStr, CX, MY + 25);
+  ctx.fillStyle = GOLD;
+  ctx.font = "800 19px 'Outfit', sans-serif";
+  ctx.fillText(venueText, CX, MY + 56);
+  ctx.restore();
 
   ctx.fillStyle = GOLD;
-  ctx.font      = "800 28px 'Outfit', sans-serif";
-  ctx.fillText(`XORNADA ${jornada}`, CX, 608);
+  ctx.font      = "900 32px 'Outfit', sans-serif";
+  ctx.textAlign    = "center";
+  ctx.fillText(`XORNADA ${jornada}`, CX, MY + BOX_H + 55);
   ctx.restore();
 
   // ─── Match Main Data ────────────────────────────────────────────────────────

@@ -19,6 +19,8 @@ export interface FormState {
   // Shared
   categoria:      string;
   jugadorXOffset: number;
+  jugadorYOffset: number;
+  jugadorZoom:    number;
   showCarouselIndicator: boolean;
   // Partido / Resumo / Cronoloxia
   competicion:    string;
@@ -42,6 +44,7 @@ export interface FormState {
   matches:        NextMatch[];
   // O Noso 11
   jugadorFotoUrl: string;
+  noso11Flip:     boolean;
   titulares:      Player[];
   suplentes:      Player[];
 }

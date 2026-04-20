@@ -36,3 +36,41 @@ export const Toggle: React.FC<{ label: string; active: boolean; onClick: () => v
     {label}
   </button>
 );
+
+export const MatchSelector: React.FC<{ 
+  dbMatches: any[]; 
+  onSelect: (m: any) => void;
+  categoria: string;
+}> = ({ dbMatches, onSelect, categoria }) => {
+  const filtered = dbMatches.filter(m => m.categoria === categoria);
+
+  if (filtered.length === 0) return null;
+
+  return (
+    <div style={{ 
+      marginBottom: "2rem", 
+      padding: "1rem", 
+      background: "rgba(250, 204, 21, 0.05)", 
+      border: "1px solid rgba(250, 204, 21, 0.2)", 
+      borderRadius: "12px" 
+    }}>
+      <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase" }}>
+        ⚡ Autocompletar desde la liga
+      </label>
+      <select 
+        onChange={e => {
+          const m = filtered.find(x => x.id === e.target.value);
+          if (m) onSelect(m);
+        }}
+        style={{ width: "100%", background: "rgba(0,0,0,0.3)", color: "white", padding: "0.6rem", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.1)" }}
+      >
+        <option value="">-- Seleccionar partido reciente o próximo --</option>
+        {filtered.map(m => (
+          <option key={m.id} value={m.id}>
+            J{m.jornada?.numero || '?'} - {m.local.nombre} vs {m.visitante.nombre} ({m.fecha ? new Date(m.fecha).toLocaleDateString() : 'Sin fecha'})
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};

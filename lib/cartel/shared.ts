@@ -81,16 +81,16 @@ export function drawTopLogos(
   xunta: HTMLImageElement | null,
   rfgf:  HTMLImageElement | null,
   xuntaIsLeft: boolean,
-  logoY = 40, logoH = 105
+  logoY = 30, logoH = 125
 ) {
   const leftImg  = xuntaIsLeft ? xunta : rfgf;
   const rightImg = xuntaIsLeft ? rfgf  : xunta;
 
-  function place(img: HTMLImageElement | null, edgeX: number, side: "left" | "right", label: string) {
+  function place(img: HTMLImageElement | null, edgeX: number, side: "left" | "right", label: string, height: number) {
     if (img) {
       const r    = img.naturalWidth / img.naturalHeight;
-      const rawW = logoH * r;
-      const w    = Math.max(Math.min(rawW, 240), 90);
+      const rawW = height * r;
+      const w    = Math.max(Math.min(rawW, 280), 80);
       const h    = w / r;
       const dy   = logoY + (logoH - h) / 2;
       const dx   = side === "left" ? edgeX : edgeX - w;
@@ -110,8 +110,11 @@ export function drawTopLogos(
     }
   }
 
-  place(leftImg,  CL, "left",  xuntaIsLeft ? "XUNTA"  : "RFGF");
-  place(rightImg, CR, "right", xuntaIsLeft ? "RFGF"   : "XUNTA");
+  const hXunta = 135;
+  const hRFGF  = 90;
+
+  place(leftImg,  CL, "left",  xuntaIsLeft ? "XUNTA"  : "RFGF",  xuntaIsLeft ? hXunta : hRFGF);
+  place(rightImg, CR, "right", xuntaIsLeft ? "RFGF"   : "XUNTA", xuntaIsLeft ? hRFGF  : hXunta);
 
   // Golden separator — 28px below logo bottom
   const sepY = logoY + logoH + 28;
