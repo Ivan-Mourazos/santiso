@@ -327,10 +327,10 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                 const visShield = getTeamShield(p.equipo_visitante_id);
                 
                 return (
-                  <div key={p.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div key={p.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem 1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
                     
-                    {/* Equipos */}
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem', fontWeight: 800 }}>
+                    {/* Fila Superior: Equipos y Marcador */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontWeight: 800, width: '100%' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, justifyContent: 'flex-end', textAlign: 'right' }}>
                         {localName} 
                         {localShield && <img src={localShield} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />}
@@ -338,15 +338,25 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                       
                       {/* Marcador */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '8px' }}>
-                        <input type="number" value={p.goles_local} onChange={e => {
-                          const val = parseInt(e.target.value) || 0;
-                          setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, goles_local: val } : pt));
-                        }} style={{ width: '40px', background: 'transparent', border: 'none', color: 'white', fontWeight: 900, textAlign: 'center', fontSize: '1.2rem' }} />
-                        <span style={{ color: '#666' }}>-</span>
-                        <input type="number" value={p.goles_visitante} onChange={e => {
-                          const val = parseInt(e.target.value) || 0;
-                          setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, goles_visitante: val } : pt));
-                        }} style={{ width: '40px', background: 'transparent', border: 'none', color: 'white', fontWeight: 900, textAlign: 'center', fontSize: '1.2rem' }} />
+                        <input 
+                          type="number" 
+                          value={p.goles_local ?? 0} 
+                          onChange={e => {
+                            const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, goles_local: val } : pt));
+                          }} 
+                          style={{ width: '60px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: 900, textAlign: 'center', fontSize: '1.2rem', borderRadius: '6px', padding: '4px' }} 
+                        />
+                        <span style={{ color: '#666', fontWeight: 900 }}>-</span>
+                        <input 
+                          type="number" 
+                          value={p.goles_visitante ?? 0} 
+                          onChange={e => {
+                            const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, goles_visitante: val } : pt));
+                          }} 
+                          style={{ width: '60px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: 900, textAlign: 'center', fontSize: '1.2rem', borderRadius: '6px', padding: '4px' }} 
+                        />
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
@@ -355,15 +365,39 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                       </div>
                     </div>
 
-                    {/* Controles */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '2rem' }}>
-                       <select value={p.estado} onChange={e => updatePartidoState(p.id, 'estado', e.target.value)} style={{ padding: '0.4rem', borderRadius: '4px', background: p.estado === 'finalizado' ? '#10b981' : p.estado === 'en_juego' ? '#ef4444' : 'rgba(255,255,255,0.1)', color: p.estado === 'programado' ? 'white' : 'black', fontWeight: 800, border: 'none' }}>
-                         <option value="programado">Programado</option>
-                         <option value="en_juego">Activo</option>
-                         <option value="finalizado">Finalizado</option>
-                       </select>
-                       <button onClick={() => saveMatchScore(p.id, p.goles_local, p.goles_visitante)} style={{ background: 'var(--primary)', border: 'none', color: 'black', padding: '0.4rem 0.8rem', borderRadius: '4px', fontWeight: 800, cursor: 'pointer' }}>Guardar</button>
-                       <button onClick={() => handleDeletePartido(p.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>🗑️</button>
+                    {/* Fila Inferior: Controles y Guardado */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '8px' }}>
+                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                         <label style={{ fontSize: '0.7rem', color: '#888', fontWeight: 800, textTransform: 'uppercase' }}>Fecha y Hora</label>
+                         <input 
+                           type="datetime-local" 
+                           value={p.fecha ? p.fecha.substring(0, 16) : ""}
+                           onChange={e => {
+                             const val = e.target.value;
+                             setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, fecha: val } : pt));
+                           }}
+                           style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', padding: '0.5rem', fontSize: '0.9rem' }}
+                         />
+                       </div>
+
+                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                         <label style={{ fontSize: '0.7rem', color: '#888', fontWeight: 800, textTransform: 'uppercase' }}>Estado</label>
+                         <select value={p.estado} onChange={e => updatePartidoState(p.id, 'estado', e.target.value)} style={{ padding: '0.5rem', borderRadius: '4px', background: p.estado === 'finalizado' ? '#10b981' : p.estado === 'en_juego' ? '#ef4444' : 'rgba(255,255,255,0.1)', color: p.estado === 'programado' ? 'white' : 'black', fontWeight: 800, border: 'none', fontSize: '0.9rem', width: '120px' }}>
+                           <option value="programado">Programado</option>
+                           <option value="en_juego">Activo</option>
+                           <option value="finalizado">Finalizado</option>
+                         </select>
+                       </div>
+
+                       <button onClick={async () => {
+                         const { error } = await supabase.from("partidos_liga").update({
+                           goles_local: p.goles_local,
+                           goles_visitante: p.goles_visitante,
+                           fecha: p.fecha ? new Date(p.fecha).toISOString() : null
+                         }).eq("id", p.id);
+                         if (!error) showToast("Partido actualizado con éxito");
+                       }} style={{ background: 'var(--primary)', border: 'none', color: 'black', padding: '0.6rem 1.2rem', borderRadius: '4px', fontWeight: 900, cursor: 'pointer', alignSelf: 'flex-end', marginBottom: '2px' }}>Guardar</button>
+                       <button onClick={() => handleDeletePartido(p.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', alignSelf: 'flex-end', marginBottom: '6px', fontSize: '1.2rem' }}>🗑️</button>
                     </div>
                   </div>
                 )

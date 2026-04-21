@@ -24,23 +24,37 @@ export default function Home() {
       const { data: pData } = await supabase.from("jugadores").select("*").order("dorsal", { ascending: true });
       if (pData) setJugadores(pData);
 
-      // Fetch Próximo Partido (Buscamos el más cercano a hoy)
-      const { data: mData } = await supabase
-        .from("partidos_liga")
-        .select(`
-          *,
-          local:equipo_local_id (nombre, escudo_url),
-          visitante:equipo_visitante_id (nombre, escudo_url)
-        `)
-        .gte("fecha", new Date().toISOString())
-        .order("fecha", { ascending: true })
-        .limit(1);
-      
-      if (mData && mData.length > 0) {
-        // Encontramos quién es el rival (el que no es UD Santiso)
-        // O simplemente mapeamos según la posición local/visitante
-        setProximoPartido(mData[0]);
+      // Fetch Próximos Partidos (Uno por categoría para los equipos del Santiso)
+      const { data: santisoTeams } = await supabase
+        .from("equipos")
+        .select("id, categoria")
+        .ilike("nombre", "%santiso%");
+
+      const nextMatches = [];
+      if (santisoTeams) {
+        for (const team of santisoTeams) {
+          const { data: mData } = await supabase
+            .from("partidos_liga")
+            .select(`
+              *,
+              local:equipo_local_id (nombre, escudo_url),
+              visitante:equipo_visitante_id (nombre, escudo_url)
+            `)
+            .eq("categoria", team.categoria)
+            .or(`equipo_local_id.eq.${team.id},equipo_visitante_id.eq.${team.id}`)
+            .gte("fecha", new Date().toISOString())
+            .order("fecha", { ascending: true })
+            .limit(1);
+
+          if (mData && mData.length > 0) {
+            nextMatches.push(mData[0]);
+          }
+        }
       }
+      // Ordenar por fecha para mostrar primero el más inminente
+      nextMatches.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+      
+      setProximoPartido(nextMatches);
 
       // Fetch Patrocinadores
       const { data: sData } = await supabase.from("patrocinadores").select("*").order("orden", { ascending: true });
@@ -78,56 +92,61 @@ export default function Home() {
       <section id="fixtures" className="section-fixtures">
         <div className="container">
           <div className="fixtures-card glass shadow-glare">
-            <h3 className="card-tag">Siguiente Partido</h3>
-            {proximoPartido ? (
-              <div className="match-display">
-                <div className="team-box">
-                  {proximoPartido.local?.escudo_url ? (
-                    <img src={proximoPartido.local.escudo_url} alt={proximoPartido.local.nombre} className="team-logo-large" />
-                  ) : (
-                    <div className="team-badge-large">{proximoPartido.local?.nombre?.[0] || 'L'}</div>
-                  )}
-                  <span>{proximoPartido.local?.nombre || 'Local'}</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                  {proximoPartido.estado === 'en_juego' && (
-                    <div className="live-badge">
-                      <span className="live-dot"></span> EN JUEGO
-                    </div>
-                  )}
-                  {proximoPartido.estado === 'finalizado' && (
-                    <div className="final-badge">FINALIZADO</div>
-                  )}
-                  
-                  <div className="match-score-container">
-                    {(proximoPartido.estado === 'en_juego' || proximoPartido.estado === 'finalizado') ? (
-                      <div className="live-score">
-                        <span className="score-num">{proximoPartido.goles_local || 0}</span>
-                        <span className="score-divider">-</span>
-                        <span className="score-num">{proximoPartido.goles_rival || 0}</span>
+            <h3 className="card-tag">Próximos Partidos</h3>
+            {Array.isArray(proximoPartido) && proximoPartido.length > 0 ? (
+              <div className="matches-grid">
+                {proximoPartido.map((partido) => (
+                  <div key={partido.id} className="match-card-individual">
+                    <h4 className="match-category-label">{partido.categoria}</h4>
+                    <div className="match-display-small">
+                      <div className="team-box-small">
+                        {partido.local?.escudo_url ? (
+                          <img src={partido.local.escudo_url} alt={partido.local.nombre} className="team-logo-small" />
+                        ) : (
+                          <div className="team-badge-small">{partido.local?.nombre?.[0] || 'L'}</div>
+                        )}
+                        <span>{partido.local?.nombre || 'Local'}</span>
                       </div>
-                    ) : (
-                      <div className="vs-badge">VS</div>
-                    )}
+                      <div className="match-center-small">
+                        {partido.estado === 'en_juego' && (
+                          <div className="live-badge"><span className="live-dot"></span> EN JUEGO</div>
+                        )}
+                        {partido.estado === 'finalizado' && (
+                          <div className="final-badge">FINALIZADO</div>
+                        )}
+                        
+                        <div className="match-score-container-small">
+                          {(partido.estado === 'en_juego' || partido.estado === 'finalizado') ? (
+                            <div className="live-score-small">
+                              <span className="score-num-small">{partido.goles_local ?? 0}</span>
+                              <span className="score-divider-small">-</span>
+                              <span className="score-num-small">{partido.goles_visitante ?? 0}</span>
+                            </div>
+                          ) : (
+                            <div className="vs-badge-small">VS</div>
+                          )}
+                        </div>
+                        
+                        <div className="match-meta-small">
+                          <span className="match-date-small">
+                            {new Date(partido.fecha).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+                          </span>
+                          <span className="match-time-small">
+                            {new Date(partido.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="team-box-small">
+                        {partido.visitante?.escudo_url ? (
+                          <img src={partido.visitante.escudo_url} alt={partido.visitante.nombre} className="team-logo-small" />
+                        ) : (
+                          <div className="team-badge-small bg-muted">{partido.visitante?.nombre?.[0] || 'V'}</div>
+                        )}
+                        <span>{partido.visitante?.nombre || 'Visitante'}</span>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div className="match-meta">
-                    <span className="match-date">
-                      {new Date(proximoPartido.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </span>
-                    <span className="match-time">
-                      {new Date(proximoPartido.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-                <div className="team-box">
-                  {proximoPartido.visitante?.escudo_url ? (
-                    <img src={proximoPartido.visitante.escudo_url} alt={proximoPartido.visitante.nombre} className="team-logo-large" />
-                  ) : (
-                    <div className="team-badge-large bg-muted">{proximoPartido.visitante?.nombre?.[0] || 'V'}</div>
-                  )}
-                  <span>{proximoPartido.visitante?.nombre || 'Visitante'}</span>
-                </div>
+                ))}
               </div>
             ) : (
               <p>Esperando calendario...</p>
@@ -205,42 +224,22 @@ export default function Home() {
         .section-fixtures { margin-top: -5rem; padding-bottom: 5rem; }
         .fixtures-card { padding: 4rem 3rem; border-radius: 2rem; text-align: center; }
         .card-tag { font-size: 0.8rem; text-transform: uppercase; color: var(--primary); letter-spacing: 3px; margin-bottom: 3rem; }
-        .match-display { display: flex; align-items: center; justify-content: center; gap: 3rem; }
+        .matches-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+        .match-card-individual { background: rgba(255,255,255,0.02); padding: 2rem 1rem; border-radius: 1.5rem; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+        .match-category-label { font-size: 0.9rem; text-transform: uppercase; color: var(--primary); letter-spacing: 2px; margin-bottom: 2rem; font-weight: 800; }
+        .match-display-small { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
         
-        .team-box { display: flex; flex-direction: column; align-items: center; gap: 1rem; font-weight: 900; font-size: 1.2rem; flex: 1; min-width: 0; }
-        .team-logo-large { width: 130px; height: 130px; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4)); }
-        .team-badge-large { width: 130px; height: 130px; border-radius: 50%; background: var(--secondary); border: 1px solid var(--border); color: #444; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+        .team-box-small { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; flex: 1; font-weight: 800; font-size: 0.9rem; }
+        .team-logo-small { width: 70px; height: 70px; object-fit: contain; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3)); }
+        .team-badge-small { width: 70px; height: 70px; border-radius: 50%; background: var(--secondary); border: 1px solid var(--border); color: #444; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
         
-        .match-score-container { display: flex; flex-direction: column; align-items: center; gap: 1rem; flex: 1; }
-        .live-score { display: flex; align-items: center; gap: 1.5rem; margin: 0.5rem 0; }
-        .score-num { font-size: 5rem; font-weight: 900; color: white; line-height: 1; font-family: 'Outfit', sans-serif; text-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .score-divider { font-size: 3rem; color: var(--primary); font-weight: 200; opacity: 0.5; }
+        .match-center-small { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .live-score-small { display: flex; align-items: center; gap: 0.5rem; }
+        .score-num-small { font-size: 2.5rem; font-weight: 900; color: white; line-height: 1; font-family: 'Outfit', sans-serif; }
+        .score-divider-small { font-size: 1.5rem; color: var(--primary); opacity: 0.5; }
+        .vs-badge-small { background: var(--primary); color: black; padding: 0.4rem 1rem; border-radius: 2rem; font-weight: 900; font-size: 1rem; }
         
-        .vs-badge { background: var(--primary); color: black; padding: 0.6rem 2rem; border-radius: 2rem; font-weight: 900; font-size: 1.4rem; transform: rotate(-5deg); box-shadow: 0 10px 20px rgba(250, 204, 21, 0.2); }
-        
-        .live-badge { background: #ef4444; color: white; padding: 0.4rem 1rem; border-radius: 0.5rem; font-weight: 800; font-size: 0.7rem; display: flex; align-items: center; gap: 0.5rem; animation: pulse 2s infinite; }
-        .live-dot { width: 8px; height: 8px; background: white; border-radius: 50%; display: inline-block; }
-        .final-badge { background: #404040; color: #a3a3a3; padding: 0.4rem 1rem; border-radius: 0.5rem; font-weight: 800; font-size: 0.7rem; }
-
-        @keyframes pulse {
-          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-          70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-
-        .match-meta { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
-
-        .section-padding { padding: 6rem 0; }
-        .section-heading { font-size: 4rem; text-align: center; margin-bottom: 4rem; }
-        .player-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
-        .player-card { border-radius: 1.5rem; overflow: hidden; transition: transform 0.3s; }
-        .player-card:hover { transform: translateY(-10px); }
-        .player-image-box { height: 350px; position: relative; background: #111; }
-        .player-img { width: 100%; height: 100%; object-fit: cover; }
-        .player-number-overlay { position: absolute; top: 20px; right: 20px; font-size: 3rem; font-weight: 900; color: rgba(250, 204, 21, 0.2); }
-        .player-data { padding: 2rem; text-align: center; }
-        .player-data h4 { font-size: 1.3rem; margin-bottom: 0.5rem; }
-        .player-data p { color: var(--primary); font-weight: 800; text-transform: uppercase; font-size: 0.8rem; }
+        .match-meta-small { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; font-size: 0.8rem; color: #a3a3a3; margin-top: 0.5rem; }
 
         .sponsors-flex { display: flex; flex-wrap: wrap; gap: 5rem; justify-content: center; margin-top: 5rem; }
         .sponsor-link { text-decoration: none; }

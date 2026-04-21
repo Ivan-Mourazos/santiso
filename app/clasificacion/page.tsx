@@ -13,19 +13,58 @@ export default function ClasificacionPage() {
 
   async function fetchClasificacion() {
     setLoading(true);
+    
+    // Obtener clasificación general
     const { data } = await supabase
       .from("vista_clasificacion")
       .select("*")
+      .eq("categoria", categoria);
+
+    // Obtener partidos para desempates directos
+    const { data: partidosData } = await supabase
+      .from("partidos_liga")
+      .select("*")
       .eq("categoria", categoria)
-      .order("pts", { ascending: false })
-      .order("gf", { ascending: false });
+      .eq("estado", "finalizado");
 
     if (data) {
       const sorted = [...data].sort((a, b) => {
+        // 1. Puntos
         if (b.pts !== a.pts) return b.pts - a.pts;
+
+        // 2. Goal-Average Particular (Enfrentamientos Directos)
+        if (partidosData) {
+          const directMatches = partidosData.filter(p => 
+            (p.equipo_local_id === a.equipo_id && p.equipo_visitante_id === b.equipo_id) ||
+            (p.equipo_local_id === b.equipo_id && p.equipo_visitante_id === a.equipo_id)
+          );
+          
+          if (directMatches.length > 0) {
+            let ptsA = 0, ptsB = 0, gfA = 0, gfB = 0;
+            
+            directMatches.forEach(p => {
+              const aIsLocal = p.equipo_local_id === a.equipo_id;
+              const gA = aIsLocal ? p.goles_local : p.goles_visitante;
+              const gB = aIsLocal ? p.goles_visitante : p.goles_local;
+              
+              if (gA > gB) ptsA += 3;
+              else if (gB > gA) ptsB += 3;
+              else { ptsA += 1; ptsB += 1; }
+              
+              gfA += gA; gfB += gB;
+            });
+            
+            if (ptsA !== ptsB) return ptsB - ptsA;
+            if (gfA - gfB !== 0) return (gfB - gfA); // Diferencia en sus cruces
+          }
+        }
+
+        // 3. Goal-Average General
         const diffA = a.gf - a.gc;
         const diffB = b.gf - b.gc;
         if (diffB !== diffA) return diffB - diffA;
+        
+        // 4. Goles a favor
         return b.gf - a.gf;
       });
       setEquipos(sorted);
