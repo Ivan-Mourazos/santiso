@@ -11,6 +11,7 @@ interface AdminJornadasProps {
 export default function AdminJornadas({ showToast, showConfirm, categoria }: AdminJornadasProps) {
   const [jornadas, setJornadas] = useState<any[]>([]);
   const [equipos, setEquipos] = useState<any[]>([]);
+  const [campos, setCampos] = useState<any[]>([]);
   const [partidos, setPartidos] = useState<any[]>([]);
   const [temporadas, setTemporadas] = useState<any[]>([]);
   const [temporadaActiva, setTemporadaActiva] = useState<any>(null);
@@ -29,7 +30,7 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
   const [localId, setLocalId] = useState("");
   const [visitanteId, setVisitanteId] = useState("");
   const [fechaPartido, setFechaPartido] = useState("");
-  const [lugarPartido, setLugarPartido] = useState("");
+  const [campoId, setCampoId] = useState("");
 
   useEffect(() => {
     fetchBaseData();
@@ -47,6 +48,15 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     // Equipos de la categoría
     const { data: eData } = await supabase.from("equipos").select("*").eq("categoria", categoria).order("nombre");
     if (eData) setEquipos(eData);
+
+    // Campos
+    const { data: cData, error: cError } = await supabase.from("campos_futbol").select("*").order("nombre");
+    if (cError) {
+      console.error("Error cargando campos:", cError);
+    } else if (cData) {
+      console.log("Campos cargados correctamente:", cData.length);
+      setCampos(cData);
+    }
   }
 
   useEffect(() => {
@@ -156,13 +166,13 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
       equipo_local_id: localId,
       equipo_visitante_id: visitanteId,
       fecha: fechaPartido || null,
-      lugar: lugarPartido || null,
+      campo_id: campoId || null,
       estado: "programado"
     }]);
 
     if (!error) {
       showToast("Partido añadido");
-      setLocalId(""); setVisitanteId(""); setLugarPartido("");
+      setLocalId(""); setVisitanteId(""); setCampoId("");
       fetchPartidos();
     }
     setLoading(false);
@@ -204,121 +214,133 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
   const getTeamShield = (id: string) => equipos.find(e => e.id === id)?.escudo_url || "";
 
   return (
-    <div className="card glass full-width" style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 1fr) 3fr', gap: '2rem' }}>
+    <div className="card glass full-width" style={{ padding: '2.5rem' }}>
       
-      {/* Columna Izquierda: selector de temporadas y jornadas */}
-      <div style={{ borderRight: '1px solid rgba(255,255,255,0.1)', paddingRight: '2rem' }}>
-        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.2rem' }}>Configuración Liga</h3>
+      {/* BARRA DE HERRAMIENTAS SUPERIOR (TOOLBAR) */}
+      <div style={{ 
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '2.5rem', 
+        paddingBottom: '2.5rem', 
+        marginBottom: '3rem', 
+        borderBottom: '1px solid rgba(255,255,255,0.08)'
+      }}>
         
-        {/* Gestión de Temporadas */}
-        <div style={{ marginBottom: '2rem' }}>
-          <span style={{ fontSize: '0.7rem', color: '#a3a3a3', textTransform: 'uppercase', fontWeight: 800 }}>Temporadas</span>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.5rem' }}>
-            {temporadas.map(t => (
-              <div key={t.id} style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                padding: '0.5rem', 
-                background: t.activa ? 'rgba(250, 204, 21, 0.1)' : 'rgba(255,255,255,0.03)',
-                border: t.activa ? '1px solid var(--primary)' : '1px solid transparent',
-                borderRadius: '6px'
-              }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: t.activa ? 800 : 400 }}>{t.nombre}</span>
-                {!t.activa && (
-                  <button onClick={() => toggleTemporadaActiva(t.id)} style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer' }}>Activar</button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <form onSubmit={handleCreateTemporada} style={{ display: 'flex', gap: '0.4rem', marginTop: '0.8rem' }}>
+        {/* Bloque Temporada */}
+        <div className="control-group">
+          <label style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1rem', display: 'block' }}>
+            🏆 Gestión de Temporada
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 60px', gap: '0.8rem' }}>
+            <select 
+              value={temporadaActiva?.id || ""} 
+              onChange={(e) => toggleTemporadaActiva(e.target.value)}
+              style={{ height: '55px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1.2rem', borderRadius: '12px', fontSize: '1rem', fontWeight: 600 }}
+            >
+              {temporadas.map(t => (
+                <option key={t.id} value={t.id}>{t.nombre} {t.activa ? '(Activa)' : ''}</option>
+              ))}
+            </select>
             <input 
               type="text" 
-              placeholder="Nueva (24/25)" 
+              placeholder="Nueva..." 
               value={nuevaTemporadaNombre}
               onChange={e => setNuevaTemporadaNombre(e.target.value)}
-              style={{ flex: 1, padding: '0.4rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.8rem', borderRadius: '4px' }}
+              style={{ height: '55px', padding: '0 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.9rem', borderRadius: '12px' }}
             />
-            <button type="submit" disabled={loading} style={{ background: 'var(--primary)', color: 'black', border: 'none', padding: '0 0.5rem', borderRadius: '4px', fontWeight: 900, cursor: 'pointer' }}>+</button>
-          </form>
+            <button onClick={handleCreateTemporada} className="btn-primary" style={{ height: '55px', borderRadius: '12px', fontSize: '1.5rem' }}>+</button>
+          </div>
         </div>
 
-        {/* Lista de Jornadas */}
-        <div style={{ marginBottom: '1rem' }}>
-          <span style={{ fontSize: '0.7rem', color: '#a3a3a3', textTransform: 'uppercase', fontWeight: 800 }}>Jornadas ({categoria})</span>
+        {/* Bloque Jornada */}
+        <div className="control-group">
+          <label style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1rem', display: 'block' }}>
+            📅 Selección de Jornada
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 60px 60px', gap: '0.8rem' }}>
+            <select 
+              value={selectedJornada || ""} 
+              onChange={(e) => setSelectedJornada(e.target.value)}
+              style={{ height: '55px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1.2rem', borderRadius: '12px', fontSize: '1rem', fontWeight: 700 }}
+            >
+              <option value="">Selecciona jornada...</option>
+              {jornadas.map(j => (
+                <option key={j.id} value={j.id}>Jornada {j.numero}</option>
+              ))}
+            </select>
+            <input 
+              type="number" 
+              placeholder="Nº" 
+              value={numJornada}
+              onChange={e => setNumJornada(e.target.value)}
+              style={{ height: '55px', padding: '0 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '1rem', borderRadius: '12px', textAlign: 'center' }}
+            />
+            <button onClick={handleCreateJornada} className="btn-primary" style={{ height: '55px', borderRadius: '12px', fontSize: '1.5rem' }}>+</button>
+            {selectedJornada && (
+              <button 
+                onClick={() => handleDeleteJornada(selectedJornada)} 
+                className="btn-delete-icon" 
+                style={{ height: '55px', borderRadius: '12px', fontSize: '1.2rem', width: '100%' }}
+              >
+                🗑️
+              </button>
+            )}
+          </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
-          {jornadas.map(j => (
-             <div 
-               key={j.id} 
-               onClick={() => setSelectedJornada(j.id)}
-               style={{
-                 padding: '0.8rem 1rem',
-                 background: selectedJornada === j.id ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                 color: selectedJornada === j.id ? 'black' : 'white',
-                 borderRadius: '8px',
-                 cursor: 'pointer',
-                 fontWeight: 700,
-                 display: 'flex',
-                 justifyContent: 'space-between'
-               }}>
-               <span>Jornada {j.numero}</span>
-               <button 
-                 onClick={(e) => { e.stopPropagation(); handleDeleteJornada(j.id); }} 
-                 style={{ background: 'none', border: 'none', color: selectedJornada === j.id ? 'black' : '#ef4444', cursor: 'pointer', opacity: 0.6 }}>✖</button>
-             </div>
-          ))}
-        </div>
-
-        {/* Creador de Jornadas */}
-        <form onSubmit={handleCreateJornada} style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
-          <h4 style={{ fontSize: '0.9rem', marginBottom: '0.8rem', color: '#888' }}>Nueva Jornada</h4>
-          <input type="number" placeholder="Número (ej: 1)" value={numJornada} onChange={e => setNumJornada(e.target.value)} required style={{ width: '100%', marginBottom: '0.5rem', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', borderRadius: '4px' }} />
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '0.5rem', background: 'var(--primary)', color: 'black', border: 'none', borderRadius: '4px', fontWeight: 800, cursor: 'pointer' }}>Crear Jornada</button>
-        </form>
       </div>
 
-      {/* Columna Derecha: Partidos de la Jornada seleccionada */}
-      <div>
+      {/* CUERPO PRINCIPAL: PARTIDOS */}
+      <div style={{ width: '100%' }}>
         {selectedJornada ? (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3>Partidos de la Jornada {jornadas.find(j => j.id === selectedJornada)?.numero}</h3>
-              <p style={{ fontSize: '0.8rem', color: '#a3a3a3' }}>Los resultados en estado 'Finalizado' automatizan la Clasificación.</p>
+            <div style={{ marginBottom: '2.5rem' }}>
+              <h3 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-1px' }}>
+                Partidos <span className="text-primary">Jornada {jornadas.find(j => j.id === selectedJornada)?.numero}</span>
+              </h3>
+              <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
+                Configura los enfrentamientos, horarios y resultados finales.
+              </p>
             </div>
 
             {/* Creador de Partidos */}
-            <form onSubmit={handleAddPartido} className="form-grid-4" style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <form onSubmit={handleAddPartido} className="form-grid-4" style={{ 
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)', 
+              padding: '2rem', 
+              borderRadius: '20px', 
+              marginBottom: '3rem', 
+              border: '1px solid rgba(255,255,255,0.05)',
+              alignItems: 'flex-end',
+              gap: '1.5rem'
+            }}>
               <div className="input-group">
-                <label>Equipo Local</label>
-                <select value={localId} onChange={e => setLocalId(e.target.value)} required style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.6rem', borderRadius: '6px' }}>
+                <label style={{ marginBottom: '0.8rem' }}>Equipo Local</label>
+                <select value={localId} onChange={e => setLocalId(e.target.value)} required style={{ height: '50px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1rem', borderRadius: '10px', width: '100%' }}>
                   <option value="">Selecciona...</option>
                   {equipos.map(eq => <option key={eq.id} value={eq.id}>{eq.nombre}</option>)}
                 </select>
               </div>
               <div className="input-group">
-                <label>Equipo Visitante</label>
-                <select value={visitanteId} onChange={e => setVisitanteId(e.target.value)} required style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.6rem', borderRadius: '6px' }}>
+                <label style={{ marginBottom: '0.8rem' }}>Equipo Visitante</label>
+                <select value={visitanteId} onChange={e => setVisitanteId(e.target.value)} required style={{ height: '50px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1rem', borderRadius: '10px', width: '100%' }}>
                   <option value="">Selecciona...</option>
                   {equipos.map(eq => <option key={eq.id} value={eq.id}>{eq.nombre}</option>)}
                 </select>
               </div>
               <div className="input-group">
-                <label>Fecha y Hora</label>
-                <input type="datetime-local" value={fechaPartido} onChange={e => setFechaPartido(e.target.value)} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.6rem', borderRadius: '6px' }} />
+                <label style={{ marginBottom: '0.8rem' }}>Estadio / Campo</label>
+                <select value={campoId} onChange={e => setCampoId(e.target.value)} style={{ height: '50px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1rem', borderRadius: '10px', width: '100%' }}>
+                  <option value="">Selecciona campo...</option>
+                  {campos.map(c => <option key={c.id} value={c.id}>{c.nombre} ({c.poblacion})</option>)}
+                </select>
               </div>
-              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                <button type="submit" disabled={loading} style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.1)', border: '1px dashed rgba(255,255,255,0.2)', color: 'white', fontWeight: 600, borderRadius: '6px', cursor: 'pointer' }}>
-                  + Añadir Partido
-                </button>
-              </div>
+              <button type="submit" disabled={loading} style={{ height: '50px', background: 'var(--primary)', color: 'black', fontWeight: 900, borderRadius: '10px', cursor: 'pointer', border: 'none', width: '100%', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                + Añadir Partido
+              </button>
             </form>
 
             {/* Listado de Partidos */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {partidos.length === 0 && <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>No hay partidos en esta jornada.</p>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              {partidos.length === 0 && <p style={{ color: '#666', textAlign: 'center', padding: '4rem', background: 'rgba(255,255,255,0.01)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>No hay partidos registrados en esta jornada.</p>}
               
               {partidos.map(p => {
                 const localName = getTeamName(p.equipo_local_id);
@@ -327,17 +349,26 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                 const visShield = getTeamShield(p.equipo_visitante_id);
                 
                 return (
-                  <div key={p.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem 1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div key={p.id} style={{ 
+                    background: 'rgba(255,255,255,0.02)', 
+                    padding: '2.5rem', 
+                    borderRadius: '24px', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '2.5rem', 
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                  }}>
                     
-                    {/* Fila Superior: Equipos y Marcador */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontWeight: 800, width: '100%' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, justifyContent: 'flex-end', textAlign: 'right' }}>
-                        {localName} 
-                        {localShield && <img src={localShield} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />}
+                    {/* SECCIÓN 1: MARCADOR Y EQUIPOS (GRANDE) */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', width: '100%' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1, justifyContent: 'flex-end', textAlign: 'right' }}>
+                        <span style={{ fontSize: '1.4rem', fontWeight: 800 }}>{localName}</span>
+                        {localShield && <img src={localShield} alt="" style={{ width: 50, height: 50, objectFit: 'contain' }} />}
                       </div>
                       
-                      {/* Marcador */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '8px' }}>
+                      {/* Marcador Central */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'rgba(0,0,0,0.5)', padding: '1rem 2rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <input 
                           type="number" 
                           value={p.goles_local ?? 0} 
@@ -345,9 +376,9 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                             const val = e.target.value === '' ? 0 : parseInt(e.target.value);
                             setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, goles_local: val } : pt));
                           }} 
-                          style={{ width: '60px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: 900, textAlign: 'center', fontSize: '1.2rem', borderRadius: '6px', padding: '4px' }} 
+                          style={{ width: '80px', height: '60px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: 900, textAlign: 'center', fontSize: '2.5rem', borderRadius: '12px' }} 
                         />
-                        <span style={{ color: '#666', fontWeight: 900 }}>-</span>
+                        <span style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '2rem' }}>-</span>
                         <input 
                           type="number" 
                           value={p.goles_visitante ?? 0} 
@@ -355,36 +386,60 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                             const val = e.target.value === '' ? 0 : parseInt(e.target.value);
                             setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, goles_visitante: val } : pt));
                           }} 
-                          style={{ width: '60px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: 900, textAlign: 'center', fontSize: '1.2rem', borderRadius: '6px', padding: '4px' }} 
+                          style={{ width: '80px', height: '60px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: 900, textAlign: 'center', fontSize: '2.5rem', borderRadius: '12px' }} 
                         />
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                         {visShield && <img src={visShield} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />}
-                         {visName}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+                         {visShield && <img src={visShield} alt="" style={{ width: 50, height: 50, objectFit: 'contain' }} />}
+                         <span style={{ fontSize: '1.4rem', fontWeight: 800 }}>{visName}</span>
                       </div>
                     </div>
 
-                    {/* Fila Inferior: Controles y Guardado */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '8px' }}>
-                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                         <label style={{ fontSize: '0.7rem', color: '#888', fontWeight: 800, textTransform: 'uppercase' }}>Fecha y Hora</label>
-                         <input 
-                           type="datetime-local" 
-                           value={p.fecha ? p.fecha.substring(0, 16) : ""}
-                           onChange={e => {
-                             const val = e.target.value;
-                             setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, fecha: val } : pt));
-                           }}
-                           style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', padding: '0.5rem', fontSize: '0.9rem' }}
-                         />
-                       </div>
+                    {/* SECCIÓN 2: CONFIGURACIÓN (DETALLES) */}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: '1fr 1fr 160px auto auto', 
+                      alignItems: 'flex-end', 
+                      gap: '1.5rem', 
+                      background: 'rgba(255,255,255,0.01)', 
+                      padding: '2rem', 
+                      borderRadius: '16px',
+                      border: '1px solid rgba(255,255,255,0.03)'
+                    }}>
+                        <div className="input-group">
+                          <label style={{ fontSize: '0.7rem', color: '#666', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.6rem', display: 'block' }}>🏟️ Campo / Estadio</label>
+                          <select 
+                            value={p.campo_id || ""}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, campo_id: val } : pt));
+                            }}
+                            style={{ height: '45px', background: 'rgba(0,0,0,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0 1rem', fontSize: '0.95rem', width: '100%' }}
+                          >
+                            <option value="">Sin asignar</option>
+                            {campos.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                          </select>
+                        </div>
 
-                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                         <label style={{ fontSize: '0.7rem', color: '#888', fontWeight: 800, textTransform: 'uppercase' }}>Estado</label>
-                         <select value={p.estado} onChange={e => updatePartidoState(p.id, 'estado', e.target.value)} style={{ padding: '0.5rem', borderRadius: '4px', background: p.estado === 'finalizado' ? '#10b981' : p.estado === 'en_juego' ? '#ef4444' : 'rgba(255,255,255,0.1)', color: p.estado === 'programado' ? 'white' : 'black', fontWeight: 800, border: 'none', fontSize: '0.9rem', width: '120px' }}>
+                        <div className="input-group">
+                          <label style={{ fontSize: '0.7rem', color: '#666', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.6rem', display: 'block' }}>⏰ Fecha y Hora</label>
+                          <input 
+                            type="datetime-local" 
+                            value={p.fecha ? p.fecha.substring(0, 16) : ""}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, fecha: val } : pt));
+                            }}
+                            style={{ height: '45px', background: 'rgba(0,0,0,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0 1rem', fontSize: '0.95rem', width: '100%' }}
+                          />
+                        </div>
+
+                       <div className="input-group">
+                         <label style={{ fontSize: '0.7rem', color: '#666', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.6rem', display: 'block' }}>🏁 Estado</label>
+                         <select value={p.estado} onChange={e => updatePartidoState(p.id, 'estado', e.target.value)} style={{ height: '45px', padding: '0 1rem', borderRadius: '8px', background: p.estado === 'finalizado' ? '#10b981' : p.estado === 'en_juego' ? '#ef4444' : 'rgba(255,255,255,0.1)', color: 'black', fontWeight: 900, border: 'none', fontSize: '0.9rem', width: '100%' }}>
                            <option value="programado">Programado</option>
-                           <option value="en_juego">Activo</option>
+                           <option value="en_juego">En Juego</option>
                            <option value="finalizado">Finalizado</option>
                          </select>
                        </div>
@@ -393,11 +448,13 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                          const { error } = await supabase.from("partidos_liga").update({
                            goles_local: p.goles_local,
                            goles_visitante: p.goles_visitante,
-                           fecha: p.fecha ? new Date(p.fecha).toISOString() : null
+                           fecha: p.fecha ? new Date(p.fecha).toISOString() : null,
+                           campo_id: p.campo_id
                          }).eq("id", p.id);
-                         if (!error) showToast("Partido actualizado con éxito");
-                       }} style={{ background: 'var(--primary)', border: 'none', color: 'black', padding: '0.6rem 1.2rem', borderRadius: '4px', fontWeight: 900, cursor: 'pointer', alignSelf: 'flex-end', marginBottom: '2px' }}>Guardar</button>
-                       <button onClick={() => handleDeletePartido(p.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', alignSelf: 'flex-end', marginBottom: '6px', fontSize: '1.2rem' }}>🗑️</button>
+                         if (!error) showToast("Cambios guardados");
+                       }} style={{ height: '45px', background: 'var(--primary)', border: 'none', color: 'black', padding: '0 2rem', borderRadius: '8px', fontWeight: 900, cursor: 'pointer' }}>Guardar</button>
+                       
+                       <button onClick={() => handleDeletePartido(p.id)} style={{ height: '45px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '0 1rem', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}>🗑️</button>
                     </div>
                   </div>
                 )
@@ -405,8 +462,10 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
             </div>
           </>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#666' }}>
-            Selecciona una jornada para ver sus partidos.
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#444', background: 'rgba(255,255,255,0.01)', borderRadius: '30px', border: '2px dashed rgba(255,255,255,0.05)' }}>
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ marginBottom: '1.5rem', opacity: 0.2 }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#666' }}>Panel de Control de Jornadas</h3>
+            <p style={{ marginTop: '0.5rem' }}>Selecciona una jornada arriba para gestionar el calendario y los resultados.</p>
           </div>
         )}
       </div>
