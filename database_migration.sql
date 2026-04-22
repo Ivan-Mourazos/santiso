@@ -82,3 +82,33 @@ LEFT JOIN partidos_liga p
     ON (e.id = p.equipo_local_id OR e.id = p.equipo_visitante_id) 
     AND p.estado = 'finalizado'
 GROUP BY e.id, e.nombre, e.escudo_url, e.categoria;
+-- 6. Crear tabla de Jugadores (Plantilla)
+CREATE TABLE IF NOT EXISTS jugadores (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre TEXT NOT NULL,
+    apodo TEXT, -- Nombre deportivo o apodo (Ej: Mourazos)
+    dorsal INTEGER,
+    posicion TEXT, -- Posición principal (abreviatura)
+    posiciones_conocidas TEXT[] DEFAULT '{}', -- Array de posiciones que ha jugado (DFC, MCD, MI, MD, etc.)
+    capitan INTEGER DEFAULT 0, -- 0: No es capitán, 1: Primer capitán, 2: Segundo...
+    foto_url TEXT,
+    categoria TEXT NOT NULL, -- Senior, Femenino, Veteranos
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- 7. Índice para búsqueda rápida por categoría
+CREATE INDEX IF NOT EXISTS idx_jugadores_categoria ON jugadores(categoria);
+
+-- 8. Crear tabla de Staff (Directiva y Cuerpo Técnico)
+CREATE TABLE IF NOT EXISTS staff_club (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre TEXT NOT NULL,
+    cargo TEXT NOT NULL, -- Presidente, Entrenador, Delegado, etc.
+    tipo TEXT NOT NULL, -- 'Directiva' o 'Tecnico'
+    categoria TEXT, -- Senior, Femenino, Veteranos (NULL si es Directiva general)
+    foto_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Índice para filtrar staff por tipo/categoría
+CREATE INDEX IF NOT EXISTS idx_staff_tipo_cat ON staff_club(tipo, categoria);

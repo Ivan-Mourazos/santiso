@@ -13,6 +13,7 @@ interface AdminPlayersProps {
 export default function AdminPlayers({ showToast, showConfirm, categoria }: AdminPlayersProps) {
   const [jugadores, setJugadores] = useState<any[]>([]);
   const [nombre, setNombre] = useState("");
+  const [apodo, setApodo] = useState("");
   const [dorsal, setDorsal] = useState("");
   const [posicion, setPosicion] = useState("");
   const [fotoFile, setFotoFile] = useState<File | null>(null);
@@ -46,13 +47,36 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
     }
 
     const { error } = await supabase.from("jugadores").insert([{ 
-      nombre, dorsal: parseInt(dorsal), posicion, foto_url, categoria 
+      nombre, apodo, dorsal: parseInt(dorsal), posicion, foto_url, categoria 
     }]);
 
     if (!error) {
-      setNombre(""); setDorsal(""); setPosicion(""); setFotoFile(null);
+      setNombre(""); setApodo(""); setDorsal(""); setPosicion(""); setFotoFile(null);
       fetchJugadores();
       showToast("Jugador añadido correctamente");
+    }
+    setLoading(false);
+  }
+
+  async function handleUpdateFoto(id: string, file: File) {
+    setLoading(true);
+    const processed = await processAndUploadImage(file);
+    if (processed) {
+      const fileName = `jugadores/${uuidv4()}.webp`;
+      const { data, error: uploadError } = await supabase.storage.from("fotos").upload(fileName, processed);
+      
+      if (data) {
+        const { data: pUrl } = supabase.storage.from("fotos").getPublicUrl(fileName);
+        const { error: dbError } = await supabase
+          .from("jugadores")
+          .update({ foto_url: pUrl.publicUrl })
+          .eq("id", id);
+        
+        if (!dbError) {
+          showToast("Foto actualizada");
+          fetchJugadores();
+        }
+      }
     }
     setLoading(false);
   }
@@ -69,10 +93,14 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
     <div className="card glass">
       <h3>Plantilla {categoria}</h3>
       <form onSubmit={handleAddJugador} className="admin-form">
-        <div className="form-grid-4">
+        <div className="form-grid-5" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
           <div className="input-group">
-            <label>Nombre del Jugador</label>
-            <input type="text" placeholder="Ej: Ivan Mourazos" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+            <label>Nombre Completo</label>
+            <input type="text" placeholder="Ej: Iván Sánchez Vázquez" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+          </div>
+          <div className="input-group">
+            <label>Apodo</label>
+            <input type="text" placeholder="Ej: Mourazos" value={apodo} onChange={(e) => setApodo(e.target.value)} />
           </div>
           <div className="input-group">
             <label>Dorsal</label>
@@ -82,14 +110,22 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
             <label>Posición</label>
             <select value={posicion} onChange={(e) => setPosicion(e.target.value)} required>
               <option value="">Selección...</option>
-              <option value="Portero">Portero</option>
-              <option value="Defensa">Defensa</option>
-              <option value="Centrocampista">Centrocampista</option>
-              <option value="Delantero">Delantero</option>
+              <option value="POR">POR (Portero)</option>
+              <option value="LD">LD (Lateral Derecho)</option>
+              <option value="LI">LI (Lateral Izquierdo)</option>
+              <option value="DFC">DFC (Defensa Central)</option>
+              <option value="MCD">MCD (M. Centro Defensivo)</option>
+              <option value="MC">MC (Medio Centro)</option>
+              <option value="MI">MI (Medio Izquierdo)</option>
+              <option value="MD">MD (Medio Derecho)</option>
+              <option value="MCO">MCO (M. Centro Ofensivo)</option>
+              <option value="EI">EI (Extremo Izquierdo)</option>
+              <option value="ED">ED (Extremo Derecho)</option>
+              <option value="DC">DC (Delantero Centro)</option>
             </select>
           </div>
           <div className="input-group">
-            <label>Foto (Recorte 1:1)</label>
+            <label>Foto</label>
             <div className="file-input-group">
               <label className="file-input-label">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
@@ -108,8 +144,10 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
         <table className="admin-table">
           <thead>
             <tr>
+              <th>Foto</th>
               <th>Dorsal</th>
               <th>Nombre</th>
+              <th>Apodo</th>
               <th>Posición</th>
               <th>Acciones</th>
             </tr>
@@ -117,8 +155,34 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
           <tbody>
             {jugadores.map(j => (
               <tr key={j.id}>
+                <td>
+                  <div style={{ position: 'relative', width: '45px', height: '45px' }}>
+                    {j.foto_url ? (
+                      <img src={j.foto_url} alt={j.nombre} style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', background: '#1a1a1a', borderRadius: '8px', display: 'flex', alignItems: 'center', justify: 'center', color: '#444' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                      </div>
+                    )}
+                    <label style={{ position: 'absolute', bottom: '-5px', right: '-5px', background: 'var(--primary)', color: 'black', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justify: 'center', cursor: 'pointer', border: '2px solid #000' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"/></svg>
+                      <input type="file" className="hidden-input" accept="image/*" onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUpdateFoto(j.id, f);
+                      }} />
+                    </label>
+                  </div>
+                </td>
                 <td style={{ fontWeight: 900, color: 'var(--primary)' }}>#{j.dorsal}</td>
-                <td style={{ fontWeight: 700 }}>{j.nombre}</td>
+                <td style={{ fontWeight: 700 }}>
+                  {j.nombre}
+                  {j.capitan > 0 && (
+                    <span className="badge-capitan" title={`Capitán ${j.capitan}`} style={{ marginLeft: '8px', fontSize: '0.8rem', backgroundColor: '#ffd700', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                      C{j.capitan}
+                    </span>
+                  )}
+                </td>
+                <td style={{ fontStyle: 'italic', color: 'var(--text-secondary)' }}>{j.apodo || "-"}</td>
                 <td><span className="badge-posicion">{j.posicion}</span></td>
                 <td>
                   <button onClick={() => handleDeleteJugador(j.id)} className="btn-delete">
