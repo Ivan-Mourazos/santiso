@@ -240,11 +240,11 @@ export default function GeneradorCartel() {
           <div className="gen-form card glass">
 
             {/* Template-specific fields */}
-            {tipo === "partido"    && <FormPartido form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} />}
-            {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} />}
-            {tipo === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} />}
-            {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} dbMatches={dbMatches} />}
-            {tipo === "noso11"     && <FormNoso11 form={form} set={set} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} />}
+            {tipo === "partido"    && <FormPartido form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} />}
+            {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} />}
+            {tipo === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} />}
+            {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} jugadores={jugadores} dbMatches={dbMatches} />}
+            {tipo === "noso11"     && <FormNoso11 form={form} set={set} jugadores={jugadores} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} />}
 
             {/* Santiso side (shared) */}
             {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (

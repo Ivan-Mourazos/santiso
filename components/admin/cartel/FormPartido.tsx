@@ -15,6 +15,7 @@ interface Props {
   handleRivalFile: (file: File) => void;
   dbMatches: any[];
   loadMatchFromDb: (m: any) => void;
+  campos: { id: string; nombre: string; poblacion: string }[];
 }
 
 export const RivalSelector = ({
@@ -60,7 +61,7 @@ export const RivalSelector = ({
   );
 };
 
-export const FormPartido: React.FC<Props> = ({ form, set, equipos, handleRivalSelect, handleRivalFile, dbMatches, loadMatchFromDb }) => {
+export const FormPartido: React.FC<Props> = ({ form, set, equipos, handleRivalSelect, handleRivalFile, dbMatches, loadMatchFromDb, campos }) => {
   return (
     <>
       <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} />
@@ -94,7 +95,28 @@ export const FormPartido: React.FC<Props> = ({ form, set, equipos, handleRivalSe
         </div>
         <div className="input-group">
           <label>Estadio / Campo</label>
-          <input type="text" placeholder="Municipal As Cancelas" value={form.lugar} onChange={e => set("lugar", e.target.value)} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            <select 
+              value={campos.find(c => c.nombre === form.lugar)?.id || ""} 
+              onChange={e => {
+                const selected = campos.find(c => c.id === e.target.value);
+                if (selected) set("lugar", selected.nombre);
+              }}
+              style={{ fontSize: '0.75rem', padding: '0.4rem' }}
+            >
+              <option value="">— Seleccionar Estadio —</option>
+              {campos.map(c => (
+                <option key={c.id} value={c.id}>{c.nombre} ({c.poblacion || 'S/P'})</option>
+              ))}
+            </select>
+            <input 
+              type="text" 
+              placeholder="Nombre manual..." 
+              value={form.lugar} 
+              onChange={e => set("lugar", e.target.value)} 
+              style={{ padding: '0.4rem', height: 'auto' }}
+            />
+          </div>
         </div>
       </div>
 

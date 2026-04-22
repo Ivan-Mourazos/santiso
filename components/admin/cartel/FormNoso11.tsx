@@ -11,14 +11,35 @@ import type { Player } from "@/lib/cartel-draw";
 interface Props {
   form: FormState;
   set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
+  jugadores: any[];
   jugFileName: string;
   handleJugadorFile: (file: File) => void;
   updatePlayer: (list: "titulares" | "suplentes", i: number, patch: Partial<Player>) => void;
 }
 
 export const FormNoso11: React.FC<Props> = ({
-  form, set, jugFileName, handleJugadorFile, updatePlayer
+  form, set, jugadores, jugFileName, handleJugadorFile, updatePlayer
 }) => {
+  const getDisplayName = (j: any) => {
+    if (j.apodo) return j.apodo;
+    const parts = j.nombre.split(" ");
+    return parts.length > 1 ? `${parts[0]} ${parts[1]}` : j.nombre;
+  };
+
+  const jugadoresCategoria = jugadores.filter(j => j.categoria === form.categoria);
+
+  const handleSelectJugador = (list: "titulares" | "suplentes", i: number, id: string) => {
+    const jug = jugadores.find(j => j.id === id);
+    if (jug) {
+      updatePlayer(list, i, { 
+        nome: getDisplayName(jug), 
+        dorsal: jug.dorsal?.toString() || "" 
+      });
+    } else {
+      updatePlayer(list, i, { nome: "", dorsal: "" });
+    }
+  };
+
   return (
     <>
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
@@ -110,8 +131,16 @@ export const FormNoso11: React.FC<Props> = ({
             <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="#" value={p.dorsal}
               onChange={e => updatePlayer("titulares", i, { dorsal: e.target.value })}
               style={{ textAlign: "center" }} />
-            <input type="text" placeholder={`Jugador ${i + 1}`} value={p.nome}
-              onChange={e => updatePlayer("titulares", i, { nome: e.target.value })} />
+            <select 
+              value={jugadores.find(j => getDisplayName(j) === p.nome)?.id || ""}
+              onChange={e => handleSelectJugador("titulares", i, e.target.value)}
+              style={{ padding: "0.4rem", borderRadius: "0.4rem", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "#fff" }}
+            >
+              <option value="">Elegir jugador...</option>
+              {jugadoresCategoria.map(j => (
+                <option key={j.id} value={j.id}>{getDisplayName(j)} (#{j.dorsal})</option>
+              ))}
+            </select>
             <button title="Capitán" onClick={() => updatePlayer("titulares", i, { eCapitan: !p.eCapitan })}
               style={{ background: p.eCapitan ? "#4aa8d8" : "rgba(255,255,255,0.04)",
                        border: "1px solid var(--border)", padding: "0.4rem", borderRadius: "0.4rem", cursor: "pointer" }}>
@@ -128,8 +157,16 @@ export const FormNoso11: React.FC<Props> = ({
             <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="#" value={p.dorsal}
               onChange={e => updatePlayer("suplentes", i, { dorsal: e.target.value })}
               style={{ textAlign: "center" }} />
-            <input type="text" placeholder="Jugador Suplente" value={p.nome}
-              onChange={e => updatePlayer("suplentes", i, { nome: e.target.value })} />
+            <select 
+              value={jugadores.find(j => getDisplayName(j) === p.nome)?.id || ""}
+              onChange={e => handleSelectJugador("suplentes", i, e.target.value)}
+              style={{ padding: "0.4rem", borderRadius: "0.4rem", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "#fff" }}
+            >
+              <option value="">Elegir jugador...</option>
+              {jugadoresCategoria.map(j => (
+                <option key={j.id} value={j.id}>{getDisplayName(j)} (#{j.dorsal})</option>
+              ))}
+            </select>
           </div>
         ))}
       </div>

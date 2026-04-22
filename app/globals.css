@@ -315,3 +315,379 @@ input[type=number] {
   from { opacity: 0; transform: translateY(-15px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* --- SISTEMA DE DISEÑO PREMIUM --- */
+
+/* Botones */
+.btn-premium { 
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 2rem; 
+  border-radius: 0.8rem; 
+  font-weight: 900; 
+  text-transform: uppercase; 
+  cursor: pointer; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+  border: none;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+}
+.btn-primary { background: var(--primary); color: black; }
+.btn-outline { 
+  background: transparent; 
+  color: var(--primary); 
+  border: 2px solid var(--primary); 
+}
+.btn-premium:hover { 
+  transform: translateY(-3px); 
+  box-shadow: 0 10px 25px rgba(250, 204, 21, 0.25); 
+}
+
+/* --- SISTEMA FIFA ULTIMATE TEAM STYLE --- */
+
+.grid-pro { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
+  gap: 3rem; 
+  width: 100%;
+  padding: 2rem 0;
+}
+
+.fifa-card-container {
+  display: flex;
+  justify-content: center;
+  perspective: 1000px;
+}
+
+.fifa-card {
+  width: 240px;
+  height: 340px;
+  background: #1a1a1a;
+  position: relative;
+  clip-path: polygon(0 10%, 10% 0, 90% 0, 100% 10%, 100% 80%, 50% 100%, 0 80%);
+  border: 2px solid #facc15;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fifa-card.senior { background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); border-color: #facc15; }
+.fifa-card.femenino { background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); border-color: #facc15; }
+
+.fifa-card:hover {
+  transform: translateY(-15px) rotateY(10deg);
+  box-shadow: 0 30px 60px rgba(250, 204, 21, 0.2);
+  filter: brightness(1.1);
+}
+
+/* Detalles de la Carta */
+.fifa-meta {
+  position: absolute;
+  top: 15%;
+  left: 10%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5;
+  font-family: 'Outfit', sans-serif;
+}
+
+.fifa-dorsal {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.fifa-pos {
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: white;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  margin-top: 5px;
+  padding-top: 5px;
+}
+
+.fifa-img-box {
+  width: 100%;
+  height: 65%;
+  position: relative;
+  margin-top: 5%;
+}
+
+.fifa-player-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+}
+
+.fifa-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.1);
+}
+
+.fifa-info {
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(5px);
+  width: 100%;
+  height: 35%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  text-align: center;
+  border-top: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.fifa-name {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+  margin-bottom: 2px;
+}
+
+.fifa-nickname {
+  font-size: 0.8rem;
+  color: var(--primary);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.fifa-capitan-badge {
+  position: absolute;
+  top: 15%;
+  right: 10%;
+  background: var(--primary);
+  color: black;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.7rem;
+  z-index: 5;
+  box-shadow: 0 0 15px rgba(250, 204, 21, 0.5);
+}
+
+/* Staff Cards (Más simples pero elegantes) */
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.staff-card-pro {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 2rem;
+  border-radius: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s;
+}
+
+.staff-card-pro:hover {
+  border-color: var(--primary);
+  background: rgba(250, 204, 21, 0.05);
+}
+
+.staff-role-label {
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.staff-name-label {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: white;
+}
+
+.pos-title { 
+  font-size: 0.9rem; 
+  text-transform: uppercase; 
+  color: var(--primary); 
+  letter-spacing: 5px; 
+  margin: 6rem 0 3rem; 
+  display: flex; 
+  align-items: center; 
+  gap: 2rem; 
+}
+.pos-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(250, 204, 21, 0.2), transparent); }
+
+@media (max-width: 768px) {
+  .fifa-card { width: 170px; height: 240px; }
+  .fifa-dorsal { font-size: 1.5rem; }
+  .fifa-pos { font-size: 0.7rem; }
+  .fifa-name { font-size: 0.8rem; }
+  .grid-pro { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1rem; }
+}
+/* --- VISTA DETALLADA JUGADOR (FIFA STYLE) --- */
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(15px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.player-detail-card {
+  width: 100%;
+  max-width: 900px;
+  background: #111;
+  border: 1px solid rgba(250, 204, 21, 0.2);
+  border-radius: 2rem;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+}
+
+.detail-left {
+  flex: 0.8;
+  background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+.detail-right {
+  flex: 1.2;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Stats Grid */
+.stats-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stat-label-group {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stat-value { color: var(--primary); }
+
+.stat-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+  border-radius: 3px;
+  transition: width 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Real Stats Badge */
+.real-stats-row {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.real-stat-box {
+  background: rgba(255,255,255,0.03);
+  padding: 1rem 1.5rem;
+  border-radius: 1rem;
+  text-align: center;
+  min-width: 100px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.rs-value {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+}
+
+.rs-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: #666;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.close-detail {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: rgba(255,255,255,0.05);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.close-detail:hover {
+  background: var(--primary);
+  color: black;
+  transform: rotate(90deg);
+}
+
+@media (max-width: 900px) {
+  .player-detail-card { flex-direction: column; max-height: 90vh; overflow-y: auto; }
+  .detail-left { padding: 2rem; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .detail-right { padding: 2rem; }
+  .stats-container { grid-template-columns: 1fr; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

@@ -50,26 +50,27 @@ const DEFAULT_FORM: FormState = {
 export function useCartelForm() {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [equipos, setEquipos] = useState<{ id: string; nombre: string; escudo_url: string; categoria: string }[]>([]);
+  const [jugadores, setJugadores] = useState<any[]>([]);
   const [dbMatches, setDbMatches] = useState<any[]>([]);
+  const [campos, setCampos] = useState<any[]>([]);
   const [jugFileName, setJugFileName] = useState("");
   const fileUrlRef = useRef<string>("");
 
   useEffect(() => {
-    // Carga inicial de equipos y partidos de la liga
     async function loadData() {
-      const { data: eqs } = await supabase.from("equipos").select("*").order("nombre");
-      if (eqs) setEquipos(eqs);
+      const { data: jData } = await supabase.from("jugadores").select("*");
+      if (jData) setJugadores(jData);
+
+      const { data: eData } = await supabase.from("equipos").select("*");
+      if (eData) setEquipos(eData);
+
+      const { data: cData } = await supabase.from("campos_futbol").select("*");
+      if (cData) setCampos(cData);
 
       const { data: mData } = await supabase
         .from("partidos_liga")
-        .select(`
-          *,
-          local:equipo_local_id (id, nombre, escudo_url),
-          visitante:equipo_visitante_id (id, nombre, escudo_url),
-          jornada:jornada_id (numero)
-        `)
-        .order("fecha", { ascending: false })
-        .limit(20);
+        .select("*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*)")
+        .order("fecha", { ascending: false });
       if (mData) setDbMatches(mData);
     }
     loadData();
@@ -181,6 +182,7 @@ export function useCartelForm() {
   return {
     form, set,
     equipos, setEquipos,
+    jugadores,
     jugFileName,
     handleRivalSelect,
     handleRivalFile,

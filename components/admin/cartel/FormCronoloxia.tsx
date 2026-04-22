@@ -13,6 +13,7 @@ interface Props {
   form: FormState;
   set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
   equipos: { id: string; nombre: string; escudo_url: string }[];
+  jugadores: any[];
   handleRivalSelect: (nombre: string) => void;
   handleRivalFile: (file: File) => void;
   addEvent: () => void;
@@ -23,9 +24,17 @@ interface Props {
 }
 
 export const FormCronoloxia: React.FC<Props> = ({
-  form, set, equipos, handleRivalSelect, handleRivalFile,
+  form, set, equipos, jugadores, handleRivalSelect, handleRivalFile,
   addEvent, updateEvent, removeEvent, dbMatches, loadMatchFromDb
 }) => {
+  const getDisplayName = (j: any) => {
+    if (j.apodo) return j.apodo;
+    const parts = j.nombre.split(" ");
+    return parts.length > 1 ? `${parts[0]} ${parts[1]}` : j.nombre;
+  };
+
+  const jugadoresCategoria = jugadores.filter(j => j.categoria === form.categoria);
+
   return (
     <>
       <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} />
@@ -71,24 +80,102 @@ export const FormCronoloxia: React.FC<Props> = ({
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
         {form.events.map((ev, i) => (
-          <div key={ev.id} style={{ display: "grid", gridTemplateColumns: "55px 1fr 1fr 1fr auto", gap: "0.5rem", alignItems: "center" }}>
+          <div key={ev.id} style={{ display: "grid", gridTemplateColumns: "55px 100px 140px 1fr auto", gap: "0.5rem", alignItems: "center" }}>
             <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Min'"
               value={ev.minuto} onChange={e => updateEvent(i, { minuto: e.target.value })}
-              style={{ textAlign: "center" }} />
-            <select value={ev.equipo} onChange={e => updateEvent(i, { equipo: e.target.value as CronEvent["equipo"] })}>
+              style={{ textAlign: "center", padding: "0.4rem" }} />
+            <select 
+              value={ev.equipo} 
+              onChange={e => updateEvent(i, { equipo: e.target.value as CronEvent["equipo"], jugador: "" })}
+              style={{ padding: "0.4rem", borderRadius: "0.4rem", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "#fff" }}
+            >
               <option value="local">Santiso</option>
               <option value="rival">Rival</option>
             </select>
-            <select value={ev.tipo} onChange={e => updateEvent(i, { tipo: e.target.value as CronEvent["tipo"] })}>
+            <select 
+              value={ev.tipo} 
+              onChange={e => updateEvent(i, { tipo: e.target.value as CronEvent["tipo"], jugadorEntra: "" })}
+              style={{ padding: "0.4rem", borderRadius: "0.4rem", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "#fff" }}
+            >
               <option value="gol">⚽ Gol</option>
               <option value="penalti">🥅 Penalti</option>
               <option value="propia">🔴 Gol en Propia</option>
               <option value="amarela">🟨 Amarela</option>
               <option value="doble_amarela">🟨🟨 Doble Amarela</option>
               <option value="vermella">🟥 Vermella</option>
+              <option value="cambio">🔄 Cambio</option>
             </select>
-            <input type="text" placeholder="Jugador" value={ev.jugador}
-              onChange={e => updateEvent(i, { jugador: e.target.value })} />
+            
+            <div style={{ display: "flex", gap: "0.3rem", flex: 1 }}>
+              {ev.tipo === "cambio" ? (
+                <>
+                  {ev.equipo === "local" ? (
+                    <>
+                      <select 
+                        title="Sale"
+                        value={jugadores.find(j => getDisplayName(j) === ev.jugador)?.id || ""}
+                        onChange={e => {
+                          const jug = jugadores.find(j => j.id === e.target.value);
+                          updateEvent(i, { jugador: jug ? getDisplayName(jug) : "" });
+                        }}
+                        style={{ flex: 1, padding: "0.4rem", borderRadius: "0.4rem", background: "rgba(255,255,255,0.04)", border: "1px solid #e55", color: "#fff", fontSize: "0.75rem" }}
+                      >
+                        <option value="">Sale...</option>
+                        {jugadoresCategoria.map(j => (
+                          <option key={j.id} value={j.id}>{getDisplayName(j)}</option>
+                        ))}
+                      </select>
+                      <select 
+                        title="Entra"
+                        value={jugadores.find(j => getDisplayName(j) === ev.jugadorEntra)?.id || ""}
+                        onChange={e => {
+                          const jug = jugadores.find(j => j.id === e.target.value);
+                          updateEvent(i, { jugadorEntra: jug ? getDisplayName(jug) : "" });
+                        }}
+                        style={{ flex: 1, padding: "0.4rem", borderRadius: "0.4rem", background: "rgba(255,255,255,0.04)", border: "1px solid #22c55e", color: "#fff", fontSize: "0.75rem" }}
+                      >
+                        <option value="">Entra...</option>
+                        {jugadoresCategoria.map(j => (
+                          <option key={j.id} value={j.id}>{getDisplayName(j)}</option>
+                        ))}
+                      </select>
+                    </>
+                  ) : (
+                    <>
+                      <input type="text" placeholder="Sale..." value={ev.jugador}
+                        onChange={e => updateEvent(i, { jugador: e.target.value })}
+                        style={{ flex: 1, padding: "0.4rem", fontSize: "0.75rem", border: "1px solid #e55" }} />
+                      <input type="text" placeholder="Entra..." value={ev.jugadorEntra}
+                        onChange={e => updateEvent(i, { jugadorEntra: e.target.value })}
+                        style={{ flex: 1, padding: "0.4rem", fontSize: "0.75rem", border: "1px solid #22c55e" }} />
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  {ev.equipo === "local" ? (
+                    <select 
+                      value={jugadores.find(j => getDisplayName(j) === ev.jugador)?.id || ""}
+                      onChange={e => {
+                        const jug = jugadores.find(j => j.id === e.target.value);
+                        updateEvent(i, { jugador: jug ? getDisplayName(jug) : "" });
+                      }}
+                      style={{ flex: 1, padding: "0.4rem", borderRadius: "0.4rem", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "#fff" }}
+                    >
+                      <option value="">Jugador...</option>
+                      {jugadoresCategoria.map(j => (
+                        <option key={j.id} value={j.id}>{getDisplayName(j)} (#{j.dorsal})</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input type="text" placeholder="Jugador Rival" value={ev.jugador}
+                      onChange={e => updateEvent(i, { jugador: e.target.value })}
+                      style={{ flex: 1, padding: "0.4rem" }} />
+                  )}
+                </>
+              )}
+            </div>
+
             <button onClick={() => removeEvent(ev.id)}
               style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "1rem" }}>
               ✕
