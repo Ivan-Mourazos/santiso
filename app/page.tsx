@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 interface Jugador {
   id: string;
@@ -20,10 +21,6 @@ export default function Home() {
   useEffect(() => {
     setMounted(true);
     async function fetchData() {
-      // Fetch Jugadores
-      const { data: pData } = await supabase.from("jugadores").select("*").order("dorsal", { ascending: true });
-      if (pData) setJugadores(pData);
-
       // Fetch Próximos Partidos (Uno por categoría para los equipos del Santiso)
       const { data: santisoTeams } = await supabase
         .from("equipos")
@@ -82,8 +79,8 @@ export default function Home() {
           <h1 className="hero-title">UD <span className="text-primary">SANTISO</span></h1>
           <p className="hero-subtitle">Pasión, Orgullo y Compromiso en cada partido de nuestra liga.</p>
           <div className="hero-actions">
-            <a href="#fixtures" className="btn-premium btn-primary">Próximo Partido</a>
-            <a href="#teams" className="btn-premium btn-outline">Nuestra Plantilla</a>
+            <Link href="/partidos" className="btn-premium btn-primary">Calendario</Link>
+            <Link href="/clasificacion" className="btn-premium btn-outline">Clasificación</Link>
           </div>
         </div>
       </section>
@@ -94,60 +91,65 @@ export default function Home() {
           <div className="fixtures-card glass shadow-glare">
             <h3 className="card-tag">Próximos Partidos</h3>
             {Array.isArray(proximoPartido) && proximoPartido.length > 0 ? (
-              <div className="matches-grid">
-                {proximoPartido.map((partido) => (
-                  <div key={partido.id} className="match-card-individual">
-                    <h4 className="match-category-label">{partido.categoria}</h4>
-                    <div className="match-display-small">
-                      <div className="team-box-small">
-                        {partido.local?.escudo_url ? (
-                          <img src={partido.local.escudo_url} alt={partido.local.nombre} className="team-logo-small" />
-                        ) : (
-                          <div className="team-badge-small">{partido.local?.nombre?.[0] || 'L'}</div>
-                        )}
-                        <span>{partido.local?.nombre || 'Local'}</span>
-                      </div>
-                      <div className="match-center-small">
-                        {partido.estado === 'en_juego' && (
-                          <div className="live-badge"><span className="live-dot"></span> EN JUEGO</div>
-                        )}
-                        {partido.estado === 'finalizado' && (
-                          <div className="final-badge">FINALIZADO</div>
-                        )}
-                        
-                        <div className="match-score-container-small">
-                          {(partido.estado === 'en_juego' || partido.estado === 'finalizado') ? (
-                            <div className="live-score-small">
-                              <span className="score-num-small">{partido.goles_local ?? 0}</span>
-                              <span className="score-divider-small">-</span>
-                              <span className="score-num-small">{partido.goles_visitante ?? 0}</span>
-                            </div>
+              <>
+                <div className="matches-grid">
+                  {proximoPartido.map((partido) => (
+                    <div key={partido.id} className="match-card-individual">
+                      <h4 className="match-category-label">{partido.categoria}</h4>
+                      <div className="match-display-small">
+                        <div className="team-box-small">
+                          {partido.local?.escudo_url ? (
+                            <img src={partido.local.escudo_url} alt={partido.local.nombre} className="team-logo-small" />
                           ) : (
-                            <div className="vs-badge-small">VS</div>
+                            <div className="team-badge-small">{partido.local?.nombre?.[0] || 'L'}</div>
                           )}
+                          <span>{partido.local?.nombre || 'Local'}</span>
                         </div>
-                        
-                        <div className="match-meta-small">
-                          <span className="match-date-small">
-                            {new Date(partido.fecha).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
-                          </span>
-                          <span className="match-time-small">
-                            {new Date(partido.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                        <div className="match-center-small">
+                          {partido.estado === 'en_juego' && (
+                            <div className="live-badge"><span className="live-dot"></span> EN JUEGO</div>
+                          )}
+                          {partido.estado === 'finalizado' && (
+                            <div className="final-badge">FINALIZADO</div>
+                          )}
+                          
+                          <div className="match-score-container-small">
+                            {(partido.estado === 'en_juego' || partido.estado === 'finalizado') ? (
+                              <div className="live-score-small">
+                                <span className="score-num-small">{partido.goles_local ?? 0}</span>
+                                <span className="score-divider-small">-</span>
+                                <span className="score-num-small">{partido.goles_visitante ?? 0}</span>
+                              </div>
+                            ) : (
+                              <div className="vs-badge-small">VS</div>
+                            )}
+                          </div>
+                          
+                          <div className="match-meta-small">
+                            <span className="match-date-small">
+                              {new Date(partido.fecha).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+                            </span>
+                            <span className="match-time-small">
+                              {new Date(partido.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="team-box-small">
-                        {partido.visitante?.escudo_url ? (
-                          <img src={partido.visitante.escudo_url} alt={partido.visitante.nombre} className="team-logo-small" />
-                        ) : (
-                          <div className="team-badge-small bg-muted">{partido.visitante?.nombre?.[0] || 'V'}</div>
-                        )}
-                        <span>{partido.visitante?.nombre || 'Visitante'}</span>
+                        <div className="team-box-small">
+                          {partido.visitante?.escudo_url ? (
+                            <img src={partido.visitante.escudo_url} alt={partido.visitante.nombre} className="team-logo-small" />
+                          ) : (
+                            <div className="team-badge-small bg-muted">{partido.visitante?.nombre?.[0] || 'V'}</div>
+                          )}
+                          <span>{partido.visitante?.nombre || 'Visitante'}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: '3rem' }}>
+                  <Link href="/partidos" className="btn-premium btn-outline" style={{ fontSize: '0.8rem' }}>Ver calendario completo</Link>
+                </div>
+              </>
             ) : (
               <p>Esperando calendario...</p>
             )}
@@ -155,32 +157,23 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Team Listing */}
-      <section id="teams" className="section-padding">
+      {/* Squad Teaser Banner */}
+      <section className="section-padding">
         <div className="container">
-          <h2 className="section-heading">Nuestra <span className="text-primary">Plantilla</span></h2>
-          <div className="player-grid">
-            {jugadores.map((j) => (
-              <div key={j.id} className="player-card glass">
-                <div className="player-image-box">
-                   {j.foto_url ? (
-                     <img src={j.foto_url} alt={j.nombre} className="player-img" />
-                   ) : (
-                     <div className="image-placeholder">
-                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ width: '60%', height: '60%', color: '#333', opacity: 0.5 }}>
-                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                         <circle cx="12" cy="7" r="4" />
-                       </svg>
-                     </div>
-                   )}
-                   <div className="player-number-overlay">{j.dorsal}</div>
-                </div>
-                <div className="player-data">
-                  <h4>{j.nombre}</h4>
-                  <p>{j.posicion}</p>
-                </div>
-              </div>
-            ))}
+          <div className="squad-teaser glass shadow-glare">
+            <div className="teaser-content">
+              <h2 className="teaser-title">Nuestros <span className="text-primary">Guerreros</span></h2>
+              <p className="teaser-desc">Descubre a los protagonistas de esta temporada. Desde la cantera hasta los veteranos, todos unidos por un escudo.</p>
+              <Link href="/plantilla" className="btn-premium btn-primary">Ver Plantilla Completa</Link>
+            </div>
+            <div className="teaser-visual">
+               <div className="visual-circle"></div>
+               <div className="visual-cards">
+                  <div className="v-card c1"></div>
+                  <div className="v-card c2"></div>
+                  <div className="v-card c3"></div>
+               </div>
+            </div>
           </div>
         </div>
       </section>
@@ -216,10 +209,6 @@ export default function Home() {
         .hero-subtitle { font-size: 1.5rem; color: #a3a3a3; max-width: 600px; margin: 0 auto 3rem; }
         .badge-premium { background: var(--muted); padding: 0.5rem 1.5rem; border-radius: 2rem; font-weight: 800; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; }
         .hero-actions { display: flex; gap: 1.5rem; justify-content: center; }
-        .btn-premium { padding: 1.2rem 2.5rem; border-radius: 0.5rem; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: all 0.2s; border: none; }
-        .btn-primary { background: var(--primary); color: black; }
-        .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
-        .btn-premium:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(250, 204, 21, 0.2); }
 
         .section-fixtures { margin-top: -5rem; padding-bottom: 5rem; }
         .fixtures-card { padding: 4rem 3rem; border-radius: 2rem; text-align: center; }
@@ -240,6 +229,19 @@ export default function Home() {
         .vs-badge-small { background: var(--primary); color: black; padding: 0.4rem 1rem; border-radius: 2rem; font-weight: 900; font-size: 1rem; }
         
         .match-meta-small { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; font-size: 0.8rem; color: #a3a3a3; margin-top: 0.5rem; }
+
+        .squad-teaser { padding: 4rem; border-radius: 2rem; display: flex; align-items: center; justify-content: space-between; gap: 4rem; overflow: hidden; position: relative; }
+        .teaser-content { flex: 1; z-index: 2; }
+        .teaser-title { font-size: 3.5rem; font-weight: 900; margin-bottom: 1.5rem; }
+        .teaser-desc { font-size: 1.2rem; color: #a3a3a3; margin-bottom: 2.5rem; max-width: 500px; }
+        
+        .teaser-visual { flex: 0.8; position: relative; height: 300px; display: flex; align-items: center; justify-content: center; }
+        .visual-circle { position: absolute; width: 400px; height: 400px; border: 1px solid rgba(250, 204, 21, 0.1); border-radius: 50%; }
+        .visual-cards { position: relative; width: 100%; height: 100%; }
+        .v-card { position: absolute; width: 120px; height: 160px; background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250, 204, 21, 0.3); border-radius: 1rem; backdrop-filter: blur(5px); }
+        .c1 { left: 10%; top: 20%; transform: rotate(-15deg); }
+        .c2 { left: 40%; top: 10%; transform: rotate(0deg); background: rgba(250, 204, 21, 0.2); border-color: var(--primary); z-index: 2; }
+        .c3 { left: 70%; top: 30%; transform: rotate(15deg); }
 
         .sponsors-flex { display: flex; flex-wrap: wrap; gap: 5rem; justify-content: center; margin-top: 5rem; }
         .sponsor-link { text-decoration: none; }
@@ -267,6 +269,15 @@ export default function Home() {
         }
         .sponsor-item:hover .sponsor-logo { 
           filter: grayscale(0) brightness(1); 
+        }
+
+        @media (max-width: 768px) {
+          .hero-title { font-size: 3.5rem; }
+          .hero-subtitle { font-size: 1.1rem; }
+          .squad-teaser { flex-direction: column; text-align: center; padding: 3rem 1.5rem; }
+          .teaser-title { font-size: 2.5rem; }
+          .teaser-visual { display: none; }
+          .teaser-desc { margin: 0 auto 2.5rem; }
         }
       `}</style>
     </main>

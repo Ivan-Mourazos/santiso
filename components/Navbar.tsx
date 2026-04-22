@@ -20,8 +20,9 @@ export default function Navbar() {
         </Link>
         <div className="nav-links">
           <Link href="/">Inicio</Link>
-          <Link href="/noticias">Noticias</Link>
+          <Link href="/partidos">Partidos</Link>
           <Link href="/clasificacion">Clasificación</Link>
+          <Link href="/plantilla">Plantilla</Link>
           <Link href="/admin" className="nav-admin">Admin</Link>
         </div>
       </div>
