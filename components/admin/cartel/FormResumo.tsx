@@ -18,12 +18,11 @@ interface Props {
   loadMatchFromDb: (m: any) => void;
 }
 
-export const FormResumo = (props: Props) => {
-  const { form, set, dbMatches, loadMatchFromDb } = props;
+export const FormResumo = (props: Props & { tipo: string }) => {
+  const { form, set, tipo } = props;
   return (
     <>
-      <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} />
-      <FormPartido {...props} />
+      <FormPartido {...props} tipo={tipo} />
       <SectionLabel>Resultado</SectionLabel>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group">

@@ -31,11 +31,11 @@ export const RivalSelector = ({
   handleRivalSelect: (nombre: string) => void;
   handleRivalFile: (file: File) => void;
 }) => {
-  const filtered = equipos.filter(eq => {
-    const isSantiso = eq.nombre.toLowerCase().includes("santiso");
+  const filtered = equipos?.filter(eq => {
+    const isSantiso = eq.nombre?.toLowerCase().includes("santiso");
     const matchesCat = !eq.categoria || eq.categoria === categoria;
     return !isSantiso && matchesCat;
-  });
+  }) || [];
 
   return (
     <>
@@ -61,10 +61,10 @@ export const RivalSelector = ({
   );
 };
 
-export const FormPartido: React.FC<Props> = ({ form, set, equipos, handleRivalSelect, handleRivalFile, dbMatches, loadMatchFromDb, campos }) => {
+export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equipos, handleRivalSelect, handleRivalFile, dbMatches, loadMatchFromDb, campos, tipo }) => {
   return (
     <>
-      <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} />
+      <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} tipo={tipo} />
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
       
       <div className="input-group" style={{ marginBottom: "1rem" }}>
@@ -97,15 +97,15 @@ export const FormPartido: React.FC<Props> = ({ form, set, equipos, handleRivalSe
           <label>Estadio / Campo</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <select 
-              value={campos.find(c => c.nombre === form.lugar)?.id || ""} 
+              value={campos?.find(c => c.nombre === form.lugar)?.id || ""} 
               onChange={e => {
-                const selected = campos.find(c => c.id === e.target.value);
+                const selected = campos?.find(c => c.id === e.target.value);
                 if (selected) set("lugar", selected.nombre);
               }}
               style={{ fontSize: '0.75rem', padding: '0.4rem' }}
             >
               <option value="">— Seleccionar Estadio —</option>
-              {campos.map(c => (
+              {campos?.map(c => (
                 <option key={c.id} value={c.id}>{c.nombre} ({c.poblacion || 'S/P'})</option>
               ))}
             </select>

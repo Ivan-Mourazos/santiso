@@ -15,13 +15,16 @@ interface Props {
   jugFileName: string;
   handleJugadorFile: (file: File) => void;
   updatePlayer: (list: "titulares" | "suplentes", i: number, patch: Partial<Player>) => void;
+  tipo: string;
 }
 
 export const FormNoso11: React.FC<Props> = ({
-  form, set, jugadores, jugFileName, handleJugadorFile, updatePlayer
+  form, set, jugadores, jugFileName, handleJugadorFile, updatePlayer, tipo
 }) => {
   const getDisplayName = (j: any) => {
+    if (!j) return "";
     if (j.apodo) return j.apodo;
+    if (!j.nombre) return "";
     const parts = j.nombre.split(" ");
     return parts.length > 1 ? `${parts[0]} ${parts[1]}` : j.nombre;
   };

@@ -6,9 +6,10 @@ import { processAndUploadImage } from "@/lib/image-utils";
 interface AdminShieldProps {
   showToast: (msg: string, type?: "success" | "error") => void;
   showConfirm: (msg: string, onConfirm: () => void) => void;
+  compact?: boolean;
 }
 
-export default function AdminShield({ showToast, showConfirm }: AdminShieldProps) {
+export default function AdminShield({ showToast, showConfirm, compact }: AdminShieldProps) {
   const [clubShield, setClubShield] = useState<string | null>(null);
   const [tempShieldFile, setTempShieldFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -56,6 +57,27 @@ export default function AdminShield({ showToast, showConfirm }: AdminShieldProps
     } finally {
       setLoading(false);
     }
+  }
+
+  if (compact) {
+    return (
+      <div className="shield-compact-trigger" style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', background: 'rgba(255,255,255,0.03)', padding: '0.4rem 0.6rem', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="shield-hex" style={{ width: '32px', height: '32px', overflow: 'hidden', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyItems: 'center' }}>
+             {(previewUrl || clubShield) && <img src={previewUrl || clubShield || ""} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+          </div>
+          <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#888', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', margin: 0 }}>
+             {loading ? "..." : (previewUrl ? "Confirmar" : "Escudo")}
+             {!previewUrl && <input type="file" className="hidden-input" accept="image/*" onChange={handleShieldSelect} style={{ display: 'none' }} />}
+          </label>
+          {previewUrl && !loading && (
+            <button onClick={confirmUploadShield} style={{ background: 'var(--primary)', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (

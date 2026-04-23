@@ -14,28 +14,58 @@ interface Props {
   updateMatch: (i: number, patch: Partial<NextMatch>) => void;
   equipos: { id: string; nombre: string; escudo_url: string }[];
   dbMatches: any[];
+  tipo: string;
 }
 
-export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos, dbMatches }) => {
+export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos, dbMatches, tipo }) => {
   const handleAutoFill = () => {
-    // Filtrar partidos que aún no han ocurrido (o los más recientes programados)
-    const upcoming = [...dbMatches]
+    // 1. Obtener todos los próximos programados
+    const allUpcoming = [...dbMatches]
       .filter(m => m.estado === "programado")
-      .reverse() // Asumiendo que vienen por fecha desc en useCartelForm
-      .slice(0, 3);
-    
-    upcoming.forEach((match, index) => {
-      const isSantisoLocal = match.local.nombre.toLowerCase().includes("santiso");
-      const rival = isSantisoLocal ? match.visitante : match.local;
-      updateMatch(index, {
-        rival: rival.nombre,
-        rivalEscudoUrl: rival.escudo_url,
+      .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+
+    if (allUpcoming.length === 0) return;
+
+    // 2. Buscar el más próximo de cada categoría
+    const cats = ["Sénior", "Feminino", "Veteranos"];
+    const selectedMatches: any[] = [];
+
+    cats.forEach(cat => {
+      const match = allUpcoming.find(m => (m.categoria || "").toLowerCase().startsWith(cat.toLowerCase().substring(0, 3)));
+      if (match) selectedMatches.push(match);
+    });
+
+    // 3. Si no hay 3 (porque alguna categoría no juega), rellenar con los siguientes más próximos
+    if (selectedMatches.length < 3) {
+      allUpcoming.forEach(m => {
+        if (selectedMatches.length < 3 && !selectedMatches.find(sm => sm.id === m.id)) {
+          selectedMatches.push(m);
+        }
+      });
+    }
+
+    // 4. Ordenar los elegidos por fecha para que el cartel sea cronológico
+    selectedMatches.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+
+    // 5. Rellenar los 3 slots
+    const newMatches = Array.from({ length: 3 }, () => ({
+      rival: "", rivalEscudoUrl: "", fecha: "", hora: "18:00", categoria: "Sénior", santisoSide: "right"
+    }));
+
+    selectedMatches.forEach((match, index) => {
+      const isSantisoLocal = match.equipo_local?.nombre?.toLowerCase().includes("santiso");
+      const rival = isSantisoLocal ? match.equipo_visitante : match.equipo_local;
+      newMatches[index] = {
+        rival: rival?.nombre || "",
+        rivalEscudoUrl: rival?.escudo_url || "",
         fecha: match.fecha ? match.fecha.split("T")[0] : "",
         hora: match.fecha ? match.fecha.split("T")[1].substring(0, 5) : "18:00",
-        categoria: match.categoria,
+        categoria: match.categoria || "Sénior",
         santisoSide: isSantisoLocal ? "left" : "right"
-      });
+      };
     });
+
+    set("matches", newMatches as any);
   };
 
   return (

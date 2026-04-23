@@ -69,7 +69,7 @@ export function useCartelForm() {
 
       const { data: mData } = await supabase
         .from("partidos_liga")
-        .select("*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*)")
+        .select("*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*), jornada:jornada_id(*)")
         .order("fecha", { ascending: false });
       if (mData) setDbMatches(mData);
     }
@@ -148,8 +148,8 @@ export function useCartelForm() {
   }
 
   function loadMatchFromDb(match: any) {
-    const isSantisoLocal = match.local.nombre.toLowerCase().includes("santiso");
-    const rival = isSantisoLocal ? match.visitante : match.local;
+    const isSantisoLocal = match.equipo_local?.nombre?.toLowerCase().includes("santiso");
+    const rival = isSantisoLocal ? match.equipo_visitante : match.equipo_local;
     
     setForm(p => ({
       ...p,
@@ -193,6 +193,7 @@ export function useCartelForm() {
     removeEvent,
     updateMatch,
     dbMatches,
+    campos,
     loadMatchFromDb,
     resetForm,
   };

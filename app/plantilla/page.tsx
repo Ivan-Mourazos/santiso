@@ -20,6 +20,7 @@ interface Staff {
   cargo: string;
   tipo: string;
   categoria: string | null;
+  foto_url: string | null;
 }
 
 export default function PlantillaPage() {
@@ -61,7 +62,6 @@ export default function PlantillaPage() {
     fetchData();
   }, []);
 
-  // Cargar fases disponibles cuando cambia el jugador o categoría
   useEffect(() => {
     if (selectedPlayer && temporadaActiva) {
       async function getFases() {
@@ -142,36 +142,44 @@ export default function PlantillaPage() {
   const Medios = jugadoresFiltrados.filter(j => ['MC', 'MCD', 'MCO', 'MI', 'MD'].includes(j.posicion));
   const Delanteros = jugadoresFiltrados.filter(j => ['DC', 'ED', 'EI'].includes(j.posicion));
 
-  const renderFifaCard = (j: Jugador, isSmall = true) => (
-    <div 
-      key={j.id} 
-      className={`fifa-card-container ${isSmall ? 'clickable' : 'no-scale'}`}
-      onClick={isSmall ? () => setSelectedPlayer(j) : undefined}
-    >
-      <div className={`fifa-card ${categoriaActiva.toLowerCase()}`}>
-        {j.capitan > 0 && <div className="fifa-capitan-badge" title={`Capitán ${j.capitan}`}>C</div>}
-        <div className="fifa-meta">
-          <span className="fifa-dorsal">{j.dorsal}</span>
-          <span className="fifa-pos">{j.posicion}</span>
-        </div>
-        <div className="fifa-img-box">
-          {j.foto_url ? (
-            <img src={j.foto_url} alt={j.nombre} className="fifa-player-img" />
-          ) : (
-            <div className="fifa-placeholder">
-               <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+  const renderFifaCard = (j: any, isSmall = true) => {
+    const isStaff = j.tipo !== undefined;
+    const name = isStaff ? j.nombre : j.nombre.split(' ').slice(0, 2).join(' ');
+    
+    return (
+      <div 
+        key={j.id} 
+        className={`fifa-card-container ${isSmall && !isStaff ? 'clickable' : 'no-scale'}`}
+        onClick={isSmall && !isStaff ? () => setSelectedPlayer(j) : undefined}
+      >
+        <div className={`fifa-card ${categoriaActiva.toLowerCase()}`}>
+          {!isStaff && j.capitan > 0 && <div className="fifa-capitan-badge" title={`Capitán ${j.capitan}`}>C</div>}
+          {!isStaff && (
+            <div className="fifa-meta">
+              <span className="fifa-dorsal">{j.dorsal}</span>
+              <span className="fifa-pos">{j.posicion}</span>
             </div>
           )}
-        </div>
-        <div className="fifa-info">
-          <h4 className="fifa-name">{j.nombre.split(' ').slice(0, 2).join(' ')}</h4>
-          {j.apodo && <p className="fifa-nickname">{j.apodo}</p>}
+          <div className="fifa-img-box">
+            {j.foto_url ? (
+              <img src={j.foto_url} alt={j.nombre} className="fifa-player-img" />
+            ) : (
+              <div className="fifa-placeholder">
+                 <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+              </div>
+            )}
+          </div>
+          <div className="fifa-info" style={{ justifyContent: 'center', padding: '0.2rem 1rem 0.5rem' }}>
+            <h4 className="fifa-name" style={{ fontSize: name.length > 15 ? '1.1rem' : '1.4rem', lineHeight: 1.1, marginBottom: '0.1rem' }}>{name}</h4>
+            {!isStaff && j.apodo && <p className="fifa-nickname" style={{ fontSize: '1rem', marginTop: '-0.2rem' }}>{j.apodo}</p>}
+            {isStaff && <p className="fifa-nickname" style={{ fontSize: '0.8rem', opacity: 0.8, color: 'var(--primary)', marginTop: '-0.2rem' }}>{j.cargo}</p>}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  const renderSection = (titulo: string, lista: Jugador[]) => {
+  const renderSection = (titulo: string, lista: any[]) => {
     if (lista.length === 0) return null;
     return (
       <div className="pos-section">
@@ -187,16 +195,12 @@ export default function PlantillaPage() {
     <main className="plantilla-page-v2">
       <div className="container">
         <div className="page-header">
-          <Link href="/" className="back-link">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Volver al inicio
-          </Link>
           <h1 className="main-title">Nuestra <span className="text-primary">Plantilla</span></h1>
-          <p className="page-subtitle">Temporada {temporadaActiva?.nombre || '2023/24'} - Unión Deportiva Santiso</p>
+          <p className="page-subtitle">Temporada {temporadaActiva?.nombre || '25/26'} - Unión Deportiva Santiso</p>
         </div>
 
         <div className="cat-selector">
-          {['Senior', 'Femenino', 'Veteranos'].map(cat => (
+          {['Senior', 'Femenino', 'Veteranos', 'Directiva'].map(cat => (
             <button 
               key={cat} 
               className={`cat-btn ${categoriaActiva === cat ? 'active' : ''}`}
@@ -211,39 +215,18 @@ export default function PlantillaPage() {
           <div className="loading-state">Preparando los cromos...</div>
         ) : (
           <div className="squad-content">
-            {renderSection("Porteros", Porteros)}
-            {renderSection("Defensas", Defensas)}
-            {renderSection("Centrocampistas", Medios)}
-            {renderSection("Delanteros", Delanteros)}
+            {categoriaActiva === 'Directiva' ? (
+              renderSection("Junta Directiva", directiva)
+            ) : (
+              <>
+                {renderSection("Porteros", Porteros)}
+                {renderSection("Defensas", Defensas)}
+                {renderSection("Centrocampistas", Medios)}
+                {renderSection("Delanteros", Delanteros)}
 
-            {/* STAFF */}
-            <div className="staff-section">
-              <h3 className="pos-title">Cuerpo Técnico</h3>
-              <div className="staff-grid">
-                {staffFiltrado.length > 0 ? staffFiltrado.map(s => (
-                  <div key={s.id} className="staff-card-pro">
-                    <span className="staff-role-label">{s.cargo}</span>
-                    <h4 className="staff-name-label">{s.nombre}</h4>
-                  </div>
-                )) : (
-                  <p className="no-staff">Cargando equipo técnico...</p>
-                )}
-              </div>
-            </div>
-
-            {/* DIRECTIVA */}
-            {categoriaActiva === 'Senior' && directiva.length > 0 && (
-              <div className="staff-section directiva-section">
-                <h3 className="pos-title">Junta Directiva</h3>
-                <div className="staff-grid">
-                  {directiva.map(s => (
-                    <div key={s.id} className="staff-card-pro">
-                      <span className="staff-role-label">{s.cargo}</span>
-                      <h4 className="staff-name-label">{s.nombre}</h4>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                {/* STAFF */}
+                {renderSection("Cuerpo Técnico", staffFiltrado)}
+              </>
             )}
           </div>
         )}
@@ -330,22 +313,17 @@ export default function PlantillaPage() {
       )}
 
       <style jsx>{`
-        .plantilla-page-v2 { padding: 8rem 0 10rem; min-height: 100vh; background: radial-gradient(circle at top, #1a1a1a 0%, #000 100%); }
+        .plantilla-page-v2 { padding: 2rem 0 6rem; min-height: 100vh; background: radial-gradient(circle at top, #1a1a1a 0%, #000 100%); }
         .page-header { text-align: center; margin-bottom: 4rem; }
-        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #666; font-size: 0.9rem; margin-bottom: 2rem; transition: color 0.2s; }
-        .back-link:hover { color: var(--primary); }
         .main-title { font-size: 4rem; font-weight: 900; line-height: 1; margin-bottom: 1rem; }
         .page-subtitle { color: #666; font-size: 1.2rem; }
 
-        .cat-selector { display: flex; gap: 0.5rem; padding: 0.5rem; border-radius: 1rem; margin: 0 auto 5rem; max-width: fit-content; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); }
+        .cat-selector { display: flex; gap: 0.5rem; padding: 0.5rem; border-radius: 1rem; margin: 0 auto 2.5rem; max-width: fit-content; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); }
         .cat-btn { padding: 0.8rem 2rem; border-radius: 0.7rem; border: none; background: transparent; color: #666; font-weight: 800; cursor: pointer; transition: all 0.3s; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
         .cat-btn.active { background: var(--primary); color: black; box-shadow: 0 4px 15px rgba(250, 204, 21, 0.2); }
 
-        .fase-pill-selector { display: flex; gap: 0.4rem; background: rgba(255,255,255,0.03); padding: 0.3rem; border-radius: 2rem; border: 1px solid rgba(255,255,255,0.05); }
-        .fase-pill { padding: 0.4rem 1rem; border-radius: 2rem; border: none; background: transparent; color: #555; font-size: 0.7rem; font-weight: 800; cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
-        .fase-pill.active { background: rgba(255,255,255,0.07); color: var(--primary); }
-
-        .pos-section { margin-bottom: 6rem; }
+        .pos-section { margin-bottom: 0rem; }
+        .pos-title { margin-bottom: 0.5rem; }
         .loading-state { text-align: center; padding: 5rem; font-size: 1.2rem; color: var(--primary); font-style: italic; }
         
         .block-title { color: #555; font-weight: 800; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1rem; }

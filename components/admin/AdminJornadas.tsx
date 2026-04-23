@@ -54,7 +54,6 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     if (cError) {
       console.error("Error cargando campos:", cError);
     } else if (cData) {
-      console.log("Campos cargados correctamente:", cData.length);
       setCampos(cData);
     }
   }
@@ -76,7 +75,6 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     if (data) {
       setJornadas(data);
       if (data.length > 0 && !selectedJornada) {
-        // Auto-select initial matchday
         setSelectedJornada(data[0].id);
       } else if (data.length === 0) {
         setSelectedJornada(null);
@@ -97,7 +95,6 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
       setNuevaTemporadaNombre("");
       fetchBaseData();
     } else {
-      console.error("Error creating season:", error);
       showToast("Error al crear: " + error.message, "error");
     }
     setLoading(false);
@@ -111,7 +108,6 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
       showToast("Temporada activa cambiada");
       fetchBaseData();
     } else {
-      console.error("Error changing active season:", error);
       showToast("Error al activar: " + error.message, "error");
     }
     setLoading(false);
@@ -128,6 +124,7 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
       .from("partidos_liga")
       .select("*")
       .eq("jornada_id", selectedJornada)
+      .eq("categoria", categoria) // <-- Filtro de seguridad
       .order("fecha", { ascending: true });
     if (data) setPartidos(data);
   }
@@ -136,14 +133,12 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     e.preventDefault();
     if (!temporadaActiva) return showToast("No hay temporada activa", "error");
     setLoading(true);
-
     const { error } = await supabase.from("jornadas").insert([{
       temporada_id: temporadaActiva.id,
       categoria,
       numero: parseInt(numJornada),
       fecha_inicio: fechaInicio || null
     }]);
-
     if (!error) {
       showToast("Jornada creada");
       setNumJornada("");
@@ -158,7 +153,6 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     e.preventDefault();
     if (!selectedJornada || !localId || !visitanteId) return;
     if (localId === visitanteId) return showToast("Un equipo no puede jugar contra sí mismo", "error");
-    
     setLoading(true);
     const { error } = await supabase.from("partidos_liga").insert([{
       jornada_id: selectedJornada,
@@ -169,7 +163,6 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
       campo_id: campoId || null,
       estado: "programado"
     }]);
-
     if (!error) {
       showToast("Partido añadido");
       setLocalId(""); setVisitanteId(""); setCampoId("");
@@ -179,7 +172,6 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
   }
 
   async function updatePartidoState(id: string, field: string, value: any) {
-    // Si cambia de estado, update inmediatament
     const updateObj = { [field]: value };
     const { error } = await supabase.from("partidos_liga").update(updateObj).eq("id", id);
     if (!error) fetchPartidos();
@@ -293,15 +285,6 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
       <div style={{ width: '100%' }}>
         {selectedJornada ? (
           <>
-            <div style={{ marginBottom: '2.5rem' }}>
-              <h3 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-1px' }}>
-                Partidos <span className="text-primary">Jornada {jornadas.find(j => j.id === selectedJornada)?.numero}</span>
-              </h3>
-              <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
-                Configura los enfrentamientos, horarios y resultados finales.
-              </p>
-            </div>
-
             {/* Creador de Partidos */}
             <form onSubmit={handleAddPartido} className="form-grid-4" style={{ 
               background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)', 
@@ -359,15 +342,12 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                     border: '1px solid rgba(255,255,255,0.05)',
                     boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
                   }}>
-                    
-                    {/* SECCIÓN 1: MARCADOR Y EQUIPOS (GRANDE) */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', width: '100%' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1, justifyContent: 'flex-end', textAlign: 'right' }}>
                         <span style={{ fontSize: '1.4rem', fontWeight: 800 }}>{localName}</span>
                         {localShield && <img src={localShield} alt="" style={{ width: 50, height: 50, objectFit: 'contain' }} />}
                       </div>
                       
-                      {/* Marcador Central */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'rgba(0,0,0,0.5)', padding: '1rem 2rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <input 
                           type="number" 
@@ -396,7 +376,6 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                       </div>
                     </div>
 
-                    {/* SECCIÓN 2: CONFIGURACIÓN (DETALLES) */}
                     <div style={{ 
                       display: 'grid', 
                       gridTemplateColumns: '1fr 1fr 160px auto auto', 

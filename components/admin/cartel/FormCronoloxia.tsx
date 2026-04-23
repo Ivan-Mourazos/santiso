@@ -23,12 +23,14 @@ interface Props {
   loadMatchFromDb: (m: any) => void;
 }
 
-export const FormCronoloxia: React.FC<Props> = ({
+export const FormCronoloxia: React.FC<Props & { tipo: string }> = ({
   form, set, equipos, jugadores, handleRivalSelect, handleRivalFile,
-  addEvent, updateEvent, removeEvent, dbMatches, loadMatchFromDb
+  addEvent, updateEvent, removeEvent, dbMatches, loadMatchFromDb, tipo
 }) => {
   const getDisplayName = (j: any) => {
+    if (!j) return "";
     if (j.apodo) return j.apodo;
+    if (!j.nombre) return "";
     const parts = j.nombre.split(" ");
     return parts.length > 1 ? `${parts[0]} ${parts[1]}` : j.nombre;
   };
@@ -37,7 +39,7 @@ export const FormCronoloxia: React.FC<Props> = ({
 
   return (
     <>
-      <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} />
+      <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} tipo={tipo} />
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group"><label>Fecha</label>

@@ -208,7 +208,7 @@ export default function ClasificacionPage() {
       </section>
 
       <style jsx>{`
-        .hero-simple { padding: 8rem 0 4rem; text-align: center; }
+        .hero-simple { padding: 1.5rem 0 2rem; text-align: center; }
         .hero-title { font-size: 4rem; font-weight: 900; margin-bottom: 1rem; }
         .hero-subtitle { color: #a3a3a3; font-size: 1.1rem; margin-bottom: 2.5rem; }
 

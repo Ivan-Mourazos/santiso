@@ -89,10 +89,6 @@ export default function PartidosPage() {
     <main className="main-content">
       <section className="hero-simple glass-bg">
         <div className="container">
-          <Link href="/" className="back-link-simple">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Volver
-          </Link>
           <h1 className="hero-title">Calendario y <span className="text-primary">Resultados</span></h1>
           <p className="hero-subtitle">Sigue todos los partidos de la temporada {temporadaActiva?.nombre || ''}</p>
           
@@ -199,11 +195,9 @@ export default function PartidosPage() {
       </section>
 
       <style jsx>{`
-        .hero-simple { padding: 8rem 0 4rem; text-align: center; }
+        .hero-simple { padding: 1.5rem 0 2rem; text-align: center; }
         .hero-title { font-size: 4rem; font-weight: 900; margin-bottom: 1rem; }
         .hero-subtitle { color: #666; font-size: 1.1rem; margin-bottom: 2.5rem; }
-        .back-link-simple { display: inline-flex; align-items: center; gap: 0.5rem; color: #666; font-size: 0.9rem; margin-bottom: 2rem; transition: all 0.2s; }
-        .back-link-simple:hover { color: var(--primary); transform: translateX(-5px); }
 
         .category-tabs-public { display: inline-flex; background: rgba(255,255,255,0.03); padding: 5px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.05); gap: 5px; }
         .tab-btn-public { padding: 0.8rem 2rem; border-radius: 50px; border: none; background: transparent; color: #666; font-weight: 700; cursor: pointer; transition: all 0.3s; }

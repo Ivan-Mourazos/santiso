@@ -10,6 +10,7 @@ import {
   drawBackground, drawTopLogos, drawSponsorBar,
   drawPartido, drawResumo, drawCronoloxia, drawProximos, drawNoso11,
 } from "@/lib/cartel-draw";
+import AdminCartelAssets from "./AdminCartelAssets";
 
 // UI Components & Hooks
 import { TEMPLATES } from "./cartel/types";
@@ -22,15 +23,23 @@ import { FormCronoloxia } from "./cartel/FormCronoloxia";
 import { FormProximos } from "./cartel/FormProximos";
 import { FormNoso11 } from "./cartel/FormNoso11";
 
-// 2K output: logical canvas stays 1080\u00d71350, rendered at 2\u00d7 for high resolution
-const RENDER_SCALE = 2;
+// Ultra HD output: logical canvas 1080x1350, rendered at 4x for professional resolution (4320x5400)
+const RENDER_SCALE = 4;
 
-export default function GeneradorCartel() {
+interface Props {
+  templateId?: string;
+  onTemplateChange?: (id: string) => void;
+  hideLayout?: boolean;
+}
+
+export default function GeneradorCartel({ templateId, onTemplateChange, hideLayout }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const {
     form, set,
     equipos, setEquipos,
+    jugadores,
+    campos,
     jugFileName,
     handleRivalSelect,
     handleRivalFile,
@@ -45,8 +54,26 @@ export default function GeneradorCartel() {
     resetForm,
   } = useCartelForm();
 
-  const [tipo, setTipo] = useState<string>("partido");
+  const [tipoInternal, setTipoInternal] = useState<string>("partido");
+  const tipo = templateId || tipoInternal;
+  const setTipo = (val: any) => {
+    if (onTemplateChange) onTemplateChange(typeof val === 'function' ? val(tipo) : val);
+    else setTipoInternal(val);
+  };
   const [copied, setCopied] = useState(false);
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string, onConfirm: () => void } | null>(null);
+  const [showAssets, setShowAssets] = useState(false);
+
+  const showToastUI = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const showConfirmUI = (message: string, onConfirm: () => void) => {
+    setConfirmDialog({ message, onConfirm });
+  };
+
   const assetUrls = useCartelAssets(tipo);
 
   // Load ALL equipos once
@@ -153,45 +180,10 @@ export default function GeneradorCartel() {
 
   useEffect(() => { drawCanvas(); }, [drawCanvas]);
 
-  // ── Download ────────────────────────────────────────────────────────────────
-  function handleDownload() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const url = canvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    a.href = url;
-    const slug = tipo === "partido" || tipo === "resumo"
-      ? `jornada-${form.jornada}${form.rivalNombre ? `-vs-${form.rivalNombre.toLowerCase().replace(/\s+/g, "-")}` : ""}`
-      : tipo;
-    a.download = `cartel-${slug}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-
   // ── Instagram Text ──────────────────────────────────────────────────────────
   const instagramText = useMemo(() => {
-    if (tipo === "proximos") {
-      return generateProximosText({ matches: form.matches.map(m => ({
-        ...m,
-        lugar: (m as any).lugar || form.lugar,
-        estadio: form.estadio,
-      })) });
-    }
-    if (tipo === "resumo" || tipo === "cronoloxia" || tipo === "noso11") {
-      return generateResultadoText({
-        categoria:   form.categoria,
-        competicion: form.competicion,
-        jornada:     form.jornada,
-        fecha:       form.fecha,
-        estadio:     form.estadio || form.lugar,
-        rivalNombre: form.rivalNombre,
-        golesLocal:  form.golesLocal,
-        golesRival:  form.golesRival,
-        santisoSide: form.santisoSide,
-        events:      form.events,
-      });
-    }
+    if (tipo === "proximos") return generateProximosText(form);
+    if (tipo === "resumo")    return generateResultadoText(form);
     return null;
   }, [tipo, form]);
 
@@ -203,48 +195,65 @@ export default function GeneradorCartel() {
     });
   }
 
+  const handleDownload = useCallback(() => {
+    if (!canvasRef.current) return;
+    const link = document.createElement("a");
+    link.download = `cartel-${tipo}-${new Date().getTime()}.png`;
+    link.href = canvasRef.current.toDataURL("image/png");
+    link.click();
+  }, [tipo]);
 
   return (
-    <main style={{ minHeight: "100vh", background: "#000", padding: "2rem 0 5rem" }}>
-      <div className="container">
+    <main style={hideLayout ? {} : { minHeight: "100vh", background: "#000", padding: "3rem 0 5rem" }}>
+      <div className={hideLayout ? "" : "container"}>
+        {!hideLayout && (
+          <>
+            <header style={{ marginBottom: "3.5rem", borderLeft: "4px solid var(--primary)", paddingLeft: "2rem" }}>
+              <Link href="/admin" style={{ 
+                display: "inline-flex", alignItems: "center", gap: "0.5rem",
+                color: "#666", fontWeight: 800, fontSize: "0.75rem", textDecoration: "none",
+                textTransform: "uppercase", letterSpacing: "1px", marginBottom: "1rem",
+                transition: "all 0.2s"
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
+              onMouseLeave={e => (e.currentTarget.style.color = "#666")}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                Volver al Panel
+              </Link>
+              <h1 style={{ fontSize: "3.8rem", fontWeight: 900, marginTop: "0", letterSpacing: "-2.5px", lineHeight: 1 }}>
+                Generador de <span className="text-primary">Carteles</span>
+              </h1>
+            </header>
 
-        <header style={{ marginBottom: "2.5rem" }}>
-          <Link href="/admin" style={{ color: "var(--primary)", fontWeight: 700, fontSize: "0.85rem" }}>
-            ← Volver al Panel
-          </Link>
-          <h1 style={{ fontSize: "2.8rem", fontWeight: 900, marginTop: "0.5rem", letterSpacing: "-1.5px" }}>
-            Generador de <span className="text-primary">Carteles</span>
-          </h1>
-          <p style={{ color: "#666", fontSize: "0.88rem", marginTop: "0.2rem" }}>
-            Selecciona la plantilla, rellena los datos y descarga el PNG en alta resolución.
-          </p>
-        </header>
-
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "2rem", flexWrap: "wrap" }}>
-          {TEMPLATES.map(t => (
-            <button key={t.id} onClick={() => setTipo(t.id)}
-              style={{
-                padding: "0.55rem 1.1rem", borderRadius: "0.6rem", fontFamily: "inherit",
-                fontWeight: 800, fontSize: "0.82rem", cursor: "pointer",
-                border: tipo === t.id ? "none" : "1px solid var(--border)",
-                background: tipo === t.id ? "var(--primary)" : "rgba(255,255,255,0.04)",
-                color: tipo === t.id ? "#000" : "#aaa",
-                transition: "all 0.2s",
-              }}>
-              {t.emoji} {t.label}
-            </button>
-          ))}
-        </div>
+            <div style={{ display: "flex", gap: "0.8rem", marginBottom: "3rem", flexWrap: "wrap" }}>
+              {TEMPLATES.map(t => (
+                <button key={t.id} onClick={() => setTipo(t.id)}
+                  style={{
+                    padding: "0.75rem 1.5rem", borderRadius: "0.8rem", fontFamily: "inherit",
+                    fontWeight: 800, fontSize: "0.85rem", cursor: "pointer",
+                    border: "1px solid",
+                    borderColor: tipo === t.id ? "rgba(250, 204, 21, 0.4)" : "rgba(255,255,255,0.05)",
+                    background: tipo === t.id ? "var(--primary)" : "rgba(255,255,255,0.02)",
+                    color: tipo === t.id ? "#000" : "#888",
+                    boxShadow: tipo === t.id ? "0 4px 15px rgba(250, 204, 21, 0.2)" : "none",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    display: "flex", alignItems: "center", gap: "0.6rem"
+                  }}>
+                  <span style={{ fontSize: "1.1rem" }}>{t.emoji}</span> {t.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <div className="gen-layout">
           <div className="gen-form card glass">
-
             {/* Template-specific fields */}
-            {tipo === "partido"    && <FormPartido form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} />}
-            {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} />}
-            {tipo === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} />}
-            {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} jugadores={jugadores} dbMatches={dbMatches} />}
-            {tipo === "noso11"     && <FormNoso11 form={form} set={set} jugadores={jugadores} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} />}
+            {tipo === "partido"    && <FormPartido form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} tipo={tipo} />}
+            {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}
+            {tipo === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}
+            {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} jugadores={jugadores} dbMatches={dbMatches} tipo={tipo} />}
+            {tipo === "noso11"     && <FormNoso11 form={form} set={set} jugadores={jugadores} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} tipo={tipo} />}
 
             {/* Santiso side (shared) */}
             {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
@@ -257,7 +266,6 @@ export default function GeneradorCartel() {
               </div>
             )}
 
-
             <div style={{ display: "flex", gap: "0.6rem", marginTop: "2.5rem" }}>
               <button className="btn-primary" onClick={handleDownload}
                 style={{ flex: 1, height: 54, fontSize: "1rem",
@@ -265,10 +273,9 @@ export default function GeneradorCartel() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
                 </svg>
-                Descargar 2K PNG
+                Descargar PNG
               </button>
-              <button onClick={resetForm}
-                title="Limpiar todos los campos"
+              <button className="btn-secondary" onClick={resetForm}
                 style={{ height: 54, padding: "0 1.2rem", borderRadius: "var(--radius)",
                          background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)",
                          color: "#888", fontFamily: "inherit", fontWeight: 800, fontSize: "0.82rem",
@@ -290,10 +297,9 @@ export default function GeneradorCartel() {
                     📱 Texto para Instagram
                   </p>
                   <button onClick={handleCopyInstagram}
-                    style={{ padding: "0.35rem 0.9rem", borderRadius: "0.5rem", cursor: "pointer",
-                             fontFamily: "inherit", fontWeight: 800, fontSize: "0.75rem",
-                             background: copied ? "#22c55e" : "rgba(255,255,255,0.08)",
-                             color: copied ? "#000" : "#fff",
+                    style={{ background: copied ? "var(--primary)" : "rgba(255,255,255,0.05)",
+                             color: copied ? "#000" : "#fff", border: "none", padding: "0.3rem 0.7rem",
+                             borderRadius: "0.4rem", fontSize: "0.65rem", fontWeight: 800, cursor: "pointer",
                              border: "1px solid var(--border)", transition: "all 0.2s" }}>
                     {copied ? "✅ Copiado!" : "📋 Copiar"}
                   </button>
@@ -305,21 +311,87 @@ export default function GeneradorCartel() {
                            outline: "none", cursor: "text" }} />
               </div>
             )}
+
+            {/* ASSET MANAGEMENT BUTTON (NEW) */}
+            <div style={{ marginTop: "4rem" }}>
+               <button 
+                 onClick={() => setShowAssets(!showAssets)}
+                 style={{
+                   width: "100%", padding: "1rem", borderRadius: "0.8rem", 
+                   background: showAssets ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.02)",
+                   border: "1px solid", 
+                   borderColor: showAssets ? "var(--primary)" : "rgba(255,255,255,0.05)",
+                   color: showAssets ? "var(--primary)" : "#666",
+                   fontWeight: 800, fontSize: "0.75rem", textTransform: "uppercase",
+                   letterSpacing: "1px", cursor: "pointer", display: "flex",
+                   alignItems: "center", justifyContent: "center", gap: "0.6rem",
+                   transition: "all 0.3s"
+                 }}>
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: showAssets ? "rotate(180deg)" : "none", transition: "0.3s" }}>
+                   <polyline points="6 9 12 15 18 9"></polyline>
+                 </svg>
+                 {showAssets ? "Ocultar gestión de activos" : "Gestionar Activos (Logos, Fondos...)"}
+               </button>
+               
+               {showAssets && (
+                 <div className="scale-in" style={{ marginTop: "1.5rem", padding: "1.5rem", background: "rgba(255,255,255,0.02)", borderRadius: "1rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                   <AdminCartelAssets showToast={showToastUI} showConfirm={showConfirmUI} />
+                 </div>
+               )}
+            </div>
           </div>
 
           <div className="gen-preview">
-            <div style={{ position: "sticky", top: "1.5rem" }}>
-              <p style={{ fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase",
-                          letterSpacing: "1.5px", color: "#555", marginBottom: "0.75rem" }}>
-                Vista previa en tiempo real
-              </p>
-              <canvas ref={canvasRef} width={W * RENDER_SCALE} height={H * RENDER_SCALE}
-                style={{ width: "100%", height: "auto", display: "block",
-                         borderRadius: 10, border: "1px solid var(--border)" }} />
+            <div style={{ position: "sticky", top: "2rem", background: "rgba(255,255,255,0.01)", borderRadius: "1.5rem", border: "1px solid rgba(255,255,255,0.05)", boxShadow: "0 20px 40px rgba(0,0,0,0.4)", overflow: "hidden" }}>
+              <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <p style={{ fontSize: "0.7rem", fontWeight: 900, textTransform: "uppercase",
+                            letterSpacing: "1.5px", color: "var(--primary)", margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ width: "8px", height: "8px", background: "var(--primary)", borderRadius: "50%", display: "inline-block" }}></span>
+                  Previsualización Ultra HD
+                </p>
+                <span style={{ fontSize: "0.6rem", color: "#444", fontWeight: 800 }}>4320x5400px</span>
+              </div>
+              
+              <div style={{ padding: "1rem", background: "#000" }}>
+                <canvas ref={canvasRef} width={W * RENDER_SCALE} height={H * RENDER_SCALE}
+                  style={{ width: "100%", height: "auto", display: "block",
+                           borderRadius: "0.8rem", boxShadow: "0 10px 40px rgba(0,0,0,0.8)" }} />
+              </div>
+
+              <div style={{ padding: "1rem", borderTop: "1px solid rgba(255,255,255,0.03)", background: "rgba(255,255,255,0.01)" }}>
+                <p style={{ color: "#555", fontSize: "0.7rem", textAlign: "center", margin: 0, fontWeight: 600 }}>
+                   💡 El archivo final preservará la máxima fidelidad y transparencia.
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* NOTIFICACIONES Y MODALES */}
+      {confirmDialog && (
+        <div className="confirm-overlay">
+          <div className="confirm-modal glass scale-in">
+            <h3>¿Estás seguro?</h3>
+            <p>{confirmDialog.message}</p>
+            <div className="confirm-actions">
+              <button className="btn-cancel" onClick={() => setConfirmDialog(null)}>Cancelar</button>
+              <button className="btn-confirm" onClick={() => {
+                confirmDialog.onConfirm();
+                setConfirmDialog(null);
+              }}>Aceptar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className={`toast-container glass ${toast.type}`}>
+          <div className="toast-content">
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .gen-layout {
@@ -329,6 +401,19 @@ export default function GeneradorCartel() {
           align-items: start;
         }
         .gen-form { padding: 2rem; }
+        
+        /* Toast & Confirm (Minimal Copy) */
+        .toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; padding: 1rem 1.5rem; border-radius: 1rem; border: 1px solid var(--primary); background: rgba(250, 204, 21, 0.1); }
+        .toast-content { font-weight: 700; color: white; }
+        .confirm-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+        .confirm-modal { max-width: 400px; padding: 2.5rem; border-radius: 1.5rem; text-align: center; border: 1px solid rgba(250, 204, 21, 0.2); }
+        .confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
+        .btn-cancel { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; padding: 0.8rem; border-radius: 0.8rem; cursor: pointer; }
+        .btn-confirm { background: var(--primary); border: none; color: black; padding: 0.8rem; border-radius: 0.8rem; font-weight: 800; cursor: pointer; }
+
+        .scale-in { animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
         @media (max-width: 960px) {
           .gen-layout { grid-template-columns: 1fr; }
           .gen-preview { order: -1; }

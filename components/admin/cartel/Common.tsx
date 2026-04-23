@@ -41,8 +41,21 @@ export const MatchSelector: React.FC<{
   dbMatches: any[]; 
   onSelect: (m: any) => void;
   categoria: string;
-}> = ({ dbMatches, onSelect, categoria }) => {
-  const filtered = dbMatches.filter(m => m.categoria === categoria);
+  tipo: string;
+}> = ({ dbMatches, onSelect, categoria, tipo }) => {
+  const filtered = dbMatches?.filter(m => {
+    const isCat = m.categoria === categoria;
+    if (!isCat) return false;
+    
+    // Filtrar por estado según el tipo de cartel
+    if (tipo === "partido" || tipo === "proximos") {
+      return m.estado === "programado";
+    }
+    if (tipo === "resumo" || tipo === "cronoloxia") {
+      return m.estado === "finalizado";
+    }
+    return true;
+  }) || [];
 
   if (filtered.length === 0) return null;
 
@@ -67,7 +80,7 @@ export const MatchSelector: React.FC<{
         <option value="">-- Seleccionar partido reciente o próximo --</option>
         {filtered.map(m => (
           <option key={m.id} value={m.id}>
-            J{m.jornada?.numero || '?'} - {m.local.nombre} vs {m.visitante.nombre} ({m.fecha ? new Date(m.fecha).toLocaleDateString() : 'Sin fecha'})
+            J{m.jornada?.numero || '?'} - {m.equipo_local?.nombre} vs {m.equipo_visitante?.nombre} ({m.fecha ? new Date(m.fecha).toLocaleDateString() : 'Sin fecha'})
           </option>
         ))}
       </select>

@@ -182,8 +182,51 @@ input[type=number] {
 .admin-table th { text-align: left; padding: 1.2rem 1rem; border-bottom: 2px solid var(--border); color: #666; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
 .admin-table td { padding: 1.2rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
 
-.btn-delete { background: rgba(220, 38, 38, 0.05); color: #ef4444; border: 1px solid rgba(220, 38, 38, 0.1); padding: 0.6rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; }
-.btn-delete:hover { background: #dc2626; color: white; border-color: #dc2626; }
+.btn-delete { 
+  background: rgba(239, 68, 68, 0.05); 
+  color: #ef4444; 
+  border: 1px solid rgba(239, 68, 68, 0.2); 
+  padding: 0.7rem 1.2rem; 
+  border-radius: 10px; 
+  font-size: 0.75rem; 
+  font-weight: 800; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  gap: 0.6rem; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-delete:hover { 
+  background: #ef4444; 
+  color: white; 
+  border-color: #ef4444; 
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+}
+
+.btn-delete-icon-only {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 10px;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-delete-icon-only:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+  transform: scale(1.05);
+}
 
 .file-input-label { 
   display: flex !important; 
@@ -347,10 +390,11 @@ input[type=number] {
 
 .grid-pro { 
   display: grid; 
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
-  gap: 3rem; 
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); 
+  gap: 2rem; 
   width: 100%;
-  padding: 2rem 0;
+  padding: 0.5rem 0 0.5rem;
+  justify-items: center;
 }
 
 .fifa-card-container {
@@ -360,8 +404,8 @@ input[type=number] {
 }
 
 .fifa-card {
-  width: 240px;
-  height: 340px;
+  width: 210px;
+  height: 300px;
   background: #1a1a1a;
   position: relative;
   clip-path: polygon(0 10%, 10% 0, 90% 0, 100% 10%, 100% 80%, 50% 100%, 0 80%);
@@ -394,7 +438,7 @@ input[type=number] {
 }
 
 .fifa-dorsal {
-  font-size: 2.2rem;
+  font-size: 2rem;
   font-weight: 900;
   color: var(--primary);
   line-height: 1;
@@ -443,14 +487,14 @@ input[type=number] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 0 1rem;
+  justify-content: flex-start;
+  padding: 0.8rem 1rem 0;
   text-align: center;
   border-top: 1px solid rgba(250, 204, 21, 0.3);
 }
 
 .fifa-name {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 900;
   color: white;
   text-transform: uppercase;
@@ -525,11 +569,11 @@ input[type=number] {
   font-size: 0.9rem; 
   text-transform: uppercase; 
   color: var(--primary); 
-  letter-spacing: 5px; 
-  margin: 6rem 0 3rem; 
+  letter-spacing: 4px; 
+  margin: 1.5rem 0 1rem; 
   display: flex; 
   align-items: center; 
-  gap: 2rem; 
+  gap: 1.5rem; 
 }
 .pos-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(250, 204, 21, 0.2), transparent); }
 
