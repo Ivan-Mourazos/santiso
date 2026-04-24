@@ -49,15 +49,6 @@ export interface FormState {
   suplentes:      Player[];
 }
 
-export interface NextMatch {
-  rival: string;
-  rivalEscudoUrl: string;
-  fecha: string;
-  hora: string;
-  categoria: string;
-  santisoSide: "left" | "right";
-}
-
 export interface AssetUrls {
   fondo:    string;
   xunta:    string;

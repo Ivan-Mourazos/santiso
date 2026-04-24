@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import { getCompetitionQueryLabels } from "@/lib/supabase-queries";
 
 export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <p style={{
@@ -41,11 +42,14 @@ export const MatchSelector: React.FC<{
   dbMatches: any[]; 
   onSelect: (m: any) => void;
   categoria: string;
+  competicion?: string;
   tipo: string;
-}> = ({ dbMatches, onSelect, categoria, tipo }) => {
+}> = ({ dbMatches, onSelect, categoria, competicion, tipo }) => {
+  const labels = competicion ? getCompetitionQueryLabels(categoria, competicion) : [];
   const filtered = dbMatches?.filter(m => {
     const isCat = m.categoria === categoria;
     if (!isCat) return false;
+    if (competicion && !labels.includes(m.competicion || "")) return false;
     
     // Filtrar por estado según el tipo de cartel
     if (tipo === "partido" || tipo === "proximos") {

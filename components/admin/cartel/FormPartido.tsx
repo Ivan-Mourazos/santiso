@@ -3,9 +3,10 @@
  * Form panel for the "Cartel de Partido" template.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { COMPETICIONS, type FormState } from "./types";
-import { CategorySelector, MatchSelector } from "./Common";
+import { CategorySelector } from "./Common";
+import { getCompetitionQueryLabels } from "@/lib/supabase-queries";
 
 interface Props {
   form: FormState;
@@ -62,9 +63,42 @@ export const RivalSelector = ({
 };
 
 export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equipos, handleRivalSelect, handleRivalFile, dbMatches, loadMatchFromDb, campos, tipo }) => {
+  const [autoFillMessage, setAutoFillMessage] = useState("");
+
+  function handleLoadNextMatch() {
+    setAutoFillMessage("");
+    const labels = getCompetitionQueryLabels(form.categoria, form.competicion);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const nextMatch = dbMatches
+      .filter((match) => {
+        if (!match.fecha) return false;
+        if (match.categoria !== form.categoria) return false;
+        if (!labels.includes(match.competicion || match.jornada?.competicion || "")) return false;
+        if (["finalizado", "cancelado", "aplazado"].includes((match.estado || "").toLowerCase().trim())) return false;
+
+        const localName = match.equipo_local?.nombre?.toLowerCase() || "";
+        const visitorName = match.equipo_visitante?.nombre?.toLowerCase() || "";
+        if (!localName.includes("santiso") && !visitorName.includes("santiso")) return false;
+
+        const matchDate = new Date(match.fecha);
+        if (Number.isNaN(matchDate.getTime())) return false;
+        return matchDate.getTime() >= today.getTime();
+      })
+      .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())[0];
+
+    if (nextMatch) {
+      loadMatchFromDb(nextMatch);
+      setAutoFillMessage("Partido cargado.");
+      return;
+    }
+
+    setAutoFillMessage("No encontré próximo partido pendiente para esa categoría y liga.");
+  }
+
   return (
     <>
-      <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} tipo={tipo} />
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
       
       <div className="input-group" style={{ marginBottom: "1rem" }}>
@@ -76,6 +110,30 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
           ))}
         </select>
       </div>
+
+      {tipo === "partido" && (
+        <div style={{ marginBottom: "1rem" }}>
+          <button
+            type="button"
+            onClick={handleLoadNextMatch}
+            className="btn-primary"
+            style={{
+              width: "100%",
+              background: "rgba(250, 204, 21, 0.1)",
+              border: "1px dashed var(--primary)",
+              color: "var(--primary)",
+              padding: "0.8rem",
+            }}
+          >
+            Autocompletar próximo partido de esta categoría y liga
+          </button>
+          {autoFillMessage && (
+            <p style={{ margin: "0.5rem 0 0", color: "#a3a3a3", fontSize: "0.75rem", fontWeight: 700 }}>
+              {autoFillMessage}
+            </p>
+          )}
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group">

@@ -30,6 +30,7 @@ export default function PlantillaPage() {
   const [loading, setLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState<Jugador | null>(null);
   const [temporadaActiva, setTemporadaActiva] = useState<any>(null);
+  const [santisoTeamIds, setSantisoTeamIds] = useState<string[]>([]);
   const [faseActiva, setFaseActiva] = useState("Total");
   const [fasesDisponibles, setFasesDisponibles] = useState<string[]>([]);
   const [playerStats, setPlayerStats] = useState({ 
@@ -57,78 +58,92 @@ export default function PlantillaPage() {
         .from("staff_club")
         .select("*");
       if (sData) setStaff(sData);
+
+      const { data: santisoTeams } = await supabase
+        .from("equipos")
+        .select("id")
+        .ilike("nombre", "%santiso%");
+      setSantisoTeamIds((santisoTeams || []).map((team: { id: string }) => team.id));
       setLoading(false);
     }
     fetchData();
   }, []);
 
   useEffect(() => {
-    if (selectedPlayer && temporadaActiva) {
-      async function getFases() {
-        const { data: jData } = await supabase
-          .from("jornadas")
-          .select("competicion")
-          .eq("temporada_id", temporadaActiva.id)
-          .eq("categoria", selectedPlayer.categoria);
-        
-        if (jData) {
-          const unicas = Array.from(new Set(jData.map(j => j.competicion || "Liga")));
-          setFasesDisponibles(unicas);
-        }
+    const player = selectedPlayer;
+    const temporada = temporadaActiva;
+    if (!player || !temporada) return;
+
+    async function getFases(categoria: string, temporadaId: string) {
+      const { data: jData } = await supabase
+        .from("jornadas")
+        .select("competicion")
+        .eq("temporada_id", temporadaId)
+        .eq("categoria", categoria);
+
+      if (jData) {
+        const unicas = Array.from(new Set(jData.map(j => j.competicion || "Liga")));
+        setFasesDisponibles(unicas);
       }
-      getFases();
     }
+    void getFases(player.categoria, temporada.id);
   }, [selectedPlayer, temporadaActiva]);
 
   useEffect(() => {
-    if (selectedPlayer && temporadaActiva) {
-      async function loadDetailedStats() {
-        let query = supabase
-          .from("jornadas")
-          .select("id")
-          .eq("temporada_id", temporadaActiva.id)
-          .eq("categoria", selectedPlayer.categoria);
-        
-        if (faseActiva !== "Total") {
-          query = query.eq("competicion", faseActiva);
-        }
+    const player = selectedPlayer;
+    const temporada = temporadaActiva;
+    if (!player || !temporada) return;
 
-        const { data: jornadas } = await query;
-        const jornadaIds = jornadas?.map(j => j.id) || [];
+    async function loadDetailedStats(p: Jugador, temporadaId: string, fase: string) {
+      let query = supabase
+        .from("jornadas")
+        .select("id")
+        .eq("temporada_id", temporadaId)
+        .eq("categoria", p.categoria);
 
-        const { data: stats } = await supabase
-          .from("jugador_partido_stats")
-          .select("*, partidos_liga!inner(*)")
-          .eq("jugador_id", selectedPlayer.id)
-          .in("partidos_liga.jornada_id", jornadaIds);
-
-        if (stats) {
-          let totalMin = 0; let totalGoles = 0; let totalEncajados = 0;
-          let conv = stats.length; let tit = 0; let sup = 0; let pj = 0;
-
-          stats.forEach(s => {
-            const isTitular = s.titular;
-            const played = s.jugo || s.titular;
-            if (played) pj++;
-            if (isTitular) tit++; else if (played) sup++;
-            totalGoles += (s.goles || 0);
-
-            if (selectedPlayer.posicion === 'POR' && played) {
-              const p = s.partidos_liga;
-              totalEncajados += (p.equipo_local_id === 'c3c7e732-7201-4976-9630-1081518f8883' ? p.goles_visitante : p.goles_local);
-            }
-            if (played) totalMin += isTitular ? 90 : 25;
-          });
-
-          setPlayerStats({
-            convocado: conv, titular: tit, suplente: sup, pj: pj,
-            goles: totalGoles, minutos: totalMin, golesEncajados: totalEncajados
-          });
-        }
+      if (fase !== "Total") {
+        query = query.eq("competicion", fase);
       }
-      loadDetailedStats();
+
+      const { data: jornadas } = await query;
+      const jornadaIds = jornadas?.map(j => j.id) || [];
+      if (jornadaIds.length === 0) {
+        setPlayerStats({ convocado: 0, titular: 0, suplente: 0, pj: 0, goles: 0, minutos: 0, golesEncajados: 0 });
+        return;
+      }
+
+      const { data: stats } = await supabase
+        .from("jugador_partido_stats")
+        .select("*, partidos_liga!inner(*)")
+        .eq("jugador_id", p.id)
+        .in("partidos_liga.jornada_id", jornadaIds);
+
+      if (stats) {
+        let totalMin = 0; let totalGoles = 0; let totalEncajados = 0;
+        let conv = stats.length; let tit = 0; let sup = 0; let pj = 0;
+
+        stats.forEach(s => {
+          const isTitular = s.titular;
+          const played = s.jugo || s.titular;
+          if (played) pj++;
+          if (isTitular) tit++; else if (played) sup++;
+          totalGoles += (s.goles || 0);
+
+          if (p.posicion === 'POR' && played) {
+            const pl = s.partidos_liga;
+            totalEncajados += santisoTeamIds.includes(pl.equipo_local_id) ? pl.goles_visitante : pl.goles_local;
+          }
+          if (played) totalMin += isTitular ? 90 : 25;
+        });
+
+        setPlayerStats({
+          convocado: conv, titular: tit, suplente: sup, pj: pj,
+          goles: totalGoles, minutos: totalMin, golesEncajados: totalEncajados
+        });
+      }
     }
-  }, [selectedPlayer, temporadaActiva, faseActiva]);
+    void loadDetailedStats(player, temporada.id, faseActiva);
+  }, [selectedPlayer, temporadaActiva, faseActiva, santisoTeamIds]);
 
   const jugadoresFiltrados = jugadores.filter(j => j.categoria === categoriaActiva);
   const staffFiltrado = staff.filter(s => 

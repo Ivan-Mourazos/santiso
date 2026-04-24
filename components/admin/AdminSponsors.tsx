@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { processAndUploadImage } from "@/lib/image-utils";
 import { v4 as uuidv4 } from "uuid";
+import BusyBanner from "./BusyBanner";
 
 interface AdminSponsorsProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -15,25 +16,37 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
   const [logoSponsor, setLogoSponsor] = useState<File | null>(null);
   const [webSponsor, setWebSponsor] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [busyText, setBusyText] = useState("Cargando patrocinadores...");
+  const [busyProgress, setBusyProgress] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     fetchPatrocinadores();
   }, []);
 
   async function fetchPatrocinadores() {
+    setIsFetching(true);
     const { data } = await supabase.from("patrocinadores").select("*").order("orden", { ascending: true });
     if (data) setPatrocinadores(data);
+    setIsFetching(false);
   }
 
   async function handleAddSponsor(e: React.FormEvent) {
     e.preventDefault();
     if (!nombreSponsor || !logoSponsor) return;
+    setBusyText("Procesando logo y creando patrocinador...");
+    setBusyProgress(5);
     setLoading(true);
 
     try {
-      const processed = await processAndUploadImage(logoSponsor);
+      const processed = await processAndUploadImage(logoSponsor, (percent) => {
+        setBusyText("Procesando logo...");
+        setBusyProgress(percent * 0.6);
+      });
       if (!processed) return;
 
+      setBusyText("Subiendo logo...");
+      setBusyProgress(75);
       const fileName = `sponsors/${uuidv4()}.webp`;
       const { data, error: uploadError } = await supabase.storage.from("fotos").upload(fileName, processed);
       
@@ -41,6 +54,8 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
 
       const { data: pUrl } = supabase.storage.from("fotos").getPublicUrl(fileName);
       
+      setBusyText("Guardando patrocinador...");
+      setBusyProgress(90);
       const { error: dbError } = await supabase.from("patrocinadores").insert([{
         nombre: nombreSponsor,
         logo_url: pUrl.publicUrl,
@@ -59,6 +74,7 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
       showToast("Error al añadir patrocinador", "error");
     } finally {
       setLoading(false);
+      setBusyProgress(undefined);
     }
   }
 
@@ -72,6 +88,7 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
 
   return (
     <div className="card glass">
+      <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando patrocinadores..." : busyText} progress={loading ? busyProgress : undefined} />
       <h3>Gestión de Patrocinadores</h3>
       <form onSubmit={handleAddSponsor} className="admin-form">
         <div className="form-grid-4">

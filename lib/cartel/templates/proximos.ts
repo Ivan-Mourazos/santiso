@@ -75,7 +75,9 @@ export function drawProximos(
     ctx.font = "900 18px 'Outfit'";
     ctx.textAlign = "center";
     const datePart = m.fecha ? fmtDate(m.fecha) : "";
-    const label = `${m.categoria} – ${datePart}`.toUpperCase();
+    const timePart = (m.hora || "").trim();
+    const dateTimePart = [datePart, timePart].filter(Boolean).join(" · ");
+    const label = `${m.categoria} – ${dateTimePart}`.toUpperCase();
     ctx.fillText(label, CX, y - 5);
 
     // Shields config

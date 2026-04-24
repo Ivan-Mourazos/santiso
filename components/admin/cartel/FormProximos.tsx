@@ -8,36 +8,81 @@ import type { FormState } from "./types";
 import { SectionLabel, Toggle } from "./Common";
 import type { NextMatch } from "@/lib/cartel-draw";
 
+function normalizeText(value: string) {
+  return (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function categoriaKey(value: string) {
+  const normalized = normalizeText(value);
+  if (normalized.startsWith("sen")) return "sen";
+  if (normalized.startsWith("fem")) return "fem";
+  if (normalized.startsWith("vet")) return "vet";
+  return normalized.slice(0, 3);
+}
+
+function isSantisoTeam(team?: { nombre?: string | null } | null) {
+  return normalizeText(team?.nombre || "").includes("santiso");
+}
+
+function isPendingMatch(match: any) {
+  const estado = normalizeText(match.estado || "programado");
+  return !["finalizado", "cancelado", "aplazado"].includes(estado);
+}
+
+function toDateInput(value: string) {
+  return value.split("T")[0] || "";
+}
+
+function toTimeInput(value: string) {
+  const rawTime = value.split("T")[1];
+  if (!rawTime) return "18:00";
+  const match = rawTime.match(/^(\d{2}):(\d{2})/);
+  return match ? `${match[1]}:${match[2]}` : "18:00";
+}
+
 interface Props {
   form: FormState;
   set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
   updateMatch: (i: number, patch: Partial<NextMatch>) => void;
-  equipos: { id: string; nombre: string; escudo_url: string }[];
+  equipos: { id: string; nombre: string; escudo_url: string; categoria?: string }[];
   dbMatches: any[];
   tipo: string;
 }
 
 export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos, dbMatches, tipo }) => {
   const handleAutoFill = () => {
-    // 1. Obtener todos los próximos programados
-    const allUpcoming = [...dbMatches]
-      .filter(m => m.estado === "programado")
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Solo partidos del Santiso pendientes. Si no, puede coger otro partido de la liga.
+    const allUpcomingSantiso = [...dbMatches]
+      .filter(m => {
+        if (!m.fecha || !isPendingMatch(m)) return false;
+        if (!isSantisoTeam(m.equipo_local) && !isSantisoTeam(m.equipo_visitante)) return false;
+        const matchDate = new Date(m.fecha);
+        if (Number.isNaN(matchDate.getTime())) return false;
+        return matchDate.getTime() >= today.getTime();
+      })
       .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
 
-    if (allUpcoming.length === 0) return;
+    if (allUpcomingSantiso.length === 0) return;
 
-    // 2. Buscar el más próximo de cada categoría
+    // Buscar el más próximo de cada categoría del club.
     const cats = ["Sénior", "Feminino", "Veteranos"];
     const selectedMatches: any[] = [];
 
     cats.forEach(cat => {
-      const match = allUpcoming.find(m => (m.categoria || "").toLowerCase().startsWith(cat.toLowerCase().substring(0, 3)));
+      const match = allUpcomingSantiso.find(m => categoriaKey(m.categoria || "") === categoriaKey(cat));
       if (match) selectedMatches.push(match);
     });
 
-    // 3. Si no hay 3 (porque alguna categoría no juega), rellenar con los siguientes más próximos
+    // Si no hay 3 categorías con partido, rellena con otros próximos del Santiso.
     if (selectedMatches.length < 3) {
-      allUpcoming.forEach(m => {
+      allUpcomingSantiso.forEach(m => {
         if (selectedMatches.length < 3 && !selectedMatches.find(sm => sm.id === m.id)) {
           selectedMatches.push(m);
         }
@@ -53,13 +98,13 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
     }));
 
     selectedMatches.forEach((match, index) => {
-      const isSantisoLocal = match.equipo_local?.nombre?.toLowerCase().includes("santiso");
+      const isSantisoLocal = isSantisoTeam(match.equipo_local);
       const rival = isSantisoLocal ? match.equipo_visitante : match.equipo_local;
       newMatches[index] = {
         rival: rival?.nombre || "",
         rivalEscudoUrl: rival?.escudo_url || "",
-        fecha: match.fecha ? match.fecha.split("T")[0] : "",
-        hora: match.fecha ? match.fecha.split("T")[1].substring(0, 5) : "18:00",
+        fecha: match.fecha ? toDateInput(match.fecha) : "",
+        hora: match.fecha ? toTimeInput(match.fecha) : "18:00",
         categoria: match.categoria || "Sénior",
         santisoSide: isSantisoLocal ? "left" : "right"
       };
@@ -103,10 +148,9 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
                   <option value="">-- Seleccionar --</option>
                   {equipos
                     .filter(e => {
-                      const dbCat = (e.categoria || "").toLowerCase();
-                      const stateCat = (m.categoria || "").toLowerCase();
-                      // Match "sen" for Senior/Sénior, "fem" for Femenino/Feminino, "vet" for Veteranos
-                      return dbCat.startsWith(stateCat.substring(0, 3));
+                      const dbCat = categoriaKey(e.categoria || "");
+                      const stateCat = categoriaKey(m.categoria || "");
+                      return dbCat === stateCat;
                     })
                     .map(e => <option key={e.id} value={e.nombre}>{e.nombre}</option>)}
                 </select>
@@ -131,6 +175,14 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
                 <input type="date" value={m.fecha}
                   onChange={e => updateMatch(i, { fecha: e.target.value })} />
               </div>
+              <div className="input-group">
+                <label>Hora</label>
+                <input type="time" value={m.hora || "18:00"}
+                  onChange={e => updateMatch(i, { hora: e.target.value })} />
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.8rem", marginTop: "0.8rem" }}>
               <div className="input-group">
                 <label>Localía</label>
                 <div style={{ display: "flex", gap: "0.4rem" }}>

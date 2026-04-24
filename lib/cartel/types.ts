@@ -28,8 +28,11 @@ export interface Player {
 }
 
 export interface NextMatch {
-  rival:     string;
-  fecha:     string;
+  rival: string;
+  /** Rival shield URL for poster preload (optional in DB-derived rows). */
+  rivalEscudoUrl: string;
+  fecha: string;
   categoria: string;
-  hora:      string;
+  hora: string;
+  santisoSide: "left" | "right";
 }

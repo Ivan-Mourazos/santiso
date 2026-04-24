@@ -13,7 +13,7 @@ import {
 import AdminCartelAssets from "./AdminCartelAssets";
 
 // UI Components & Hooks
-import { TEMPLATES } from "./cartel/types";
+import { TEMPLATES, type TemplateId } from "./cartel/types";
 import { useCartelForm } from "./cartel/useCartelForm";
 import { useCartelAssets } from "./cartel/useCartelAssets";
 import { Toggle } from "./cartel/Common";
@@ -74,7 +74,8 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
     setConfirmDialog({ message, onConfirm });
   };
 
-  const assetUrls = useCartelAssets(tipo);
+  const tipoForAssets: TemplateId = TEMPLATES.some(t => t.id === tipo) ? (tipo as TemplateId) : "partido";
+  const assetUrls = useCartelAssets(tipoForAssets);
 
   // Load ALL equipos once
   useEffect(() => {
@@ -249,10 +250,10 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
         <div className="gen-layout">
           <div className="gen-form card glass">
             {/* Template-specific fields */}
-            {tipo === "partido"    && <FormPartido form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} tipo={tipo} />}
-            {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}
+            {tipo === "partido"    && <FormPartido form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} tipo={tipo} />}
+            {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} tipo={tipo} />}
             {tipo === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}
-            {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} jugadores={jugadores} dbMatches={dbMatches} tipo={tipo} />}
+            {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} dbMatches={dbMatches} tipo={tipo} />}
             {tipo === "noso11"     && <FormNoso11 form={form} set={set} jugadores={jugadores} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} tipo={tipo} />}
 
             {/* Santiso side (shared) */}
@@ -298,7 +299,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
                   </p>
                   <button onClick={handleCopyInstagram}
                     style={{ background: copied ? "var(--primary)" : "rgba(255,255,255,0.05)",
-                             color: copied ? "#000" : "#fff", border: "none", padding: "0.3rem 0.7rem",
+                             color: copied ? "#000" : "#fff", padding: "0.3rem 0.7rem",
                              borderRadius: "0.4rem", fontSize: "0.65rem", fontWeight: 800, cursor: "pointer",
                              border: "1px solid var(--border)", transition: "all 0.2s" }}>
                     {copied ? "✅ Copiado!" : "📋 Copiar"}

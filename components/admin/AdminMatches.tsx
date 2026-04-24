@@ -1,6 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import BusyBanner from "./BusyBanner";
+import { getCompetitionsByCategory } from "@/lib/competition";
+import { fetchTeamsForCompetition } from "@/lib/supabase-queries";
 
 interface AdminMatchesProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -14,35 +17,52 @@ export default function AdminMatches({ showToast, showConfirm, categoria }: Admi
   const [fecha, setFecha] = useState("");
   const [lugar, setLugar] = useState("");
   const [equipos, setEquipos] = useState<any[]>([]);
+  const [competiciones, setCompeticiones] = useState<string[]>([]);
+  const [competicion, setCompeticion] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [busyText, setBusyText] = useState("Cargando partidos...");
+  const [rowBusy, setRowBusy] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    fetchPartidos();
-    fetchEquipos();
+    const opts = getCompetitionsByCategory(categoria);
+    setCompeticiones(opts);
+    setCompeticion(opts[0] || "");
   }, [categoria]);
 
+  useEffect(() => {
+    if (!competicion) return;
+    fetchPartidos();
+    fetchEquipos();
+  }, [categoria, competicion]);
+
   async function fetchPartidos() {
-    const { data } = await supabase.from("partidos").select("*").eq("categoria", categoria).order("fecha", { ascending: true });
+    setIsFetching(true);
+    const { data } = await supabase.from("partidos").select("*").eq("categoria", categoria).eq("competicion", competicion).order("fecha", { ascending: true });
     if (data) setPartidos(data);
+    setIsFetching(false);
   }
 
   async function fetchEquipos() {
-    const { data } = await supabase.from("equipos").select("*").eq("categoria", categoria).order("nombre", { ascending: true });
-    if (data) setEquipos(data);
+    const data = await fetchTeamsForCompetition(categoria, competicion);
+    setEquipos(data);
   }
 
   const handleDeletePartido = async (id: string) => {
     showConfirm("¿Borrar este partido del calendario?", async () => {
+      setRowBusy(prev => ({ ...prev, [id]: true }));
       const { error } = await supabase.from("partidos").delete().eq("id", id);
       if (!error) {
         showToast("Partido eliminado");
         fetchPartidos();
       }
+      setRowBusy(prev => ({ ...prev, [id]: false }));
     });
   };
 
   async function handleAddPartido(e: React.FormEvent) {
     e.preventDefault();
+    setBusyText("Guardando nuevo partido...");
     setLoading(true);
 
     let rival_escudo_url = "";
@@ -50,7 +70,7 @@ export default function AdminMatches({ showToast, showConfirm, categoria }: Admi
     if (equipoEncontrado) rival_escudo_url = equipoEncontrado.escudo_url;
 
     const { error } = await supabase.from("partidos").insert([{ 
-      rival, fecha, lugar, categoria, rival_escudo_url 
+      rival, fecha, lugar, categoria, competicion, rival_escudo_url 
     }]);
 
     if (!error) {
@@ -62,6 +82,9 @@ export default function AdminMatches({ showToast, showConfirm, categoria }: Admi
   }
 
   async function handleUpdateScore(id: string, gLocal: number, gRival: number, estado: string) {
+    setBusyText("Guardando resultado...");
+    setRowBusy(prev => ({ ...prev, [id]: true }));
+    setLoading(true);
     const { error } = await supabase.from("partidos").update({
       goles_local: gLocal,
       goles_rival: gRival,
@@ -72,6 +95,8 @@ export default function AdminMatches({ showToast, showConfirm, categoria }: Admi
       showToast("Marcador actualizado");
       fetchPartidos();
     }
+    setRowBusy(prev => ({ ...prev, [id]: false }));
+    setLoading(false);
   }
 
   const handleScoreChange = (id: string, field: string, val: string) => {
@@ -85,6 +110,13 @@ export default function AdminMatches({ showToast, showConfirm, categoria }: Admi
 
   return (
     <div className="card glass">
+      <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando partidos..." : busyText} />
+      <div className="input-group" style={{ marginBottom: "1rem", maxWidth: "480px" }}>
+        <label>Competición</label>
+        <select value={competicion} onChange={(e) => setCompeticion(e.target.value)} disabled={loading || isFetching}>
+          {competiciones.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
           <h3>Gestión de Partidos ({categoria})</h3>
@@ -157,8 +189,10 @@ export default function AdminMatches({ showToast, showConfirm, categoria }: Admi
               </div>
 
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => handleUpdateScore(p.id, p.goles_local, p.goles_rival, p.estado)} className="btn-primary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.8rem' }}>Guardar</button>
-                <button onClick={() => handleDeletePartido(p.id)} className="btn-delete-icon" title="Borrar partido">
+                <button disabled={!!rowBusy[p.id]} onClick={() => handleUpdateScore(p.id, p.goles_local, p.goles_rival, p.estado)} className="btn-primary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.8rem', opacity: rowBusy[p.id] ? 0.7 : 1 }}>
+                  {rowBusy[p.id] ? "Guardando..." : "Guardar"}
+                </button>
+                <button disabled={!!rowBusy[p.id]} onClick={() => handleDeletePartido(p.id)} className="btn-delete-icon" title="Borrar partido" style={{ opacity: rowBusy[p.id] ? 0.5 : 1 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 </button>
               </div>

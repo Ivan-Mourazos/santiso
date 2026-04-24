@@ -112,3 +112,113 @@ CREATE TABLE IF NOT EXISTS staff_club (
 
 -- Índice para filtrar staff por tipo/categoría
 CREATE INDEX IF NOT EXISTS idx_staff_tipo_cat ON staff_club(tipo, categoria);
+
+-- 9. Relación equipos por competición (evita duplicados por liga/copa)
+CREATE TABLE IF NOT EXISTS equipo_competiciones (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    equipo_id UUID NOT NULL REFERENCES equipos(id) ON DELETE CASCADE,
+    categoria TEXT NOT NULL,
+    competicion TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    UNIQUE (equipo_id, categoria, competicion)
+);
+
+CREATE INDEX IF NOT EXISTS idx_equipo_comp_cat_comp ON equipo_competiciones(categoria, competicion);
+
+-- 10. Competición en jornadas y partidos para separar Liga/Copa
+ALTER TABLE jornadas ADD COLUMN IF NOT EXISTS competicion TEXT;
+ALTER TABLE partidos_liga ADD COLUMN IF NOT EXISTS competicion TEXT;
+
+UPDATE jornadas SET competicion = COALESCE(competicion, 'Liga principal');
+UPDATE partidos_liga SET competicion = COALESCE(competicion, 'Liga principal');
+
+-- Tabla legacy "partidos" (solo si aún existe en algún proyecto)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'partidos'
+  ) THEN
+    ALTER TABLE partidos ADD COLUMN IF NOT EXISTS competicion TEXT;
+    UPDATE partidos SET competicion = COALESCE(competicion, 'Liga principal');
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_jornadas_categoria_comp ON jornadas(categoria, competicion);
+CREATE INDEX IF NOT EXISTS idx_partidos_liga_categoria_comp ON partidos_liga(categoria, competicion);
+
+-- 11. Descanso por jornada (equipo sin partido esa jornada)
+CREATE TABLE IF NOT EXISTS jornada_equipo_descanso (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    jornada_id UUID NOT NULL REFERENCES jornadas(id) ON DELETE CASCADE,
+    equipo_id UUID NOT NULL REFERENCES equipos(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    UNIQUE (jornada_id, equipo_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_jornada_descanso_jornada ON jornada_equipo_descanso(jornada_id);
+CREATE INDEX IF NOT EXISTS idx_jornada_descanso_equipo ON jornada_equipo_descanso(equipo_id);
+
+-- 12. Tablas y columnas auxiliares usadas por la web/admin
+CREATE TABLE IF NOT EXISTS campos_futbol (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre TEXT NOT NULL,
+    poblacion TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+ALTER TABLE partidos_liga ADD COLUMN IF NOT EXISTS campo_id UUID;
+ALTER TABLE partidos_liga
+  DROP CONSTRAINT IF EXISTS partidos_liga_campo_id_fkey;
+ALTER TABLE partidos_liga
+  ADD CONSTRAINT partidos_liga_campo_id_fkey
+  FOREIGN KEY (campo_id) REFERENCES campos_futbol(id) ON DELETE SET NULL;
+
+CREATE TABLE IF NOT EXISTS patrocinadores (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre TEXT NOT NULL,
+    logo_url TEXT NOT NULL,
+    web_url TEXT,
+    orden INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS cartel_assets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre TEXT NOT NULL,
+    tipo TEXT NOT NULL,
+    subtipo TEXT,
+    url TEXT NOT NULL DEFAULT '',
+    orden INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    UNIQUE (tipo, subtipo)
+);
+
+CREATE TABLE IF NOT EXISTS noticias (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    titulo TEXT NOT NULL,
+    contenido TEXT,
+    imagen_url TEXT,
+    fecha TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS jugador_partido_stats (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    jugador_id UUID NOT NULL REFERENCES jugadores(id) ON DELETE CASCADE,
+    partido_id UUID NOT NULL REFERENCES partidos_liga(id) ON DELETE CASCADE,
+    titular BOOLEAN DEFAULT false,
+    jugo BOOLEAN DEFAULT false,
+    goles INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    UNIQUE (jugador_id, partido_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_partidos_liga_jornada_comp ON partidos_liga(jornada_id, competicion);
+CREATE INDEX IF NOT EXISTS idx_partidos_liga_local ON partidos_liga(equipo_local_id);
+CREATE INDEX IF NOT EXISTS idx_partidos_liga_visitante ON partidos_liga(equipo_visitante_id);
+CREATE INDEX IF NOT EXISTS idx_partidos_liga_fecha ON partidos_liga(fecha);
+CREATE INDEX IF NOT EXISTS idx_patrocinadores_orden ON patrocinadores(orden);
+CREATE INDEX IF NOT EXISTS idx_cartel_assets_tipo ON cartel_assets(tipo, subtipo, orden);
+CREATE INDEX IF NOT EXISTS idx_jugador_stats_jugador ON jugador_partido_stats(jugador_id);
+CREATE INDEX IF NOT EXISTS idx_jugador_stats_partido ON jugador_partido_stats(partido_id);

@@ -1,34 +1,90 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import {
+  getCompetitionsByCategory,
+  getDefaultUiCompetitionForCategory,
+} from "@/lib/competition";
+import {
+  fetchTeamsForCompetition,
+  getCompetitionQueryLabels,
+  mergeMissingTeams,
+} from "@/lib/supabase-queries";
 
 export default function ClasificacionPage() {
   const [equipos, setEquipos] = useState<any[]>([]);
   const [categoria, setCategoria] = useState("Senior");
+  const [competiciones, setCompeticiones] = useState<string[]>([]);
+  const [competicion, setCompeticion] = useState(() => getDefaultUiCompetitionForCategory("Senior"));
   const [loading, setLoading] = useState(true);
+  const [statsHint, setStatsHint] = useState<string | null>(null);
+  const clasificacionFetchGen = useRef(0);
 
   useEffect(() => {
-    fetchClasificacion();
+    setCompeticiones(getCompetitionsByCategory(categoria));
   }, [categoria]);
 
-  async function fetchClasificacion() {
-    setLoading(true);
-    
-    // Obtener clasificación general
-    const { data } = await supabase
-      .from("vista_clasificacion")
-      .select("*")
-      .eq("categoria", categoria);
+  useEffect(() => {
+    if (!competicion) return;
+    fetchClasificacion();
+  }, [categoria, competicion]);
 
-    // Obtener partidos para desempates directos
+  async function fetchClasificacion() {
+    const gen = ++clasificacionFetchGen.current;
+    setLoading(true);
+
+    const compFilters = getCompetitionQueryLabels(categoria, competicion);
+
     const { data: partidosData } = await supabase
       .from("partidos_liga")
       .select("*")
       .eq("categoria", categoria)
+      .in("competicion", compFilters)
       .eq("estado", "finalizado");
 
-    if (data) {
-      const sorted = [...data].sort((a, b) => {
+    const baseTeams = await fetchTeamsForCompetition(categoria, competicion);
+    const matchTeamIds = (partidosData || []).flatMap((p: any) => [
+      p.equipo_local_id,
+      p.equipo_visitante_id,
+    ]);
+    const teamsData = await mergeMissingTeams(baseTeams, matchTeamIds);
+
+    if (gen !== clasificacionFetchGen.current) return;
+
+    if (teamsData.length > 0) {
+      const withStats = teamsData.map((team: any) => {
+        const teamMatches = (partidosData || []).filter((p: any) =>
+          p.equipo_local_id === team.id || p.equipo_visitante_id === team.id
+        );
+
+        const pj = teamMatches.length;
+        let pg = 0;
+        let pe = 0;
+        let pp = 0;
+        let gf = 0;
+        let gc = 0;
+
+        teamMatches.forEach((p: any) => {
+          const isLocal = p.equipo_local_id === team.id;
+          const favor = isLocal ? (p.goles_local || 0) : (p.goles_visitante || 0);
+          const contra = isLocal ? (p.goles_visitante || 0) : (p.goles_local || 0);
+          gf += favor;
+          gc += contra;
+          if (favor > contra) pg += 1;
+          else if (favor === contra) pe += 1;
+          else pp += 1;
+        });
+
+        return {
+          equipo_id: team.id,
+          nombre: team.nombre,
+          escudo_url: team.escudo_url,
+          pj, pg, pe, pp, gf, gc,
+          pts: pg * 3 + pe,
+        };
+      });
+
+      const sorted = [...withStats].sort((a, b) => {
         // 1. Puntos
         if (b.pts !== a.pts) return b.pts - a.pts;
 
@@ -68,6 +124,17 @@ export default function ClasificacionPage() {
         return b.gf - a.gf;
       });
       setEquipos(sorted);
+      const anyPlayed = sorted.some((r: any) => r.pj > 0);
+      if (!anyPlayed && sorted.length > 0) {
+        setStatsHint(
+          "No hay partidos finalizados para esta competición (o siguen con otra etiqueta en competicion). Revisa Admin → Calendario y el script scripts/fix_competicion_legacy.sql."
+        );
+      } else {
+        setStatsHint(null);
+      }
+    } else {
+      setEquipos([]);
+      setStatsHint(null);
     }
     setLoading(false);
   }
@@ -106,11 +173,19 @@ export default function ClasificacionPage() {
               <button 
                 key={cat.id} 
                 className={`tab-btn-public ${categoria === cat.id ? 'active' : ''}`}
-                onClick={() => setCategoria(cat.id)}
+                onClick={() => {
+                  setCategoria(cat.id);
+                  setCompeticion(getDefaultUiCompetitionForCategory(cat.id));
+                }}
               >
                 {cat.label}
               </button>
             ))}
+          </div>
+          <div style={{ marginTop: "1rem" }}>
+            <select value={competicion} onChange={(e) => setCompeticion(e.target.value)} className="competition-select">
+              {competiciones.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
         </div>
       </section>
@@ -130,6 +205,11 @@ export default function ClasificacionPage() {
             </div>
           ) : (
             <>
+              {statsHint && (
+                <div className="clasificacion-hint glass">
+                  <p>{statsHint}</p>
+                </div>
+              )}
               <div className="fixtures-card glass shadow-glare" style={{ padding: '0', overflow: 'hidden' }}>
                 <table className="league-table">
                   <thead>
@@ -240,6 +320,9 @@ export default function ClasificacionPage() {
           background: rgba(255,255,255,0.05);
           color: white;
         }
+        .competition-select { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0.6rem 0.9rem; border-radius: 10px; min-width: 320px; font-weight: 600; }
+        .clasificacion-hint { max-width: 720px; margin: 0 auto 1.5rem; padding: 1rem 1.25rem; border-radius: 12px; border: 1px solid rgba(251, 191, 36, 0.3); background: rgba(251, 191, 36, 0.06); color: #d4a574; font-size: 0.9rem; line-height: 1.5; }
+        .clasificacion-hint p { margin: 0; }
 
         .section-padding { padding: 2rem 0 8rem; }
         

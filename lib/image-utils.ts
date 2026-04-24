@@ -1,16 +1,27 @@
 import imageCompression from "browser-image-compression";
 import { v4 as uuidv4 } from "uuid";
 
-export async function processAndUploadImage(file: File): Promise<File | null> {
+type ImageProcessStage =
+  | "starting"
+  | "converting_heic"
+  | "trimming"
+  | "compressing"
+  | "done";
+
+type ProgressCallback = (percent: number, stage: ImageProcessStage) => void;
+
+export async function processAndUploadImage(file: File, onProgress?: ProgressCallback): Promise<File | null> {
   // Prevent SSR execution
   if (typeof window === "undefined") return null;
   
   try {
+    onProgress?.(5, "starting");
     const heic2any = (await import("heic2any")).default;
     let currentFile = file;
 
     // 1. Manejar HEIC (iPhone)
     if (file.type === "image/heic" || file.name.toLowerCase().endsWith(".heic")) {
+      onProgress?.(15, "converting_heic");
       const convertedBlob = await heic2any({
         blob: file,
         toType: "image/jpeg",
@@ -24,9 +35,11 @@ export async function processAndUploadImage(file: File): Promise<File | null> {
     }
 
     // 2. Recorte inteligente 1:1
+    onProgress?.(35, "trimming");
     currentFile = await trimImageTransparency(currentFile);
 
     // 3. Compresión
+    onProgress?.(60, "compressing");
     const options = {
       maxSizeMB: 0.8, // Menos de 1MB
       maxWidthOrHeight: 1200,
@@ -41,6 +54,7 @@ export async function processAndUploadImage(file: File): Promise<File | null> {
       type: "image/webp",
     });
 
+    onProgress?.(100, "done");
     return finalFile;
   } catch (error) {
     console.error("Error procesando imagen:", error);

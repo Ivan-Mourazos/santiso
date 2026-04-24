@@ -1,3 +1,10 @@
+<!-- BEGIN:tooling-env -->
+# Tooling & environment
+
+- **Package manager:** `pnpm` only (`pnpm install`, `pnpm run dev`, `pnpm run build`, …). Do not use `npm`/`yarn` in this repo unless the user explicitly asks.
+- **Env vars:** Next.js reads **`.env.local`** (and other `.env*` files). That file is usually gitignored, so agent file search may not list it; it can still exist on disk and is what `next build` uses locally.
+<!-- END:tooling-env -->
+
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 

@@ -1,6 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import BusyBanner from "./BusyBanner";
+import { getCompetitionsByCategory } from "@/lib/competition";
+import { fetchTeamsForCompetition } from "@/lib/supabase-queries";
 
 interface AdminLeagueProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -10,16 +13,27 @@ interface AdminLeagueProps {
 
 export default function AdminLeague({ showToast, showConfirm, categoria }: AdminLeagueProps) {
   const [equipos, setEquipos] = useState<any[]>([]);
+  const [competiciones, setCompeticiones] = useState<string[]>([]);
+  const [competicion, setCompeticion] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
 
   useEffect(() => {
-    fetchEquipos();
+    const opts = getCompetitionsByCategory(categoria);
+    setCompeticiones(opts);
+    setCompeticion(opts[0] || "");
   }, [categoria]);
 
+  useEffect(() => {
+    if (!competicion) return;
+    fetchEquipos();
+  }, [categoria, competicion]);
+
   async function fetchEquipos() {
-    const { data } = await supabase.from("equipos").select("*").eq("categoria", categoria).order("nombre", { ascending: true });
-    if (data) setEquipos(data);
-    else setEquipos([]);
+    setIsFetching(true);
+    const data = await fetchTeamsForCompetition(categoria, competicion);
+    setEquipos(data);
+    setIsFetching(false);
   }
 
   const handleInputChange = (id: string, field: string, value: string) => {
@@ -57,6 +71,13 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
 
   return (
     <div className="card full-width glass" style={{ marginBottom: '2rem' }}>
+      <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando clasificación..." : "Guardando clasificación..."} />
+      <div className="input-group" style={{ marginBottom: "1rem", maxWidth: "480px" }}>
+        <label>Competición</label>
+        <select value={competicion} onChange={(e) => setCompeticion(e.target.value)} disabled={loading || isFetching}>
+          {competiciones.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
           <h3>Editor de Clasificación de la Liga</h3>

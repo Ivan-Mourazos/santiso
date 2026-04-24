@@ -16,6 +16,7 @@ interface Props {
   handleRivalFile: (file: File) => void;
   dbMatches: any[];
   loadMatchFromDb: (m: any) => void;
+  campos: { id: string; nombre: string; poblacion: string }[];
 }
 
 export const FormResumo = (props: Props & { tipo: string }) => {

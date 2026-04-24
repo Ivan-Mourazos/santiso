@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { processAndUploadImage } from "@/lib/image-utils";
 import { v4 as uuidv4 } from "uuid";
+import BusyBanner from "./BusyBanner";
 
 interface AdminPlayersProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -19,27 +20,41 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isFetching, setIsFetching] = useState(true);
+  const [busyText, setBusyText] = useState("Cargando jugadores...");
+  const [busyProgress, setBusyProgress] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     fetchJugadores();
   }, [categoria]);
 
   async function fetchJugadores() {
+    setIsFetching(true);
     const { data } = await supabase.from("jugadores").select("*").eq("categoria", categoria).order("dorsal", { ascending: true });
     if (data) setJugadores(data);
+    setIsFetching(false);
   }
 
   async function handleAddJugador(e: React.FormEvent) {
     e.preventDefault();
+    setBusyText("Procesando foto y guardando jugador...");
+    setBusyProgress(5);
     setLoading(true);
     
     let foto_url = "";
     if (fotoFile) {
-      const processed = await processAndUploadImage(fotoFile);
+      const processed = await processAndUploadImage(fotoFile, (percent) => {
+        setBusyText("Procesando foto...");
+        setBusyProgress(percent * 0.6);
+      });
       if (processed) {
+        setBusyText("Subiendo foto...");
+        setBusyProgress(75);
         const fileName = `jugadores/${uuidv4()}.webp`;
         const { data, error } = await supabase.storage.from("fotos").upload(fileName, processed);
         if (data) {
+          setBusyText("Guardando jugador...");
+          setBusyProgress(90);
           const { data: pUrl } = supabase.storage.from("fotos").getPublicUrl(fileName);
           foto_url = pUrl.publicUrl;
         }
@@ -56,16 +71,26 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
       showToast("Jugador añadido correctamente");
     }
     setLoading(false);
+    setBusyProgress(undefined);
   }
 
   async function handleUpdateFoto(id: string, file: File) {
+    setBusyText("Procesando y subiendo foto...");
+    setBusyProgress(5);
     setLoading(true);
-    const processed = await processAndUploadImage(file);
+    const processed = await processAndUploadImage(file, (percent) => {
+      setBusyText("Procesando foto...");
+      setBusyProgress(percent * 0.6);
+    });
     if (processed) {
+      setBusyText("Subiendo foto...");
+      setBusyProgress(75);
       const fileName = `jugadores/${uuidv4()}.webp`;
       const { data, error: uploadError } = await supabase.storage.from("fotos").upload(fileName, processed);
       
       if (data) {
+        setBusyText("Guardando foto...");
+        setBusyProgress(90);
         const { data: pUrl } = supabase.storage.from("fotos").getPublicUrl(fileName);
         const { error: dbError } = await supabase
           .from("jugadores")
@@ -79,6 +104,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
       }
     }
     setLoading(false);
+    setBusyProgress(undefined);
   }
 
   async function handleDeleteJugador(id: string) {
@@ -91,6 +117,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
 
   return (
     <div className="card glass">
+      <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando jugadores..." : busyText} progress={loading ? busyProgress : undefined} />
       <h3>Plantilla {categoria}</h3>
       <form onSubmit={handleAddJugador} className="admin-form">
         <div className="form-grid-5" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -160,13 +187,13 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
                     {j.foto_url ? (
                       <img src={j.foto_url} alt={j.nombre} style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', background: '#1a1a1a', borderRadius: '8px', display: 'flex', alignItems: 'center', justify: 'center', color: '#444' }}>
+                      <div style={{ width: '100%', height: '100%', background: '#1a1a1a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444' }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                       </div>
                     )}
-                    <label style={{ position: 'absolute', bottom: '-5px', right: '-5px', background: 'var(--primary)', color: 'black', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justify: 'center', cursor: 'pointer', border: '2px solid #000' }}>
+                    <label style={{ position: 'absolute', bottom: '-5px', right: '-5px', background: 'var(--primary)', color: 'black', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: loading ? 'not-allowed' : 'pointer', border: '2px solid #000', opacity: loading ? 0.6 : 1 }}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"/></svg>
-                      <input type="file" className="hidden-input" accept="image/*" onChange={(e) => {
+                      <input disabled={loading} type="file" className="hidden-input" accept="image/*" onChange={(e) => {
                         const f = e.target.files?.[0];
                         if (f) handleUpdateFoto(j.id, f);
                       }} />
@@ -185,7 +212,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
                 <td style={{ fontStyle: 'italic', color: 'var(--text-secondary)' }}>{j.apodo || "-"}</td>
                 <td><span className="badge-posicion">{j.posicion}</span></td>
                 <td>
-                  <button onClick={() => handleDeleteJugador(j.id)} className="btn-delete">
+                  <button disabled={loading} onClick={() => handleDeleteJugador(j.id)} className="btn-delete" style={{ opacity: loading ? 0.6 : 1 }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                     Eliminar
                   </button>

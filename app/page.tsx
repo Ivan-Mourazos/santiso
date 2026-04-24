@@ -2,17 +2,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-
-interface Jugador {
-  id: string;
-  nombre: string;
-  dorsal: number;
-  posicion: string;
-  foto_url: string | null;
-}
+import { fetchCurrentSantisoMatches } from "@/lib/supabase-queries";
 
 export default function Home() {
-  const [jugadores, setJugadores] = useState<Jugador[]>([]);
   const [proximoPartido, setProximoPartido] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
   const [escudo, setEscudo] = useState<string | null>(null);
@@ -21,39 +13,9 @@ export default function Home() {
   useEffect(() => {
     setMounted(true);
     async function fetchData() {
-      // Fetch Próximos Partidos (Uno por categoría para los equipos del Santiso)
-      const { data: santisoTeams } = await supabase
-        .from("equipos")
-        .select("id, categoria")
-        .ilike("nombre", "%santiso%");
-
-      const nextMatches = [];
-      if (santisoTeams) {
-        for (const team of santisoTeams) {
-          const { data: mData } = await supabase
-            .from("partidos_liga")
-            .select(`
-              *,
-              local:equipo_local_id (nombre, escudo_url),
-              visitante:equipo_visitante_id (nombre, escudo_url)
-            `)
-            .eq("categoria", team.categoria)
-            .or(`equipo_local_id.eq.${team.id},equipo_visitante_id.eq.${team.id}`)
-            .gte("fecha", new Date().toISOString())
-            .order("fecha", { ascending: true })
-            .limit(1);
-
-          if (mData && mData.length > 0) {
-            nextMatches.push(mData[0]);
-          }
-        }
-      }
-      // Ordenar por fecha para mostrar primero el más inminente
-      nextMatches.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
-      
+      const nextMatches = await fetchCurrentSantisoMatches();
       setProximoPartido(nextMatches);
 
-      // Fetch Patrocinadores
       const { data: sData } = await supabase.from("patrocinadores").select("*").order("orden", { ascending: true });
       if (sData) setPatrocinadores(sData);
     }

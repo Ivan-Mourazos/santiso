@@ -1,6 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import BusyBanner from "./BusyBanner";
+import { getCompetitionsByCategory } from "@/lib/competition";
+import {
+  fetchMatchdaysForCompetition,
+  fetchMatchesForMatchday,
+  fetchSeasons,
+  fetchTeamsForCompetition,
+  mergeMissingTeams,
+} from "@/lib/supabase-queries";
 
 interface AdminJornadasProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -17,7 +26,12 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
   const [temporadaActiva, setTemporadaActiva] = useState<any>(null);
 
   const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [busyText, setBusyText] = useState("Cargando jornadas y partidos...");
+  const [rowBusy, setRowBusy] = useState<Record<string, boolean>>({});
   const [selectedJornada, setSelectedJornada] = useState<string | null>(null);
+  const [competitions, setCompetitions] = useState<string[]>([]);
+  const [selectedCompeticion, setSelectedCompeticion] = useState("");
 
   // New Matchday form
   const [numJornada, setNumJornada] = useState("");
@@ -31,23 +45,29 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
   const [visitanteId, setVisitanteId] = useState("");
   const [fechaPartido, setFechaPartido] = useState("");
   const [campoId, setCampoId] = useState("");
+  const [descansos, setDescansos] = useState<any[]>([]);
+  const [descansoEquipoId, setDescansoEquipoId] = useState("");
 
   useEffect(() => {
     fetchBaseData();
+  }, [categoria, selectedCompeticion]);
+
+  useEffect(() => {
+    const opts = getCompetitionsByCategory(categoria);
+    setCompetitions(opts);
+    setSelectedCompeticion(opts[0] || "");
   }, [categoria]);
 
   async function fetchBaseData() {
-    // Temporadas
-    const { data: tData } = await supabase.from("temporadas").select("*").order("created_at", { ascending: false });
-    if (tData) {
-      setTemporadas(tData);
-      const activa = tData.find((t: any) => t.activa) || tData[0];
-      if (activa) setTemporadaActiva(activa);
-    }
+    setIsFetching(true);
+    const [{ data: tData, active }, eData] = await Promise.all([
+      fetchSeasons(),
+      selectedCompeticion ? fetchTeamsForCompetition(categoria, selectedCompeticion) : Promise.resolve([]),
+    ]);
 
-    // Equipos de la categoría
-    const { data: eData } = await supabase.from("equipos").select("*").eq("categoria", categoria).order("nombre");
-    if (eData) setEquipos(eData);
+    setTemporadas(tData);
+    if (active) setTemporadaActiva(active);
+    setEquipos(eData);
 
     // Campos
     const { data: cData, error: cError } = await supabase.from("campos_futbol").select("*").order("nombre");
@@ -56,35 +76,39 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     } else if (cData) {
       setCampos(cData);
     }
+    setIsFetching(false);
   }
 
   useEffect(() => {
     if (temporadaActiva) {
       fetchJornadas();
     }
-  }, [temporadaActiva, categoria]);
+  }, [temporadaActiva, categoria, selectedCompeticion]);
 
   async function fetchJornadas() {
-    const { data } = await supabase
-      .from("jornadas")
-      .select("*")
-      .eq("temporada_id", temporadaActiva.id)
-      .eq("categoria", categoria)
-      .order("numero", { ascending: true });
-    
-    if (data) {
-      setJornadas(data);
-      if (data.length > 0 && !selectedJornada) {
-        setSelectedJornada(data[0].id);
-      } else if (data.length === 0) {
-        setSelectedJornada(null);
-      }
+    setIsFetching(true);
+    const { data, error } = await fetchMatchdaysForCompetition(
+      temporadaActiva.id,
+      categoria,
+      selectedCompeticion
+    );
+
+    if (error) {
+      showToast("Error cargando jornadas: " + error.message, "error");
+      setIsFetching(false);
+      return;
     }
+
+    setJornadas(data);
+    if (data.length === 0) setSelectedJornada(null);
+    else if (!selectedJornada || !data.some((j: any) => j.id === selectedJornada)) setSelectedJornada(data[0].id);
+    setIsFetching(false);
   }
 
   async function handleCreateTemporada(e: React.FormEvent) {
     e.preventDefault();
     if (!nuevaTemporadaNombre) return;
+    setBusyText("Creando temporada...");
     setLoading(true);
     const { error } = await supabase.from("temporadas").insert([{ 
       nombre: nuevaTemporadaNombre, 
@@ -101,6 +125,7 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
   }
 
   async function toggleTemporadaActiva(id: string) {
+    setBusyText("Cambiando temporada activa...");
     setLoading(true);
     await supabase.from("temporadas").update({ activa: false }).neq("id", id);
     const { error } = await supabase.from("temporadas").update({ activa: true }).eq("id", id);
@@ -116,29 +141,78 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
   useEffect(() => {
     if (selectedJornada) {
       fetchPartidos();
+      fetchDescansos();
+    } else {
+      setDescansos([]);
     }
-  }, [selectedJornada]);
+  }, [selectedJornada, selectedCompeticion]);
+
+  useEffect(() => {
+    if (!partidos.length) return;
+    const needed = new Set<string>();
+    for (const p of partidos) {
+      if (p.equipo_local_id) needed.add(p.equipo_local_id);
+      if (p.equipo_visitante_id) needed.add(p.equipo_visitante_id);
+    }
+    const have = new Set(equipos.map((e: any) => e.id));
+    const missing = [...needed].filter((id) => !have.has(id));
+    if (missing.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const merged = await mergeMissingTeams(equipos, missing);
+      if (cancelled) return;
+      if (merged.length === equipos.length) return;
+      setEquipos(merged);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [partidos, equipos]);
+
+  async function fetchDescansos() {
+    if (!selectedJornada) return;
+    const { data, error } = await supabase
+      .from("jornada_equipo_descanso")
+      .select("id, equipo_id")
+      .eq("jornada_id", selectedJornada);
+    if (error) {
+      console.error("jornada_equipo_descanso:", error.message);
+      setDescansos([]);
+      return;
+    }
+    setDescansos(data || []);
+  }
 
   async function fetchPartidos() {
-    const { data } = await supabase
-      .from("partidos_liga")
-      .select("*")
-      .eq("jornada_id", selectedJornada)
-      .eq("categoria", categoria) // <-- Filtro de seguridad
-      .order("fecha", { ascending: true });
-    if (data) setPartidos(data);
+    setIsFetching(true);
+    if (!selectedJornada) {
+      setPartidos([]);
+      setIsFetching(false);
+      return;
+    }
+
+    const jornada = jornadas.find((j: any) => j.id === selectedJornada);
+    const { data, error } = await fetchMatchesForMatchday(selectedJornada, categoria, selectedCompeticion, {
+      jornadaCompeticion: jornada?.competicion ?? null,
+    });
+    if (error) showToast("Error cargando partidos: " + error.message, "error");
+    setPartidos(data);
+    setIsFetching(false);
   }
 
   async function handleCreateJornada(e: React.FormEvent) {
     e.preventDefault();
     if (!temporadaActiva) return showToast("No hay temporada activa", "error");
+    setBusyText("Creando jornada...");
     setLoading(true);
-    const { error } = await supabase.from("jornadas").insert([{
+    const payload: any = {
       temporada_id: temporadaActiva.id,
       categoria,
       numero: parseInt(numJornada),
-      fecha_inicio: fechaInicio || null
-    }]);
+      fecha_inicio: fechaInicio || null,
+      competicion: selectedCompeticion,
+    };
+    const { error } = await supabase.from("jornadas").insert([payload]);
     if (!error) {
       showToast("Jornada creada");
       setNumJornada("");
@@ -149,24 +223,72 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     setLoading(false);
   }
 
+  async function handleAddDescanso(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedJornada || !descansoEquipoId) return;
+    const teamAlreadyPlays = partidos.some((p: any) =>
+      p.equipo_local_id === descansoEquipoId || p.equipo_visitante_id === descansoEquipoId
+    );
+    if (teamAlreadyPlays) return showToast("Ese equipo ya tiene partido en esta jornada", "error");
+
+    setBusyText("Marcando descanso...");
+    setLoading(true);
+    const { error } = await supabase.from("jornada_equipo_descanso").insert([
+      { jornada_id: selectedJornada, equipo_id: descansoEquipoId },
+    ]);
+    if (error) {
+      if (error.code === "23505") showToast("Ese equipo ya tiene descanso en esta jornada", "error");
+      else if (error.message?.includes("does not exist")) {
+        showToast("Ejecuta scripts/migration_jornada_descanso.sql en Supabase", "error");
+      } else showToast(error.message, "error");
+    } else {
+      showToast("Descanso registrado");
+      setDescansoEquipoId("");
+      fetchDescansos();
+    }
+    setLoading(false);
+  }
+
+  async function handleRemoveDescanso(rowId: string) {
+    showConfirm("¿Quitar el descanso de este equipo en esta jornada?", async () => {
+      await supabase.from("jornada_equipo_descanso").delete().eq("id", rowId);
+      fetchDescansos();
+      showToast("Descanso eliminado");
+    });
+  }
+
   async function handleAddPartido(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedJornada || !localId || !visitanteId) return;
     if (localId === visitanteId) return showToast("Un equipo no puede jugar contra sí mismo", "error");
+    const restingIds = new Set(descansos.map((d: any) => d.equipo_id));
+    if (restingIds.has(localId) || restingIds.has(visitanteId)) {
+      return showToast("No puedes añadir un partido con un equipo que descansa", "error");
+    }
+    const alreadyUsed = partidos.some((p: any) =>
+      [localId, visitanteId].includes(p.equipo_local_id) || [localId, visitanteId].includes(p.equipo_visitante_id)
+    );
+    if (alreadyUsed) return showToast("Uno de los equipos ya juega en esta jornada", "error");
+
+    setBusyText("Añadiendo partido...");
     setLoading(true);
-    const { error } = await supabase.from("partidos_liga").insert([{
+    const payload: any = {
       jornada_id: selectedJornada,
       categoria,
+      competicion: selectedCompeticion,
       equipo_local_id: localId,
       equipo_visitante_id: visitanteId,
       fecha: fechaPartido || null,
       campo_id: campoId || null,
       estado: "programado"
-    }]);
+    };
+    const { error } = await supabase.from("partidos_liga").insert([payload]);
     if (!error) {
       showToast("Partido añadido");
       setLocalId(""); setVisitanteId(""); setCampoId("");
       fetchPartidos();
+    } else {
+      showToast("Error añadiendo partido: " + error.message, "error");
     }
     setLoading(false);
   }
@@ -187,9 +309,11 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
 
   async function handleDeletePartido(id: string) {
     showConfirm("¿Borrar este partido de la jornada?", async () => {
+      setRowBusy(prev => ({ ...prev, [id]: true }));
       await supabase.from("partidos_liga").delete().eq("id", id);
       fetchPartidos();
       showToast("Partido eliminado");
+      setRowBusy(prev => ({ ...prev, [id]: false }));
     });
   }
 
@@ -202,11 +326,46 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     });
   }
 
-  const getTeamName = (id: string) => equipos.find(e => e.id === id)?.nombre || "Desconocido";
-  const getTeamShield = (id: string) => equipos.find(e => e.id === id)?.escudo_url || "";
+  const teamsById = useMemo(() => new Map(equipos.map((e: any) => [e.id, e])), [equipos]);
+  const getTeamName = (id: string) => teamsById.get(id)?.nombre || "Desconocido";
+  const getTeamShield = (id: string) => teamsById.get(id)?.escudo_url || "";
+  const restingTeamIds = useMemo(() => new Set(descansos.map((d: any) => d.equipo_id)), [descansos]);
+  const playingTeamIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const p of partidos) {
+      if (p.equipo_local_id) ids.add(p.equipo_local_id);
+      if (p.equipo_visitante_id) ids.add(p.equipo_visitante_id);
+    }
+    return ids;
+  }, [partidos]);
+  const unavailableTeamIds = useMemo(
+    () => new Set([...restingTeamIds, ...playingTeamIds]),
+    [restingTeamIds, playingTeamIds]
+  );
+  const availableForLocal = equipos.filter((eq) =>
+    (!unavailableTeamIds.has(eq.id) || eq.id === localId) && eq.id !== visitanteId
+  );
+  const availableForVisitor = equipos.filter((eq) =>
+    (!unavailableTeamIds.has(eq.id) || eq.id === visitanteId) && eq.id !== localId
+  );
+  const availableForRest = equipos.filter((eq) =>
+    (!unavailableTeamIds.has(eq.id) || eq.id === descansoEquipoId)
+  );
 
   return (
     <div className="card glass full-width" style={{ padding: '2.5rem' }}>
+      <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando jornadas y partidos..." : busyText} />
+      <div className="input-group" style={{ marginBottom: "1rem", maxWidth: "480px" }}>
+        <label>Competición</label>
+        <select value={selectedCompeticion} onChange={(e) => {
+          setSelectedJornada(null);
+          setPartidos([]);
+          setDescansos([]);
+          setSelectedCompeticion(e.target.value);
+        }} disabled={loading || isFetching}>
+          {competitions.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
       
       {/* BARRA DE HERRAMIENTAS SUPERIOR (TOOLBAR) */}
       <div style={{ 
@@ -271,8 +430,9 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
             {selectedJornada && (
               <button 
                 onClick={() => handleDeleteJornada(selectedJornada)} 
+              disabled={loading}
                 className="btn-delete-icon" 
-                style={{ height: '55px', borderRadius: '12px', fontSize: '1.2rem', width: '100%' }}
+              style={{ height: '55px', borderRadius: '12px', fontSize: '1.2rem', width: '100%', opacity: loading ? 0.6 : 1 }}
               >
                 🗑️
               </button>
@@ -299,14 +459,14 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                 <label style={{ marginBottom: '0.8rem' }}>Equipo Local</label>
                 <select value={localId} onChange={e => setLocalId(e.target.value)} required style={{ height: '50px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1rem', borderRadius: '10px', width: '100%' }}>
                   <option value="">Selecciona...</option>
-                  {equipos.map(eq => <option key={eq.id} value={eq.id}>{eq.nombre}</option>)}
+                  {availableForLocal.map(eq => <option key={eq.id} value={eq.id}>{eq.nombre}</option>)}
                 </select>
               </div>
               <div className="input-group">
                 <label style={{ marginBottom: '0.8rem' }}>Equipo Visitante</label>
                 <select value={visitanteId} onChange={e => setVisitanteId(e.target.value)} required style={{ height: '50px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1rem', borderRadius: '10px', width: '100%' }}>
                   <option value="">Selecciona...</option>
-                  {equipos.map(eq => <option key={eq.id} value={eq.id}>{eq.nombre}</option>)}
+                  {availableForVisitor.map(eq => <option key={eq.id} value={eq.id}>{eq.nombre}</option>)}
                 </select>
               </div>
               <div className="input-group">
@@ -319,6 +479,79 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
               <button type="submit" disabled={loading} style={{ height: '50px', background: 'var(--primary)', color: 'black', fontWeight: 900, borderRadius: '10px', cursor: 'pointer', border: 'none', width: '100%', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 + Añadir Partido
               </button>
+            </form>
+
+            <form onSubmit={handleAddDescanso} style={{
+              background: 'rgba(139, 92, 246, 0.06)',
+              padding: '1.5rem 2rem',
+              borderRadius: '16px',
+              marginBottom: '2rem',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'flex-end',
+              gap: '1rem',
+            }}>
+              <div className="input-group" style={{ flex: '1 1 280px' }}>
+                <label style={{ marginBottom: '0.5rem', display: 'block', fontWeight: 800, color: '#a78bfa' }}>
+                  🛌 Equipo que descansa esta jornada
+                </label>
+                <select
+                  value={descansoEquipoId}
+                  onChange={(e) => setDescansoEquipoId(e.target.value)}
+                  style={{ height: '48px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1rem', borderRadius: '10px', width: '100%' }}
+                >
+                  <option value="">Selecciona equipo...</option>
+                  {availableForRest.map((eq) => (
+                    <option key={eq.id} value={eq.id}>{eq.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="submit"
+                disabled={loading || !descansoEquipoId}
+                style={{
+                  height: '48px',
+                  background: 'rgba(139, 92, 246, 0.35)',
+                  color: '#e9d5ff',
+                  fontWeight: 800,
+                  borderRadius: '10px',
+                  border: '1px solid rgba(139, 92, 246, 0.4)',
+                  padding: '0 1.5rem',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
+              >
+                + Marcar descanso
+              </button>
+              {descansos.length > 0 && (
+                <div style={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#888', fontWeight: 700 }}>Descansan:</span>
+                  {descansos.map((d) => (
+                    <span
+                      key={d.id}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        background: 'rgba(0,0,0,0.35)',
+                        padding: '0.35rem 0.65rem',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                      }}
+                    >
+                      {getTeamName(d.equipo_id)}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDescanso(d.id)}
+                        style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: 0, lineHeight: 1 }}
+                        title="Quitar"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </form>
 
             {/* Listado de Partidos */}
@@ -423,7 +656,8 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                          </select>
                        </div>
 
-                       <button onClick={async () => {
+                      <button disabled={!!rowBusy[p.id]} onClick={async () => {
+                        setRowBusy(prev => ({ ...prev, [p.id]: true }));
                          const { error } = await supabase.from("partidos_liga").update({
                            goles_local: p.goles_local,
                            goles_visitante: p.goles_visitante,
@@ -431,9 +665,12 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                            campo_id: p.campo_id
                          }).eq("id", p.id);
                          if (!error) showToast("Cambios guardados");
-                       }} style={{ height: '45px', background: 'var(--primary)', border: 'none', color: 'black', padding: '0 2rem', borderRadius: '8px', fontWeight: 900, cursor: 'pointer' }}>Guardar</button>
+                        setRowBusy(prev => ({ ...prev, [p.id]: false }));
+                       }} style={{ height: '45px', background: 'var(--primary)', border: 'none', color: 'black', padding: '0 2rem', borderRadius: '8px', fontWeight: 900, cursor: 'pointer', opacity: rowBusy[p.id] ? 0.7 : 1 }}>
+                        {rowBusy[p.id] ? "Guardando..." : "Guardar"}
+                      </button>
                        
-                       <button onClick={() => handleDeletePartido(p.id)} style={{ height: '45px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '0 1rem', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}>🗑️</button>
+                       <button disabled={!!rowBusy[p.id]} onClick={() => handleDeletePartido(p.id)} style={{ height: '45px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '0 1rem', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s', opacity: rowBusy[p.id] ? 0.6 : 1 }}>🗑️</button>
                     </div>
                   </div>
                 )

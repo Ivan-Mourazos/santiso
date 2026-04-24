@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import BusyBanner from "./BusyBanner";
 
 interface AdminTemporadasProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -11,19 +12,24 @@ export default function AdminTemporadas({ showToast, showConfirm }: AdminTempora
   const [temporadas, setTemporadas] = useState<any[]>([]);
   const [nombre, setNombre] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [busyText, setBusyText] = useState("Cargando temporadas...");
 
   useEffect(() => {
     fetchTemporadas();
   }, []);
 
   async function fetchTemporadas() {
+    setIsFetching(true);
     const { data } = await supabase.from("temporadas").select("*").order("created_at", { ascending: false });
     if (data) setTemporadas(data);
+    setIsFetching(false);
   }
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!nombre) return;
+    setBusyText("Creando temporada...");
     setLoading(true);
 
     const { error } = await supabase.from("temporadas").insert([{ nombre, activa: temporadas.length === 0 }]);
@@ -39,6 +45,7 @@ export default function AdminTemporadas({ showToast, showConfirm }: AdminTempora
   }
 
   async function setActiva(id: string) {
+    setBusyText("Activando temporada...");
     setLoading(true);
     // Desactivar todas
     await supabase.from("temporadas").update({ activa: false }).neq("id", id);
@@ -54,6 +61,7 @@ export default function AdminTemporadas({ showToast, showConfirm }: AdminTempora
 
   return (
     <div className="card glass full-width">
+      <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando temporadas..." : busyText} />
       <form onSubmit={handleAdd} className="form-grid-3" style={{ marginBottom: '2rem' }}>
         <div className="input-group">
           <label>Nombre de Temporada</label>

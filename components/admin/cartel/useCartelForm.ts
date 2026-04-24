@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/lib/supabase";
 import { COMPETICIONS, type FormState, type TemplateId } from "./types";
 import type { Player, CronEvent, NextMatch } from "@/lib/cartel-draw";
+import { fetchSeasons } from "@/lib/supabase-queries";
 
 function mkPlayer(): Player {
   return { id: uuidv4(), dorsal: "", nome: "", eCapitan: false };
@@ -58,6 +59,8 @@ export function useCartelForm() {
 
   useEffect(() => {
     async function loadData() {
+      const { active } = await fetchSeasons();
+
       const { data: jData } = await supabase.from("jugadores").select("*");
       if (jData) setJugadores(jData);
 
@@ -69,9 +72,14 @@ export function useCartelForm() {
 
       const { data: mData } = await supabase
         .from("partidos_liga")
-        .select("*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*), jornada:jornada_id(*)")
+        .select("*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*), jornada:jornada_id(*), campo:campo_id(*)")
         .order("fecha", { ascending: false });
-      if (mData) setDbMatches(mData);
+      if (mData) {
+        const activeMatches = active?.id
+          ? mData.filter((match: any) => match.jornada?.temporada_id === active.id)
+          : mData;
+        setDbMatches(activeMatches);
+      }
     }
     loadData();
   }, []);
@@ -154,12 +162,13 @@ export function useCartelForm() {
     setForm(p => ({
       ...p,
       categoria: match.categoria,
+      competicion: match.competicion || match.jornada?.competicion || p.competicion,
       jornada: match.jornada?.numero?.toString() || "1",
       rivalNombre: rival.nombre,
       rivalEscudoUrl: rival.escudo_url,
       fecha: match.fecha ? match.fecha.split("T")[0] : "",
       hora: match.fecha ? match.fecha.split("T")[1].substring(0, 5) : "18:00",
-      lugar: match.lugar || "",
+      lugar: match.campo?.nombre || match.lugar || "",
       santisoSide: isSantisoLocal ? "left" : "right",
       golesLocal: match.goles_local?.toString() || "0",
       golesRival: match.goles_visitante?.toString() || "0",

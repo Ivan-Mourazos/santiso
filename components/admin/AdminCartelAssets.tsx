@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { processAndUploadImage } from "@/lib/image-utils";
 import { v4 as uuidv4 } from "uuid";
+import BusyBanner from "./BusyBanner";
 
 interface Asset {
   id:      string;
@@ -49,15 +50,19 @@ const TEMPLATE_LABELS: Record<string, string> = {
 export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
   const [assets, setAssets]   = useState<Asset[]>([]);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [isFetching, setIsFetching] = useState(true);
+  const [uploadProgress, setUploadProgress] = useState<number | undefined>(undefined);
 
   useEffect(() => { fetchAssets(); }, []);
 
   async function fetchAssets() {
+    setIsFetching(true);
     const { data } = await supabase
       .from("cartel_assets")
       .select("*")
       .order("orden", { ascending: true });
     if (data) setAssets(data as Asset[]);
+    setIsFetching(false);
   }
 
   // Generic upload helper
@@ -70,10 +75,14 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
   ) {
     const key = `${tipo}_${subtipo}`;
     setLoading(p => ({ ...p, [key]: true }));
+    setUploadProgress(5);
     try {
-      const processed = await processAndUploadImage(file);
+      const processed = await processAndUploadImage(file, (percent) => {
+        setUploadProgress(percent * 0.6);
+      });
       if (!processed) throw new Error("Error procesando imagen");
 
+      setUploadProgress(80);
       const path = `cartel/${sanitizeKey(tipo)}/${sanitizeKey(subtipo)}-${uuidv4()}.webp`;
       const { data: upload, error: uploadErr } = await supabase.storage
         .from("fotos")
@@ -84,6 +93,7 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
       const url = pUrl.publicUrl;
 
       // Check existing row to decide insert vs update
+      setUploadProgress(92);
       const existing = assets.find(a => a.tipo === tipo && a.subtipo === subtipo);
       if (existing) {
         await supabase.from("cartel_assets").update({ url, nombre }).eq("id", existing.id);
@@ -98,6 +108,7 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
       showToast("Error al subir imagen", "error");
     } finally {
       setLoading(p => ({ ...p, [key]: false }));
+      setUploadProgress(undefined);
     }
   }
 
@@ -128,6 +139,7 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
   const fondos     = assets.filter(a => a.tipo === "fondo");
   const instLogos  = assets.filter(a => a.tipo === "logo_institucional");
   const sponsors   = assets.filter(a => a.tipo === "logo_patrocinador").sort((a, b) => a.orden - b.orden);
+  const isUploading = Object.values(loading).some(Boolean);
 
   function getFondo(subtipo: string) { return fondos.find(f => f.subtipo === subtipo); }
   function getInst(subtipo: string)  { return instLogos.find(l => l.subtipo === subtipo); }
@@ -179,6 +191,7 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
 
   return (
     <div className="card glass">
+      <BusyBanner show={isFetching || isUploading} text={isFetching ? "Cargando activos de carteles..." : "Procesando y subiendo imagen..."} progress={isUploading ? uploadProgress : undefined} />
       <h3>Activos del Generador de Carteles</h3>
       <p style={{ color: "#a3a3a3", fontSize: "0.85rem", marginTop: "0.25rem" }}>
         Sube aquí los logos y fondos. El generador los carga automáticamente.
