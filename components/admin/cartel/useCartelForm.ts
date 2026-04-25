@@ -14,43 +14,58 @@ function mkPlayer(): Player {
   return { id: uuidv4(), dorsal: "", nome: "", eCapitan: false };
 }
 function mkEvent(): CronEvent {
-  return { id: uuidv4(), minuto: "", tipo: "gol", equipo: "local", jugador: "" };
+  return {
+    id: uuidv4(),
+    minuto: "",
+    tipo: "gol",
+    equipo: "local",
+    jugador: "",
+  };
 }
 function mkMatch(): NextMatch {
-  return { rival: "", rivalEscudoUrl: "", fecha: "", hora: "18:00", categoria: "Senior", santisoSide: "right" };
+  return {
+    rival: "",
+    rivalEscudoUrl: "",
+    fecha: "",
+    hora: "18:00",
+    categoria: "Senior",
+    santisoSide: "right",
+  };
 }
 
 const DEFAULT_FORM: FormState = {
-  categoria:      "Senior",
-  competicion:    COMPETICIONS["Senior"][0],
-  jornada:        "1",
-  rivalNombre:    "",
+  categoria: "Senior",
+  competicion: COMPETICIONS["Senior"][0],
+  jornada: "1",
+  rivalNombre: "",
   rivalEscudoUrl: "",
-  fecha:          "",
-  hora:           "18:00",
-  lugar:          "",
-  santisoSide:    "right",
-  golesLocal:     "0",
-  golesRival:     "0",
-  estadio:        "",
-  localSponsor:   "",
-  rivalSponsor:   "",
-  events:         [],
+  fecha: "",
+  hora: "18:00",
+  lugar: "",
+  santisoSide: "right",
+  golesLocal: "0",
+  golesRival: "0",
+  estadio: "",
+  localSponsor: "",
+  rivalSponsor: "",
+  events: [],
   categoriasText: "FEMENINO – SENIOR – VETERANOS",
-  matches:        Array.from({ length: 3 }, mkMatch),
+  matches: Array.from({ length: 3 }, mkMatch),
   jugadorFotoUrl: "",
   jugadorXOffset: 0.5,
   jugadorYOffset: 0.5,
-  jugadorZoom:    1.0,
+  jugadorZoom: 1.0,
   showCarouselIndicator: true,
-  noso11Flip:     false,
-  titulares:      Array.from({ length: 11 }, mkPlayer),
-  suplentes:      Array.from({ length: 5 },  mkPlayer),
+  noso11Flip: false,
+  titulares: Array.from({ length: 11 }, mkPlayer),
+  suplentes: Array.from({ length: 5 }, mkPlayer),
 };
 
 export function useCartelForm() {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
-  const [equipos, setEquipos] = useState<{ id: string; nombre: string; escudo_url: string; categoria: string }[]>([]);
+  const [equipos, setEquipos] = useState<
+    { id: string; nombre: string; escudo_url: string; categoria: string }[]
+  >([]);
   const [jugadores, setJugadores] = useState<any[]>([]);
   const [dbMatches, setDbMatches] = useState<any[]>([]);
   const [campos, setCampos] = useState<any[]>([]);
@@ -72,11 +87,15 @@ export function useCartelForm() {
 
       const { data: mData } = await supabase
         .from("partidos_liga")
-        .select("*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*), jornada:jornada_id(*), campo:campo_id(*)")
+        .select(
+          "*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*), jornada:jornada_id(*), campo:campo_id(*)",
+        )
         .order("fecha", { ascending: false });
       if (mData) {
         const activeMatches = active?.id
-          ? mData.filter((match: any) => match.jornada?.temporada_id === active.id)
+          ? mData.filter(
+              (match: any) => match.jornada?.temporada_id === active.id,
+            )
           : mData;
         setDbMatches(activeMatches);
       }
@@ -85,11 +104,13 @@ export function useCartelForm() {
   }, []);
 
   useEffect(() => {
-    return () => { if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current); };
+    return () => {
+      if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
+    };
   }, []);
 
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
-    setForm(p => {
+    setForm((p) => {
       const next = { ...p, [k]: v };
       if (k === "categoria" && typeof v === "string") {
         next.competicion = COMPETICIONS[v]?.[0] || "";
@@ -101,20 +122,30 @@ export function useCartelForm() {
   function resetForm() {
     setForm(DEFAULT_FORM);
     setJugFileName("");
-    if (fileUrlRef.current) { URL.revokeObjectURL(fileUrlRef.current); fileUrlRef.current = ""; }
+    if (fileUrlRef.current) {
+      URL.revokeObjectURL(fileUrlRef.current);
+      fileUrlRef.current = "";
+    }
   }
 
   function handleRivalSelect(nombre: string) {
-    const eq = equipos.find(e => e.nombre === nombre);
-    setForm(p => ({ ...p, rivalNombre: nombre, rivalEscudoUrl: eq?.escudo_url || "" }));
-    if (fileUrlRef.current) { URL.revokeObjectURL(fileUrlRef.current); fileUrlRef.current = ""; }
+    const eq = equipos.find((e) => e.nombre === nombre);
+    setForm((p) => ({
+      ...p,
+      rivalNombre: nombre,
+      rivalEscudoUrl: eq?.escudo_url || "",
+    }));
+    if (fileUrlRef.current) {
+      URL.revokeObjectURL(fileUrlRef.current);
+      fileUrlRef.current = "";
+    }
   }
 
   function handleRivalFile(file: File) {
     if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
     const url = URL.createObjectURL(file);
     fileUrlRef.current = url;
-    setForm(p => ({ ...p, rivalEscudoUrl: url }));
+    setForm((p) => ({ ...p, rivalEscudoUrl: url }));
   }
 
   function handleJugadorFile(file: File) {
@@ -122,11 +153,15 @@ export function useCartelForm() {
     const url = URL.createObjectURL(file);
     fileUrlRef.current = url;
     setJugFileName(file.name);
-    setForm(p => ({ ...p, jugadorFotoUrl: url }));
+    setForm((p) => ({ ...p, jugadorFotoUrl: url }));
   }
 
-  function updatePlayer(list: "titulares" | "suplentes", i: number, patch: Partial<Player>) {
-    setForm(p => {
+  function updatePlayer(
+    list: "titulares" | "suplentes",
+    i: number,
+    patch: Partial<Player>,
+  ) {
+    setForm((p) => {
       const arr = [...p[list]];
       arr[i] = { ...arr[i], ...patch };
       return { ...p, [list]: arr };
@@ -134,21 +169,21 @@ export function useCartelForm() {
   }
 
   function addEvent() {
-    setForm(p => ({ ...p, events: [...p.events, mkEvent()] }));
+    setForm((p) => ({ ...p, events: [...p.events, mkEvent()] }));
   }
   function updateEvent(i: number, patch: Partial<CronEvent>) {
-    setForm(p => {
+    setForm((p) => {
       const evts = [...p.events];
       evts[i] = { ...evts[i], ...patch };
       return { ...p, events: evts };
     });
   }
   function removeEvent(id: string) {
-    setForm(p => ({ ...p, events: p.events.filter(e => e.id !== id) }));
+    setForm((p) => ({ ...p, events: p.events.filter((e) => e.id !== id) }));
   }
 
   function updateMatch(i: number, patch: Partial<NextMatch>) {
-    setForm(p => {
+    setForm((p) => {
       const ms = [...p.matches];
       ms[i] = { ...ms[i], ...patch };
       return { ...p, matches: ms };
@@ -156,13 +191,16 @@ export function useCartelForm() {
   }
 
   function loadMatchFromDb(match: any) {
-    const isSantisoLocal = match.equipo_local?.nombre?.toLowerCase().includes("santiso");
+    const isSantisoLocal = match.equipo_local?.nombre
+      ?.toLowerCase()
+      .includes("santiso");
     const rival = isSantisoLocal ? match.equipo_visitante : match.equipo_local;
-    
-    setForm(p => ({
+
+    setForm((p) => ({
       ...p,
       categoria: match.categoria,
-      competicion: match.competicion || match.jornada?.competicion || p.competicion,
+      competicion:
+        match.competicion || match.jornada?.competicion || p.competicion,
       jornada: match.jornada?.numero?.toString() || "1",
       rivalNombre: rival.nombre,
       rivalEscudoUrl: rival.escudo_url,
@@ -175,7 +213,8 @@ export function useCartelForm() {
     }));
 
     // Cargar estadísticas si existen (goleadores, etc)
-    supabase.from("estadisticas_partido_santiso")
+    supabase
+      .from("estadisticas_partido_santiso")
       .select("*")
       .eq("partido_id", match.id)
       .single()
@@ -189,8 +228,10 @@ export function useCartelForm() {
   }
 
   return {
-    form, set,
-    equipos, setEquipos,
+    form,
+    set,
+    equipos,
+    setEquipos,
     jugadores,
     jugFileName,
     handleRivalSelect,

@@ -1,4 +1,7 @@
-import { getCompeticionLabelsForQuery, getMainCompetitionForCategory } from "@/lib/competition";
+import {
+  getCompeticionLabelsForQuery,
+  getMainCompetitionForCategory,
+} from "@/lib/competition";
 import { supabase } from "@/lib/supabase";
 
 export interface Team {
@@ -47,7 +50,10 @@ export interface LeagueMatch {
   [key: string]: unknown;
 }
 
-export function getCompetitionQueryLabels(categoria: string, competicion: string) {
+export function getCompetitionQueryLabels(
+  categoria: string,
+  competicion: string,
+) {
   const labels = new Set(getCompeticionLabelsForQuery(categoria, competicion));
   if (competicion === getMainCompetitionForCategory(categoria)) {
     labels.add("Liga principal");
@@ -55,9 +61,13 @@ export function getCompetitionQueryLabels(categoria: string, competicion: string
   return [...labels].filter(Boolean);
 }
 
-export function sortTeamsByName<T extends { nombre?: string | null }>(teams: T[]) {
+export function sortTeamsByName<T extends { nombre?: string | null }>(
+  teams: T[],
+) {
   return [...teams].sort((a, b) =>
-    (a.nombre || "").localeCompare(b.nombre || "", "es", { sensitivity: "base" })
+    (a.nombre || "").localeCompare(b.nombre || "", "es", {
+      sensitivity: "base",
+    }),
   );
 }
 
@@ -70,7 +80,9 @@ export async function fetchSeasons() {
   return {
     data: (data || []) as Season[],
     error,
-    active: ((data || []).find((t: Season) => t.activa) || data?.[0] || null) as Season | null,
+    active: ((data || []).find((t: Season) => t.activa) ||
+      data?.[0] ||
+      null) as Season | null,
   };
 }
 
@@ -88,7 +100,10 @@ export async function fetchTeamsByIds(ids: string[]) {
   return data as Team[];
 }
 
-export async function fetchTeamsForCompetition(categoria: string, competicion: string) {
+export async function fetchTeamsForCompetition(
+  categoria: string,
+  competicion: string,
+) {
   const labels = getCompetitionQueryLabels(categoria, competicion);
   const { data: relData, error: relError } = await supabase
     .from("equipo_competiciones")
@@ -97,7 +112,9 @@ export async function fetchTeamsForCompetition(categoria: string, competicion: s
     .in("competicion", labels);
 
   if (!relError && relData && relData.length > 0) {
-    const teams = await fetchTeamsByIds(relData.map((r: { equipo_id: string }) => r.equipo_id));
+    const teams = await fetchTeamsByIds(
+      relData.map((r: { equipo_id: string }) => r.equipo_id),
+    );
     if (teams.length > 0) return teams;
   }
 
@@ -124,7 +141,7 @@ export async function mergeMissingTeams(current: Team[], ids: string[]) {
 export async function fetchMatchdaysForCompetition(
   temporadaId: string,
   categoria: string,
-  competicion: string
+  competicion: string,
 ) {
   const labels = getCompetitionQueryLabels(categoria, competicion);
   const { data, error } = await supabase
@@ -142,7 +159,7 @@ export async function fetchMatchesForMatchday(
   jornadaId: string,
   categoria: string,
   competicion: string,
-  options: { embed?: boolean; jornadaCompeticion?: string | null } = {}
+  options: { embed?: boolean; jornadaCompeticion?: string | null } = {},
 ) {
   const labels = new Set(getCompetitionQueryLabels(categoria, competicion));
   if (options.jornadaCompeticion) labels.add(options.jornadaCompeticion);
@@ -159,7 +176,7 @@ export async function fetchMatchesForMatchday(
     .in("competicion", [...labels])
     .order("fecha", { ascending: true });
 
-  return { data: ((data || []) as unknown) as LeagueMatch[], error };
+  return { data: (data || []) as unknown as LeagueMatch[], error };
 }
 
 export async function fetchCurrentSantisoMatches() {
@@ -176,24 +193,29 @@ export async function fetchCurrentSantisoMatches() {
 
   let query = supabase
     .from("partidos_liga")
-    .select(`
+    .select(
+      `
       *,
       local:equipo_local_id(nombre, escudo_url),
       visitante:equipo_visitante_id(nombre, escudo_url),
       jornada:jornada_id(id, temporada_id, numero, competicion)
-    `)
+    `,
+    )
     .gte("fecha", today)
     .order("fecha", { ascending: true });
 
   const teamFilters = teamIds
-    .flatMap((id) => [`equipo_local_id.eq.${id}`, `equipo_visitante_id.eq.${id}`])
+    .flatMap((id) => [
+      `equipo_local_id.eq.${id}`,
+      `equipo_visitante_id.eq.${id}`,
+    ])
     .join(",");
 
   query = query.or(teamFilters);
 
   const { data } = await query;
   const matches = ((data || []) as LeagueMatch[]).filter((match) =>
-    active?.id ? match.jornada?.temporada_id === active.id : true
+    active?.id ? match.jornada?.temporada_id === active.id : true,
   );
 
   const firstByCategory = new Map<string, LeagueMatch>();
@@ -203,6 +225,7 @@ export async function fetchCurrentSantisoMatches() {
   }
 
   return [...firstByCategory.values()].sort(
-    (a, b) => new Date(a.fecha || 0).getTime() - new Date(b.fecha || 0).getTime()
+    (a, b) =>
+      new Date(a.fecha || 0).getTime() - new Date(b.fecha || 0).getTime(),
   );
 }

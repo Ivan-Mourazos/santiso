@@ -17,7 +17,11 @@ interface AdminJornadasProps {
   categoria: string;
 }
 
-export default function AdminJornadas({ showToast, showConfirm, categoria }: AdminJornadasProps) {
+export default function AdminJornadas({
+  showToast,
+  showConfirm,
+  categoria,
+}: AdminJornadasProps) {
   const [jornadas, setJornadas] = useState<any[]>([]);
   const [equipos, setEquipos] = useState<any[]>([]);
   const [campos, setCampos] = useState<any[]>([]);
@@ -62,7 +66,9 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     setIsFetching(true);
     const [{ data: tData, active }, eData] = await Promise.all([
       fetchSeasons(),
-      selectedCompeticion ? fetchTeamsForCompetition(categoria, selectedCompeticion) : Promise.resolve([]),
+      selectedCompeticion
+        ? fetchTeamsForCompetition(categoria, selectedCompeticion)
+        : Promise.resolve([]),
     ]);
 
     setTemporadas(tData);
@@ -70,7 +76,10 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     setEquipos(eData);
 
     // Campos
-    const { data: cData, error: cError } = await supabase.from("campos_futbol").select("*").order("nombre");
+    const { data: cData, error: cError } = await supabase
+      .from("campos_futbol")
+      .select("*")
+      .order("nombre");
     if (cError) {
       console.error("Error cargando campos:", cError);
     } else if (cData) {
@@ -90,7 +99,7 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     const { data, error } = await fetchMatchdaysForCompetition(
       temporadaActiva.id,
       categoria,
-      selectedCompeticion
+      selectedCompeticion,
     );
 
     if (error) {
@@ -101,7 +110,11 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
 
     setJornadas(data);
     if (data.length === 0) setSelectedJornada(null);
-    else if (!selectedJornada || !data.some((j: any) => j.id === selectedJornada)) setSelectedJornada(data[0].id);
+    else if (
+      !selectedJornada ||
+      !data.some((j: any) => j.id === selectedJornada)
+    )
+      setSelectedJornada(data[0].id);
     setIsFetching(false);
   }
 
@@ -110,10 +123,12 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     if (!nuevaTemporadaNombre) return;
     setBusyText("Creando temporada...");
     setLoading(true);
-    const { error } = await supabase.from("temporadas").insert([{ 
-      nombre: nuevaTemporadaNombre, 
-      activa: temporadas.length === 0 
-    }]);
+    const { error } = await supabase.from("temporadas").insert([
+      {
+        nombre: nuevaTemporadaNombre,
+        activa: temporadas.length === 0,
+      },
+    ]);
     if (!error) {
       showToast("Temporada creada");
       setNuevaTemporadaNombre("");
@@ -128,7 +143,10 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     setBusyText("Cambiando temporada activa...");
     setLoading(true);
     await supabase.from("temporadas").update({ activa: false }).neq("id", id);
-    const { error } = await supabase.from("temporadas").update({ activa: true }).eq("id", id);
+    const { error } = await supabase
+      .from("temporadas")
+      .update({ activa: true })
+      .eq("id", id);
     if (!error) {
       showToast("Temporada activa cambiada");
       fetchBaseData();
@@ -192,9 +210,14 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
     }
 
     const jornada = jornadas.find((j: any) => j.id === selectedJornada);
-    const { data, error } = await fetchMatchesForMatchday(selectedJornada, categoria, selectedCompeticion, {
-      jornadaCompeticion: jornada?.competicion ?? null,
-    });
+    const { data, error } = await fetchMatchesForMatchday(
+      selectedJornada,
+      categoria,
+      selectedCompeticion,
+      {
+        jornadaCompeticion: jornada?.competicion ?? null,
+      },
+    );
     if (error) showToast("Error cargando partidos: " + error.message, "error");
     setPartidos(data);
     setIsFetching(false);
@@ -226,20 +249,27 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
   async function handleAddDescanso(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedJornada || !descansoEquipoId) return;
-    const teamAlreadyPlays = partidos.some((p: any) =>
-      p.equipo_local_id === descansoEquipoId || p.equipo_visitante_id === descansoEquipoId
+    const teamAlreadyPlays = partidos.some(
+      (p: any) =>
+        p.equipo_local_id === descansoEquipoId ||
+        p.equipo_visitante_id === descansoEquipoId,
     );
-    if (teamAlreadyPlays) return showToast("Ese equipo ya tiene partido en esta jornada", "error");
+    if (teamAlreadyPlays)
+      return showToast("Ese equipo ya tiene partido en esta jornada", "error");
 
     setBusyText("Marcando descanso...");
     setLoading(true);
-    const { error } = await supabase.from("jornada_equipo_descanso").insert([
-      { jornada_id: selectedJornada, equipo_id: descansoEquipoId },
-    ]);
+    const { error } = await supabase
+      .from("jornada_equipo_descanso")
+      .insert([{ jornada_id: selectedJornada, equipo_id: descansoEquipoId }]);
     if (error) {
-      if (error.code === "23505") showToast("Ese equipo ya tiene descanso en esta jornada", "error");
+      if (error.code === "23505")
+        showToast("Ese equipo ya tiene descanso en esta jornada", "error");
       else if (error.message?.includes("does not exist")) {
-        showToast("Ejecuta scripts/migration_jornada_descanso.sql en Supabase", "error");
+        showToast(
+          "Ejecuta scripts/migration_jornada_descanso.sql en Supabase",
+          "error",
+        );
       } else showToast(error.message, "error");
     } else {
       showToast("Descanso registrado");
@@ -250,25 +280,35 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
   }
 
   async function handleRemoveDescanso(rowId: string) {
-    showConfirm("¿Quitar el descanso de este equipo en esta jornada?", async () => {
-      await supabase.from("jornada_equipo_descanso").delete().eq("id", rowId);
-      fetchDescansos();
-      showToast("Descanso eliminado");
-    });
+    showConfirm(
+      "¿Quitar el descanso de este equipo en esta jornada?",
+      async () => {
+        await supabase.from("jornada_equipo_descanso").delete().eq("id", rowId);
+        fetchDescansos();
+        showToast("Descanso eliminado");
+      },
+    );
   }
 
   async function handleAddPartido(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedJornada || !localId || !visitanteId) return;
-    if (localId === visitanteId) return showToast("Un equipo no puede jugar contra sí mismo", "error");
+    if (localId === visitanteId)
+      return showToast("Un equipo no puede jugar contra sí mismo", "error");
     const restingIds = new Set(descansos.map((d: any) => d.equipo_id));
     if (restingIds.has(localId) || restingIds.has(visitanteId)) {
-      return showToast("No puedes añadir un partido con un equipo que descansa", "error");
+      return showToast(
+        "No puedes añadir un partido con un equipo que descansa",
+        "error",
+      );
     }
-    const alreadyUsed = partidos.some((p: any) =>
-      [localId, visitanteId].includes(p.equipo_local_id) || [localId, visitanteId].includes(p.equipo_visitante_id)
+    const alreadyUsed = partidos.some(
+      (p: any) =>
+        [localId, visitanteId].includes(p.equipo_local_id) ||
+        [localId, visitanteId].includes(p.equipo_visitante_id),
     );
-    if (alreadyUsed) return showToast("Uno de los equipos ya juega en esta jornada", "error");
+    if (alreadyUsed)
+      return showToast("Uno de los equipos ya juega en esta jornada", "error");
 
     setBusyText("Añadiendo partido...");
     setLoading(true);
@@ -280,12 +320,14 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
       equipo_visitante_id: visitanteId,
       fecha: fechaPartido || null,
       campo_id: campoId || null,
-      estado: "programado"
+      estado: "programado",
     };
     const { error } = await supabase.from("partidos_liga").insert([payload]);
     if (!error) {
       showToast("Partido añadido");
-      setLocalId(""); setVisitanteId(""); setCampoId("");
+      setLocalId("");
+      setVisitanteId("");
+      setCampoId("");
       fetchPartidos();
     } else {
       showToast("Error añadiendo partido: " + error.message, "error");
@@ -295,41 +337,57 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
 
   async function updatePartidoState(id: string, field: string, value: any) {
     const updateObj = { [field]: value };
-    const { error } = await supabase.from("partidos_liga").update(updateObj).eq("id", id);
+    const { error } = await supabase
+      .from("partidos_liga")
+      .update(updateObj)
+      .eq("id", id);
     if (!error) fetchPartidos();
   }
 
   async function saveMatchScore(id: string, local: number, vis: number) {
-    const { error } = await supabase.from("partidos_liga").update({
-      goles_local: local,
-      goles_visitante: vis
-    }).eq("id", id);
+    const { error } = await supabase
+      .from("partidos_liga")
+      .update({
+        goles_local: local,
+        goles_visitante: vis,
+      })
+      .eq("id", id);
     if (!error) showToast("Marcador guardado");
   }
 
   async function handleDeletePartido(id: string) {
     showConfirm("¿Borrar este partido de la jornada?", async () => {
-      setRowBusy(prev => ({ ...prev, [id]: true }));
+      setRowBusy((prev) => ({ ...prev, [id]: true }));
       await supabase.from("partidos_liga").delete().eq("id", id);
       fetchPartidos();
       showToast("Partido eliminado");
-      setRowBusy(prev => ({ ...prev, [id]: false }));
+      setRowBusy((prev) => ({ ...prev, [id]: false }));
     });
   }
 
   async function handleDeleteJornada(id: string) {
-    showConfirm("¿Eliminar TODA la jornada y sus partidos? Esto recalculará la clasificación.", async () => {
-      await supabase.from("jornadas").delete().eq("id", id);
-      setSelectedJornada(null);
-      fetchJornadas();
-      showToast("Jornada borrada");
-    });
+    showConfirm(
+      "¿Eliminar TODA la jornada y sus partidos? Esto recalculará la clasificación.",
+      async () => {
+        await supabase.from("jornadas").delete().eq("id", id);
+        setSelectedJornada(null);
+        fetchJornadas();
+        showToast("Jornada borrada");
+      },
+    );
   }
 
-  const teamsById = useMemo(() => new Map(equipos.map((e: any) => [e.id, e])), [equipos]);
-  const getTeamName = (id: string) => teamsById.get(id)?.nombre || "Desconocido";
+  const teamsById = useMemo(
+    () => new Map(equipos.map((e: any) => [e.id, e])),
+    [equipos],
+  );
+  const getTeamName = (id: string) =>
+    teamsById.get(id)?.nombre || "Desconocido";
   const getTeamShield = (id: string) => teamsById.get(id)?.escudo_url || "";
-  const restingTeamIds = useMemo(() => new Set(descansos.map((d: any) => d.equipo_id)), [descansos]);
+  const restingTeamIds = useMemo(
+    () => new Set(descansos.map((d: any) => d.equipo_id)),
+    [descansos],
+  );
   const playingTeamIds = useMemo(() => {
     const ids = new Set<string>();
     for (const p of partidos) {
@@ -340,99 +398,215 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
   }, [partidos]);
   const unavailableTeamIds = useMemo(
     () => new Set([...restingTeamIds, ...playingTeamIds]),
-    [restingTeamIds, playingTeamIds]
+    [restingTeamIds, playingTeamIds],
   );
-  const availableForLocal = equipos.filter((eq) =>
-    (!unavailableTeamIds.has(eq.id) || eq.id === localId) && eq.id !== visitanteId
+  const availableForLocal = equipos.filter(
+    (eq) =>
+      (!unavailableTeamIds.has(eq.id) || eq.id === localId) &&
+      eq.id !== visitanteId,
   );
-  const availableForVisitor = equipos.filter((eq) =>
-    (!unavailableTeamIds.has(eq.id) || eq.id === visitanteId) && eq.id !== localId
+  const availableForVisitor = equipos.filter(
+    (eq) =>
+      (!unavailableTeamIds.has(eq.id) || eq.id === visitanteId) &&
+      eq.id !== localId,
   );
-  const availableForRest = equipos.filter((eq) =>
-    (!unavailableTeamIds.has(eq.id) || eq.id === descansoEquipoId)
+  const availableForRest = equipos.filter(
+    (eq) => !unavailableTeamIds.has(eq.id) || eq.id === descansoEquipoId,
   );
 
   return (
-    <div className="card glass full-width" style={{ padding: '2.5rem' }}>
-      <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando jornadas y partidos..." : busyText} />
-      <div className="input-group" style={{ marginBottom: "1rem", maxWidth: "480px" }}>
+    <div className="card glass full-width" style={{ padding: "2.5rem" }}>
+      <BusyBanner
+        show={loading || isFetching}
+        text={isFetching ? "Cargando jornadas y partidos..." : busyText}
+      />
+      <div
+        className="input-group"
+        style={{ marginBottom: "1rem", maxWidth: "480px" }}
+      >
         <label>Competición</label>
-        <select value={selectedCompeticion} onChange={(e) => {
-          setSelectedJornada(null);
-          setPartidos([]);
-          setDescansos([]);
-          setSelectedCompeticion(e.target.value);
-        }} disabled={loading || isFetching}>
-          {competitions.map(c => <option key={c} value={c}>{c}</option>)}
+        <select
+          value={selectedCompeticion}
+          onChange={(e) => {
+            setSelectedJornada(null);
+            setPartidos([]);
+            setDescansos([]);
+            setSelectedCompeticion(e.target.value);
+          }}
+          disabled={loading || isFetching}
+        >
+          {competitions.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
         </select>
       </div>
-      
+
       {/* BARRA DE HERRAMIENTAS SUPERIOR (TOOLBAR) */}
-      <div style={{ 
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '2.5rem', 
-        paddingBottom: '2.5rem', 
-        marginBottom: '3rem', 
-        borderBottom: '1px solid rgba(255,255,255,0.08)'
-      }}>
-        
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "2.5rem",
+          paddingBottom: "2.5rem",
+          marginBottom: "3rem",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
         {/* Bloque Temporada */}
         <div className="control-group">
-          <label style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1rem', display: 'block' }}>
+          <label
+            style={{
+              fontSize: "0.8rem",
+              color: "var(--primary)",
+              fontWeight: 800,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginBottom: "1rem",
+              display: "block",
+            }}
+          >
             🏆 Gestión de Temporada
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 60px', gap: '0.8rem' }}>
-            <select 
-              value={temporadaActiva?.id || ""} 
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 140px 60px",
+              gap: "0.8rem",
+            }}
+          >
+            <select
+              value={temporadaActiva?.id || ""}
               onChange={(e) => toggleTemporadaActiva(e.target.value)}
-              style={{ height: '55px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1.2rem', borderRadius: '12px', fontSize: '1rem', fontWeight: 600 }}
+              style={{
+                height: "55px",
+                background: "rgba(0,0,0,0.4)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "white",
+                padding: "0 1.2rem",
+                borderRadius: "12px",
+                fontSize: "1rem",
+                fontWeight: 600,
+              }}
             >
-              {temporadas.map(t => (
-                <option key={t.id} value={t.id}>{t.nombre} {t.activa ? '(Activa)' : ''}</option>
+              {temporadas.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.nombre} {t.activa ? "(Activa)" : ""}
+                </option>
               ))}
             </select>
-            <input 
-              type="text" 
-              placeholder="Nueva..." 
+            <input
+              type="text"
+              placeholder="Nueva..."
               value={nuevaTemporadaNombre}
-              onChange={e => setNuevaTemporadaNombre(e.target.value)}
-              style={{ height: '55px', padding: '0 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.9rem', borderRadius: '12px' }}
+              onChange={(e) => setNuevaTemporadaNombre(e.target.value)}
+              style={{
+                height: "55px",
+                padding: "0 1rem",
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "white",
+                fontSize: "0.9rem",
+                borderRadius: "12px",
+              }}
             />
-            <button onClick={handleCreateTemporada} className="btn-primary" style={{ height: '55px', borderRadius: '12px', fontSize: '1.5rem' }}>+</button>
+            <button
+              onClick={handleCreateTemporada}
+              className="btn-primary"
+              style={{
+                height: "55px",
+                borderRadius: "12px",
+                fontSize: "1.5rem",
+              }}
+            >
+              +
+            </button>
           </div>
         </div>
 
         {/* Bloque Jornada */}
         <div className="control-group">
-          <label style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1rem', display: 'block' }}>
+          <label
+            style={{
+              fontSize: "0.8rem",
+              color: "var(--primary)",
+              fontWeight: 800,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginBottom: "1rem",
+              display: "block",
+            }}
+          >
             📅 Selección de Jornada
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 60px 60px', gap: '0.8rem' }}>
-            <select 
-              value={selectedJornada || ""} 
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 100px 60px 60px",
+              gap: "0.8rem",
+            }}
+          >
+            <select
+              value={selectedJornada || ""}
               onChange={(e) => setSelectedJornada(e.target.value)}
-              style={{ height: '55px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1.2rem', borderRadius: '12px', fontSize: '1rem', fontWeight: 700 }}
+              style={{
+                height: "55px",
+                background: "rgba(0,0,0,0.4)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "white",
+                padding: "0 1.2rem",
+                borderRadius: "12px",
+                fontSize: "1rem",
+                fontWeight: 700,
+              }}
             >
               <option value="">Selecciona jornada...</option>
-              {jornadas.map(j => (
-                <option key={j.id} value={j.id}>Jornada {j.numero}</option>
+              {jornadas.map((j) => (
+                <option key={j.id} value={j.id}>
+                  Jornada {j.numero}
+                </option>
               ))}
             </select>
-            <input 
-              type="number" 
-              placeholder="Nº" 
+            <input
+              type="number"
+              placeholder="Nº"
               value={numJornada}
-              onChange={e => setNumJornada(e.target.value)}
-              style={{ height: '55px', padding: '0 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '1rem', borderRadius: '12px', textAlign: 'center' }}
+              onChange={(e) => setNumJornada(e.target.value)}
+              style={{
+                height: "55px",
+                padding: "0 1rem",
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "white",
+                fontSize: "1rem",
+                borderRadius: "12px",
+                textAlign: "center",
+              }}
             />
-            <button onClick={handleCreateJornada} className="btn-primary" style={{ height: '55px', borderRadius: '12px', fontSize: '1.5rem' }}>+</button>
+            <button
+              onClick={handleCreateJornada}
+              className="btn-primary"
+              style={{
+                height: "55px",
+                borderRadius: "12px",
+                fontSize: "1.5rem",
+              }}
+            >
+              +
+            </button>
             {selectedJornada && (
-              <button 
-                onClick={() => handleDeleteJornada(selectedJornada)} 
-              disabled={loading}
-                className="btn-delete-icon" 
-              style={{ height: '55px', borderRadius: '12px', fontSize: '1.2rem', width: '100%', opacity: loading ? 0.6 : 1 }}
+              <button
+                onClick={() => handleDeleteJornada(selectedJornada)}
+                disabled={loading}
+                className="btn-delete-icon"
+                style={{
+                  height: "55px",
+                  borderRadius: "12px",
+                  fontSize: "1.2rem",
+                  width: "100%",
+                  opacity: loading ? 0.6 : 1,
+                }}
               >
                 🗑️
               </button>
@@ -442,68 +616,162 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
       </div>
 
       {/* CUERPO PRINCIPAL: PARTIDOS */}
-      <div style={{ width: '100%' }}>
+      <div style={{ width: "100%" }}>
         {selectedJornada ? (
           <>
             {/* Creador de Partidos */}
-            <form onSubmit={handleAddPartido} className="form-grid-4" style={{ 
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)', 
-              padding: '2rem', 
-              borderRadius: '20px', 
-              marginBottom: '3rem', 
-              border: '1px solid rgba(255,255,255,0.05)',
-              alignItems: 'flex-end',
-              gap: '1.5rem'
-            }}>
+            <form
+              onSubmit={handleAddPartido}
+              className="form-grid-4"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)",
+                padding: "2rem",
+                borderRadius: "20px",
+                marginBottom: "3rem",
+                border: "1px solid rgba(255,255,255,0.05)",
+                alignItems: "flex-end",
+                gap: "1.5rem",
+              }}
+            >
               <div className="input-group">
-                <label style={{ marginBottom: '0.8rem' }}>Equipo Local</label>
-                <select value={localId} onChange={e => setLocalId(e.target.value)} required style={{ height: '50px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1rem', borderRadius: '10px', width: '100%' }}>
+                <label style={{ marginBottom: "0.8rem" }}>Equipo Local</label>
+                <select
+                  value={localId}
+                  onChange={(e) => setLocalId(e.target.value)}
+                  required
+                  style={{
+                    height: "50px",
+                    background: "rgba(0,0,0,0.5)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "white",
+                    padding: "0 1rem",
+                    borderRadius: "10px",
+                    width: "100%",
+                  }}
+                >
                   <option value="">Selecciona...</option>
-                  {availableForLocal.map(eq => <option key={eq.id} value={eq.id}>{eq.nombre}</option>)}
+                  {availableForLocal.map((eq) => (
+                    <option key={eq.id} value={eq.id}>
+                      {eq.nombre}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="input-group">
-                <label style={{ marginBottom: '0.8rem' }}>Equipo Visitante</label>
-                <select value={visitanteId} onChange={e => setVisitanteId(e.target.value)} required style={{ height: '50px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1rem', borderRadius: '10px', width: '100%' }}>
+                <label style={{ marginBottom: "0.8rem" }}>
+                  Equipo Visitante
+                </label>
+                <select
+                  value={visitanteId}
+                  onChange={(e) => setVisitanteId(e.target.value)}
+                  required
+                  style={{
+                    height: "50px",
+                    background: "rgba(0,0,0,0.5)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "white",
+                    padding: "0 1rem",
+                    borderRadius: "10px",
+                    width: "100%",
+                  }}
+                >
                   <option value="">Selecciona...</option>
-                  {availableForVisitor.map(eq => <option key={eq.id} value={eq.id}>{eq.nombre}</option>)}
+                  {availableForVisitor.map((eq) => (
+                    <option key={eq.id} value={eq.id}>
+                      {eq.nombre}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="input-group">
-                <label style={{ marginBottom: '0.8rem' }}>Estadio / Campo</label>
-                <select value={campoId} onChange={e => setCampoId(e.target.value)} style={{ height: '50px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1rem', borderRadius: '10px', width: '100%' }}>
+                <label style={{ marginBottom: "0.8rem" }}>
+                  Estadio / Campo
+                </label>
+                <select
+                  value={campoId}
+                  onChange={(e) => setCampoId(e.target.value)}
+                  style={{
+                    height: "50px",
+                    background: "rgba(0,0,0,0.5)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "white",
+                    padding: "0 1rem",
+                    borderRadius: "10px",
+                    width: "100%",
+                  }}
+                >
                   <option value="">Selecciona campo...</option>
-                  {campos.map(c => <option key={c.id} value={c.id}>{c.nombre} ({c.poblacion})</option>)}
+                  {campos.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre} ({c.poblacion})
+                    </option>
+                  ))}
                 </select>
               </div>
-              <button type="submit" disabled={loading} style={{ height: '50px', background: 'var(--primary)', color: 'black', fontWeight: 900, borderRadius: '10px', cursor: 'pointer', border: 'none', width: '100%', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  height: "50px",
+                  background: "var(--primary)",
+                  color: "black",
+                  fontWeight: 900,
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  border: "none",
+                  width: "100%",
+                  textTransform: "uppercase",
+                  letterSpacing: "1px",
+                }}
+              >
                 + Añadir Partido
               </button>
             </form>
 
-            <form onSubmit={handleAddDescanso} style={{
-              background: 'rgba(139, 92, 246, 0.06)',
-              padding: '1.5rem 2rem',
-              borderRadius: '16px',
-              marginBottom: '2rem',
-              border: '1px solid rgba(139, 92, 246, 0.2)',
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'flex-end',
-              gap: '1rem',
-            }}>
-              <div className="input-group" style={{ flex: '1 1 280px' }}>
-                <label style={{ marginBottom: '0.5rem', display: 'block', fontWeight: 800, color: '#a78bfa' }}>
+            <form
+              onSubmit={handleAddDescanso}
+              style={{
+                background: "rgba(139, 92, 246, 0.06)",
+                padding: "1.5rem 2rem",
+                borderRadius: "16px",
+                marginBottom: "2rem",
+                border: "1px solid rgba(139, 92, 246, 0.2)",
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "flex-end",
+                gap: "1rem",
+              }}
+            >
+              <div className="input-group" style={{ flex: "1 1 280px" }}>
+                <label
+                  style={{
+                    marginBottom: "0.5rem",
+                    display: "block",
+                    fontWeight: 800,
+                    color: "#a78bfa",
+                  }}
+                >
                   🛌 Equipo que descansa esta jornada
                 </label>
                 <select
                   value={descansoEquipoId}
                   onChange={(e) => setDescansoEquipoId(e.target.value)}
-                  style={{ height: '48px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 1rem', borderRadius: '10px', width: '100%' }}
+                  style={{
+                    height: "48px",
+                    background: "rgba(0,0,0,0.5)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "white",
+                    padding: "0 1rem",
+                    borderRadius: "10px",
+                    width: "100%",
+                  }}
                 >
                   <option value="">Selecciona equipo...</option>
                   {availableForRest.map((eq) => (
-                    <option key={eq.id} value={eq.id}>{eq.nombre}</option>
+                    <option key={eq.id} value={eq.id}>
+                      {eq.nombre}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -511,39 +779,62 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
                 type="submit"
                 disabled={loading || !descansoEquipoId}
                 style={{
-                  height: '48px',
-                  background: 'rgba(139, 92, 246, 0.35)',
-                  color: '#e9d5ff',
+                  height: "48px",
+                  background: "rgba(139, 92, 246, 0.35)",
+                  color: "#e9d5ff",
                   fontWeight: 800,
-                  borderRadius: '10px',
-                  border: '1px solid rgba(139, 92, 246, 0.4)',
-                  padding: '0 1.5rem',
-                  cursor: loading ? 'not-allowed' : 'pointer',
+                  borderRadius: "10px",
+                  border: "1px solid rgba(139, 92, 246, 0.4)",
+                  padding: "0 1.5rem",
+                  cursor: loading ? "not-allowed" : "pointer",
                 }}
               >
                 + Marcar descanso
               </button>
               {descansos.length > 0 && (
-                <div style={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.75rem', color: '#888', fontWeight: 700 }}>Descansan:</span>
+                <div
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "0.5rem",
+                    alignItems: "center",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "#888",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Descansan:
+                  </span>
                   {descansos.map((d) => (
                     <span
                       key={d.id}
                       style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        background: 'rgba(0,0,0,0.35)',
-                        padding: '0.35rem 0.65rem',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.35rem",
+                        background: "rgba(0,0,0,0.35)",
+                        padding: "0.35rem 0.65rem",
+                        borderRadius: "8px",
+                        fontSize: "0.85rem",
                       }}
                     >
                       {getTeamName(d.equipo_id)}
                       <button
                         type="button"
                         onClick={() => handleRemoveDescanso(d.id)}
-                        style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: 0, lineHeight: 1 }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#f87171",
+                          cursor: "pointer",
+                          padding: 0,
+                          lineHeight: 1,
+                        }}
                         title="Quitar"
                       >
                         ×
@@ -555,133 +846,405 @@ export default function AdminJornadas({ showToast, showConfirm, categoria }: Adm
             </form>
 
             {/* Listado de Partidos */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {partidos.length === 0 && <p style={{ color: '#666', textAlign: 'center', padding: '4rem', background: 'rgba(255,255,255,0.01)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>No hay partidos registrados en esta jornada.</p>}
-              
-              {partidos.map(p => {
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "2rem" }}
+            >
+              {partidos.length === 0 && (
+                <p
+                  style={{
+                    color: "#666",
+                    textAlign: "center",
+                    padding: "4rem",
+                    background: "rgba(255,255,255,0.01)",
+                    borderRadius: "20px",
+                    border: "1px dashed rgba(255,255,255,0.1)",
+                  }}
+                >
+                  No hay partidos registrados en esta jornada.
+                </p>
+              )}
+
+              {partidos.map((p) => {
                 const localName = getTeamName(p.equipo_local_id);
                 const visName = getTeamName(p.equipo_visitante_id);
                 const localShield = getTeamShield(p.equipo_local_id);
                 const visShield = getTeamShield(p.equipo_visitante_id);
-                
+
                 return (
-                  <div key={p.id} style={{ 
-                    background: 'rgba(255,255,255,0.02)', 
-                    padding: '2.5rem', 
-                    borderRadius: '24px', 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    gap: '2.5rem', 
-                    border: '1px solid rgba(255,255,255,0.05)',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', width: '100%' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1, justifyContent: 'flex-end', textAlign: 'right' }}>
-                        <span style={{ fontSize: '1.4rem', fontWeight: 800 }}>{localName}</span>
-                        {localShield && <img src={localShield} alt="" style={{ width: 50, height: 50, objectFit: 'contain' }} />}
+                  <div
+                    key={p.id}
+                    style={{
+                      background: "rgba(255,255,255,0.02)",
+                      padding: "2.5rem",
+                      borderRadius: "24px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "2.5rem",
+                      border: "1px solid rgba(255,255,255,0.05)",
+                      boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "2rem",
+                        width: "100%",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "1.5rem",
+                          flex: 1,
+                          justifyContent: "flex-end",
+                          textAlign: "right",
+                        }}
+                      >
+                        <span style={{ fontSize: "1.4rem", fontWeight: 800 }}>
+                          {localName}
+                        </span>
+                        {localShield && (
+                          <img
+                            src={localShield}
+                            alt=""
+                            style={{
+                              width: 50,
+                              height: 50,
+                              objectFit: "contain",
+                            }}
+                          />
+                        )}
                       </div>
-                      
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'rgba(0,0,0,0.5)', padding: '1rem 2rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <input 
-                          type="number" 
-                          value={p.goles_local ?? 0} 
-                          onChange={e => {
-                            const val = e.target.value === '' ? 0 : parseInt(e.target.value);
-                            setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, goles_local: val } : pt));
-                          }} 
-                          style={{ width: '80px', height: '60px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: 900, textAlign: 'center', fontSize: '2.5rem', borderRadius: '12px' }} 
+
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "1.5rem",
+                          background: "rgba(0,0,0,0.5)",
+                          padding: "1rem 2rem",
+                          borderRadius: "20px",
+                          border: "1px solid rgba(255,255,255,0.05)",
+                        }}
+                      >
+                        <input
+                          type="number"
+                          value={p.goles_local ?? 0}
+                          onChange={(e) => {
+                            const val =
+                              e.target.value === ""
+                                ? 0
+                                : parseInt(e.target.value);
+                            setPartidos((prev) =>
+                              prev.map((pt) =>
+                                pt.id === p.id
+                                  ? { ...pt, goles_local: val }
+                                  : pt,
+                              ),
+                            );
+                          }}
+                          style={{
+                            width: "80px",
+                            height: "60px",
+                            background: "rgba(255,255,255,0.03)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            color: "white",
+                            fontWeight: 900,
+                            textAlign: "center",
+                            fontSize: "2.5rem",
+                            borderRadius: "12px",
+                          }}
                         />
-                        <span style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '2rem' }}>-</span>
-                        <input 
-                          type="number" 
-                          value={p.goles_visitante ?? 0} 
-                          onChange={e => {
-                            const val = e.target.value === '' ? 0 : parseInt(e.target.value);
-                            setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, goles_visitante: val } : pt));
-                          }} 
-                          style={{ width: '80px', height: '60px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: 900, textAlign: 'center', fontSize: '2.5rem', borderRadius: '12px' }} 
+                        <span
+                          style={{
+                            color: "var(--primary)",
+                            fontWeight: 900,
+                            fontSize: "2rem",
+                          }}
+                        >
+                          -
+                        </span>
+                        <input
+                          type="number"
+                          value={p.goles_visitante ?? 0}
+                          onChange={(e) => {
+                            const val =
+                              e.target.value === ""
+                                ? 0
+                                : parseInt(e.target.value);
+                            setPartidos((prev) =>
+                              prev.map((pt) =>
+                                pt.id === p.id
+                                  ? { ...pt, goles_visitante: val }
+                                  : pt,
+                              ),
+                            );
+                          }}
+                          style={{
+                            width: "80px",
+                            height: "60px",
+                            background: "rgba(255,255,255,0.03)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            color: "white",
+                            fontWeight: 900,
+                            textAlign: "center",
+                            fontSize: "2.5rem",
+                            borderRadius: "12px",
+                          }}
                         />
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
-                         {visShield && <img src={visShield} alt="" style={{ width: 50, height: 50, objectFit: 'contain' }} />}
-                         <span style={{ fontSize: '1.4rem', fontWeight: 800 }}>{visName}</span>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "1.5rem",
+                          flex: 1,
+                        }}
+                      >
+                        {visShield && (
+                          <img
+                            src={visShield}
+                            alt=""
+                            style={{
+                              width: 50,
+                              height: 50,
+                              objectFit: "contain",
+                            }}
+                          />
+                        )}
+                        <span style={{ fontSize: "1.4rem", fontWeight: 800 }}>
+                          {visName}
+                        </span>
                       </div>
                     </div>
 
-                    <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: '1fr 1fr 160px auto auto', 
-                      alignItems: 'flex-end', 
-                      gap: '1.5rem', 
-                      background: 'rgba(255,255,255,0.01)', 
-                      padding: '2rem', 
-                      borderRadius: '16px',
-                      border: '1px solid rgba(255,255,255,0.03)'
-                    }}>
-                        <div className="input-group">
-                          <label style={{ fontSize: '0.7rem', color: '#666', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.6rem', display: 'block' }}>🏟️ Campo / Estadio</label>
-                          <select 
-                            value={p.campo_id || ""}
-                            onChange={e => {
-                              const val = e.target.value;
-                              setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, campo_id: val } : pt));
-                            }}
-                            style={{ height: '45px', background: 'rgba(0,0,0,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0 1rem', fontSize: '0.95rem', width: '100%' }}
-                          >
-                            <option value="">Sin asignar</option>
-                            {campos.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                          </select>
-                        </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr 160px auto auto",
+                        alignItems: "flex-end",
+                        gap: "1.5rem",
+                        background: "rgba(255,255,255,0.01)",
+                        padding: "2rem",
+                        borderRadius: "16px",
+                        border: "1px solid rgba(255,255,255,0.03)",
+                      }}
+                    >
+                      <div className="input-group">
+                        <label
+                          style={{
+                            fontSize: "0.7rem",
+                            color: "#666",
+                            fontWeight: 800,
+                            textTransform: "uppercase",
+                            marginBottom: "0.6rem",
+                            display: "block",
+                          }}
+                        >
+                          🏟️ Campo / Estadio
+                        </label>
+                        <select
+                          value={p.campo_id || ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPartidos((prev) =>
+                              prev.map((pt) =>
+                                pt.id === p.id ? { ...pt, campo_id: val } : pt,
+                              ),
+                            );
+                          }}
+                          style={{
+                            height: "45px",
+                            background: "rgba(0,0,0,0.3)",
+                            color: "white",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            borderRadius: "8px",
+                            padding: "0 1rem",
+                            fontSize: "0.95rem",
+                            width: "100%",
+                          }}
+                        >
+                          <option value="">Sin asignar</option>
+                          {campos.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                        <div className="input-group">
-                          <label style={{ fontSize: '0.7rem', color: '#666', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.6rem', display: 'block' }}>⏰ Fecha y Hora</label>
-                          <input 
-                            type="datetime-local" 
-                            value={p.fecha ? p.fecha.substring(0, 16) : ""}
-                            onChange={e => {
-                              const val = e.target.value;
-                              setPartidos(prev => prev.map(pt => pt.id === p.id ? { ...pt, fecha: val } : pt));
-                            }}
-                            style={{ height: '45px', background: 'rgba(0,0,0,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0 1rem', fontSize: '0.95rem', width: '100%' }}
-                          />
-                        </div>
+                      <div className="input-group">
+                        <label
+                          style={{
+                            fontSize: "0.7rem",
+                            color: "#666",
+                            fontWeight: 800,
+                            textTransform: "uppercase",
+                            marginBottom: "0.6rem",
+                            display: "block",
+                          }}
+                        >
+                          ⏰ Fecha y Hora
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={p.fecha ? p.fecha.substring(0, 16) : ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPartidos((prev) =>
+                              prev.map((pt) =>
+                                pt.id === p.id ? { ...pt, fecha: val } : pt,
+                              ),
+                            );
+                          }}
+                          style={{
+                            height: "45px",
+                            background: "rgba(0,0,0,0.3)",
+                            color: "white",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            borderRadius: "8px",
+                            padding: "0 1rem",
+                            fontSize: "0.95rem",
+                            width: "100%",
+                          }}
+                        />
+                      </div>
 
-                       <div className="input-group">
-                         <label style={{ fontSize: '0.7rem', color: '#666', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.6rem', display: 'block' }}>🏁 Estado</label>
-                         <select value={p.estado} onChange={e => updatePartidoState(p.id, 'estado', e.target.value)} style={{ height: '45px', padding: '0 1rem', borderRadius: '8px', background: p.estado === 'finalizado' ? '#10b981' : p.estado === 'en_juego' ? '#ef4444' : 'rgba(255,255,255,0.1)', color: 'black', fontWeight: 900, border: 'none', fontSize: '0.9rem', width: '100%' }}>
-                           <option value="programado">Programado</option>
-                           <option value="en_juego">En Juego</option>
-                           <option value="finalizado">Finalizado</option>
-                         </select>
-                       </div>
+                      <div className="input-group">
+                        <label
+                          style={{
+                            fontSize: "0.7rem",
+                            color: "#666",
+                            fontWeight: 800,
+                            textTransform: "uppercase",
+                            marginBottom: "0.6rem",
+                            display: "block",
+                          }}
+                        >
+                          🏁 Estado
+                        </label>
+                        <select
+                          value={p.estado}
+                          onChange={(e) =>
+                            updatePartidoState(p.id, "estado", e.target.value)
+                          }
+                          style={{
+                            height: "45px",
+                            padding: "0 1rem",
+                            borderRadius: "8px",
+                            background:
+                              p.estado === "finalizado"
+                                ? "#10b981"
+                                : p.estado === "en_juego"
+                                  ? "#ef4444"
+                                  : "rgba(255,255,255,0.1)",
+                            color: "black",
+                            fontWeight: 900,
+                            border: "none",
+                            fontSize: "0.9rem",
+                            width: "100%",
+                          }}
+                        >
+                          <option value="programado">Programado</option>
+                          <option value="en_juego">En Juego</option>
+                          <option value="finalizado">Finalizado</option>
+                        </select>
+                      </div>
 
-                      <button disabled={!!rowBusy[p.id]} onClick={async () => {
-                        setRowBusy(prev => ({ ...prev, [p.id]: true }));
-                         const { error } = await supabase.from("partidos_liga").update({
-                           goles_local: p.goles_local,
-                           goles_visitante: p.goles_visitante,
-                           fecha: p.fecha ? new Date(p.fecha).toISOString() : null,
-                           campo_id: p.campo_id
-                         }).eq("id", p.id);
-                         if (!error) showToast("Cambios guardados");
-                        setRowBusy(prev => ({ ...prev, [p.id]: false }));
-                       }} style={{ height: '45px', background: 'var(--primary)', border: 'none', color: 'black', padding: '0 2rem', borderRadius: '8px', fontWeight: 900, cursor: 'pointer', opacity: rowBusy[p.id] ? 0.7 : 1 }}>
+                      <button
+                        disabled={!!rowBusy[p.id]}
+                        onClick={async () => {
+                          setRowBusy((prev) => ({ ...prev, [p.id]: true }));
+                          const { error } = await supabase
+                            .from("partidos_liga")
+                            .update({
+                              goles_local: p.goles_local,
+                              goles_visitante: p.goles_visitante,
+                              fecha: p.fecha
+                                ? new Date(p.fecha).toISOString()
+                                : null,
+                              campo_id: p.campo_id,
+                            })
+                            .eq("id", p.id);
+                          if (!error) showToast("Cambios guardados");
+                          setRowBusy((prev) => ({ ...prev, [p.id]: false }));
+                        }}
+                        style={{
+                          height: "45px",
+                          background: "var(--primary)",
+                          border: "none",
+                          color: "black",
+                          padding: "0 2rem",
+                          borderRadius: "8px",
+                          fontWeight: 900,
+                          cursor: "pointer",
+                          opacity: rowBusy[p.id] ? 0.7 : 1,
+                        }}
+                      >
                         {rowBusy[p.id] ? "Guardando..." : "Guardar"}
                       </button>
-                       
-                       <button disabled={!!rowBusy[p.id]} onClick={() => handleDeletePartido(p.id)} style={{ height: '45px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '0 1rem', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s', opacity: rowBusy[p.id] ? 0.6 : 1 }}>🗑️</button>
+
+                      <button
+                        disabled={!!rowBusy[p.id]}
+                        onClick={() => handleDeletePartido(p.id)}
+                        style={{
+                          height: "45px",
+                          background: "rgba(239, 68, 68, 0.1)",
+                          border: "1px solid rgba(239, 68, 68, 0.2)",
+                          color: "#ef4444",
+                          padding: "0 1rem",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          opacity: rowBusy[p.id] ? 0.6 : 1,
+                        }}
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           </>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#444', background: 'rgba(255,255,255,0.01)', borderRadius: '30px', border: '2px dashed rgba(255,255,255,0.05)' }}>
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ marginBottom: '1.5rem', opacity: 0.2 }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#666' }}>Panel de Control de Jornadas</h3>
-            <p style={{ marginTop: '0.5rem' }}>Selecciona una jornada arriba para gestionar el calendario y los resultados.</p>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "400px",
+              color: "#444",
+              background: "rgba(255,255,255,0.01)",
+              borderRadius: "30px",
+              border: "2px dashed rgba(255,255,255,0.05)",
+            }}
+          >
+            <svg
+              width="64"
+              height="64"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1"
+              style={{ marginBottom: "1.5rem", opacity: 0.2 }}
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#666" }}>
+              Panel de Control de Jornadas
+            </h3>
+            <p style={{ marginTop: "0.5rem" }}>
+              Selecciona una jornada arriba para gestionar el calendario y los
+              resultados.
+            </p>
           </div>
         )}
       </div>

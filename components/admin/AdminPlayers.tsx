@@ -11,7 +11,11 @@ interface AdminPlayersProps {
   categoria: string;
 }
 
-export default function AdminPlayers({ showToast, showConfirm, categoria }: AdminPlayersProps) {
+export default function AdminPlayers({
+  showToast,
+  showConfirm,
+  categoria,
+}: AdminPlayersProps) {
   const [jugadores, setJugadores] = useState<any[]>([]);
   const [nombre, setNombre] = useState("");
   const [apodo, setApodo] = useState("");
@@ -22,7 +26,9 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(true);
   const [busyText, setBusyText] = useState("Cargando jugadores...");
-  const [busyProgress, setBusyProgress] = useState<number | undefined>(undefined);
+  const [busyProgress, setBusyProgress] = useState<number | undefined>(
+    undefined,
+  );
 
   useEffect(() => {
     fetchJugadores();
@@ -30,7 +36,11 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
 
   async function fetchJugadores() {
     setIsFetching(true);
-    const { data } = await supabase.from("jugadores").select("*").eq("categoria", categoria).order("dorsal", { ascending: true });
+    const { data } = await supabase
+      .from("jugadores")
+      .select("*")
+      .eq("categoria", categoria)
+      .order("dorsal", { ascending: true });
     if (data) setJugadores(data);
     setIsFetching(false);
   }
@@ -40,7 +50,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
     setBusyText("Procesando foto y guardando jugador...");
     setBusyProgress(5);
     setLoading(true);
-    
+
     let foto_url = "";
     if (fotoFile) {
       const processed = await processAndUploadImage(fotoFile, (percent) => {
@@ -51,22 +61,37 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
         setBusyText("Subiendo foto...");
         setBusyProgress(75);
         const fileName = `jugadores/${uuidv4()}.webp`;
-        const { data, error } = await supabase.storage.from("fotos").upload(fileName, processed);
+        const { data, error } = await supabase.storage
+          .from("fotos")
+          .upload(fileName, processed);
         if (data) {
           setBusyText("Guardando jugador...");
           setBusyProgress(90);
-          const { data: pUrl } = supabase.storage.from("fotos").getPublicUrl(fileName);
+          const { data: pUrl } = supabase.storage
+            .from("fotos")
+            .getPublicUrl(fileName);
           foto_url = pUrl.publicUrl;
         }
       }
     }
 
-    const { error } = await supabase.from("jugadores").insert([{ 
-      nombre, apodo, dorsal: parseInt(dorsal), posicion, foto_url, categoria 
-    }]);
+    const { error } = await supabase.from("jugadores").insert([
+      {
+        nombre,
+        apodo,
+        dorsal: parseInt(dorsal),
+        posicion,
+        foto_url,
+        categoria,
+      },
+    ]);
 
     if (!error) {
-      setNombre(""); setApodo(""); setDorsal(""); setPosicion(""); setFotoFile(null);
+      setNombre("");
+      setApodo("");
+      setDorsal("");
+      setPosicion("");
+      setFotoFile(null);
       fetchJugadores();
       showToast("Jugador añadido correctamente");
     }
@@ -86,17 +111,21 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
       setBusyText("Subiendo foto...");
       setBusyProgress(75);
       const fileName = `jugadores/${uuidv4()}.webp`;
-      const { data, error: uploadError } = await supabase.storage.from("fotos").upload(fileName, processed);
-      
+      const { data, error: uploadError } = await supabase.storage
+        .from("fotos")
+        .upload(fileName, processed);
+
       if (data) {
         setBusyText("Guardando foto...");
         setBusyProgress(90);
-        const { data: pUrl } = supabase.storage.from("fotos").getPublicUrl(fileName);
+        const { data: pUrl } = supabase.storage
+          .from("fotos")
+          .getPublicUrl(fileName);
         const { error: dbError } = await supabase
           .from("jugadores")
           .update({ foto_url: pUrl.publicUrl })
           .eq("id", id);
-        
+
         if (!dbError) {
           showToast("Foto actualizada");
           fetchJugadores();
@@ -117,25 +146,60 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
 
   return (
     <div className="card glass">
-      <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando jugadores..." : busyText} progress={loading ? busyProgress : undefined} />
+      <BusyBanner
+        show={loading || isFetching}
+        text={isFetching ? "Cargando jugadores..." : busyText}
+        progress={loading ? busyProgress : undefined}
+      />
       <h3>Plantilla {categoria}</h3>
       <form onSubmit={handleAddJugador} className="admin-form">
-        <div className="form-grid-5" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div
+          className="form-grid-5"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+            gap: "1rem",
+            marginBottom: "1.5rem",
+          }}
+        >
           <div className="input-group">
             <label>Nombre Completo</label>
-            <input type="text" placeholder="Ej: Iván Sánchez Vázquez" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+            <input
+              type="text"
+              placeholder="Ej: Iván Sánchez Vázquez"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              required
+            />
           </div>
           <div className="input-group">
             <label>Apodo</label>
-            <input type="text" placeholder="Ej: Mourazos" value={apodo} onChange={(e) => setApodo(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Ej: Mourazos"
+              value={apodo}
+              onChange={(e) => setApodo(e.target.value)}
+            />
           </div>
           <div className="input-group">
             <label>Dorsal</label>
-            <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="10" value={dorsal} onChange={(e) => setDorsal(e.target.value)} required />
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="10"
+              value={dorsal}
+              onChange={(e) => setDorsal(e.target.value)}
+              required
+            />
           </div>
           <div className="input-group">
             <label>Posición</label>
-            <select value={posicion} onChange={(e) => setPosicion(e.target.value)} required>
+            <select
+              value={posicion}
+              onChange={(e) => setPosicion(e.target.value)}
+              required
+            >
               <option value="">Selección...</option>
               <option value="POR">POR (Portero)</option>
               <option value="LD">LD (Lateral Derecho)</option>
@@ -155,14 +219,35 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
             <label>Foto</label>
             <div className="file-input-group">
               <label className="file-input-label">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                {fotoFile ? fotoFile.name.substring(0, 10) + "..." : "Subir Foto"}
-                <input type="file" className="hidden-input" accept="image/*" onChange={(e) => setFotoFile(e.target.files?.[0] || null)} />
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                </svg>
+                {fotoFile
+                  ? fotoFile.name.substring(0, 10) + "..."
+                  : "Subir Foto"}
+                <input
+                  type="file"
+                  className="hidden-input"
+                  accept="image/*"
+                  onChange={(e) => setFotoFile(e.target.files?.[0] || null)}
+                />
               </label>
             </div>
           </div>
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading} style={{ padding: '0.8rem 2rem' }}>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={loading}
+          style={{ padding: "0.8rem 2rem" }}
+        >
           {loading ? "Añadiendo..." : "Añadir Jugador"}
         </button>
       </form>
@@ -180,40 +265,145 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
             </tr>
           </thead>
           <tbody>
-            {jugadores.map(j => (
+            {jugadores.map((j) => (
               <tr key={j.id}>
                 <td>
-                  <div style={{ position: 'relative', width: '45px', height: '45px' }}>
+                  <div
+                    style={{
+                      position: "relative",
+                      width: "45px",
+                      height: "45px",
+                    }}
+                  >
                     {j.foto_url ? (
-                      <img src={j.foto_url} alt={j.nombre} style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} />
+                      <img
+                        src={j.foto_url}
+                        alt={j.nombre}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          borderRadius: "8px",
+                          objectFit: "cover",
+                        }}
+                      />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', background: '#1a1a1a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444' }}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          background: "#1a1a1a",
+                          borderRadius: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#444",
+                        }}
+                      >
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
                       </div>
                     )}
-                    <label style={{ position: 'absolute', bottom: '-5px', right: '-5px', background: 'var(--primary)', color: 'black', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: loading ? 'not-allowed' : 'pointer', border: '2px solid #000', opacity: loading ? 0.6 : 1 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"/></svg>
-                      <input disabled={loading} type="file" className="hidden-input" accept="image/*" onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) handleUpdateFoto(j.id, f);
-                      }} />
+                    <label
+                      style={{
+                        position: "absolute",
+                        bottom: "-5px",
+                        right: "-5px",
+                        background: "var(--primary)",
+                        color: "black",
+                        borderRadius: "50%",
+                        width: "22px",
+                        height: "22px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: loading ? "not-allowed" : "pointer",
+                        border: "2px solid #000",
+                        opacity: loading ? 0.6 : 1,
+                      }}
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      >
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                      <input
+                        disabled={loading}
+                        type="file"
+                        className="hidden-input"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleUpdateFoto(j.id, f);
+                        }}
+                      />
                     </label>
                   </div>
                 </td>
-                <td style={{ fontWeight: 900, color: 'var(--primary)' }}>#{j.dorsal}</td>
+                <td style={{ fontWeight: 900, color: "var(--primary)" }}>
+                  #{j.dorsal}
+                </td>
                 <td style={{ fontWeight: 700 }}>
                   {j.nombre}
                   {j.capitan > 0 && (
-                    <span className="badge-capitan" title={`Capitán ${j.capitan}`} style={{ marginLeft: '8px', fontSize: '0.8rem', backgroundColor: '#ffd700', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    <span
+                      className="badge-capitan"
+                      title={`Capitán ${j.capitan}`}
+                      style={{
+                        marginLeft: "8px",
+                        fontSize: "0.8rem",
+                        backgroundColor: "#ffd700",
+                        color: "#000",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        fontWeight: "bold",
+                      }}
+                    >
                       C{j.capitan}
                     </span>
                   )}
                 </td>
-                <td style={{ fontStyle: 'italic', color: 'var(--text-secondary)' }}>{j.apodo || "-"}</td>
-                <td><span className="badge-posicion">{j.posicion}</span></td>
+                <td
+                  style={{
+                    fontStyle: "italic",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  {j.apodo || "-"}
+                </td>
                 <td>
-                  <button disabled={loading} onClick={() => handleDeleteJugador(j.id)} className="btn-delete" style={{ opacity: loading ? 0.6 : 1 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                  <span className="badge-posicion">{j.posicion}</span>
+                </td>
+                <td>
+                  <button
+                    disabled={loading}
+                    onClick={() => handleDeleteJugador(j.id)}
+                    className="btn-delete"
+                    style={{ opacity: loading ? 0.6 : 1 }}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    </svg>
                     Eliminar
                   </button>
                 </td>
