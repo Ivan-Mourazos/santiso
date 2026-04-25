@@ -6,9 +6,80 @@
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/lib/supabase";
-import { COMPETICIONS, type FormState, type TemplateId } from "./types";
+import { COMPETICIONS, type FormState } from "./types";
 import type { Player, CronEvent, NextMatch } from "@/lib/cartel-draw";
 import { fetchSeasons } from "@/lib/supabase-queries";
+
+interface CartelPlayer {
+  id: string;
+  nombre: string;
+  apodo?: string | null;
+  dorsal?: number | null;
+  categoria?: string | null;
+}
+
+interface CartelTeam {
+  id: string;
+  nombre: string;
+  escudo_url: string;
+  categoria: string;
+}
+
+interface CartelField {
+  id: string;
+  nombre: string;
+  poblacion: string;
+}
+
+interface CartelMatch {
+  id: string;
+  categoria: string;
+  competicion?: string | null;
+  fecha?: string | null;
+  lugar?: string | null;
+  goles_local?: number | null;
+  goles_visitante?: number | null;
+  equipo_local?: CartelTeam | null;
+  equipo_visitante?: CartelTeam | null;
+  jornada?: {
+    numero?: number | null;
+    competicion?: string | null;
+    temporada_id?: string | null;
+  } | null;
+  campo?: {
+    nombre?: string | null;
+  } | null;
+}
+
+interface DbCronEventRow {
+  id: string | null;
+  tipo: string;
+  minuto: number | null;
+  jugador: CartelPlayer | CartelPlayer[] | null;
+  jugador_relacionado: CartelPlayer | CartelPlayer[] | null;
+}
+
+function normalizePlayerRelation(
+  player: CartelPlayer | CartelPlayer[] | null,
+) {
+  return Array.isArray(player) ? (player[0] ?? null) : player;
+}
+
+function getPlayerDisplayName(player: CartelPlayer | CartelPlayer[] | null) {
+  const normalized = normalizePlayerRelation(player);
+  if (!normalized) return "";
+  if (normalized.apodo) return normalized.apodo;
+  if (!normalized.nombre) return "";
+  const parts = normalized.nombre.trim().split(/\s+/);
+  return parts.length > 1 ? `${parts[0]} ${parts[1]}` : normalized.nombre;
+}
+
+function mapDbEventType(tipo: string): CronEvent["tipo"] {
+  if (tipo === "tarjeta_amarilla") return "amarela";
+  if (tipo === "tarjeta_roja") return "vermella";
+  if (tipo === "cambio") return "cambio";
+  return "gol";
+}
 
 function mkPlayer(): Player {
   return { id: uuidv4(), dorsal: "", nome: "", eCapitan: false };
@@ -63,12 +134,10 @@ const DEFAULT_FORM: FormState = {
 
 export function useCartelForm() {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
-  const [equipos, setEquipos] = useState<
-    { id: string; nombre: string; escudo_url: string; categoria: string }[]
-  >([]);
-  const [jugadores, setJugadores] = useState<any[]>([]);
-  const [dbMatches, setDbMatches] = useState<any[]>([]);
-  const [campos, setCampos] = useState<any[]>([]);
+  const [equipos, setEquipos] = useState<CartelTeam[]>([]);
+  const [jugadores, setJugadores] = useState<CartelPlayer[]>([]);
+  const [dbMatches, setDbMatches] = useState<CartelMatch[]>([]);
+  const [campos, setCampos] = useState<CartelField[]>([]);
   const [jugFileName, setJugFileName] = useState("");
   const fileUrlRef = useRef<string>("");
 
@@ -92,11 +161,10 @@ export function useCartelForm() {
         )
         .order("fecha", { ascending: false });
       if (mData) {
+        const matches = mData as CartelMatch[];
         const activeMatches = active?.id
-          ? mData.filter(
-              (match: any) => match.jornada?.temporada_id === active.id,
-            )
-          : mData;
+          ? matches.filter((match) => match.jornada?.temporada_id === active.id)
+          : matches;
         setDbMatches(activeMatches);
       }
     }
@@ -190,7 +258,7 @@ export function useCartelForm() {
     });
   }
 
-  function loadMatchFromDb(match: any) {
+  function loadMatchFromDb(match: CartelMatch) {
     const isSantisoLocal = match.equipo_local?.nombre
       ?.toLowerCase()
       .includes("santiso");
@@ -202,28 +270,54 @@ export function useCartelForm() {
       competicion:
         match.competicion || match.jornada?.competicion || p.competicion,
       jornada: match.jornada?.numero?.toString() || "1",
-      rivalNombre: rival.nombre,
-      rivalEscudoUrl: rival.escudo_url,
+      rivalNombre: rival?.nombre || "",
+      rivalEscudoUrl: rival?.escudo_url || "",
       fecha: match.fecha ? match.fecha.split("T")[0] : "",
-      hora: match.fecha ? match.fecha.split("T")[1].substring(0, 5) : "18:00",
+      hora: match.fecha?.includes("T")
+        ? match.fecha.split("T")[1].substring(0, 5)
+        : "18:00",
       lugar: match.campo?.nombre || match.lugar || "",
       santisoSide: isSantisoLocal ? "left" : "right",
       golesLocal: match.goles_local?.toString() || "0",
       golesRival: match.goles_visitante?.toString() || "0",
+      events: [],
     }));
 
-    // Cargar estadísticas si existen (goleadores, etc)
     supabase
-      .from("estadisticas_partido_santiso")
-      .select("*")
+      .from("partido_eventos_santiso")
+      .select(
+        `
+        id,
+        tipo,
+        minuto,
+        jugador:jugador_id(id, nombre, apodo),
+        jugador_relacionado:jugador_relacionado_id(id, nombre, apodo)
+      `,
+      )
       .eq("partido_id", match.id)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          // Aquí podríamos mapear eventos a la cronología si quisiéramos,
-          // por ahora guardamos los datos base.
-          console.log("Estadísticas extra cargadas:", data);
-        }
+      .order("minuto", { ascending: true })
+      .then(({ data, error }) => {
+        if (error || !data) return;
+
+        const rows = data as DbCronEventRow[];
+        const events: CronEvent[] = rows.map((row) => {
+          const tipo = mapDbEventType(row.tipo);
+          const jugador = getPlayerDisplayName(row.jugador);
+          const jugadorRelacionado = getPlayerDisplayName(
+            row.jugador_relacionado,
+          );
+
+          return {
+            id: row.id || uuidv4(),
+            minuto: row.minuto ? String(row.minuto) : "",
+            tipo,
+            equipo: "local",
+            jugador: tipo === "cambio" ? jugadorRelacionado : jugador,
+            jugadorEntra: tipo === "cambio" ? jugador : undefined,
+          };
+        });
+
+        setForm((p) => ({ ...p, events }));
       });
   }
 
