@@ -38,24 +38,50 @@ export const Toggle: React.FC<{ label: string; active: boolean; onClick: () => v
   </button>
 );
 
+export interface SelectorMatch {
+  id: string;
+  categoria?: string | null;
+  competicion?: string | null;
+  estado?: string | null;
+  fecha?: string | null;
+  lugar?: string | null;
+  goles_local?: number | null;
+  goles_visitante?: number | null;
+  equipo_local?: { nombre?: string | null; escudo_url?: string | null } | null;
+  equipo_visitante?: { nombre?: string | null; escudo_url?: string | null } | null;
+  jornada?: {
+    numero?: number | string | null;
+    competicion?: string | null;
+    temporada_id?: string | null;
+  } | null;
+  campo?: { nombre?: string | null } | null;
+}
+
 export const MatchSelector: React.FC<{ 
-  dbMatches: any[]; 
-  onSelect: (m: any) => void;
+  dbMatches: SelectorMatch[]; 
+  onSelect: (m: SelectorMatch) => void;
   categoria: string;
   competicion?: string;
   tipo: string;
-}> = ({ dbMatches, onSelect, categoria, competicion, tipo }) => {
+  santisoOnly?: boolean;
+}> = ({ dbMatches, onSelect, categoria, competicion, tipo, santisoOnly }) => {
   const labels = competicion ? getCompetitionQueryLabels(categoria, competicion) : [];
+  const isSantisoMatch = (m: SelectorMatch) => {
+    const local = m.equipo_local?.nombre?.toLowerCase() || "";
+    const visitante = m.equipo_visitante?.nombre?.toLowerCase() || "";
+    return local.includes("santiso") || visitante.includes("santiso");
+  };
   const filtered = dbMatches?.filter(m => {
     const isCat = m.categoria === categoria;
     if (!isCat) return false;
     if (competicion && !labels.includes(m.competicion || "")) return false;
+    if (santisoOnly && !isSantisoMatch(m)) return false;
     
     // Filtrar por estado según el tipo de cartel
     if (tipo === "partido" || tipo === "proximos") {
       return m.estado === "programado";
     }
-    if (tipo === "resumo" || tipo === "cronoloxia") {
+    if (tipo === "resumo" || tipo === "cronoloxia" || tipo === "noso11") {
       return m.estado === "finalizado";
     }
     return true;

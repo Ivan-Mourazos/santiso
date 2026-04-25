@@ -7,6 +7,7 @@ import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/lib/supabase";
 import { COMPETICIONS, type FormState } from "./types";
+import type { SelectorMatch } from "./Common";
 import type { Player, CronEvent, NextMatch } from "@/lib/cartel-draw";
 import { fetchSeasons } from "@/lib/supabase-queries";
 
@@ -31,32 +32,18 @@ interface CartelField {
   poblacion: string;
 }
 
-interface CartelMatch {
-  id: string;
-  categoria: string;
-  competicion?: string | null;
-  fecha?: string | null;
-  lugar?: string | null;
-  goles_local?: number | null;
-  goles_visitante?: number | null;
-  equipo_local?: CartelTeam | null;
-  equipo_visitante?: CartelTeam | null;
-  jornada?: {
-    numero?: number | null;
-    competicion?: string | null;
-    temporada_id?: string | null;
-  } | null;
-  campo?: {
-    nombre?: string | null;
-  } | null;
-}
-
 interface DbCronEventRow {
   id: string | null;
   tipo: string;
   minuto: number | null;
   jugador: CartelPlayer | CartelPlayer[] | null;
   jugador_relacionado: CartelPlayer | CartelPlayer[] | null;
+}
+
+interface DbLineupRow {
+  titular: boolean | null;
+  jugo: boolean | null;
+  jugador: CartelPlayer | CartelPlayer[] | null;
 }
 
 function normalizePlayerRelation(
@@ -104,6 +91,15 @@ function mkMatch(): NextMatch {
   };
 }
 
+function toCartelPlayer(player: CartelPlayer): Player {
+  return {
+    id: uuidv4(),
+    dorsal: player.dorsal?.toString() || "",
+    nome: getPlayerDisplayName(player),
+    eCapitan: false,
+  };
+}
+
 const DEFAULT_FORM: FormState = {
   categoria: "Senior",
   competicion: COMPETICIONS["Senior"][0],
@@ -136,7 +132,7 @@ export function useCartelForm() {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [equipos, setEquipos] = useState<CartelTeam[]>([]);
   const [jugadores, setJugadores] = useState<CartelPlayer[]>([]);
-  const [dbMatches, setDbMatches] = useState<CartelMatch[]>([]);
+  const [dbMatches, setDbMatches] = useState<SelectorMatch[]>([]);
   const [campos, setCampos] = useState<CartelField[]>([]);
   const [jugFileName, setJugFileName] = useState("");
   const fileUrlRef = useRef<string>("");
@@ -161,7 +157,7 @@ export function useCartelForm() {
         )
         .order("fecha", { ascending: false });
       if (mData) {
-        const matches = mData as CartelMatch[];
+        const matches = mData as SelectorMatch[];
         const activeMatches = active?.id
           ? matches.filter((match) => match.jornada?.temporada_id === active.id)
           : matches;
@@ -258,7 +254,7 @@ export function useCartelForm() {
     });
   }
 
-  function loadMatchFromDb(match: CartelMatch) {
+  function loadMatchFromDb(match: SelectorMatch) {
     const isSantisoLocal = match.equipo_local?.nombre
       ?.toLowerCase()
       .includes("santiso");
@@ -266,7 +262,7 @@ export function useCartelForm() {
 
     setForm((p) => ({
       ...p,
-      categoria: match.categoria,
+      categoria: match.categoria || p.categoria,
       competicion:
         match.competicion || match.jornada?.competicion || p.competicion,
       jornada: match.jornada?.numero?.toString() || "1",
@@ -318,6 +314,55 @@ export function useCartelForm() {
         });
 
         setForm((p) => ({ ...p, events }));
+      });
+
+    supabase
+      .from("jugador_partido_stats")
+      .select(
+        `
+        titular,
+        jugo,
+        jugador:jugador_id(id, nombre, apodo, dorsal, categoria)
+      `,
+      )
+      .eq("partido_id", match.id)
+      .then(({ data, error }) => {
+        if (error || !data || data.length === 0) return;
+
+        const rows = (data as DbLineupRow[])
+          .map((row) => ({
+            ...row,
+            jugador: normalizePlayerRelation(row.jugador),
+          }))
+          .filter((row): row is DbLineupRow & { jugador: CartelPlayer } =>
+            Boolean(row.jugador),
+          )
+          .sort((a, b) => {
+            if (a.titular !== b.titular) return a.titular ? -1 : 1;
+            return (a.jugador.dorsal || 999) - (b.jugador.dorsal || 999);
+          });
+
+        const titulares = rows
+          .filter((row) => row.titular)
+          .map((row) => toCartelPlayer(row.jugador))
+          .slice(0, 11);
+        const suplentes = rows
+          .filter((row) => !row.titular)
+          .map((row) => toCartelPlayer(row.jugador));
+
+        if (titulares.length === 0 && suplentes.length === 0) return;
+
+        setForm((p) => ({
+          ...p,
+          titulares:
+            titulares.length > 0
+              ? titulares
+              : Array.from({ length: 11 }, mkPlayer),
+          suplentes:
+            suplentes.length > 0
+              ? suplentes
+              : Array.from({ length: 5 }, mkPlayer),
+        }));
       });
   }
 

@@ -39,7 +39,7 @@ export const FormCronoloxia: React.FC<Props & { tipo: string }> = ({
 
   return (
     <>
-      <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} tipo={tipo} />
+      <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} tipo={tipo} santisoOnly />
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group"><label>Fecha</label>

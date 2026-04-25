@@ -7,6 +7,7 @@ import React from "react";
 import type { FormState } from "./types";
 import { FormPartido } from "./FormPartido";
 import { SectionLabel, MatchSelector } from "./Common";
+import type { SelectorMatch } from "./Common";
 
 interface Props {
   form: FormState;
@@ -14,16 +15,24 @@ interface Props {
   equipos: { id: string; nombre: string; escudo_url: string }[];
   handleRivalSelect: (nombre: string) => void;
   handleRivalFile: (file: File) => void;
-  dbMatches: any[];
-  loadMatchFromDb: (m: any) => void;
+  dbMatches: SelectorMatch[];
+  loadMatchFromDb: (m: SelectorMatch) => void;
   campos: { id: string; nombre: string; poblacion: string }[];
 }
 
 export const FormResumo = (props: Props & { tipo: string }) => {
-  const { form, set, tipo } = props;
+  const { form, set, tipo, dbMatches, loadMatchFromDb } = props;
   return (
     <>
       <FormPartido {...props} tipo={tipo} />
+      <MatchSelector
+        dbMatches={dbMatches}
+        onSelect={loadMatchFromDb}
+        categoria={form.categoria}
+        competicion={form.competicion}
+        tipo={tipo}
+        santisoOnly
+      />
       <SectionLabel>Resultado</SectionLabel>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group">

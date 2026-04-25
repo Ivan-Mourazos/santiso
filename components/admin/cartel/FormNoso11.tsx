@@ -5,23 +5,34 @@
 
 import React from "react";
 import type { FormState } from "./types";
-import { SectionLabel, CategorySelector, Toggle } from "./Common";
+import { SectionLabel, CategorySelector, MatchSelector, Toggle } from "./Common";
+import type { SelectorMatch } from "./Common";
 import type { Player } from "@/lib/cartel-draw";
+
+interface CartelPlayerOption {
+  id: string;
+  nombre?: string | null;
+  apodo?: string | null;
+  dorsal?: number | null;
+  categoria?: string | null;
+}
 
 interface Props {
   form: FormState;
   set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
-  jugadores: any[];
+  jugadores: CartelPlayerOption[];
   jugFileName: string;
   handleJugadorFile: (file: File) => void;
   updatePlayer: (list: "titulares" | "suplentes", i: number, patch: Partial<Player>) => void;
+  dbMatches: SelectorMatch[];
+  loadMatchFromDb: (m: SelectorMatch) => void;
   tipo: string;
 }
 
 export const FormNoso11: React.FC<Props> = ({
-  form, set, jugadores, jugFileName, handleJugadorFile, updatePlayer, tipo
+  form, set, jugadores, jugFileName, handleJugadorFile, updatePlayer, dbMatches, loadMatchFromDb, tipo
 }) => {
-  const getDisplayName = (j: any) => {
+  const getDisplayName = (j: CartelPlayerOption | undefined) => {
     if (!j) return "";
     if (j.apodo) return j.apodo;
     if (!j.nombre) return "";
@@ -45,6 +56,7 @@ export const FormNoso11: React.FC<Props> = ({
 
   return (
     <>
+      <MatchSelector dbMatches={dbMatches} onSelect={loadMatchFromDb} categoria={form.categoria} competicion={form.competicion} tipo={tipo} santisoOnly />
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group"><label>Fecha</label>

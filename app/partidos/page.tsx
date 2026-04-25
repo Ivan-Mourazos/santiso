@@ -248,9 +248,6 @@ export default function PartidosPage() {
                   <span className="jornada-num">
                     Jornada {jornadaSeleccionada?.numero}
                   </span>
-                  <span className="jornada-fase">
-                    {jornadaSeleccionada?.competicion || "Liga"}
-                  </span>
                 </div>
                 <button
                   className="nav-btn"
@@ -552,20 +549,16 @@ export default function PartidosPage() {
 
         .jornada-info {
           text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 50px;
         }
         .jornada-num {
-          display: block;
           font-size: 1.5rem;
           font-weight: 900;
           color: white;
-          line-height: 1;
-        }
-        .jornada-fase {
-          font-size: 0.7rem;
-          text-transform: uppercase;
-          color: var(--primary);
-          font-weight: 800;
-          letter-spacing: 1px;
+          line-height: 1.1;
         }
 
         .matches-grid {
