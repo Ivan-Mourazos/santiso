@@ -36,6 +36,8 @@ interface DbCronEventRow {
   id: string | null;
   tipo: string;
   minuto: number | null;
+  es_rival?: boolean | null;
+  nombre_mostrado?: string | null;
   jugador: CartelPlayer | CartelPlayer[] | null;
   jugador_relacionado: CartelPlayer | CartelPlayer[] | null;
 }
@@ -259,6 +261,7 @@ export function useCartelForm() {
       ?.toLowerCase()
       .includes("santiso");
     const rival = isSantisoLocal ? match.equipo_visitante : match.equipo_local;
+    const campoNombre = match.campo?.nombre || match.lugar || "";
 
     setForm((p) => ({
       ...p,
@@ -272,7 +275,8 @@ export function useCartelForm() {
       hora: match.fecha?.includes("T")
         ? match.fecha.split("T")[1].substring(0, 5)
         : "18:00",
-      lugar: match.campo?.nombre || match.lugar || "",
+      lugar: campoNombre,
+      estadio: campoNombre,
       santisoSide: isSantisoLocal ? "left" : "right",
       golesLocal: match.goles_local?.toString() || "0",
       golesRival: match.goles_visitante?.toString() || "0",
@@ -286,6 +290,8 @@ export function useCartelForm() {
         id,
         tipo,
         minuto,
+        es_rival,
+        nombre_mostrado,
         jugador:jugador_id(id, nombre, apodo),
         jugador_relacionado:jugador_relacionado_id(id, nombre, apodo)
       `,
@@ -302,13 +308,18 @@ export function useCartelForm() {
           const jugadorRelacionado = getPlayerDisplayName(
             row.jugador_relacionado,
           );
+          const nombreLibre = row.nombre_mostrado?.trim() || "";
+          const esRival = Boolean(row.es_rival);
 
           return {
             id: row.id || uuidv4(),
             minuto: row.minuto ? String(row.minuto) : "",
             tipo,
-            equipo: "local",
-            jugador: tipo === "cambio" ? jugadorRelacionado : jugador,
+            equipo: esRival ? "rival" : "local",
+            jugador:
+              tipo === "cambio"
+                ? jugadorRelacionado
+                : nombreLibre || jugador,
             jugadorEntra: tipo === "cambio" ? jugador : undefined,
           };
         });

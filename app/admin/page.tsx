@@ -8,6 +8,7 @@ import AdminJornadas from "@/components/admin/AdminJornadas";
 import AdminPlayers from "@/components/admin/AdminPlayers";
 import AdminStaff from "@/components/admin/AdminStaff";
 import GeneradorCartel from "@/components/admin/GeneradorCartel";
+import AdminActaImporter from "@/components/admin/AdminActaImporter";
 import { TEMPLATES } from "@/components/admin/cartel/types";
 
 export default function AdminPage() {
@@ -55,6 +56,10 @@ export default function AdminPage() {
             <button className={`nav-tab ${activeView === 'carteles' ? 'active' : ''}`} onClick={() => setActiveView('carteles')}>
                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
                Carteles
+            </button>
+            <button className={`nav-tab ${activeView === 'actas' ? 'active' : ''}`} onClick={() => setActiveView('actas')}>
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg>
+               Importar acta
             </button>
             <button className={`nav-tab ${activeView === 'sponsors' ? 'active' : ''}`} onClick={() => setActiveView('sponsors')}>
                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
@@ -126,6 +131,7 @@ export default function AdminPage() {
            )}
            {activeView === 'equipos' && <AdminEquipos showToast={showToast} showConfirm={showConfirm} categoria={categoria} />}
            {activeView === 'carteles' && <GeneradorCartel templateId={tipoCartel} onTemplateChange={setTipoCartel} hideLayout />}
+           {activeView === 'actas' && <AdminActaImporter showToast={showToast} showConfirm={showConfirm} />}
            {activeView === 'sponsors' && <AdminSponsors showToast={showToast} showConfirm={showConfirm} />}
         </section>
 

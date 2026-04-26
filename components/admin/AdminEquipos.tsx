@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { processAndUploadImage } from "@/lib/image-utils";
 import { v4 as uuidv4 } from "uuid";
@@ -311,6 +311,78 @@ export default function AdminEquipos({
     }
   }
 
+  function renderEquipoForm() {
+    return (
+      <form
+        onSubmit={handleSubmit}
+        className="admin-form"
+        style={{
+          background: editingId ? "rgba(250, 204, 21, 0.05)" : "",
+          padding: editingId ? "1.5rem" : "",
+          borderRadius: "1rem",
+          transition: "all 0.3s",
+        }}
+      >
+        <div className="form-grid-3">
+          <div className="input-group">
+            <label>Nombre del Equipo</label>
+            <input
+              type="text"
+              placeholder="Ej: Racing de Ferrol"
+              value={nombreEquipo}
+              onChange={(e) => setNombreEquipo(e.target.value)}
+              required
+            />
+          </div>
+          <div className="input-group">
+            <label>Escudo {editingId ? "(Opcional)" : ""}</label>
+            <div className="file-input-group">
+              <label className="file-input-label">
+                {escudoEquipo
+                  ? escudoEquipo.name.substring(0, 15) + "..."
+                  : editingId
+                    ? "Cambiar Escudo"
+                    : "Elegir Escudo"}
+                <input
+                  type="file"
+                  className="hidden-input"
+                  accept="image/*"
+                  onChange={(e) => setEscudoEquipo(e.target.files?.[0] || null)}
+                />
+              </label>
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              gap: "0.8rem",
+              flexWrap: "wrap",
+            }}
+          >
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={loading}
+              style={{ flex: "1 1 160px" }}
+            >
+              {loading
+                ? "Procesando..."
+                : editingId
+                  ? "Guardar Cambios"
+                  : "Añadir Equipo"}
+            </button>
+            {editingId && (
+              <button type="button" className="btn-secondary" onClick={resetForm}>
+                Cancelar
+              </button>
+            )}
+          </div>
+        </div>
+      </form>
+    );
+  }
+
   return (
     <div className="card glass">
       <BusyBanner
@@ -407,6 +479,7 @@ export default function AdminEquipos({
         </p>
       )}
 
+      {!editingId && (
       <form
         onSubmit={handleSubmit}
         className="admin-form"
@@ -472,6 +545,7 @@ export default function AdminEquipos({
           </div>
         </div>
       </form>
+      )}
 
       <div style={{ marginTop: "2.5rem" }}>
         <h4
@@ -490,8 +564,8 @@ export default function AdminEquipos({
           style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
         >
           {equipos.map((e) => (
+            <Fragment key={e.id}>
             <div
-              key={e.id}
               className="admin-item glass shadow-sm"
               style={{
                 display: "flex",
@@ -588,48 +662,40 @@ export default function AdminEquipos({
                   {e.nombre}
                 </span>
               </div>
-              <div style={{ display: "flex", gap: "15px" }}>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                 <button
                   disabled={loading}
                   onClick={() => startEdit(e)}
-                  className="text-secondary"
-                  style={{
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    background: "none",
-                    border: "none",
-                    color: "var(--primary)",
-                    cursor: loading ? "not-allowed" : "pointer",
-                    opacity: loading ? 0.5 : 1,
-                  }}
+                  className="btn-edit btn-action"
                 >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
                   Editar
                 </button>
-                <div
-                  style={{
-                    width: "1px",
-                    height: "15px",
-                    background: "rgba(255,255,255,0.1)",
-                  }}
-                />
                 <button
                   disabled={loading}
                   onClick={() => handleDeleteEquipo(e.id)}
-                  className="text-red"
-                  style={{
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    background: "none",
-                    border: "none",
-                    color: "#ef4444",
-                    cursor: loading ? "not-allowed" : "pointer",
-                    opacity: loading ? 0.5 : 1,
-                  }}
+                  className="btn-delete btn-action"
                 >
                   {relationEnabled ? "Quitar" : "Borrar"}
                 </button>
               </div>
             </div>
+            {editingId === e.id && (
+              <div style={{ margin: "0.2rem 0 1rem" }}>
+                {renderEquipoForm()}
+              </div>
+            )}
+            </Fragment>
           ))}
         </div>
       </div>
