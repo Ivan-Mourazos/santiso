@@ -200,7 +200,8 @@ Formato exacto:
   "suplentes": [{ "dorsal": "4", "rawName": "texto acta", "jugadorId": "uuid" }],
   "eventos": [
     { "tipo": "gol", "minuto": "18", "isRival": false, "jugadorId": "uuid", "scoreAfter": "1-1", "confidence": "alta" },
-    { "tipo": "cambio", "minuto": "60", "isRival": false, "jugadorSaleId": "uuid", "jugadorEntraId": "uuid", "confidence": "alta" }
+    { "tipo": "cambio", "minuto": "60", "isRival": false, "jugadorSaleId": "uuid", "jugadorEntraId": "uuid", "confidence": "alta" },
+    { "tipo": "tarjeta_amarilla", "minuto": "75", "isRival": true, "nombreRival": "García Pérez", "confidence": "alta" }
   ],
   "warnings": []
 }

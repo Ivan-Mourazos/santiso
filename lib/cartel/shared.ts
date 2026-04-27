@@ -30,12 +30,61 @@ export function drawBackground(
     ctx.fillRect(0, 0, W, H);
   }
 
-  // Radial vignette — darkens corners, spotlights centre
-  const vig = ctx.createRadialGradient(CX, H * 0.48, H * 0.22, CX, H * 0.48, H * 0.82);
+  // 1. Radial vignette — darkens corners, spotlights centre (Enhanced for depth)
+  const vig = ctx.createRadialGradient(CX, H * 0.48, H * 0.15, CX, H * 0.48, H * 0.9);
   vig.addColorStop(0, "rgba(0,0,0,0)");
-  vig.addColorStop(1, "rgba(0,0,0,0.52)");
+  vig.addColorStop(0.7, "rgba(0,0,0,0.4)");
+  vig.addColorStop(1, "rgba(0,0,0,0.85)");
   ctx.fillStyle = vig;
   ctx.fillRect(0, 0, W, H);
+
+  // 2. Trading Card Foil / Metallic Diagonal Shine Overlay
+  ctx.save();
+  const foilGrad = ctx.createLinearGradient(0, 0, W, H);
+  foilGrad.addColorStop(0.0, "rgba(255, 255, 255, 0.0)");
+  foilGrad.addColorStop(0.4, "rgba(250, 204, 21, 0.05)"); // gold tint
+  foilGrad.addColorStop(0.45, "rgba(255, 255, 255, 0.18)"); // sharp bright shine
+  foilGrad.addColorStop(0.5, "rgba(250, 204, 21, 0.12)"); // gold reflection
+  foilGrad.addColorStop(0.55, "rgba(255, 255, 255, 0.08)"); // secondary shine
+  foilGrad.addColorStop(0.7, "rgba(0, 0, 0, 0.15)"); // shadow contrast
+  foilGrad.addColorStop(1.0, "rgba(0, 0, 0, 0.4)");
+  
+  ctx.globalCompositeOperation = "overlay";
+  ctx.fillStyle = foilGrad;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  // 3. Premium Inner Frame (Double subtle border)
+  ctx.save();
+  const bm = 18; // border margin
+  
+  // Outer subtle gold
+  ctx.strokeStyle = "rgba(250, 204, 21, 0.35)";
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(bm, bm, W - bm * 2, H - bm * 2);
+
+  // Inner subtle white/silver
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(bm + 5, bm + 5, W - (bm + 5) * 2, H - (bm + 5) * 2);
+  
+  // Corner accents
+  const cx = 8; // corner line length
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(250, 204, 21, 0.8)";
+  ctx.lineWidth = 2.5;
+  
+  // Top Left
+  ctx.moveTo(bm, bm + cx); ctx.lineTo(bm, bm); ctx.lineTo(bm + cx, bm);
+  // Top Right
+  ctx.moveTo(W - bm - cx, bm); ctx.lineTo(W - bm, bm); ctx.lineTo(W - bm, bm + cx);
+  // Bottom Right
+  ctx.moveTo(W - bm, H - bm - cx); ctx.lineTo(W - bm, H - bm); ctx.lineTo(W - bm - cx, H - bm);
+  // Bottom Left
+  ctx.moveTo(bm + cx, H - bm); ctx.lineTo(bm, H - bm); ctx.lineTo(bm, H - bm - cx);
+  ctx.stroke();
+  
+  ctx.restore();
 }
 
 /** Giant subtle club shield texture */

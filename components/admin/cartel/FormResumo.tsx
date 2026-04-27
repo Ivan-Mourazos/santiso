@@ -24,7 +24,6 @@ export const FormResumo = (props: Props & { tipo: string }) => {
   const { form, set, tipo, dbMatches, loadMatchFromDb } = props;
   return (
     <>
-      <FormPartido {...props} tipo={tipo} />
       <MatchSelector
         dbMatches={dbMatches}
         onSelect={loadMatchFromDb}
@@ -33,6 +32,7 @@ export const FormResumo = (props: Props & { tipo: string }) => {
         tipo={tipo}
         santisoOnly
       />
+      <FormPartido {...props} tipo={tipo} />
       <SectionLabel>Resultado</SectionLabel>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group">

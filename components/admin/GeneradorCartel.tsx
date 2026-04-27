@@ -22,8 +22,8 @@ import { FormCronoloxia } from "./cartel/FormCronoloxia";
 import { FormProximos } from "./cartel/FormProximos";
 import { FormNoso11 } from "./cartel/FormNoso11";
 
-// Ultra HD output: logical canvas 1080x1350, rendered at 4x for professional resolution (4320x5400)
-const RENDER_SCALE = 4;
+// Output optimizado para Instagram: canvas base 1080x1350, renderizado a 2x (2160x2700) para evitar que IG comprima en exceso
+const RENDER_SCALE = 2;
 
 interface Props {
   templateId?: string;
@@ -211,8 +211,8 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
   const handleDownload = useCallback(() => {
     if (!canvasRef.current) return;
     const link = document.createElement("a");
-    link.download = `cartel-${tipo}-${new Date().getTime()}.png`;
-    link.href = canvasRef.current.toDataURL("image/png");
+    link.download = `cartel-${tipo}-${new Date().getTime()}.jpg`;
+    link.href = canvasRef.current.toDataURL("image/jpeg", 1.0);
     link.click();
   }, [tipo]);
 
@@ -286,7 +286,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
                 </svg>
-                Descargar PNG
+                Descargar JPG (Alta Calidad IG)
               </button>
               <button onClick={resetForm}
                 style={{ background: "none", border: "none", color: "#666", fontSize: "0.8rem",
@@ -366,9 +366,9 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
                 <p style={{ fontSize: "0.7rem", fontWeight: 900, textTransform: "uppercase",
                             letterSpacing: "1.5px", color: "var(--primary)", margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
                   <span style={{ width: "8px", height: "8px", background: "var(--primary)", borderRadius: "50%", display: "inline-block" }}></span>
-                  Previsualización Ultra HD
+                  Previsualización Óptima
                 </p>
-                <span style={{ fontSize: "0.6rem", color: "#444", fontWeight: 800 }}>4320x5400px</span>
+                <span style={{ fontSize: "0.6rem", color: "#444", fontWeight: 800 }}>{W * RENDER_SCALE}x{H * RENDER_SCALE}px</span>
               </div>
               
               <div style={{ padding: "1rem", background: "#000" }}>

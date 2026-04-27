@@ -91,13 +91,13 @@ export const MatchSelector: React.FC<{
 
   return (
     <div style={{ 
-      marginBottom: "2rem", 
+      marginBottom: "1.5rem", 
       padding: "1rem", 
       background: "rgba(250, 204, 21, 0.05)", 
-      border: "1px solid rgba(250, 204, 21, 0.2)", 
+      border: "1px dashed rgba(250, 204, 21, 0.4)", 
       borderRadius: "12px" 
     }}>
-      <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase" }}>
+      <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)", marginBottom: "0.6rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
         ⚡ Autocompletar desde la liga
       </label>
       <select 
@@ -105,7 +105,7 @@ export const MatchSelector: React.FC<{
           const m = filtered.find(x => x.id === e.target.value);
           if (m) onSelect(m);
         }}
-        style={{ width: "100%", background: "rgba(0,0,0,0.3)", color: "white", padding: "0.6rem", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.1)" }}
+        style={{ width: "100%", background: "rgba(0,0,0,0.4)", color: "white", padding: "0.7rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.15)", outline: "none", fontFamily: "inherit", fontWeight: 500 }}
       >
         <option value="">-- Seleccionar partido reciente o próximo --</option>
         {filtered.map(m => (

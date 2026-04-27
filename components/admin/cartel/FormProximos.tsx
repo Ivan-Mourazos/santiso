@@ -119,13 +119,32 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
 
   return (
     <>
-      <div style={{ marginBottom: "1.5rem" }}>
-        <button 
+      <div style={{ 
+        marginBottom: "1.5rem", 
+        padding: "1rem", 
+        background: "rgba(250, 204, 21, 0.05)", 
+        border: "1px dashed rgba(250, 204, 21, 0.4)", 
+        borderRadius: "12px" 
+      }}>
+        <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)", marginBottom: "0.6rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+          ⚡ Autocompletar desde la liga
+        </label>
+        <button
+          type="button"
           onClick={handleAutoFill}
-          className="btn-primary"
-          style={{ width: "100%", background: "rgba(250, 204, 21, 0.1)", border: "1px dashed var(--primary)", color: "var(--primary)", padding: "0.8rem" }}
+          style={{
+            width: "100%",
+            background: "var(--primary)",
+            border: "none",
+            color: "#000",
+            padding: "0.6rem",
+            borderRadius: "6px",
+            fontWeight: 800,
+            cursor: "pointer",
+            transition: "all 0.2s"
+          }}
         >
-          ⚡ Autocompletado inteligente (3 partidos)
+          Autocompletado inteligente (3 partidos)
         </button>
       </div>
       <SectionLabel>Configurar los 3 partidos</SectionLabel>

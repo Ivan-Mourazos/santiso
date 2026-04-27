@@ -139,7 +139,7 @@ function buildEventRows(partidoId: string, acta: ParsedActa) {
       event.tipo === "cambio" ? event.jugadorSale?.jugadorId : null;
 
     assertSantisoPlayer(event, jugadorId || undefined);
-    if (event.tipo === "cambio" && !jugadorRelacionadoId) {
+    if (event.tipo === "cambio" && !event.isRival && !jugadorRelacionadoId) {
       throw new Error(`Falta jugador que sale en cambio minuto ${event.minuto}.`);
     }
 

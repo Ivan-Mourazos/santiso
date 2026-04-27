@@ -99,6 +99,42 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
 
   return (
     <>
+      {tipo === "partido" && (
+        <div style={{ 
+          marginBottom: "1.5rem", 
+          padding: "1rem", 
+          background: "rgba(250, 204, 21, 0.05)", 
+          border: "1px dashed rgba(250, 204, 21, 0.4)", 
+          borderRadius: "12px" 
+        }}>
+          <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)", marginBottom: "0.6rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            ⚡ Autocompletar desde la liga
+          </label>
+          <button
+            type="button"
+            onClick={handleLoadNextMatch}
+            style={{
+              width: "100%",
+              background: "var(--primary)",
+              border: "none",
+              color: "#000",
+              padding: "0.6rem",
+              borderRadius: "6px",
+              fontWeight: 800,
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            Cargar próximo partido
+          </button>
+          {autoFillMessage && (
+            <p style={{ margin: "0.5rem 0 0", color: "#a3a3a3", fontSize: "0.75rem", fontWeight: 700 }}>
+              {autoFillMessage}
+            </p>
+          )}
+        </div>
+      )}
+
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
       
       <div className="input-group" style={{ marginBottom: "1rem" }}>
@@ -110,35 +146,6 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
           ))}
         </select>
       </div>
-
-
-
-      {tipo === "partido" && (
-        <div style={{ marginBottom: "1rem" }}>
-          <button
-            type="button"
-            onClick={handleLoadNextMatch}
-            className="btn-primary"
-            style={{
-              width: "100%",
-              background: "rgba(250, 204, 21, 0.1)",
-              border: "1px dashed var(--primary)",
-              color: "var(--primary)",
-              padding: "0.8rem",
-              borderRadius: "10px",
-              fontWeight: 800,
-              letterSpacing: "0.3px",
-            }}
-          >
-            ⚡ Autocompletar próximo partido
-          </button>
-          {autoFillMessage && (
-            <p style={{ margin: "0.5rem 0 0", color: "#a3a3a3", fontSize: "0.75rem", fontWeight: 700 }}>
-              {autoFillMessage}
-            </p>
-          )}
-        </div>
-      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="input-group">
