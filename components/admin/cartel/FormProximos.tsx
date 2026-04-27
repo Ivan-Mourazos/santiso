@@ -5,7 +5,7 @@
 
 import React from "react";
 import type { FormState } from "./types";
-import { SectionLabel, Toggle } from "./Common";
+import { SectionLabel, Toggle, type SelectorMatch } from "./Common";
 import type { NextMatch } from "@/lib/cartel-draw";
 
 function normalizeText(value: string) {
@@ -28,7 +28,7 @@ function isSantisoTeam(team?: { nombre?: string | null } | null) {
   return normalizeText(team?.nombre || "").includes("santiso");
 }
 
-function isPendingMatch(match: any) {
+function isPendingMatch(match: SelectorMatch) {
   const estado = normalizeText(match.estado || "programado");
   return !["finalizado", "cancelado", "aplazado"].includes(estado);
 }
@@ -44,16 +44,19 @@ function toTimeInput(value: string) {
   return match ? `${match[1]}:${match[2]}` : "18:00";
 }
 
+function getMatchTime(match: SelectorMatch) {
+  return match.fecha ? new Date(match.fecha).getTime() : Number.POSITIVE_INFINITY;
+}
+
 interface Props {
   form: FormState;
   set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
   updateMatch: (i: number, patch: Partial<NextMatch>) => void;
   equipos: { id: string; nombre: string; escudo_url: string; categoria?: string }[];
-  dbMatches: any[];
-  tipo: string;
+  dbMatches: SelectorMatch[];
 }
 
-export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos, dbMatches, tipo }) => {
+export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos, dbMatches }) => {
   const handleAutoFill = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -67,13 +70,13 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
         if (Number.isNaN(matchDate.getTime())) return false;
         return matchDate.getTime() >= today.getTime();
       })
-      .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+      .sort((a, b) => getMatchTime(a) - getMatchTime(b));
 
     if (allUpcomingSantiso.length === 0) return;
 
     // Buscar el más próximo de cada categoría del club.
-    const cats = ["Sénior", "Feminino", "Veteranos"];
-    const selectedMatches: any[] = [];
+    const cats = ["Senior", "Femenino", "Veteranos"];
+    const selectedMatches: SelectorMatch[] = [];
 
     cats.forEach(cat => {
       const match = allUpcomingSantiso.find(m => categoriaKey(m.categoria || "") === categoriaKey(cat));
@@ -90,11 +93,11 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
     }
 
     // 4. Ordenar los elegidos por fecha para que el cartel sea cronológico
-    selectedMatches.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+    selectedMatches.sort((a, b) => getMatchTime(a) - getMatchTime(b));
 
     // 5. Rellenar los 3 slots
-    const newMatches = Array.from({ length: 3 }, () => ({
-      rival: "", rivalEscudoUrl: "", fecha: "", hora: "18:00", categoria: "Sénior", santisoSide: "right"
+    const newMatches: NextMatch[] = Array.from({ length: 3 }, () => ({
+      rival: "", rivalEscudoUrl: "", fecha: "", hora: "18:00", categoria: "Senior", lugar: "", santisoSide: "right"
     }));
 
     selectedMatches.forEach((match, index) => {
@@ -105,12 +108,13 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
         rivalEscudoUrl: rival?.escudo_url || "",
         fecha: match.fecha ? toDateInput(match.fecha) : "",
         hora: match.fecha ? toTimeInput(match.fecha) : "18:00",
-        categoria: match.categoria || "Sénior",
+        categoria: match.categoria || "Senior",
+        lugar: match.campo?.nombre || match.lugar || "",
         santisoSide: isSantisoLocal ? "left" : "right"
       };
     });
 
-    set("matches", newMatches as any);
+    set("matches", newMatches);
   };
 
   return (
@@ -162,8 +166,8 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
                 rival: "",
                 rivalEscudoUrl: ""
               })}>
-                  <option value="Sénior">Sénior</option>
-                  <option value="Feminino">Feminino</option>
+                  <option value="Senior">Sénior</option>
+                  <option value="Femenino">Feminino</option>
                   <option value="Veteranos">Veteranos</option>
                 </select>
               </div>
@@ -183,6 +187,15 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.8rem", marginTop: "0.8rem" }}>
+              <div className="input-group">
+                <label>Campo / estadio para Instagram</label>
+                <input
+                  type="text"
+                  value={m.lugar || ""}
+                  placeholder="A Merced"
+                  onChange={e => updateMatch(i, { lugar: e.target.value })}
+                />
+              </div>
               <div className="input-group">
                 <label>Localía</label>
                 <div style={{ display: "flex", gap: "0.4rem" }}>

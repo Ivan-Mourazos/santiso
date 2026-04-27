@@ -555,7 +555,7 @@ export default function AdminPlayers({
                 </td>
                 <td style={{ fontWeight: 700 }}>
                   {j.nombre}
-                  {j.capitan > 0 && (
+                  {(j.capitan ?? 0) > 0 && (
                     <span
                       className="badge-capitan"
                       title={`Capitán ${j.capitan}`}

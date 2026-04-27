@@ -16,7 +16,7 @@ const DEFAULT_URLS: AssetUrls = {
   sponsors: [],
 };
 
-export function useCartelAssets(tipo: TemplateId) {
+export function useCartelAssets(tipo: TemplateId, refreshKey = 0) {
   const [assetUrls, setAssetUrls] = useState<AssetUrls>(DEFAULT_URLS);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export function useCartelAssets(tipo: TemplateId) {
     }
 
     loadAssets();
-  }, [tipo]);
+  }, [tipo, refreshKey]);
 
   return assetUrls;
 }

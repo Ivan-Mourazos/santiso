@@ -89,6 +89,7 @@ function mkMatch(): NextMatch {
     fecha: "",
     hora: "18:00",
     categoria: "Senior",
+    lugar: "",
     santisoSide: "right",
   };
 }

@@ -22,6 +22,15 @@ export default function AdminJornadas({
   showConfirm,
   categoria,
 }: AdminJornadasProps) {
+  const parseGoalInput = (raw: string): number | null => {
+    if (raw.trim() === "") return null;
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
+  const toGoalInputValue = (value: unknown): string =>
+    typeof value === "number" && Number.isFinite(value) ? String(value) : "";
+
   const [jornadas, setJornadas] = useState<any[]>([]);
   const [equipos, setEquipos] = useState<any[]>([]);
   const [campos, setCampos] = useState<any[]>([]);
@@ -318,6 +327,8 @@ export default function AdminJornadas({
       competicion: selectedCompeticion,
       equipo_local_id: localId,
       equipo_visitante_id: visitanteId,
+      goles_local: null,
+      goles_visitante: null,
       fecha: fechaPartido || null,
       campo_id: campoId || null,
       estado: "programado",
@@ -931,12 +942,9 @@ export default function AdminJornadas({
                       >
                         <input
                           type="number"
-                          value={p.goles_local ?? 0}
+                          value={toGoalInputValue(p.goles_local)}
                           onChange={(e) => {
-                            const val =
-                              e.target.value === ""
-                                ? 0
-                                : parseInt(e.target.value);
+                            const val = parseGoalInput(e.target.value);
                             setPartidos((prev) =>
                               prev.map((pt) =>
                                 pt.id === p.id
@@ -968,12 +976,9 @@ export default function AdminJornadas({
                         </span>
                         <input
                           type="number"
-                          value={p.goles_visitante ?? 0}
+                          value={toGoalInputValue(p.goles_visitante)}
                           onChange={(e) => {
-                            const val =
-                              e.target.value === ""
-                                ? 0
-                                : parseInt(e.target.value);
+                            const val = parseGoalInput(e.target.value);
                             setPartidos((prev) =>
                               prev.map((pt) =>
                                 pt.id === p.id
@@ -1161,8 +1166,14 @@ export default function AdminJornadas({
                           const { error } = await supabase
                             .from("partidos_liga")
                             .update({
-                              goles_local: p.goles_local,
-                              goles_visitante: p.goles_visitante,
+                              goles_local:
+                                typeof p.goles_local === "number"
+                                  ? p.goles_local
+                                  : null,
+                              goles_visitante:
+                                typeof p.goles_visitante === "number"
+                                  ? p.goles_visitante
+                                  : null,
                               fecha: p.fecha
                                 ? new Date(p.fecha).toISOString()
                                 : null,

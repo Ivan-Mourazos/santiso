@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
 
 interface Jugador {
   id: string;
@@ -23,14 +23,33 @@ interface Staff {
   foto_url: string | null;
 }
 
+interface PlayerCardStats {
+  convocado: number;
+  titular: number;
+  pj: number;
+  goles: number;
+}
+
+interface Temporada {
+  id: string;
+  nombre: string;
+}
+
+type CardPerson = Jugador | Staff;
+
+function isStaffMember(person: CardPerson): person is Staff {
+  return "tipo" in person;
+}
+
 export default function PlantillaPage() {
   const [jugadores, setJugadores] = useState<Jugador[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [categoriaActiva, setCategoriaActiva] = useState("Senior");
   const [loading, setLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState<Jugador | null>(null);
-  const [temporadaActiva, setTemporadaActiva] = useState<any>(null);
+  const [temporadaActiva, setTemporadaActiva] = useState<Temporada | null>(null);
   const [santisoTeamIds, setSantisoTeamIds] = useState<string[]>([]);
+  const [cardStats, setCardStats] = useState<Record<string, PlayerCardStats>>({});
   const [faseActiva, setFaseActiva] = useState("Total");
   const [fasesDisponibles, setFasesDisponibles] = useState<string[]>([]);
   const [playerStats, setPlayerStats] = useState({
@@ -66,13 +85,51 @@ export default function PlantillaPage() {
         .from("equipos")
         .select("id")
         .ilike("nombre", "%santiso%");
-      setSantisoTeamIds(
-        (santisoTeams || []).map((team: { id: string }) => team.id),
-      );
+      const santisoIds = (santisoTeams || []).map((team: { id: string }) => team.id);
+      setSantisoTeamIds(santisoIds);
+      if (temp && pData) {
+        await loadCardStats(temp.id, pData as Jugador[]);
+      }
       setLoading(false);
     }
     fetchData();
   }, []);
+
+  async function loadCardStats(temporadaId: string, players: Jugador[]) {
+    const { data: jornadas } = await supabase
+      .from("jornadas")
+      .select("id")
+      .eq("temporada_id", temporadaId);
+    const jornadaIds = jornadas?.map((j) => j.id) || [];
+    const playerIds = players.map((player) => player.id);
+    if (jornadaIds.length === 0 || playerIds.length === 0) {
+      setCardStats({});
+      return;
+    }
+
+    const { data: stats } = await supabase
+      .from("jugador_partido_stats")
+      .select("jugador_id, titular, jugo, goles, partidos_liga!inner(jornada_id)")
+      .in("jugador_id", playerIds)
+      .in("partidos_liga.jornada_id", jornadaIds);
+
+    const next: Record<string, PlayerCardStats> = {};
+    for (const row of stats || []) {
+      const jugadorId = row.jugador_id as string;
+      const current = next[jugadorId] || {
+        convocado: 0,
+        titular: 0,
+        pj: 0,
+        goles: 0,
+      };
+      current.convocado += 1;
+      if (row.titular) current.titular += 1;
+      if (row.jugo || row.titular) current.pj += 1;
+      current.goles += Number(row.goles || 0);
+      next[jugadorId] = current;
+    }
+    setCardStats(next);
+  }
 
   useEffect(() => {
     const player = selectedPlayer;
@@ -141,7 +198,7 @@ export default function PlantillaPage() {
         let totalMin = 0;
         let totalGoles = 0;
         let totalEncajados = 0;
-        let conv = stats.length;
+        const conv = stats.length;
         let tit = 0;
         let sup = 0;
         let pj = 0;
@@ -198,9 +255,20 @@ export default function PlantillaPage() {
     ["DC", "ED", "EI"].includes(j.posicion),
   );
 
-  const renderFifaCard = (j: any, isSmall = true) => {
-    const isStaff = j.tipo !== undefined;
+  const renderFifaCard = (j: CardPerson, isSmall = true) => {
+    const isStaff = isStaffMember(j);
     const name = isStaff ? j.nombre : j.nombre.split(" ").slice(0, 2).join(" ");
+    const stats = !isStaff ? cardStats[j.id] : null;
+    const rating = !isStaff
+      ? Math.min(
+          99,
+          60 +
+            (stats?.pj || 0) * 2 +
+            (stats?.goles || 0) * 3 +
+            (stats?.titular || 0) +
+            (j.capitan ? 4 : 0),
+        )
+      : null;
 
     return (
       <div
@@ -208,24 +276,28 @@ export default function PlantillaPage() {
         className={`fifa-card-container ${isSmall && !isStaff ? "clickable" : "no-scale"}`}
         onClick={isSmall && !isStaff ? () => setSelectedPlayer(j) : undefined}
       >
-        <div className={`fifa-card ${categoriaActiva.toLowerCase()}`}>
-          {!isStaff && j.capitan > 0 && (
+        <div className={`fifa-card premium-card ${categoriaActiva.toLowerCase()}`}>
+          <div className="fifa-shine" />
+          {!isStaff && (j.capitan ?? 0) > 0 && (
             <div className="fifa-capitan-badge" title={`Capitán ${j.capitan}`}>
               C
             </div>
           )}
           {!isStaff && (
             <div className="fifa-meta">
-              <span className="fifa-dorsal">{j.dorsal}</span>
+              <span className="fifa-dorsal">{rating}</span>
               <span className="fifa-pos">{j.posicion}</span>
+              <span className="fifa-shirt">#{j.dorsal}</span>
             </div>
           )}
           <div className="fifa-img-box">
             {j.foto_url ? (
-              <img
+              <Image
                 src={j.foto_url}
                 alt={j.nombre}
                 className="fifa-player-img"
+                width={230}
+                height={214}
               />
             ) : (
               <div className="fifa-placeholder">
@@ -243,10 +315,7 @@ export default function PlantillaPage() {
               </div>
             )}
           </div>
-          <div
-            className="fifa-info"
-            style={{ justifyContent: "center", padding: "0.2rem 1rem 0.5rem" }}
-          >
+          <div className="fifa-info">
             <h4
               className="fifa-name"
               style={{
@@ -264,6 +333,22 @@ export default function PlantillaPage() {
               >
                 {j.apodo}
               </p>
+            )}
+            {!isStaff && (
+              <div className="fifa-stats-strip">
+                <span>
+                  <strong>{stats?.pj || 0}</strong>
+                  PJ
+                </span>
+                <span>
+                  <strong>{stats?.goles || 0}</strong>
+                  GOL
+                </span>
+                <span>
+                  <strong>{stats?.titular || 0}</strong>
+                  TIT
+                </span>
+              </div>
             )}
             {isStaff && (
               <p
@@ -284,7 +369,7 @@ export default function PlantillaPage() {
     );
   };
 
-  const renderSection = (titulo: string, lista: any[]) => {
+  const renderSection = (titulo: string, lista: CardPerson[]) => {
     if (lista.length === 0) return null;
     return (
       <div className="pos-section">

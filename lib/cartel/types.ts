@@ -34,5 +34,6 @@ export interface NextMatch {
   fecha: string;
   categoria: string;
   hora: string;
+  lugar?: string;
   santisoSide: "left" | "right";
 }

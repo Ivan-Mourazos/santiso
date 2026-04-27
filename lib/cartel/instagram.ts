@@ -11,18 +11,24 @@ const CAT_EMOJI: Record<string, string> = {
   Veteranos: "👴",
   Femenino:  "👧",
   Senior:    "👱‍♂️",
+  Feminino:  "👧",
+  "Sénior":  "👱‍♂️",
 };
 
 const CAT_LABEL: Record<string, string> = {
   Veteranos: "VETERANOS",
   Femenino:  "FEMININO",
   Senior:    "SÉNIOR",
+  Feminino:  "FEMININO",
+  "Sénior":  "SÉNIOR",
 };
 
 const CAT_HASHTAG: Record<string, string> = {
   Veteranos: "#Veteranos",
   Femenino:  "#Feminino",
   Senior:    "#Senior",
+  Feminino:  "#Feminino",
+  "Sénior":  "#Senior",
 };
 
 function fmtDateLong(dateStr: string): string {
@@ -48,12 +54,6 @@ function extractCompetitionShort(competicion: string): string {
   return competicion;
 }
 
-function jornada(jornadaNum: string, competicion: string): string {
-  const isKnown = competicion.toLowerCase().includes("copa");
-  const prefix = isKnown ? "Copa - Xornada" : "Xornada";
-  return `${prefix} ${jornadaNum}`;
-}
-
 // ─── Próximos Partidos ────────────────────────────────────────────────────────
 
 export interface ProximosParams {
@@ -72,10 +72,10 @@ export function generateProximosText(params: ProximosParams): string {
     const dateStr  = fmtDateLong(m.fecha);
     const hora     = m.hora || "—:—";
     const rival    = m.rival || "Rival a confirmar";
-    const estadio  = (m as any).lugar || (m as any).estadio || "—";
+    const estadio  = m.lugar || "—";
 
     // Build versus line depending on santisoSide
-    const santisoSide = (m as any).santisoSide as "left" | "right" || "right";
+    const santisoSide = m.santisoSide || "right";
     const santisoName = m.categoria === "Veteranos" ? "UD Santiso FC Solaina" : "UD Santiso FC";
     const versusLine = santisoSide === "left"
       ? `🆚 ${santisoName} vs ${rival}`

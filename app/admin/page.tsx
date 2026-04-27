@@ -1,15 +1,39 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
+import { useState } from "react";
+import dynamic from "next/dynamic";
 import AdminShield from "@/components/admin/AdminShield";
-import AdminEquipos from "@/components/admin/AdminEquipos";
-import AdminSponsors from "@/components/admin/AdminSponsors";
-import AdminJornadas from "@/components/admin/AdminJornadas";
-import AdminPlayers from "@/components/admin/AdminPlayers";
-import AdminStaff from "@/components/admin/AdminStaff";
-import GeneradorCartel from "@/components/admin/GeneradorCartel";
-import AdminActaImporter from "@/components/admin/AdminActaImporter";
 import { TEMPLATES } from "@/components/admin/cartel/types";
+import { LoadingState } from "@/components/ui/AdminUI";
+
+const panelLoading = () => (
+  <LoadingState
+    title="Cargando panel"
+    detail="Preparando datos e ferramentas desta sección."
+  />
+);
+
+const AdminEquipos = dynamic(() => import("@/components/admin/AdminEquipos"), {
+  loading: panelLoading,
+});
+const AdminSponsors = dynamic(() => import("@/components/admin/AdminSponsors"), {
+  loading: panelLoading,
+});
+const AdminJornadas = dynamic(() => import("@/components/admin/AdminJornadas"), {
+  loading: panelLoading,
+});
+const AdminPlayers = dynamic(() => import("@/components/admin/AdminPlayers"), {
+  loading: panelLoading,
+});
+const AdminStaff = dynamic(() => import("@/components/admin/AdminStaff"), {
+  loading: panelLoading,
+});
+const GeneradorCartel = dynamic(() => import("@/components/admin/GeneradorCartel"), {
+  loading: panelLoading,
+});
+const AdminActaImporter = dynamic(
+  () => import("@/components/admin/AdminActaImporter"),
+  { loading: panelLoading },
+);
 
 export default function AdminPage() {
   const [activeView, setActiveView] = useState<string>("jornadas");

@@ -106,7 +106,18 @@ function buildStats(acta: ParsedActa) {
 
     if (event.tipo === "gol" && event.jugador?.jugadorId) {
       const stat = stats.get(event.jugador.jugadorId);
-      if (stat) stat.goles += 1;
+      if (stat) {
+        stat.goles += 1;
+        stat.jugo = true;
+      }
+    }
+
+    if (
+      (event.tipo === "tarjeta_amarilla" || event.tipo === "tarjeta_roja") &&
+      event.jugador?.jugadorId
+    ) {
+      const stat = stats.get(event.jugador.jugadorId);
+      if (stat) stat.jugo = true;
     }
 
     if (event.tipo === "cambio" && event.jugadorEntra?.jugadorId) {
@@ -163,6 +174,25 @@ export async function saveReviewedActa({
   };
   if (campoId) updatePayload.campo_id = campoId;
 
+  const stats = buildStats(acta).map((stat) => ({
+    ...stat,
+    partido_id: partidoId,
+  }));
+  const events = buildEventRows(partidoId, acta);
+
+  const { error: rpcError } = await supabase.rpc("save_reviewed_acta", {
+    p_partido_id: partidoId,
+    p_goles_local: updatePayload.goles_local,
+    p_goles_visitante: updatePayload.goles_visitante,
+    p_campo_id: campoId,
+    p_stats: stats,
+    p_events: events,
+  });
+  if (!rpcError) return;
+  if (rpcError.message && !rpcError.message.includes("save_reviewed_acta")) {
+    throw explainSupabaseError("save_reviewed_acta", "guardar", rpcError);
+  }
+
   const { error: matchError } = await supabase
     .from("partidos_liga")
     .update(updatePayload)
@@ -189,10 +219,6 @@ export async function saveReviewedActa({
     );
   }
 
-  const stats = buildStats(acta).map((stat) => ({
-    ...stat,
-    partido_id: partidoId,
-  }));
   if (stats.length > 0) {
     const { error } = await supabase.from("jugador_partido_stats").insert(stats);
     if (error) {
@@ -204,7 +230,6 @@ export async function saveReviewedActa({
     }
   }
 
-  const events = buildEventRows(partidoId, acta);
   if (events.length > 0) {
     const { error } = await supabase.from("partido_eventos_santiso").insert(events);
     if (error) {

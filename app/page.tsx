@@ -2,26 +2,60 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { fetchCurrentSantisoMatches } from "@/lib/supabase-queries";
+import Image from "next/image";
+import {
+  fetchCurrentSantisoMatches,
+  type LeagueMatch,
+} from "@/lib/supabase-queries";
+import { LoadingState, EmptyState } from "@/components/ui/AdminUI";
+
+interface Sponsor {
+  id: string;
+  nombre: string;
+  logo_url: string;
+  web_url?: string | null;
+}
+
+function formatMatchDate(fecha?: string | null) {
+  if (!fecha) return "Data pendente";
+  return new Date(fecha).toLocaleDateString("es-ES", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function formatMatchTime(fecha?: string | null) {
+  if (!fecha) return "--:--";
+  return new Date(fecha).toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default function Home() {
-  const [proximoPartido, setProximoPartido] = useState<any>(null);
-  const [mounted, setMounted] = useState(false);
+  const [proximoPartido, setProximoPartido] = useState<LeagueMatch[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [escudo, setEscudo] = useState<string | null>(null);
-  const [patrocinadores, setPatrocinadores] = useState<any[]>([]);
+  const [patrocinadores, setPatrocinadores] = useState<Sponsor[]>([]);
 
   useEffect(() => {
-    setMounted(true);
     async function fetchData() {
-      const nextMatches = await fetchCurrentSantisoMatches();
+      setIsLoading(true);
+      const [{ data: sData }, nextMatches] = await Promise.all([
+        supabase
+          .from("patrocinadores")
+          .select("*")
+          .order("orden", { ascending: true }),
+        fetchCurrentSantisoMatches(),
+      ]);
       setProximoPartido(nextMatches);
-
-      const { data: sData } = await supabase.from("patrocinadores").select("*").order("orden", { ascending: true });
       if (sData) setPatrocinadores(sData);
+      setIsLoading(false);
     }
     
     async function fetchEscudo() {
-      const { data } = supabase.storage.from("fotos").getPublicUrl(`escudo_club.webp?t=${Date.now()}`);
+      const { data } = supabase.storage.from("fotos").getPublicUrl("escudo_club.webp");
       if (data) setEscudo(data.publicUrl);
     }
 
@@ -29,14 +63,21 @@ export default function Home() {
     fetchEscudo();
   }, []);
 
-  if (!mounted) return <div style={{ background: '#000', minHeight: '100vh' }}></div>;
-
   return (
     <main className="main-content">
       {/* Hero Section */}
       <section className="hero glass-bg">
         <div className="container hero-container">
-          {escudo && escudo !== "" && <img src={escudo} alt="Escudo UD Santiso" className="hero-logo-main" />}
+          {escudo && escudo !== "" && (
+            <Image
+              src={escudo}
+              alt="Escudo UD Santiso"
+              className="hero-logo-main"
+              width={220}
+              height={220}
+              priority
+            />
+          )}
           <span className="badge-premium">Unión Deportiva</span>
           <h1 className="hero-title">UD <span className="text-primary">SANTISO</span></h1>
           <p className="hero-subtitle">Pasión, Orgullo y Compromiso en cada partido de nuestra liga.</p>
@@ -52,7 +93,12 @@ export default function Home() {
         <div className="container">
           <div className="fixtures-card glass shadow-glare">
             <h3 className="card-tag">Próximos Partidos</h3>
-            {Array.isArray(proximoPartido) && proximoPartido.length > 0 ? (
+            {isLoading ? (
+              <LoadingState
+                title="Cargando próximos partidos"
+                detail="Preparando calendario e escudos."
+              />
+            ) : Array.isArray(proximoPartido) && proximoPartido.length > 0 ? (
               <>
                 <div className="matches-grid">
                   {proximoPartido.map((partido) => (
@@ -61,7 +107,13 @@ export default function Home() {
                       <div className="match-display-small">
                         <div className="team-box-small">
                           {partido.local?.escudo_url ? (
-                            <img src={partido.local.escudo_url} alt={partido.local.nombre} className="team-logo-small" />
+                            <Image
+                              src={partido.local.escudo_url}
+                              alt={partido.local.nombre}
+                              className="team-logo-small"
+                              width={70}
+                              height={70}
+                            />
                           ) : (
                             <div className="team-badge-small">{partido.local?.nombre?.[0] || 'L'}</div>
                           )}
@@ -89,16 +141,22 @@ export default function Home() {
                           
                           <div className="match-meta-small">
                             <span className="match-date-small">
-                              {new Date(partido.fecha).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+                              {formatMatchDate(partido.fecha)}
                             </span>
                             <span className="match-time-small">
-                              {new Date(partido.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                              {formatMatchTime(partido.fecha)}
                             </span>
                           </div>
                         </div>
                         <div className="team-box-small">
                           {partido.visitante?.escudo_url ? (
-                            <img src={partido.visitante.escudo_url} alt={partido.visitante.nombre} className="team-logo-small" />
+                            <Image
+                              src={partido.visitante.escudo_url}
+                              alt={partido.visitante.nombre}
+                              className="team-logo-small"
+                              width={70}
+                              height={70}
+                            />
                           ) : (
                             <div className="team-badge-small bg-muted">{partido.visitante?.nombre?.[0] || 'V'}</div>
                           )}
@@ -113,7 +171,10 @@ export default function Home() {
                 </div>
               </>
             ) : (
-              <p>Esperando calendario...</p>
+              <EmptyState
+                title="Calendario pendente"
+                detail="Aínda non hai próximos partidos cargados."
+              />
             )}
           </div>
         </div>
@@ -154,7 +215,14 @@ export default function Home() {
                 className="sponsor-link"
               >
                 <div className="sponsor-item glass">
-                  <img src={s.logo_url} alt={s.nombre} className="sponsor-logo" title={s.nombre} />
+                  <Image
+                    src={s.logo_url}
+                    alt={s.nombre}
+                    className="sponsor-logo"
+                    title={s.nombre}
+                    width={350}
+                    height={180}
+                  />
                 </div>
               </a>
             )) : (

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 import { generateProximosText, generateResultadoText } from "@/lib/cartel/instagram";
 import {
   W, H,
@@ -37,7 +36,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
 
   const {
     form, set,
-    equipos, setEquipos,
+    equipos,
     jugadores,
     campos,
     jugFileName,
@@ -64,6 +63,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ message: string, onConfirm: () => void } | null>(null);
   const [showAssets, setShowAssets] = useState(false);
+  const [assetRefreshKey, setAssetRefreshKey] = useState(0);
 
   const showToastUI = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -75,16 +75,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
   };
 
   const tipoForAssets: TemplateId = TEMPLATES.some(t => t.id === tipo) ? (tipo as TemplateId) : "partido";
-  const assetUrls = useCartelAssets(tipoForAssets);
-
-  // Load ALL equipos once
-  useEffect(() => {
-    supabase
-      .from("equipos")
-      .select("id, nombre, escudo_url, categoria")
-      .order("nombre", { ascending: true })
-      .then(({ data }) => setEquipos(data || []));
-  }, [setEquipos]);
+  const assetUrls = useCartelAssets(tipoForAssets, assetRefreshKey);
 
   // ── Canvas draw ─────────────────────────────────────────────────────────────
   const drawCanvas = useCallback(async () => {
@@ -187,13 +178,34 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
     if (tipo === "resumo")    return generateResultadoText(form);
     return null;
   }, [tipo, form]);
+  const instagramMeta = useMemo(() => {
+    if (tipo === "proximos") {
+      return {
+        title: "Agenda fin de semana",
+        detail: "Usa rival, categoría, fecha, hora, localía e campo de cada partido.",
+      };
+    }
+    if (tipo === "resumo") {
+      return {
+        title: "Resultado da xornada",
+        detail:
+          form.events.length > 0
+            ? "Usa marcador, competición, data, rival, goles e tarxetas cargadas."
+            : "Usa marcador e datos básicos. Engade eventos para listar goleadores e tarxetas.",
+      };
+    }
+    return null;
+  }, [tipo, form.events.length]);
 
   function handleCopyInstagram() {
     if (!instagramText) return;
-    navigator.clipboard.writeText(instagramText).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    navigator.clipboard
+      .writeText(instagramText)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => showToastUI("No se pudo copiar el texto", "error"));
   }
 
   const handleDownload = useCallback(() => {
@@ -253,7 +265,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
             {tipo === "partido"    && <FormPartido form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} tipo={tipo} />}
             {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} tipo={tipo} />}
             {tipo === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}
-            {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} dbMatches={dbMatches} tipo={tipo} />}
+            {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} dbMatches={dbMatches} />}
             {tipo === "noso11"     && <FormNoso11 form={form} set={set} jugadores={jugadores} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}
 
             {/* Santiso side (shared) */}
@@ -293,10 +305,17 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
               <div style={{ marginTop: "2rem", padding: "1.2rem", background: "rgba(255,255,255,0.03)",
                             border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem" }}>
-                  <p style={{ fontSize: "0.7rem", fontWeight: 800, textTransform: "uppercase",
-                              letterSpacing: "1.5px", color: "var(--primary)", margin: 0 }}>
-                    📱 Texto para Instagram
-                  </p>
+                  <div>
+                    <p style={{ fontSize: "0.7rem", fontWeight: 800, textTransform: "uppercase",
+                                letterSpacing: "1.5px", color: "var(--primary)", margin: 0 }}>
+                      Texto para Instagram
+                    </p>
+                    {instagramMeta && (
+                      <p style={{ margin: "0.25rem 0 0", color: "#777", fontSize: "0.75rem", lineHeight: 1.4 }}>
+                        {instagramMeta.title}: {instagramMeta.detail}
+                      </p>
+                    )}
+                  </div>
                   <button onClick={handleCopyInstagram}
                     style={{ background: copied ? "var(--primary)" : "rgba(255,255,255,0.05)",
                              color: copied ? "#000" : "#fff", padding: "0.3rem 0.7rem",
@@ -336,7 +355,11 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
                
                {showAssets && (
                  <div className="scale-in" style={{ marginTop: "1.5rem", padding: "1.5rem", background: "rgba(255,255,255,0.02)", borderRadius: "1rem", border: "1px solid rgba(255,255,255,0.05)" }}>
-                   <AdminCartelAssets showToast={showToastUI} showConfirm={showConfirmUI} />
+                   <AdminCartelAssets
+                     showToast={showToastUI}
+                     showConfirm={showConfirmUI}
+                     onAssetsChanged={() => setAssetRefreshKey((key) => key + 1)}
+                   />
                  </div>
                )}
             </div>

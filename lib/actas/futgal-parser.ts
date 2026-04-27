@@ -184,7 +184,8 @@ function parseGoals(
     const rawName = removeEventNoise(line);
     if (!minute || !rawName) continue;
 
-    let isRival = true;
+    const santisoPlayer = findPlayerByName(rawName, santisoPlayers);
+    let isRival = !santisoPlayer;
     if (score) {
       const localScored = score.local > previousLocal;
       const visitanteScored = score.visitante > previousVisitante;
@@ -194,16 +195,15 @@ function parseGoals(
       previousVisitante = score.visitante;
     }
 
-    const jugador = isRival ? undefined : findPlayerByName(rawName, santisoPlayers);
     eventos.push({
       id: newId(),
       tipo: "gol",
       minuto: minute,
       isRival,
-      jugador,
+      jugador: isRival ? undefined : santisoPlayer,
       nombreRival: isRival ? displayActaName(rawName) : undefined,
       scoreAfter: score?.text,
-      confidence: jugador || isRival ? "media" : "baja",
+      confidence: santisoPlayer || isRival ? "media" : "baja",
     });
   }
 
@@ -220,12 +220,14 @@ function parseCards(lines: string[], santisoPlayers: ActaPlayerRef[]) {
 
     const isRed = normalizeForSearch(line).includes("roja");
     const jugador = findPlayerByName(rawName, santisoPlayers);
+    const isRival = !jugador;
     eventos.push({
       id: newId(),
       tipo: isRed ? "tarjeta_roja" : "tarjeta_amarilla",
       minuto: minute,
-      isRival: false,
-      jugador,
+      isRival,
+      jugador: isRival ? undefined : jugador,
+      nombreRival: isRival ? displayActaName(rawName) : undefined,
       confidence: jugador ? "media" : "baja",
     });
   }

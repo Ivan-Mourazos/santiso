@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { processAndUploadImage } from "@/lib/image-utils";
 import { v4 as uuidv4 } from "uuid";
 import BusyBanner from "./BusyBanner";
+import { TEMPLATES } from "./cartel/types";
 
 interface Asset {
   id:      string;
@@ -18,6 +20,7 @@ interface Asset {
 interface Props {
   showToast: (msg: string, type?: "success" | "error") => void;
   showConfirm: (msg: string, onConfirm: () => void) => void;
+  onAssetsChanged?: () => void;
 }
 
 /** Strips accents + invalid storage-key characters → safe slug */
@@ -38,16 +41,11 @@ const INST_LOGOS = [
   { subtipo: "rfgf",  label: "RFGF",             hint: "Esquina superior" },
 ];
 
-// Default template list for backgrounds
-const TEMPLATE_LABELS: Record<string, string> = {
-  partido:    "Cartel de Partido",
-  resumo:     "Resumo da Xornada",
-  cronoloxia: "Cronoloxía",
-  proximos:   "Próximos Encontros",
-  noso11:     "O Noso 11",
-};
-
-export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
+export default function AdminCartelAssets({
+  showToast,
+  showConfirm,
+  onAssetsChanged,
+}: Props) {
   const [assets, setAssets]   = useState<Asset[]>([]);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [isFetching, setIsFetching] = useState(true);
@@ -84,7 +82,7 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
 
       setUploadProgress(80);
       const path = `cartel/${sanitizeKey(tipo)}/${sanitizeKey(subtipo)}-${uuidv4()}.webp`;
-      const { data: upload, error: uploadErr } = await supabase.storage
+      const { error: uploadErr } = await supabase.storage
         .from("fotos")
         .upload(path, processed, { upsert: true, contentType: "image/webp" });
       if (uploadErr) throw uploadErr;
@@ -103,6 +101,7 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
 
       showToast(`${nombre} actualizado correctamente`);
       fetchAssets();
+      onAssetsChanged?.();
     } catch (err: unknown) {
       console.error(err);
       showToast("Error al subir imagen", "error");
@@ -117,6 +116,7 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
       await supabase.from("cartel_assets").delete().eq("id", id);
       showToast("Activo eliminado");
       fetchAssets();
+      onAssetsChanged?.();
     });
   }
 
@@ -133,6 +133,7 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
       supabase.from("cartel_assets").update({ orden: a.orden }).eq("id", b.id),
     ]);
     fetchAssets();
+    onAssetsChanged?.();
   }
 
   // Collect categorised data
@@ -155,7 +156,7 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
     return (
       <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
         {url ? (
-          <img src={url} alt={label}
+          <Image src={url} alt={label} width={56} height={56}
             style={{ width: 56, height: 56, objectFit: "contain",
                      background: "rgba(255,255,255,0.04)", borderRadius: 8 }} />
         ) : (
@@ -209,8 +210,13 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
             onClick={() => {
               const nombre = "xunta_left";
               const existing = assets.find(a => a.tipo === "config" && a.subtipo === "logo_order");
-              if (existing) supabase.from("cartel_assets").update({ nombre }).eq("id", existing.id).then(() => fetchAssets());
-              else supabase.from("cartel_assets").insert([{ tipo: "config", subtipo: "logo_order", nombre, url: "", orden: 0 }]).then(() => fetchAssets());
+              const query = existing
+                ? supabase.from("cartel_assets").update({ nombre }).eq("id", existing.id)
+                : supabase.from("cartel_assets").insert([{ tipo: "config", subtipo: "logo_order", nombre, url: "", orden: 0 }]);
+              query.then(() => {
+                fetchAssets();
+                onAssetsChanged?.();
+              });
             }}
             style={ assets.find(a => a.tipo === "config" && a.subtipo === "logo_order")?.nombre !== "rfgf_left" ? activeBtnStyle : inactiveBtnStyle }>
             Xunta Izquierda
@@ -219,8 +225,13 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
             onClick={() => {
               const nombre = "rfgf_left";
               const existing = assets.find(a => a.tipo === "config" && a.subtipo === "logo_order");
-              if (existing) supabase.from("cartel_assets").update({ nombre }).eq("id", existing.id).then(() => fetchAssets());
-              else supabase.from("cartel_assets").insert([{ tipo: "config", subtipo: "logo_order", nombre, url: "", orden: 0 }]).then(() => fetchAssets());
+              const query = existing
+                ? supabase.from("cartel_assets").update({ nombre }).eq("id", existing.id)
+                : supabase.from("cartel_assets").insert([{ tipo: "config", subtipo: "logo_order", nombre, url: "", orden: 0 }]);
+              query.then(() => {
+                fetchAssets();
+                onAssetsChanged?.();
+              });
             }}
             style={ assets.find(a => a.tipo === "config" && a.subtipo === "logo_order")?.nombre === "rfgf_left" ? activeBtnStyle : inactiveBtnStyle }>
             RFGF Izquierda
@@ -249,7 +260,7 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
         Cada plantilla puede tener su propio fondo. Si no se sube, usa el fondo por defecto <code>/fondo-cartel.png</code>.
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-        {Object.entries(TEMPLATE_LABELS).map(([subtipo, label]) => (
+        {TEMPLATES.map(({ id: subtipo, label }) => (
           <UploadZone
             key={subtipo}
             label={label}
@@ -276,7 +287,7 @@ export default function AdminCartelAssets({ showToast, showConfirm }: Props) {
             <span style={{ color: "var(--primary)", fontWeight: 900, fontSize: "0.85rem", width: 20 }}>
               {i + 1}
             </span>
-            <img src={sp.url} alt={sp.nombre}
+            <Image src={sp.url} alt={sp.nombre} width={52} height={36}
               style={{ width: 52, height: 36, objectFit: "contain",
                        background: "rgba(255,255,255,0.04)", borderRadius: 6 }} />
             <span style={{ flex: 1, fontWeight: 700, fontSize: "0.9rem" }}>{sp.nombre}</span>
