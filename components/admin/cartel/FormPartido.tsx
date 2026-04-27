@@ -111,6 +111,8 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
         </select>
       </div>
 
+
+
       {tipo === "partido" && (
         <div style={{ marginBottom: "1rem" }}>
           <button
@@ -123,9 +125,12 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
               border: "1px dashed var(--primary)",
               color: "var(--primary)",
               padding: "0.8rem",
+              borderRadius: "10px",
+              fontWeight: 800,
+              letterSpacing: "0.3px",
             }}
           >
-            Autocompletar próximo partido de esta categoría y liga
+            ⚡ Autocompletar próximo partido
           </button>
           {autoFillMessage && (
             <p style={{ margin: "0.5rem 0 0", color: "#a3a3a3", fontSize: "0.75rem", fontWeight: 700 }}>
@@ -160,19 +165,19 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
                 const selected = campos?.find(c => c.id === e.target.value);
                 if (selected) set("lugar", selected.nombre);
               }}
-              style={{ fontSize: '0.75rem', padding: '0.4rem' }}
+              style={{ fontSize: '0.82rem', padding: '0.5rem 0.8rem' }}
             >
-              <option value="">— Seleccionar Estadio —</option>
+              <option value="">— Seleccionar estadio —</option>
               {campos?.map(c => (
                 <option key={c.id} value={c.id}>{c.nombre} ({c.poblacion || 'S/P'})</option>
               ))}
             </select>
             <input 
               type="text" 
-              placeholder="Nombre manual..." 
+              placeholder="O escribe el nombre manualmente..." 
               value={form.lugar} 
               onChange={e => set("lugar", e.target.value)} 
-              style={{ padding: '0.4rem', height: 'auto' }}
+              style={{ padding: '0.5rem 0.8rem', height: 'auto', fontSize: '0.82rem' }}
             />
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 import { Fragment, useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase-browser";
 import { processAndUploadImage } from "@/lib/image-utils";
 import { v4 as uuidv4 } from "uuid";
 import BusyBanner from "./BusyBanner";
@@ -477,6 +477,14 @@ export default function AdminEquipos({
           Tabla `equipo_competiciones` no existe. Modo clásico activo por
           categoría.
         </p>
+      )}
+
+      {relationEnabled && !editingId && (
+        <div style={{ display: 'flex', alignItems: 'center', margin: '2rem 0' }}>
+          <hr style={{ flex: 1, borderColor: 'rgba(255,255,255,0.06)', borderStyle: 'solid', borderBottom: 'none' }} />
+          <span style={{ padding: '0 1rem', color: '#666', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 600 }}>o crear nuevo</span>
+          <hr style={{ flex: 1, borderColor: 'rgba(255,255,255,0.06)', borderStyle: 'solid', borderBottom: 'none' }} />
+        </div>
       )}
 
       {!editingId && (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase-browser";
 import { processAndUploadImage } from "@/lib/image-utils";
 import { v4 as uuidv4 } from "uuid";
 import BusyBanner from "./BusyBanner";

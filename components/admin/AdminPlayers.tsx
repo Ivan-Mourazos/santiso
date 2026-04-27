@@ -1,6 +1,6 @@
 "use client";
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase-browser";
 import { processAndUploadImage } from "@/lib/image-utils";
 import { v4 as uuidv4 } from "uuid";
 import BusyBanner from "./BusyBanner";
@@ -194,105 +194,111 @@ export default function AdminPlayers({
           transition: "all 0.3s",
         }}
       >
-        <div
-          className="form-grid-5"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-            gap: "1rem",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <div className="input-group">
-            <label>Nombre Completo</label>
-            <input
-              type="text"
-              placeholder="Ej: Iván Sánchez Vázquez"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              required
-            />
-          </div>
-          <div className="input-group">
-            <label>Apodo</label>
-            <input
-              type="text"
-              placeholder="Ej: Mourazos"
-              value={apodo}
-              onChange={(e) => setApodo(e.target.value)}
-            />
-          </div>
-          <div className="input-group">
-            <label>Dorsal</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder="10"
-              value={dorsal}
-              onChange={(e) => setDorsal(e.target.value)}
-              required
-            />
-          </div>
-          <div className="input-group">
-            <label>Posición</label>
-            <select
-              value={posicion}
-              onChange={(e) => setPosicion(e.target.value)}
-              required
-            >
-              <option value="">Selección...</option>
-              <option value="POR">POR (Portero)</option>
-              <option value="LD">LD (Lateral Derecho)</option>
-              <option value="LI">LI (Lateral Izquierdo)</option>
-              <option value="DFC">DFC (Defensa Central)</option>
-              <option value="MCD">M. Centro Defensivo</option>
-              <option value="MC">Medio Centro</option>
-              <option value="MI">Medio Izquierdo</option>
-              <option value="MD">Medio Derecho</option>
-              <option value="MCO">M. Centro Ofensivo</option>
-              <option value="EI">Extremo Izquierdo</option>
-              <option value="ED">Extremo Derecho</option>
-              <option value="DC">Delantero Centro</option>
-            </select>
-          </div>
-          <div className="input-group">
-            <label>Foto {editingId ? "(Opcional)" : ""}</label>
-            <div className="file-input-group">
-              <label className="file-input-label">
-                {fotoFile
-                  ? fotoFile.name.substring(0, 10) + "..."
-                  : editingId
-                    ? "Cambiar Foto"
-                    : "Subir Foto"}
-                <input
-                  type="file"
-                  className="hidden-input"
-                  accept="image/*"
-                  onChange={(e) => setFotoFile(e.target.files?.[0] || null)}
-                />
-              </label>
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "1.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1.5fr 1fr", gap: "1rem" }}>
+            <div className="input-group">
+              <label>Nombre Completo</label>
+              <input
+                type="text"
+                placeholder="Ej: Iván Sánchez Vázquez"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                required
+              />
+            </div>
+            <div className="input-group">
+              <label>Apodo</label>
+              <input
+                type="text"
+                placeholder="Ej: Mourazos"
+                value={apodo}
+                onChange={(e) => setApodo(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <label>Dorsal</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="10"
+                value={dorsal}
+                onChange={(e) => setDorsal(e.target.value)}
+                required
+              />
             </div>
           </div>
-        </div>
-        <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={loading}
-            style={{ padding: "0.8rem 2rem" }}
-          >
-            {loading
-              ? "Procesando..."
-              : editingId
-                ? "Guardar cambios"
-                : "Añadir Jugador"}
-          </button>
-          {editingId && (
-            <button type="button" className="btn-secondary" onClick={resetForm}>
-              Cancelar edición
-            </button>
-          )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
+            <div className="input-group">
+              <label>Posición</label>
+              <select
+                value={posicion}
+                onChange={(e) => setPosicion(e.target.value)}
+                required
+              >
+                <option value="">Selección...</option>
+                <option value="POR">POR (Portero)</option>
+                <option value="LD">LD (Lateral Derecho)</option>
+                <option value="LI">LI (Lateral Izquierdo)</option>
+                <option value="DFC">DFC (Defensa Central)</option>
+                <option value="MCD">MCD (M. Centro Defensivo)</option>
+                <option value="MC">MC (Medio Centro)</option>
+                <option value="MI">MI (Medio Izquierdo)</option>
+                <option value="MD">MD (Medio Derecho)</option>
+                <option value="MCO">MCO (M. Centro Ofensivo)</option>
+                <option value="EI">EI (Extremo Izquierdo)</option>
+                <option value="ED">ED (Extremo Derecho)</option>
+                <option value="DC">DC (Delantero Centro)</option>
+              </select>
+            </div>
+            <div className="input-group">
+              <label>Foto {editingId ? "(Opcional)" : ""}</label>
+              <div className="file-input-group">
+                <label className="file-input-label">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                  </svg>
+                  {fotoFile
+                    ? fotoFile.name.substring(0, 10) + "..."
+                    : editingId
+                      ? "Cambiar Foto"
+                      : "Subir Foto"}
+                  <input
+                    type="file"
+                    className="hidden-input"
+                    accept="image/*"
+                    onChange={(e) => setFotoFile(e.target.files?.[0] || null)}
+                  />
+                </label>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "0.8rem" }}>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={loading}
+                style={{ flex: 1, padding: "0.8rem" }}
+              >
+                {loading
+                  ? "Procesando..."
+                  : editingId
+                    ? "Guardar cambios"
+                    : "Añadir Jugador"}
+              </button>
+              {editingId && (
+                <button type="button" className="btn-secondary" onClick={resetForm} style={{ padding: "0.8rem" }}>
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </form>
     );
@@ -342,109 +348,107 @@ export default function AdminPlayers({
           transition: "all 0.3s",
         }}
       >
-        <div
-          className="form-grid-5"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-            gap: "1rem",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <div className="input-group">
-            <label>Nombre Completo</label>
-            <input
-              type="text"
-              placeholder="Ej: Iván Sánchez Vázquez"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              required
-            />
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "1.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1.5fr 1fr", gap: "1rem" }}>
+            <div className="input-group">
+              <label>Nombre Completo</label>
+              <input
+                type="text"
+                placeholder="Ej: Iván Sánchez Vázquez"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                required
+              />
+            </div>
+            <div className="input-group">
+              <label>Apodo</label>
+              <input
+                type="text"
+                placeholder="Ej: Mourazos"
+                value={apodo}
+                onChange={(e) => setApodo(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <label>Dorsal</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="10"
+                value={dorsal}
+                onChange={(e) => setDorsal(e.target.value)}
+                required
+              />
+            </div>
           </div>
-          <div className="input-group">
-            <label>Apodo</label>
-            <input
-              type="text"
-              placeholder="Ej: Mourazos"
-              value={apodo}
-              onChange={(e) => setApodo(e.target.value)}
-            />
-          </div>
-          <div className="input-group">
-            <label>Dorsal</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder="10"
-              value={dorsal}
-              onChange={(e) => setDorsal(e.target.value)}
-              required
-            />
-          </div>
-          <div className="input-group">
-            <label>Posición</label>
-            <select
-              value={posicion}
-              onChange={(e) => setPosicion(e.target.value)}
-              required
-            >
-              <option value="">Selección...</option>
-              <option value="POR">POR (Portero)</option>
-              <option value="LD">LD (Lateral Derecho)</option>
-              <option value="LI">LI (Lateral Izquierdo)</option>
-              <option value="DFC">DFC (Defensa Central)</option>
-              <option value="MCD">MCD (M. Centro Defensivo)</option>
-              <option value="MC">MC (Medio Centro)</option>
-              <option value="MI">MI (Medio Izquierdo)</option>
-              <option value="MD">MD (Medio Derecho)</option>
-              <option value="MCO">MCO (M. Centro Ofensivo)</option>
-              <option value="EI">EI (Extremo Izquierdo)</option>
-              <option value="ED">ED (Extremo Derecho)</option>
-              <option value="DC">DC (Delantero Centro)</option>
-            </select>
-          </div>
-          <div className="input-group">
-            <label>Foto {editingId ? "(Opcional)" : ""}</label>
-            <div className="file-input-group">
-              <label className="file-input-label">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-                </svg>
-                {fotoFile
-                  ? fotoFile.name.substring(0, 10) + "..."
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
+            <div className="input-group">
+              <label>Posición</label>
+              <select
+                value={posicion}
+                onChange={(e) => setPosicion(e.target.value)}
+                required
+              >
+                <option value="">Selección...</option>
+                <option value="POR">POR (Portero)</option>
+                <option value="LD">LD (Lateral Derecho)</option>
+                <option value="LI">LI (Lateral Izquierdo)</option>
+                <option value="DFC">DFC (Defensa Central)</option>
+                <option value="MCD">MCD (M. Centro Defensivo)</option>
+                <option value="MC">MC (Medio Centro)</option>
+                <option value="MI">MI (Medio Izquierdo)</option>
+                <option value="MD">MD (Medio Derecho)</option>
+                <option value="MCO">MCO (M. Centro Ofensivo)</option>
+                <option value="EI">EI (Extremo Izquierdo)</option>
+                <option value="ED">ED (Extremo Derecho)</option>
+                <option value="DC">DC (Delantero Centro)</option>
+              </select>
+            </div>
+            <div className="input-group">
+              <label>Foto {editingId ? "(Opcional)" : ""}</label>
+              <div className="file-input-group">
+                <label className="file-input-label">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                  </svg>
+                  {fotoFile
+                    ? fotoFile.name.substring(0, 10) + "..."
+                    : editingId
+                      ? "Cambiar Foto"
+                      : "Subir Foto"}
+                  <input
+                    type="file"
+                    className="hidden-input"
+                    accept="image/*"
+                    onChange={(e) => setFotoFile(e.target.files?.[0] || null)}
+                  />
+                </label>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={loading}
+                style={{ width: "100%", padding: "0.8rem" }}
+              >
+                {loading
+                  ? "Procesando..."
                   : editingId
-                    ? "Cambiar Foto"
-                    : "Subir Foto"}
-                <input
-                  type="file"
-                  className="hidden-input"
-                  accept="image/*"
-                  onChange={(e) => setFotoFile(e.target.files?.[0] || null)}
-                />
-              </label>
+                    ? "Guardar cambios"
+                    : "Añadir Jugador"}
+              </button>
             </div>
           </div>
         </div>
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={loading}
-          style={{ padding: "0.8rem 2rem" }}
-        >
-          {loading
-            ? "Procesando..."
-            : editingId
-              ? "Guardar cambios"
-              : "Añadir Jugador"}
-        </button>
       </form>
       )}
 
@@ -608,10 +612,12 @@ export default function AdminPlayers({
                       disabled={loading}
                       onClick={() => handleDeleteJugador(j.id)}
                       className="btn-delete btn-action"
+                      title="Eliminar jugador"
+                      style={{ padding: "0.5rem" }}
                     >
                       <svg
-                        width="16"
-                        height="16"
+                        width="18"
+                        height="18"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -619,7 +625,6 @@ export default function AdminPlayers({
                       >
                         <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                       </svg>
-                      Eliminar
                     </button>
                   </div>
                 </td>

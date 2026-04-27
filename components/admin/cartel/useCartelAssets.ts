@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase-browser";
 import type { AssetUrls, TemplateId } from "./types";
 
 const DEFAULT_URLS: AssetUrls = {

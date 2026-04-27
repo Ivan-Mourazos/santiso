@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase-browser";
 import BusyBanner from "./BusyBanner";
 import { getCompetitionsByCategory } from "@/lib/competition";
 import { fetchSeasons } from "@/lib/supabase-queries";
@@ -532,11 +532,50 @@ export default function AdminActaImporter({
 
         <div className="input-group wide">
           <label>Captura del acta</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-          />
+          <label
+            htmlFor="acta-file-input"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const f = e.dataTransfer.files?.[0];
+              if (f) setFile(f);
+            }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              padding: "1.5rem",
+              border: file ? "2px solid rgba(250,204,21,0.4)" : "2px dashed rgba(255,255,255,0.12)",
+              borderRadius: "12px",
+              background: file ? "rgba(250,204,21,0.04)" : "rgba(255,255,255,0.02)",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              textAlign: "center",
+            }}
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5 }}>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span style={{ fontSize: "0.85rem", color: file ? "#facc15" : "#666", fontWeight: 600 }}>
+              {file ? file.name : "Arrastra la captura aquí o haz clic"}
+            </span>
+            {file && (
+              <span style={{ fontSize: "0.72rem", color: "#555" }}>
+                {(file.size / 1024).toFixed(0)} KB
+              </span>
+            )}
+            <input
+              id="acta-file-input"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              style={{ display: "none" }}
+            />
+          </label>
         </div>
       </div>
 
@@ -544,8 +583,22 @@ export default function AdminActaImporter({
         <button className="btn-primary analyze-btn" onClick={analyzeImage} disabled={busy || !file || !selectedMatchId}>
           Analizar con Gemini
         </button>
-        <button className="btn-secondary analyze-btn" onClick={analyzeWithLocalOcr} disabled={busy || !file || !selectedMatchId}>
-          OCR local fallback
+      </div>
+      <div style={{ textAlign: "center", marginTop: "0.5rem" }}>
+        <button
+          onClick={analyzeWithLocalOcr}
+          disabled={busy || !file || !selectedMatchId}
+          style={{
+            background: "none",
+            border: "none",
+            color: busy || !file || !selectedMatchId ? "#333" : "#555",
+            fontSize: "0.78rem",
+            cursor: busy || !file || !selectedMatchId ? "not-allowed" : "pointer",
+            textDecoration: "underline",
+            padding: "0.3rem 0.5rem",
+          }}
+        >
+          Usar OCR local (fallback)
         </button>
       </div>
 
@@ -652,13 +705,15 @@ export default function AdminActaImporter({
         </div>
       )}
 
-      <button
-        className="btn-primary save-btn"
-        disabled={!canSave || busy}
-        onClick={() => showConfirm("Se borrarán e insertarán de nuevo los datos de este partido. ¿Continuar?", saveActa)}
-      >
-        Confirmar e insertar en BD
-      </button>
+      {acta.rawText && (
+        <button
+          className="btn-primary save-btn"
+          disabled={!canSave || busy}
+          onClick={() => showConfirm("Se borrarán e insertarán de nuevo los datos de este partido. ¿Continuar?", saveActa)}
+        >
+          Confirmar e insertar en BD
+        </button>
+      )}
 
       <style jsx>{`
         .acta-header {

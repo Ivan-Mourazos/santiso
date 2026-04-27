@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase-browser";
 import { COMPETICIONS, type FormState } from "./types";
 import type { SelectorMatch } from "./Common";
 import type { Player, CronEvent, NextMatch } from "@/lib/cartel-draw";

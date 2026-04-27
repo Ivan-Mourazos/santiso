@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase-browser";
 import BusyBanner from "./BusyBanner";
 import { getCompetitionsByCategory } from "@/lib/competition";
 import { fetchTeamsForCompetition } from "@/lib/supabase-queries";

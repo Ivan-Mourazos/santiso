@@ -1,6 +1,6 @@
 "use client";
 import { Fragment, useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase-browser";
 import { processAndUploadImage } from "@/lib/image-utils";
 import { v4 as uuidv4 } from "uuid";
 import BusyBanner from "./BusyBanner";

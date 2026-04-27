@@ -34,6 +34,10 @@ const AdminActaImporter = dynamic(
   () => import("@/components/admin/AdminActaImporter"),
   { loading: panelLoading },
 );
+const AdminJornadaImporter = dynamic(
+  () => import("@/components/admin/AdminJornadaImporter"),
+  { loading: panelLoading },
+);
 
 export default function AdminPage() {
   const [activeView, setActiveView] = useState<string>("jornadas");
@@ -65,29 +69,33 @@ export default function AdminPage() {
           </div>
 
           <nav className="admin-main-nav">
-            <button className={`nav-tab ${activeView === 'jornadas' ? 'active' : ''}`} onClick={() => setActiveView('jornadas')}>
+            <button title="Calendario" className={`nav-tab ${activeView === 'jornadas' ? 'active' : ''}`} onClick={() => setActiveView('jornadas')}>
                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-               Calendario
+               <span className="nav-label">Calendario</span>
             </button>
-            <button className={`nav-tab ${activeView === 'plantilla' ? 'active' : ''}`} onClick={() => setActiveView('plantilla')}>
+            <button title="Plantilla / Staff" className={`nav-tab ${activeView === 'plantilla' ? 'active' : ''}`} onClick={() => setActiveView('plantilla')}>
                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-               Plantilla / Staff
+               <span className="nav-label">Plantilla</span>
             </button>
-            <button className={`nav-tab ${activeView === 'equipos' ? 'active' : ''}`} onClick={() => setActiveView('equipos')}>
+            <button title="Equipos" className={`nav-tab ${activeView === 'equipos' ? 'active' : ''}`} onClick={() => setActiveView('equipos')}>
                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-               Equipos
+               <span className="nav-label">Equipos</span>
             </button>
-            <button className={`nav-tab ${activeView === 'carteles' ? 'active' : ''}`} onClick={() => setActiveView('carteles')}>
+            <button title="Carteles" className={`nav-tab ${activeView === 'carteles' ? 'active' : ''}`} onClick={() => setActiveView('carteles')}>
                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-               Carteles
+               <span className="nav-label">Carteles</span>
             </button>
-            <button className={`nav-tab ${activeView === 'actas' ? 'active' : ''}`} onClick={() => setActiveView('actas')}>
+            <button title="Importar acta" className={`nav-tab ${activeView === 'actas' ? 'active' : ''}`} onClick={() => setActiveView('actas')}>
                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg>
-               Importar acta
+               <span className="nav-label">Importar acta</span>
             </button>
-            <button className={`nav-tab ${activeView === 'sponsors' ? 'active' : ''}`} onClick={() => setActiveView('sponsors')}>
+            <button title="Importar jornada" className={`nav-tab ${activeView === 'jornada-img' ? 'active' : ''}`} onClick={() => setActiveView('jornada-img')}>
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+               <span className="nav-label">Importar jornada</span>
+            </button>
+            <button title="Patrocinadores" className={`nav-tab ${activeView === 'sponsors' ? 'active' : ''}`} onClick={() => setActiveView('sponsors')}>
                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-               Patrocinadores
+               <span className="nav-label">Sponsors</span>
             </button>
           </nav>
         </header>
@@ -156,6 +164,7 @@ export default function AdminPage() {
            {activeView === 'equipos' && <AdminEquipos showToast={showToast} showConfirm={showConfirm} categoria={categoria} />}
            {activeView === 'carteles' && <GeneradorCartel templateId={tipoCartel} onTemplateChange={setTipoCartel} hideLayout />}
            {activeView === 'actas' && <AdminActaImporter showToast={showToast} showConfirm={showConfirm} />}
+           {activeView === 'jornada-img' && <AdminJornadaImporter showToast={showToast} showConfirm={showConfirm} />}
            {activeView === 'sponsors' && <AdminSponsors showToast={showToast} showConfirm={showConfirm} />}
         </section>
 
@@ -221,6 +230,11 @@ export default function AdminPage() {
           background: rgba(250, 204, 21, 0.1); color: var(--primary); 
           border-color: rgba(250, 204, 21, 0.3);
           box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 1200px) {
+          .nav-label { display: none; }
+          .nav-tab { padding: 0.8rem; }
         }
 
         .admin-filters-bar { margin-bottom: 3rem; display: flex; justify-content: center; }

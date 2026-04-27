@@ -10,6 +10,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.3",
     "browser-image-compression": "^2.0.2",
     "heic2any": "^0.0.4",

@@ -279,24 +279,19 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
               </div>
             )}
 
-            <div style={{ display: "flex", gap: "0.6rem", marginTop: "2.5rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "2.5rem" }}>
               <button className="btn-primary" onClick={handleDownload}
-                style={{ flex: 1, height: 54, fontSize: "1rem",
+                style={{ height: 54, fontSize: "1rem", width: "100%",
                          display: "flex", alignItems: "center", justifyContent: "center", gap: "0.6rem" }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
                 </svg>
                 Descargar PNG
               </button>
-              <button className="btn-secondary" onClick={resetForm}
-                style={{ height: 54, padding: "0 1.2rem", borderRadius: "var(--radius)",
-                         background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)",
-                         color: "#888", fontFamily: "inherit", fontWeight: 800, fontSize: "0.82rem",
-                         cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem",
-                         transition: "all 0.2s" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "#e55")}
-                onMouseLeave={e => (e.currentTarget.style.color = "#888")}>
-                🗑️ Limpiar
+              <button onClick={resetForm}
+                style={{ background: "none", border: "none", color: "#666", fontSize: "0.8rem",
+                         textDecoration: "underline", cursor: "pointer", alignSelf: "center" }}>
+                Limpiar datos
               </button>
             </div>
 
