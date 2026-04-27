@@ -745,8 +745,14 @@ input[type="number"] {
 /* Detalles de la Carta */
 .fifa-meta {
   position: absolute;
-  top: 13%;
+  top: 12%;
   left: 9%;
+  min-width: 58px;
+  padding: 0.45rem 0.4rem;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.46), rgba(0, 0, 0, 0.2));
+  border: 1px solid rgba(250, 204, 21, 0.18);
+  backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -756,7 +762,7 @@ input[type="number"] {
 }
 
 .fifa-dorsal {
-  font-size: 2.35rem;
+  font-size: 2.15rem;
   font-weight: 900;
   color: var(--primary);
   line-height: 1;
@@ -772,11 +778,22 @@ input[type="number"] {
   padding-top: 5px;
 }
 
-.fifa-shirt {
-  margin-top: 4px;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.65rem;
+.fifa-shirt-badge {
+  position: absolute;
+  right: 9%;
+  top: 13%;
+  z-index: 6;
+  min-width: 42px;
+  padding: 0.32rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.72rem;
   font-weight: 900;
+  text-align: center;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(8px);
 }
 
 .fifa-img-box {
@@ -978,31 +995,195 @@ input[type="number"] {
 
 .player-detail-card {
   width: 100%;
-  max-width: 900px;
+  max-width: 1180px;
+  max-height: min(88vh, 920px);
   background: #111;
   border: 1px solid rgba(250, 204, 21, 0.2);
   border-radius: 2rem;
   display: flex;
-  overflow: hidden;
+  overflow: auto;
   position: relative;
   box-shadow: 0 50px 100px rgba(0, 0, 0, 0.8);
 }
 
 .detail-left {
-  flex: 0.8;
+  flex: 0.9;
   background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
   padding: 3rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
+  min-height: 0;
 }
 
 .detail-right {
-  flex: 1.2;
+  flex: 1.1;
   padding: 3rem;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+}
+
+.rating-legend {
+  display: grid;
+  grid-template-columns: 0.85fr 2fr;
+  gap: 1.5rem;
+  align-items: center;
+  margin: 0 auto 3rem;
+  padding: 1.4rem;
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(250, 204, 21, 0.08), transparent 34%),
+    rgba(255, 255, 255, 0.025);
+}
+
+.rating-legend__tag {
+  color: var(--primary);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.rating-legend h2 {
+  margin: 0;
+  font-size: clamp(1.2rem, 2.2vw, 1.8rem);
+  line-height: 1;
+}
+
+.rating-legend__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8rem;
+}
+
+.rating-legend__grid div {
+  min-height: 108px;
+  padding: 0.9rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.26);
+}
+
+.rating-legend__grid strong {
+  display: block;
+  color: #fff;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.rating-legend__grid span {
+  display: block;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.player-back-card {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 1.2rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(250, 204, 21, 0.18);
+  background:
+    linear-gradient(135deg, rgba(250, 204, 21, 0.08), transparent 36%),
+    rgba(0, 0, 0, 0.32);
+  box-shadow: inset 0 0 30px rgba(250, 204, 21, 0.04);
+}
+
+.back-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 0.9rem;
+}
+
+.back-card-header span,
+.back-card-section small,
+.back-card-grid small {
+  color: var(--primary);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.back-card-header strong {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #000;
+  font-size: 1.15rem;
+  font-weight: 950;
+}
+
+.back-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
+}
+
+.back-card-grid--metrics {
+  margin-top: 0.8rem;
+}
+
+.back-card-grid div {
+  padding: 0.72rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.back-card-grid b {
+  display: block;
+  margin-top: 0.2rem;
+  color: #fff;
+  font-size: 0.86rem;
+}
+
+.back-card-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.back-legend {
+  color: #b7b7b7;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin-bottom: 0.9rem;
+}
+
+.player-back-card--detail {
+  margin-top: 1.4rem;
+}
+
+.detail-micro-subtitle {
+  color: #9ca3af;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.back-card-section p,
+.back-card-section li {
+  color: #b5b5b5;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.back-card-section ul {
+  margin: 0.55rem 0 0;
+  padding-left: 1rem;
 }
 
 /* Stats Grid */
@@ -1104,6 +1285,10 @@ input[type="number"] {
 }
 
 @media (max-width: 900px) {
+  .rating-legend,
+  .rating-legend__grid {
+    grid-template-columns: 1fr;
+  }
   .player-detail-card {
     flex-direction: column;
     max-height: 90vh;

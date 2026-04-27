@@ -12,6 +12,15 @@ interface Jugador {
   capitan: number;
   foto_url: string | null;
   categoria: string;
+  fecha_nacimiento?: string | null;
+  lugar_nacimiento?: string | null;
+  altura_cm?: number | null;
+  peso_kg?: number | null;
+  pierna_dominante?: string | null;
+  club_anterior?: string | null;
+  temporada_alta?: string | null;
+  historial_deportivo?: string[] | null;
+  bio_deportiva?: string | null;
 }
 
 interface Staff {
@@ -28,6 +37,10 @@ interface PlayerCardStats {
   titular: number;
   pj: number;
   goles: number;
+  golesEncajados: number;
+  porteriasCero: number;
+  puntosConJugador: number;
+  partidosTotalesCategoria: number;
 }
 
 interface Temporada {
@@ -39,6 +52,506 @@ type CardPerson = Jugador | Staff;
 
 function isStaffMember(person: CardPerson): person is Staff {
   return "tipo" in person;
+}
+
+function isGoalkeeper(player: Jugador) {
+  return player.posicion === "POR";
+}
+
+function emptyPlayerStats() {
+  return {
+    convocado: 0,
+    titular: 0,
+    suplente: 0,
+    pj: 0,
+    goles: 0,
+    minutos: 0,
+    golesEncajados: 0,
+    porteriasCero: 0,
+  };
+}
+type DetailPlayerStats = ReturnType<typeof emptyPlayerStats>;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function parseSeasonStartYear(season?: string | null) {
+  if (!season) return null;
+  const match = season.match(/(\d{4})/);
+  return match ? Number(match[1]) : null;
+}
+
+function calculateAge(birthDate?: string | null) {
+  if (!birthDate) return null;
+  const birth = new Date(birthDate);
+  if (Number.isNaN(birth.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const monthDiff = now.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+    age -= 1;
+  }
+  return age;
+}
+
+function calculateYearsInClub(seasonStart?: string | null) {
+  const startYear = parseSeasonStartYear(seasonStart);
+  if (!startYear) return null;
+  const nowYear = new Date().getFullYear();
+  return Math.max(1, nowYear - startYear + 1);
+}
+
+function computeMatchPoints(
+  match: {
+    equipo_local_id?: string | null;
+    goles_local?: number | null;
+    goles_visitante?: number | null;
+  },
+  santisoIds: string[],
+) {
+  const santisoLocal = santisoIds.includes(match.equipo_local_id || "");
+  const gf = santisoLocal
+    ? Number(match.goles_local ?? 0)
+    : Number(match.goles_visitante ?? 0);
+  const gc = santisoLocal
+    ? Number(match.goles_visitante ?? 0)
+    : Number(match.goles_local ?? 0);
+  if (gf > gc) return 3;
+  if (gf === gc) return 1;
+  return 0;
+}
+
+function calculateCardRating(player: Jugador, stats?: PlayerCardStats | null) {
+  const capitanBonus = player.capitan ? 2 : 0;
+  const played = stats?.pj || 0;
+  const totalMatches = stats?.partidosTotalesCategoria || 0;
+  const commitment = totalMatches > 0 ? played / totalMatches : 0;
+  const pointsRate = played > 0 ? (stats?.puntosConJugador || 0) / (played * 3) : 0;
+
+  if (isGoalkeeper(player)) {
+    const cleanRate = played > 0 ? (stats?.porteriasCero || 0) / played : 0;
+    const concededRate = played > 0 ? (stats?.golesEncajados || 0) / played : 0;
+    const concededControl = 1 - clamp(concededRate / 2.5, 0, 1);
+    const performance =
+      cleanRate * 0.45 + pointsRate * 0.35 + concededControl * 0.2;
+    return Math.max(
+      45,
+      Math.min(
+        99,
+        Math.round(
+          45 +
+            commitment * 35 +
+            performance * 18 +
+            capitanBonus,
+        ),
+      ),
+    );
+  }
+
+  const goalRate = played > 0 ? (stats?.goles || 0) / played : 0;
+  const goalImpact = clamp(goalRate / 1.2, 0, 1);
+  const starterRate = played > 0 ? (stats?.titular || 0) / played : 0;
+  const performance = goalImpact * 0.45 + pointsRate * 0.35 + starterRate * 0.2;
+  return Math.min(
+    99,
+    Math.round(
+      45 +
+        commitment * 35 +
+        performance * 18 +
+        capitanBonus,
+    ),
+  );
+}
+
+function formatCareerTimeline(player: Jugador) {
+  if (player.historial_deportivo?.length) return player.historial_deportivo;
+  const items: string[] = [];
+  if (player.temporada_alta) {
+    items.push(`Llegada al Santiso: ${player.temporada_alta}`);
+  }
+  if (player.club_anterior) {
+    items.push(`Club anterior: ${player.club_anterior}`);
+  }
+  return items;
+}
+
+function formatExtraLabel(player: Jugador) {
+  if (isGoalkeeper(player)) return "PORTERÍA";
+  return "RENDIMIENTO";
+}
+
+function formatMainMetric(player: Jugador, stats?: PlayerCardStats | null) {
+  if (isGoalkeeper(player)) return stats?.porteriasCero || 0;
+  return stats?.goles || 0;
+}
+
+function formatMainMetricLabel(player: Jugador) {
+  if (isGoalkeeper(player)) return "PC";
+  return "GOL";
+}
+
+function formatSecondaryMetric(player: Jugador, stats?: PlayerCardStats | null) {
+  if (isGoalkeeper(player)) return stats?.golesEncajados || 0;
+  return stats?.titular || 0;
+}
+
+function formatSecondaryMetricLabel(player: Jugador) {
+  if (isGoalkeeper(player)) return "GC";
+  return "TIT";
+}
+
+function buildCardStatsDefault(totalMatches: number): PlayerCardStats {
+  return {
+    convocado: 0,
+    titular: 0,
+    pj: 0,
+    goles: 0,
+    golesEncajados: 0,
+    porteriasCero: 0,
+    puntosConJugador: 0,
+    partidosTotalesCategoria: totalMatches,
+  };
+}
+
+type CardStatRow = {
+  jugador_id: string;
+  titular: boolean | null;
+  jugo: boolean | null;
+  goles: number | null;
+  partidos_liga: {
+    equipo_local_id?: string | null;
+    equipo_visitante_id?: string | null;
+    goles_local?: number | null;
+    goles_visitante?: number | null;
+    estado?: string | null;
+    categoria?: string | null;
+  } | null;
+};
+
+type TeamMatchRow = {
+  id: string;
+  categoria?: string | null;
+  equipo_local_id?: string | null;
+  goles_local?: number | null;
+  goles_visitante?: number | null;
+};
+
+function getInitialCardStatsByPlayer(
+  players: Jugador[],
+  totalsByCategory: Map<string, number>,
+) {
+  return new Map(
+    players.map((player) => [
+      player.id,
+      buildCardStatsDefault(totalsByCategory.get(player.categoria) || 0),
+    ]),
+  );
+}
+
+function getPlayerCategoryTotals(
+  teamMatches: TeamMatchRow[],
+  players: Jugador[],
+) {
+  const categories = new Set(players.map((player) => player.categoria));
+  const totals = new Map<string, number>();
+  for (const match of teamMatches) {
+    const category = match.categoria || "";
+    if (!category || !categories.has(category)) continue;
+    totals.set(category, (totals.get(category) || 0) + 1);
+  }
+  return totals;
+}
+
+function updateGoalkeeperStats(
+  current: PlayerCardStats,
+  row: CardStatRow,
+  santisoIds: string[],
+) {
+  const match = row.partidos_liga;
+  if (!match) return;
+  const santisoLocal = santisoIds.includes(match.equipo_local_id || "");
+  const conceded = santisoLocal
+    ? Number(match.goles_visitante ?? 0)
+    : Number(match.goles_local ?? 0);
+  current.golesEncajados += conceded;
+  if (match.estado === "finalizado" && conceded === 0) {
+    current.porteriasCero += 1;
+  }
+}
+
+function applyCardStatRow(
+  current: PlayerCardStats,
+  row: CardStatRow,
+  isKeeper: boolean,
+  santisoIds: string[],
+) {
+  const played = Boolean(row.jugo || row.titular);
+  current.convocado += 1;
+  if (row.titular) current.titular += 1;
+  if (!played) return;
+
+  current.pj += 1;
+  current.goles += Number(row.goles || 0);
+  if (row.partidos_liga) {
+    current.puntosConJugador += computeMatchPoints(row.partidos_liga, santisoIds);
+  }
+  if (isKeeper) {
+    updateGoalkeeperStats(current, row, santisoIds);
+  }
+}
+
+function toCardStatsRecord(
+  statsByPlayer: Map<string, PlayerCardStats>,
+) {
+  return Object.fromEntries(statsByPlayer.entries());
+}
+
+function getCareerYearsLabel(player: Jugador) {
+  const years = calculateYearsInClub(player.temporada_alta);
+  if (!years) return "Pendiente";
+  return `${years} ${years === 1 ? "año" : "años"}`;
+}
+
+function getAgeLabel(player: Jugador) {
+  const age = calculateAge(player.fecha_nacimiento);
+  if (!age) return "Pendiente";
+  return `${age} años`;
+}
+
+function getEntrySeasonLabel(player: Jugador) {
+  return player.temporada_alta || "Pendiente";
+}
+
+function getPointsWithPlayer(stats?: PlayerCardStats | null) {
+  return stats?.puntosConJugador || 0;
+}
+
+function getTeamMatchesByCategory(stats?: PlayerCardStats | null) {
+  return stats?.partidosTotalesCategoria || 0;
+}
+
+function getCommitmentPercent(stats?: PlayerCardStats | null) {
+  const total = stats?.partidosTotalesCategoria || 0;
+  if (total === 0) return 0;
+  return Math.round(((stats?.pj || 0) / total) * 100);
+}
+
+function getPointsRate(stats?: PlayerCardStats | null) {
+  const played = stats?.pj || 0;
+  if (played === 0) return 0;
+  return ((stats?.puntosConJugador || 0) / played).toFixed(2);
+}
+
+function getMainMetricFromStats(player: Jugador, stats?: PlayerCardStats | null) {
+  return formatMainMetric(player, stats);
+}
+
+function getSecondaryMetricFromStats(
+  player: Jugador,
+  stats?: PlayerCardStats | null,
+) {
+  return formatSecondaryMetric(player, stats);
+}
+
+function getMainMetricLabelFromPlayer(player: Jugador) {
+  return formatMainMetricLabel(player);
+}
+
+function getSecondaryMetricLabelFromPlayer(player: Jugador) {
+  return formatSecondaryMetricLabel(player);
+}
+
+function getPerformanceZoneLabel(player: Jugador) {
+  return formatExtraLabel(player);
+}
+
+function getAverageGoalsAgainstPerMatch(player: Jugador, stats: DetailPlayerStats) {
+  if (!isGoalkeeper(player)) return 0;
+  return (stats.golesEncajados / (stats.pj || 1)).toFixed(2);
+}
+
+function getAverageGoalsPerMatch(player: Jugador, stats: DetailPlayerStats) {
+  if (isGoalkeeper(player)) return "0";
+  return (stats.goles / (stats.pj || 1)).toFixed(2);
+}
+
+function getPointsRateDetail(stats?: PlayerCardStats | null) {
+  const played = stats?.pj || 0;
+  if (played === 0) return "0.00";
+  return ((stats?.puntosConJugador || 0) / played).toFixed(2);
+}
+
+function getReversoHistory(player: Jugador) {
+  const items = formatCareerTimeline(player);
+  if (items.length > 0) return items;
+  return ["Sin etapas registradas todavía."];
+}
+
+function getPlayerCardRating(player: Jugador, stats?: PlayerCardStats | null) {
+  return calculateCardRating(player, stats);
+}
+
+function getCategoryMatchesLabel(stats?: PlayerCardStats | null) {
+  return `${getTeamMatchesByCategory(stats)} partidos de categoría`;
+}
+
+function getCommitmentLabel(stats?: PlayerCardStats | null) {
+  return `${getCommitmentPercent(stats)}% compromiso`;
+}
+
+function getPerformanceLabel(stats?: PlayerCardStats | null) {
+  return `${getPointsRate(stats)} pts/jugado`;
+}
+
+function getCardLegendKey(player: Jugador) {
+  return isGoalkeeper(player) ? "Portero" : "Jugador de campo";
+}
+
+function getPlayerDetailSubtitle(player: Jugador) {
+  return `${player.posicion} · ${getAgeLabel(player)} · ${getCareerYearsLabel(player)}`;
+}
+
+function getLegendTextForGoalkeeper() {
+  return "Media = 45 + compromiso temporada + rendimiento en portería y puntos del equipo.";
+}
+
+function getLegendTextForOutfield() {
+  return "Media = 45 + compromiso temporada + impacto ofensivo + puntos por partido jugado.";
+}
+
+function getLegendTextByPlayer(player: Jugador) {
+  return isGoalkeeper(player)
+    ? getLegendTextForGoalkeeper()
+    : getLegendTextForOutfield();
+}
+
+function getPlayerInfoRows(player: Jugador) {
+  return [
+    { label: "Posición", value: player.posicion },
+    { label: "Edad", value: getAgeLabel(player) },
+    { label: "Año llegada", value: getEntrySeasonLabel(player) },
+    { label: "Veteranía", value: getCareerYearsLabel(player) },
+  ];
+}
+
+function getPerformanceRows(player: Jugador, stats?: PlayerCardStats | null) {
+  return [
+    { label: "Compromiso", value: getCommitmentLabel(stats) },
+    { label: "Partidos de categoría", value: getCategoryMatchesLabel(stats) },
+    { label: "Puntos con jugador", value: `${getPointsWithPlayer(stats)} pts` },
+    { label: "Puntos por partido", value: getPerformanceLabel(stats) },
+    {
+      label: getMainMetricLabelFromPlayer(player),
+      value: String(getMainMetricFromStats(player, stats)),
+    },
+    {
+      label: getSecondaryMetricLabelFromPlayer(player),
+      value: String(getSecondaryMetricFromStats(player, stats)),
+    },
+  ];
+}
+
+function getPlayerCareerBio(player: Jugador) {
+  return formatPlayerBio(player);
+}
+
+function getLegendHeader(player: Jugador) {
+  return `Criterio ${getCardLegendKey(player)}`;
+}
+
+function getGoalkeeperExtraStatLabel(player: Jugador) {
+  return isGoalkeeper(player) ? "GC / PJ" : "Media";
+}
+
+function getGoalkeeperExtraStatValue(player: Jugador, stats: DetailPlayerStats) {
+  return isGoalkeeper(player)
+    ? getAverageGoalsAgainstPerMatch(player, stats)
+    : getAverageGoalsPerMatch(player, stats);
+}
+
+function getDetailPerformanceBlockTitle(player: Jugador) {
+  return isGoalkeeper(player) ? "Portería" : "Rendimiento Goleador";
+}
+
+function getReversoLegend(player: Jugador) {
+  return getLegendTextByPlayer(player);
+}
+
+function getCardMetricZone(player: Jugador) {
+  return getPerformanceZoneLabel(player);
+}
+
+function getCardRatingValue(player: Jugador, stats?: PlayerCardStats | null) {
+  return getPlayerCardRating(player, stats);
+}
+
+function getPlayerDetailTitle(player: Jugador) {
+  return player.nombre;
+}
+
+function getPlayerNickname(player: Jugador) {
+  return player.apodo || "Sin apodo";
+}
+
+function getPlayerMainLabel(player: Jugador) {
+  return getDetailPerformanceBlockTitle(player);
+}
+
+function getPlayerMainAverage(player: Jugador, stats: DetailPlayerStats) {
+  return getGoalkeeperExtraStatValue(player, stats);
+}
+
+function getPlayerMainAverageLabel(player: Jugador) {
+  return getGoalkeeperExtraStatLabel(player);
+}
+
+function getGoalkeeperBlockVisible(player: Jugador) {
+  return isGoalkeeper(player);
+}
+
+function getPlayerExtraInfoLegend(player: Jugador) {
+  return getReversoLegend(player);
+}
+
+function buildPlayerCardLegend(player: Jugador) {
+  return getPlayerExtraInfoLegend(player);
+}
+
+function getPlayerStatsRows(player: Jugador, stats?: PlayerCardStats | null) {
+  return getPerformanceRows(player, stats);
+}
+
+function getPlayerBio(player: Jugador) {
+  return getPlayerCareerBio(player);
+}
+
+function getPlayerCareerRows(player: Jugador) {
+  return getReversoHistory(player);
+}
+
+function getCardDisplayZone(player: Jugador) {
+  return getCardMetricZone(player);
+}
+
+function getPlayerHeaderDetail(player: Jugador) {
+  return getPlayerDetailSubtitle(player);
+}
+
+function getPlayerInfoTable(player: Jugador) {
+  return getPlayerInfoRows(player);
+}
+
+function getPlayerScore(player: Jugador, stats?: PlayerCardStats | null) {
+  return getCardRatingValue(player, stats);
+}
+
+function getLegendLine(player: Jugador) {
+  return buildPlayerCardLegend(player);
+}
+
+function formatPlayerBio(player: Jugador) {
+  return player.bio_deportiva?.trim() || "Historial pendiente de completar.";
 }
 
 export default function PlantillaPage() {
@@ -53,13 +566,7 @@ export default function PlantillaPage() {
   const [faseActiva, setFaseActiva] = useState("Total");
   const [fasesDisponibles, setFasesDisponibles] = useState<string[]>([]);
   const [playerStats, setPlayerStats] = useState({
-    convocado: 0,
-    titular: 0,
-    suplente: 0,
-    pj: 0,
-    goles: 0,
-    minutos: 0,
-    golesEncajados: 0,
+    ...emptyPlayerStats(),
   });
 
   useEffect(() => {
@@ -88,14 +595,18 @@ export default function PlantillaPage() {
       const santisoIds = (santisoTeams || []).map((team: { id: string }) => team.id);
       setSantisoTeamIds(santisoIds);
       if (temp && pData) {
-        await loadCardStats(temp.id, pData as Jugador[]);
+        await loadCardStats(temp.id, pData as Jugador[], santisoIds);
       }
       setLoading(false);
     }
     fetchData();
   }, []);
 
-  async function loadCardStats(temporadaId: string, players: Jugador[]) {
+  async function loadCardStats(
+    temporadaId: string,
+    players: Jugador[],
+    santisoIds: string[],
+  ) {
     const { data: jornadas } = await supabase
       .from("jornadas")
       .select("id")
@@ -109,26 +620,38 @@ export default function PlantillaPage() {
 
     const { data: stats } = await supabase
       .from("jugador_partido_stats")
-      .select("jugador_id, titular, jugo, goles, partidos_liga!inner(jornada_id)")
+      .select(
+        "jugador_id, titular, jugo, goles, partidos_liga!inner(jornada_id,equipo_local_id,equipo_visitante_id,goles_local,goles_visitante,estado)",
+      )
       .in("jugador_id", playerIds)
       .in("partidos_liga.jornada_id", jornadaIds);
 
-    const next: Record<string, PlayerCardStats> = {};
-    for (const row of stats || []) {
-      const jugadorId = row.jugador_id as string;
-      const current = next[jugadorId] || {
-        convocado: 0,
-        titular: 0,
-        pj: 0,
-        goles: 0,
-      };
-      current.convocado += 1;
-      if (row.titular) current.titular += 1;
-      if (row.jugo || row.titular) current.pj += 1;
-      current.goles += Number(row.goles || 0);
-      next[jugadorId] = current;
+    const playersById = new Map(players.map((player) => [player.id, player]));
+    const statRows = (stats || []) as CardStatRow[];
+
+    const { data: teamMatchesRaw } = await supabase
+      .from("partidos_liga")
+      .select("id,categoria,equipo_local_id,goles_local,goles_visitante")
+      .in("jornada_id", jornadaIds)
+      .eq("estado", "finalizado")
+      .or(
+        santisoIds
+          .flatMap((id) => [`equipo_local_id.eq.${id}`, `equipo_visitante_id.eq.${id}`])
+          .join(","),
+      );
+    const teamMatches = (teamMatchesRaw || []) as TeamMatchRow[];
+    const totalsByCategory = getPlayerCategoryTotals(teamMatches, players);
+    const statsByPlayer = getInitialCardStatsByPlayer(players, totalsByCategory);
+
+    for (const row of statRows) {
+      const jugadorId = row.jugador_id;
+      const current = statsByPlayer.get(jugadorId);
+      const player = playersById.get(jugadorId);
+      if (!player || !current) continue;
+      applyCardStatRow(current, row, isGoalkeeper(player), santisoIds);
+      statsByPlayer.set(jugadorId, current);
     }
-    setCardStats(next);
+    setCardStats(toCardStatsRecord(statsByPlayer));
   }
 
   useEffect(() => {
@@ -176,15 +699,7 @@ export default function PlantillaPage() {
       const { data: jornadas } = await query;
       const jornadaIds = jornadas?.map((j) => j.id) || [];
       if (jornadaIds.length === 0) {
-        setPlayerStats({
-          convocado: 0,
-          titular: 0,
-          suplente: 0,
-          pj: 0,
-          goles: 0,
-          minutos: 0,
-          golesEncajados: 0,
-        });
+        setPlayerStats(emptyPlayerStats());
         return;
       }
 
@@ -198,6 +713,7 @@ export default function PlantillaPage() {
         let totalMin = 0;
         let totalGoles = 0;
         let totalEncajados = 0;
+        let porteriasCero = 0;
         const conv = stats.length;
         let tit = 0;
         let sup = 0;
@@ -213,9 +729,11 @@ export default function PlantillaPage() {
 
           if (p.posicion === "POR" && played) {
             const pl = s.partidos_liga;
-            totalEncajados += santisoTeamIds.includes(pl.equipo_local_id)
-              ? pl.goles_visitante
-              : pl.goles_local;
+            const encajados = santisoTeamIds.includes(pl.equipo_local_id)
+              ? Number(pl.goles_visitante ?? 0)
+              : Number(pl.goles_local ?? 0);
+            totalEncajados += encajados;
+            if (pl.estado === "finalizado" && encajados === 0) porteriasCero++;
           }
           if (played) totalMin += isTitular ? 90 : 25;
         });
@@ -228,6 +746,7 @@ export default function PlantillaPage() {
           goles: totalGoles,
           minutos: totalMin,
           golesEncajados: totalEncajados,
+          porteriasCero,
         });
       }
     }
@@ -259,16 +778,8 @@ export default function PlantillaPage() {
     const isStaff = isStaffMember(j);
     const name = isStaff ? j.nombre : j.nombre.split(" ").slice(0, 2).join(" ");
     const stats = !isStaff ? cardStats[j.id] : null;
-    const rating = !isStaff
-      ? Math.min(
-          99,
-          60 +
-            (stats?.pj || 0) * 2 +
-            (stats?.goles || 0) * 3 +
-            (stats?.titular || 0) +
-            (j.capitan ? 4 : 0),
-        )
-      : null;
+    const rating = !isStaff ? getPlayerScore(j, stats) : null;
+    const goalkeeper = !isStaff && isGoalkeeper(j);
 
     return (
       <div
@@ -287,9 +798,9 @@ export default function PlantillaPage() {
             <div className="fifa-meta">
               <span className="fifa-dorsal">{rating}</span>
               <span className="fifa-pos">{j.posicion}</span>
-              <span className="fifa-shirt">#{j.dorsal}</span>
             </div>
           )}
+          {!isStaff && <div className="fifa-shirt-badge">#{j.dorsal}</div>}
           <div className="fifa-img-box">
             {j.foto_url ? (
               <Image
@@ -340,13 +851,22 @@ export default function PlantillaPage() {
                   <strong>{stats?.pj || 0}</strong>
                   PJ
                 </span>
+                {goalkeeper ? (
+                  <span>
+                    <strong>{getMainMetricFromStats(j, stats)}</strong>
+                    GC
+                  </span>
+                ) : (
+                  <span>
+                    <strong>{getMainMetricFromStats(j, stats)}</strong>
+                    GOL
+                  </span>
+                )}
                 <span>
-                  <strong>{stats?.goles || 0}</strong>
-                  GOL
-                </span>
-                <span>
-                  <strong>{stats?.titular || 0}</strong>
-                  TIT
+                  <strong>
+                    {getSecondaryMetricFromStats(j, stats)}
+                  </strong>
+                  {goalkeeper ? "PC" : "TIT"}
                 </span>
               </div>
             )}
@@ -402,6 +922,27 @@ export default function PlantillaPage() {
               {cat}
             </button>
           ))}
+        </div>
+
+        <div className="rating-legend glass">
+          <div>
+            <p className="rating-legend__tag">Media do cromo</p>
+            <h2>Cómo se calcula la puntuación</h2>
+          </div>
+          <div className="rating-legend__grid">
+            <div>
+              <strong>Jugadores de campo</strong>
+              <span>Media basada en compromiso da tempada + impacto ofensivo + puntos por partido jugado.</span>
+            </div>
+            <div>
+              <strong>Porteros</strong>
+              <span>Media basada en compromiso da tempada + porterías a cero + puntos del equipo, penalizando GC/PJ.</span>
+            </div>
+            <div>
+              <strong>Proporción por fases</strong>
+              <span>Compromiso = partidos jugados / partidos totais da categoría. Así, Copa e Liga pesan según volumen real.</span>
+            </div>
+          </div>
         </div>
 
         {loading ? (
@@ -486,7 +1027,7 @@ export default function PlantillaPage() {
                       marginBottom: "0.2rem",
                     }}
                   >
-                    {selectedPlayer.nombre}
+                    {getPlayerDetailTitle(selectedPlayer)}
                   </h2>
                   <p
                     className="detail-nickname"
@@ -497,7 +1038,10 @@ export default function PlantillaPage() {
                       marginBottom: "1rem",
                     }}
                   >
-                    {selectedPlayer.apodo || "Sin apodo"}
+                    {getPlayerNickname(selectedPlayer)}
+                  </p>
+                  <p className="detail-micro-subtitle">
+                    {getPlayerHeaderDetail(selectedPlayer)}
                   </p>
                 </div>
                 <div className="fase-pill-selector">
@@ -543,25 +1087,23 @@ export default function PlantillaPage() {
 
                 {/* BLOQUE GOLES / PORTERÍA */}
                 <div className="stats-block">
-                  <p className="block-title">
-                    {selectedPlayer.posicion === "POR"
-                      ? "Portería"
-                      : "Rendimiento Goleador"}
-                  </p>
+                  <p className="block-title">{getPlayerMainLabel(selectedPlayer)}</p>
                   <div className="stats-row-mini">
-                    {selectedPlayer.posicion === "POR" ? (
+                    {getGoalkeeperBlockVisible(selectedPlayer) ? (
                       <>
                         <div className="mini-box">
                           <span>{playerStats.golesEncajados}</span>
-                          <label>Encajados</label>
+                          <label>GC</label>
                         </div>
                         <div className="mini-box">
                           <span>
-                            {(
-                              playerStats.golesEncajados / (playerStats.pj || 1)
-                            ).toFixed(2)}
+                            {getPlayerMainAverage(selectedPlayer, playerStats)}
                           </span>
-                          <label>Media</label>
+                          <label>{getPlayerMainAverageLabel(selectedPlayer)}</label>
+                        </div>
+                        <div className="mini-box">
+                          <span>{playerStats.porteriasCero}</span>
+                          <label>Porterías a cero</label>
                         </div>
                       </>
                     ) : (
@@ -572,14 +1114,30 @@ export default function PlantillaPage() {
                         </div>
                         <div className="mini-box">
                           <span>
-                            {(
-                              playerStats.goles / (playerStats.pj || 1)
-                            ).toFixed(2)}
+                            {getPlayerMainAverage(selectedPlayer, playerStats)}
                           </span>
-                          <label>Media</label>
+                          <label>{getPlayerMainAverageLabel(selectedPlayer)}</label>
                         </div>
                       </>
                     )}
+                  </div>
+                </div>
+
+                <div className="stats-block">
+                  <p className="block-title">{getCardDisplayZone(selectedPlayer)}</p>
+                  <div className="stats-row-mini">
+                    <div className="mini-box">
+                      <span>{getPointsWithPlayer(cardStats[selectedPlayer.id])}</span>
+                      <label>Puntos con jugador</label>
+                    </div>
+                    <div className="mini-box">
+                      <span>{getPointsRateDetail(cardStats[selectedPlayer.id])}</span>
+                      <label>Pts / partido</label>
+                    </div>
+                    <div className="mini-box">
+                      <span>{getCommitmentPercent(cardStats[selectedPlayer.id])}%</span>
+                      <label>Compromiso</label>
+                    </div>
                   </div>
                 </div>
 
@@ -601,6 +1159,39 @@ export default function PlantillaPage() {
                       <label>Promedio / Partido</label>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              <div className="player-back-card player-back-card--detail">
+                <div className="back-card-header">
+                  <span>Reverso profesional</span>
+                  <strong>{getPlayerScore(selectedPlayer, cardStats[selectedPlayer.id])}</strong>
+                </div>
+                <p className="back-legend">{getLegendHeader(selectedPlayer)}: {getLegendLine(selectedPlayer)}</p>
+                <div className="back-card-grid">
+                  {getPlayerInfoTable(selectedPlayer).map((row) => (
+                    <div key={row.label}>
+                      <small>{row.label}</small>
+                      <b>{row.value}</b>
+                    </div>
+                  ))}
+                </div>
+                <div className="back-card-grid back-card-grid--metrics">
+                  {getPlayerStatsRows(selectedPlayer, cardStats[selectedPlayer.id]).map((row) => (
+                    <div key={row.label}>
+                      <small>{row.label}</small>
+                      <b>{row.value}</b>
+                    </div>
+                  ))}
+                </div>
+                <div className="back-card-section">
+                  <small>Historia deportiva</small>
+                  <p>{getPlayerBio(selectedPlayer)}</p>
+                  <ul>
+                    {getPlayerCareerRows(selectedPlayer).map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
                 </div>
               </div>
 
