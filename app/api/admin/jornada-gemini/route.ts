@@ -87,16 +87,16 @@ function buildPrompt(equiposDB: string[]) {
     ? `\nEquipos registrados en nuestra BD (usa estos nombres exactos si coinciden):\n${equiposDB.map((e) => `- ${e}`).join("\n")}`
     : "";
 
-  return `Eres un extractor de datos de resultados de jornada de fútbol gallego (RFGF/Futgal).
-Analiza la imagen completa y extrae TODOS los partidos que aparecen.
+  return `Eres un extractor de datos de resultados y calendarios de jornadas de fútbol gallego (RFGF/Futgal).
+Analiza el documento/imagen completo y extrae TODOS los partidos que aparecen.
 Devuelve SOLO JSON válido, sin markdown.
 ${listaEquipos}
 
 Extrae para cada partido:
-- localNombre: nombre equipo local exactamente como aparece en imagen
+- localNombre: nombre equipo local exactamente como aparece
 - visitanteNombre: nombre equipo visitante
-- golesLocal: goles del local como string, "" si no jugado
-- golesVisitante: goles del visitante como string, "" si no jugado  
+- golesLocal: goles del local como string, "" si el partido aún NO se ha jugado (está programado)
+- golesVisitante: goles del visitante como string, "" si el partido aún NO se ha jugado
 - descansa: true si el equipo aparece como "Descansa" sin rival
 - fecha: fecha en formato YYYY-MM-DD si aparece, sino ""
 - hora: hora en formato HH:MM si aparece, sino ""
@@ -105,9 +105,9 @@ Extrae para cada partido:
 - campoPoblacion: localidad del campo si aparece, sino ""
 - confidence: "alta" si datos claros, "media" si algo dudoso, "baja" si muy incierto
 
-También extrae si aparece:
-- jornada: número de jornada como string
-- competicion: nombre de la competición
+También extrae estos metadatos MUY IMPORTANTES (búscalos en la cabecera del documento):
+- jornada: número de jornada como string (ej: "26")
+- competicion: nombre de la liga o competición (ej: "LGF 2ª División", "Tercera Galicia", "Veteranos")
 - temporada: temporada (ej "2025-2026")
 
 Formato exacto:
@@ -205,18 +205,18 @@ export async function POST(request: Request) {
   }
 
   const formData = await request.formData();
-  const image = formData.get("image");
+  const file = formData.get("image");
   const equiposRaw = formData.get("equipos");
 
-  if (!(image instanceof File)) {
-    return Response.json({ error: "Falta imagen" }, { status: 400 });
+  if (!(file instanceof File)) {
+    return Response.json({ error: "Falta archivo (imagen o pdf)" }, { status: 400 });
   }
 
   const equiposDB: string[] = equiposRaw
     ? (JSON.parse(String(equiposRaw)) as string[])
     : [];
 
-  const bytes = Buffer.from(await image.arrayBuffer());
+  const bytes = Buffer.from(await file.arrayBuffer());
   const base64 = bytes.toString("base64");
 
   let result: { model: string; payload: GeminiGenerateResponse };
@@ -224,7 +224,7 @@ export async function POST(request: Request) {
     result = await generateWithFallback(
       apiKey,
       base64,
-      image.type || "image/png",
+      file.type || "application/pdf",
       equiposDB,
     );
   } catch (error) {

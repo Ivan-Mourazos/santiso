@@ -190,10 +190,55 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
       }
 
       const data = payload.data as JornadaGeminiResponse;
+      let currentEquipos = equipos;
+      let currentJornadas = jornadas;
+
+      // Auto-detect Category & Competition
+      if (data.competicion) {
+        let bestCat = categoria;
+        let bestComp = competicion;
+        let bestScore = 0;
+        
+        for (const cat of CATEGORIES) {
+          const comps = getCompetitionsByCategory(cat);
+          for (const c of comps) {
+            const score = tokenScore(data.competicion, c);
+            if (score > bestScore && score >= 0.3) {
+              bestScore = score;
+              bestCat = cat;
+              bestComp = c;
+            }
+          }
+        }
+        
+        if (bestCat !== categoria || bestComp !== competicion) {
+          setCategoria(bestCat);
+          setCompeticion(bestComp);
+          const { active } = await fetchSeasons();
+          if (active) {
+            const [newEquipos, newJornadas] = await Promise.all([
+              fetchTeamsForCompetition(bestCat, bestComp),
+              fetchMatchdaysForCompetition(active.id, bestCat, bestComp)
+            ]);
+            currentEquipos = newEquipos;
+            currentJornadas = newJornadas.data;
+            setEquipos(newEquipos);
+            setJornadas(newJornadas.data);
+          }
+        }
+      }
+
+      // Auto-select Jornada
+      if (data.jornada && currentJornadas.length > 0) {
+        const jNum = parseInt(data.jornada, 10);
+        const jor = currentJornadas.find(j => j.numero === jNum);
+        if (jor) setSelectedJornadaId(jor.id);
+      }
+
       setExtracted(data);
       setUsedModel(payload.model || "");
-      buildRows(data);
-      showToast(`✓ Analizado con ${payload.model || "Gemini"}. Revisa antes de guardar.`);
+      buildRows(data, currentEquipos);
+      showToast(`✓ Analizado. Comprueba los cruces antes de guardar.`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Error al analizar", "error");
     } finally {
@@ -201,10 +246,10 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
     }
   }
 
-  function buildRows(data: JornadaGeminiResponse) {
+  function buildRows(data: JornadaGeminiResponse, currentEquipos: EquipoDB[]) {
     const newRows: ReviewRow[] = data.partidos.map((p, i) => {
-      const localId = bestMatch(p.localNombre, equipos);
-      const visitanteId = bestMatch(p.visitanteNombre, equipos);
+      const localId = bestMatch(p.localNombre, currentEquipos);
+      const visitanteId = bestMatch(p.visitanteNombre, currentEquipos);
       const campoId = bestCampo(p.campoNombre || "", p.campoPoblacion || "", campos);
       let fecha = normalizeFecha(p.fecha || "");
       if (fecha && p.hora) fecha = `${fecha}T${p.hora}`;
@@ -221,7 +266,7 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
         campoId,
         campoNombre: campoId ? "" : (p.campoNombre || ""),
         campoPoblacion: campoId ? "" : (p.campoPoblacion || ""),
-        selected: !p.descansa && p.golesLocal !== "" && p.golesVisitante !== "",
+        selected: !p.descansa, // Siempre seleccionado por defecto, incluso si no hay goles (programado)
       };
     });
     setRows(newRows);
@@ -309,7 +354,7 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
           row.golesVisitante !== "" ? parseInt(row.golesVisitante, 10) : null,
         fecha: normalizeFecha(row.fecha) || null,
         campo_id: resolvedCampoId,
-        estado: "finalizado",
+        estado: (row.golesLocal !== "" && row.golesVisitante !== "") ? "finalizado" : "programado",
       };
 
       let error;
@@ -360,55 +405,64 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
         )}
       </div>
 
-      {/* CONFIGURACIÓN */}
-      <div className="ji-config">
-        <div className="input-group">
-          <label>Categoría</label>
-          <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-
-        <div className="input-group">
-          <label>Competición</label>
-          <select value={competicion} onChange={(e) => setCompeticion(e.target.value)}>
-            {competitions.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-
-        <div className="input-group">
-          <label>Jornada destino</label>
-          <select
-            value={selectedJornadaId}
-            onChange={(e) => setSelectedJornadaId(e.target.value)}
+      {/* CONFIGURACIÓN INICIAL SOLO DROPZONE */}
+      <div className="ji-grid-initial" style={{ marginBottom: "1.5rem" }}>
+        <div className="input-group wide">
+          <label>Captura de la jornada (PDF o Imagen)</label>
+          <label
+            htmlFor="jornada-file-input"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const f = e.dataTransfer.files?.[0];
+              if (f) {
+                setFile(f);
+                if (previewUrl) URL.revokeObjectURL(previewUrl);
+                setPreviewUrl(URL.createObjectURL(f));
+                setExtracted(null);
+                setRows([]);
+              }
+            }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              padding: "2rem",
+              border: file ? "2px solid rgba(250,204,21,0.4)" : "2px dashed rgba(255,255,255,0.12)",
+              borderRadius: "12px",
+              background: file ? "rgba(250,204,21,0.04)" : "rgba(255,255,255,0.02)",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              textAlign: "center",
+            }}
           >
-            <option value="">Selecciona jornada...</option>
-            {jornadas.map((j) => (
-              <option key={j.id} value={j.id}>
-                Jornada {j.numero}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="input-group">
-          <label>Imagen de jornada</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-          />
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5 }}>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span style={{ fontSize: "1rem", color: file ? "#facc15" : "#888", fontWeight: 600 }}>
+              {file ? file.name : "Arrastra la captura aquí o haz clic para importar"}
+            </span>
+            {file && (
+              <span style={{ fontSize: "0.8rem", color: "#555" }}>
+                {(file.size / 1024).toFixed(0)} KB
+              </span>
+            )}
+            <input
+              id="jornada-file-input"
+              type="file"
+              accept="image/*,application/pdf"
+              onChange={handleFileChange}
+              style={{ display: "none" }}
+            />
+          </label>
         </div>
       </div>
 
-      {/* PREVIEW + ANALIZAR */}
-      <div className="ji-analyze-row">
-        {previewUrl && (
-          <div className="ji-preview">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={previewUrl} alt="Vista previa" />
-          </div>
-        )}
+      <div className="analyze-actions">
         <button
           className="btn-primary analyze-btn"
           onClick={analyzeImage}
@@ -418,9 +472,53 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
         </button>
       </div>
 
+      {/* PREVIEW */}
+      {previewUrl && (
+        <div className="ji-preview">
+          {file?.type === "application/pdf" ? (
+            <iframe src={previewUrl} title="PDF Preview" style={{ width: "100%", height: "400px", border: "none" }} />
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={previewUrl} alt="Vista previa" />
+          )}
+        </div>
+      )}
+
       {/* TABLA DE REVISIÓN */}
       {rows.length > 0 && (
         <div className="ji-review">
+          
+          <div className="ji-grid" style={{ marginBottom: "2rem", padding: "1rem", background: "rgba(255,255,255,0.02)", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
+            <div className="input-group">
+              <label style={{ color: "#facc15" }}>Categoría Detectada</label>
+              <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div className="input-group">
+              <label style={{ color: "#facc15" }}>Competición Detectada</label>
+              <select value={competicion} onChange={(e) => setCompeticion(e.target.value)}>
+                {competitions.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div className="input-group wide">
+              <label style={{ color: "#facc15" }}>Jornada Detectada</label>
+              <select
+                value={selectedJornadaId}
+                onChange={(e) => setSelectedJornadaId(e.target.value)}
+              >
+                <option value="">Selecciona jornada...</option>
+                {jornadas.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    Jornada {j.numero}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="ji-review-header">
             <h4>
               Resultados detectados
@@ -439,158 +537,159 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
             </div>
           )}
 
-          <div className="ji-table-wrap">
-            <table className="ji-table">
-              <thead>
-                <tr>
-                  <th>✓</th>
-                  <th>Local detectado</th>
-                  <th>Local BD</th>
-                  <th>Res.</th>
-                  <th>Visitante BD</th>
-                  <th>Visitante detectado</th>
-                  <th>Fecha/Hora</th>
-                  <th>Campo</th>
-                  <th>Conf.</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, idx) => (
-                  <tr
-                    key={row.key}
-                    className={`ji-row ${row.extracted.descansa ? "descansa" : ""} ${row.selected ? "selected" : ""}`}
-                  >
-                    <td>
-                      {!row.extracted.descansa && (
+          <div className="ji-cards-wrap">
+            {rows.map((row, idx) => (
+              <div
+                key={row.key}
+                className={`ji-card ${row.selected ? "selected" : ""} ${row.extracted.descansa ? "descansa" : ""}`}
+              >
+                <div className="ji-card-header">
+                  <div className="ji-card-chk">
+                    {!row.extracted.descansa ? (
+                      <label>
                         <input
                           type="checkbox"
                           checked={row.selected}
                           onChange={(e) => patchRow(idx, { selected: e.target.checked })}
                         />
-                      )}
-                      {row.extracted.descansa && <span className="tag-rest">DESCANSA</span>}
-                    </td>
+                        <span>Guardar</span>
+                      </label>
+                    ) : (
+                      <span className="tag-rest">DESCANSA</span>
+                    )}
+                  </div>
+                  <div className="ji-card-conf">
+                    <span className={`conf-badge conf-${row.extracted.confidence}`}>
+                      {row.extracted.confidence}
+                    </span>
+                  </div>
+                </div>
 
-                    <td className="team-detected">{row.extracted.localNombre}</td>
-
-                    <td>
-                      {!row.extracted.descansa && (
+                {!row.extracted.descansa ? (
+                  <>
+                    <div className="ji-card-body">
+                      {/* LOCAL */}
+                      <div className="ji-team local">
+                        <span className="team-detected" title="Texto detectado en la imagen">
+                          {row.extracted.localNombre}
+                        </span>
                         <select
                           value={row.localId}
                           onChange={(e) => patchRow(idx, { localId: e.target.value })}
                           className={row.localId ? "ok" : "warn"}
                         >
-                          <option value="">Sin enlazar...</option>
+                          <option value="">Enlazar con BD...</option>
                           {equipos.map((e) => (
                             <option key={e.id} value={e.id}>{e.nombre}</option>
                           ))}
                         </select>
-                      )}
-                    </td>
+                      </div>
 
-                    <td>
-                      {!row.extracted.descansa && (
-                        <div className="score-inputs">
-                          <input
-                            type="number"
-                            min="0"
-                            value={row.golesLocal}
-                            onChange={(e) => patchRow(idx, { golesLocal: e.target.value })}
-                          />
-                          <span>-</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={row.golesVisitante}
-                            onChange={(e) => patchRow(idx, { golesVisitante: e.target.value })}
-                          />
-                        </div>
-                      )}
-                    </td>
+                      {/* SCORE */}
+                      <div className="ji-score">
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="-"
+                          value={row.golesLocal}
+                          onChange={(e) => patchRow(idx, { golesLocal: e.target.value })}
+                        />
+                        <span className="sep">-</span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="-"
+                          value={row.golesVisitante}
+                          onChange={(e) => patchRow(idx, { golesVisitante: e.target.value })}
+                        />
+                      </div>
 
-                    <td>
-                      {!row.extracted.descansa && (
+                      {/* VISITANTE */}
+                      <div className="ji-team visitante">
+                        <span className="team-detected" title="Texto detectado en la imagen">
+                          {row.extracted.visitanteNombre}
+                        </span>
                         <select
                           value={row.visitanteId}
                           onChange={(e) => patchRow(idx, { visitanteId: e.target.value })}
                           className={row.visitanteId ? "ok" : "warn"}
                         >
-                          <option value="">Sin enlazar...</option>
+                          <option value="">Enlazar con BD...</option>
                           {equipos.map((e) => (
                             <option key={e.id} value={e.id}>{e.nombre}</option>
                           ))}
                         </select>
-                      )}
-                    </td>
+                      </div>
+                    </div>
 
-                    <td className="team-detected">{row.extracted.visitanteNombre}</td>
+                    <div className="ji-card-footer">
+                      <div className="meta-field">
+                        <div className="meta-label">📅 Fecha/Hora</div>
+                        <input
+                          type="text"
+                          placeholder="YYYY-MM-DDTHH:MM"
+                          value={row.fecha}
+                          onChange={(e) => patchRow(idx, { fecha: e.target.value })}
+                          className="fecha-input"
+                        />
+                      </div>
 
-                    <td>
-                      <input
-                        type="text"
-                        placeholder="YYYY-MM-DDTHH:MM"
-                        value={row.fecha}
-                        onChange={(e) => patchRow(idx, { fecha: e.target.value })}
-                        className="fecha-input"
-                      />
-                    </td>
-
-                    <td>
-                      <div className="campo-cell">
-                        <select
-                          value={row.campoId}
-                          onChange={(e) => {
-                            const id = e.target.value;
-                            const found = campos.find((c) => c.id === id);
-                            patchRow(idx, {
-                              campoId: id,
-                              campoNombre: id ? "" : row.campoNombre,
-                              campoPoblacion: id ? "" : row.campoPoblacion,
-                            });
-                            if (found) {
+                      <div className="meta-field campo-meta">
+                        <div className="meta-label">🏟️ Campo de juego</div>
+                        <div className="campo-cell">
+                          <select
+                            value={row.campoId}
+                            onChange={(e) => {
+                              const id = e.target.value;
+                              const found = campos.find((c) => c.id === id);
                               patchRow(idx, {
                                 campoId: id,
-                                campoNombre: "",
-                                campoPoblacion: "",
+                                campoNombre: id ? "" : row.campoNombre,
+                                campoPoblacion: id ? "" : row.campoPoblacion,
                               });
-                            }
-                          }}
-                        >
-                          <option value="">✏️ Nombre libre...</option>
-                          {campos.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.nombre}{c.poblacion ? ` (${c.poblacion})` : ""}
-                            </option>
-                          ))}
-                        </select>
-                        {!row.campoId && (
-                          <div className="campo-libre">
-                            <input
-                              type="text"
-                              placeholder="Nombre campo"
-                              value={row.campoNombre}
-                              onChange={(e) => patchRow(idx, { campoNombre: e.target.value })}
-                            />
-                            <input
-                              type="text"
-                              placeholder="Localidad"
-                              value={row.campoPoblacion}
-                              onChange={(e) => patchRow(idx, { campoPoblacion: e.target.value })}
-                            />
-                          </div>
-                        )}
+                              if (found) {
+                                patchRow(idx, {
+                                  campoId: id,
+                                  campoNombre: "",
+                                  campoPoblacion: "",
+                                });
+                              }
+                            }}
+                          >
+                            <option value="">✏️ Campo manual...</option>
+                            {campos.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.nombre}{c.poblacion ? ` (${c.poblacion})` : ""}
+                              </option>
+                            ))}
+                          </select>
+                          {!row.campoId && (
+                            <div className="campo-libre">
+                              <input
+                                type="text"
+                                placeholder="Nombre campo"
+                                value={row.campoNombre}
+                                onChange={(e) => patchRow(idx, { campoNombre: e.target.value })}
+                              />
+                              <input
+                                type="text"
+                                placeholder="Localidad"
+                                value={row.campoPoblacion}
+                                onChange={(e) => patchRow(idx, { campoPoblacion: e.target.value })}
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </td>
-
-                    <td>
-                      <span className={`conf-badge conf-${row.extracted.confidence}`}>
-                        {row.extracted.confidence}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </>
+                ) : (
+                  <div className="ji-card-body descansa">
+                    <span className="team-detected">{row.extracted.localNombre}</span>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
 
           <button
@@ -630,17 +729,18 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
           white-space: nowrap;
         }
 
-        .ji-config {
+        .ji-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 1rem;
-          margin-bottom: 1.5rem;
+          grid-template-columns: 1fr 1fr;
+          gap: 1.5rem;
+          margin-bottom: 2rem;
         }
 
-        .ji-analyze-row {
-          display: flex;
-          gap: 1.5rem;
-          align-items: flex-start;
+        .input-group.wide {
+          grid-column: 1 / -1;
+        }
+
+        .analyze-actions {
           margin-bottom: 1.5rem;
         }
 
@@ -691,59 +791,115 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
         }
         .ji-warnings p { margin: 0.2rem 0; }
 
-        .ji-table-wrap {
-          overflow-x: auto;
+        .ji-cards-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+          margin-bottom: 2rem;
+        }
+
+        .ji-card {
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.06);
           border-radius: 14px;
-          border: 1px solid rgba(255,255,255,0.08);
-          margin-bottom: 1.5rem;
+          padding: 1.25rem;
+          transition: all 0.2s;
+        }
+        .ji-card.selected {
+          background: rgba(250,204,21,0.04);
+          border-color: rgba(250,204,21,0.2);
+        }
+        .ji-card.descansa {
+          opacity: 0.6;
         }
 
-        .ji-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 0.82rem;
+        .ji-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1rem;
+          padding-bottom: 0.75rem;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .ji-table th {
-          background: rgba(255,255,255,0.04);
-          color: #888;
-          font-weight: 800;
-          text-transform: uppercase;
-          font-size: 0.72rem;
-          letter-spacing: 0.5px;
-          padding: 0.7rem 0.8rem;
-          text-align: left;
-          white-space: nowrap;
-        }
-        .ji-table td {
-          padding: 0.55rem 0.8rem;
-          border-top: 1px solid rgba(255,255,255,0.05);
-          vertical-align: middle;
-        }
-        .ji-row.selected td { background: rgba(250,204,21,0.04); }
-        .ji-row.descansa td { opacity: 0.5; }
-
-        .team-detected { color: #a3a3a3; font-size: 0.78rem; max-width: 160px; }
-
-        .score-inputs {
+        .ji-card-chk label {
           display: flex;
           align-items: center;
-          gap: 0.3rem;
-        }
-        .score-inputs input {
-          width: 44px;
-          text-align: center;
-          padding: 0.3rem;
-          border-radius: 6px;
+          gap: 0.5rem;
+          cursor: pointer;
           font-weight: 800;
-          font-size: 1rem;
+          font-size: 0.85rem;
+          color: #fff;
         }
-        .score-inputs span { color: #666; }
 
-        .fecha-input { width: 150px; font-size: 0.78rem; }
+        .ji-card-body {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-bottom: 1rem;
+        }
+        .ji-team {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        .ji-team.local { align-items: flex-end; text-align: right; }
+        .ji-team.visitante { align-items: flex-start; text-align: left; }
 
-        .campo-cell { display: flex; flex-direction: column; gap: 0.4rem; min-width: 180px; }
-        .campo-libre { display: flex; flex-direction: column; gap: 0.3rem; }
-        .campo-libre input { font-size: 0.75rem; padding: 0.3rem 0.5rem; border-radius: 6px; }
+        .team-detected { 
+          color: #a3a3a3; 
+          font-size: 0.78rem; 
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 250px;
+        }
+
+        .ji-score {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0 1rem;
+        }
+        .ji-score input {
+          width: 48px;
+          text-align: center;
+          padding: 0.4rem;
+          border-radius: 8px;
+          font-weight: 800;
+          font-size: 1.2rem;
+          background: rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+        .ji-score .sep { color: #666; font-weight: 800; }
+
+        .ji-card-footer {
+          display: grid;
+          grid-template-columns: 1fr 2fr;
+          gap: 1rem;
+          padding-top: 1rem;
+          border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .meta-field {
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+        }
+        .meta-label {
+          font-size: 0.72rem;
+          text-transform: uppercase;
+          color: #888;
+          font-weight: 800;
+        }
+        .fecha-input { font-size: 0.85rem; }
+
+        .campo-cell { display: flex; gap: 0.5rem; }
+        .campo-cell > select { flex: 1; }
+        .campo-libre { display: flex; gap: 0.5rem; flex: 1; }
+        .campo-libre input { font-size: 0.8rem; flex: 1; }
+
         .tag-rest {
           font-size: 0.65rem;
           font-weight: 800;
@@ -769,11 +925,15 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
         .conf-baja { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
 
         @media (max-width: 900px) {
-          .ji-config { grid-template-columns: 1fr 1fr; }
-          .ji-analyze-row { flex-direction: column; }
+          .ji-grid { grid-template-columns: 1fr; }
+          .input-group.wide { grid-column: auto; }
         }
-        @media (max-width: 600px) {
-          .ji-config { grid-template-columns: 1fr; }
+
+        @media (max-width: 768px) {
+          .ji-card-body { flex-direction: column; gap: 1.5rem; }
+          .ji-team { width: 100%; align-items: center !important; text-align: center !important; }
+          .ji-card-footer { grid-template-columns: 1fr; }
+          .campo-libre { flex-direction: column; }
         }
       `}</style>
     </div>

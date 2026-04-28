@@ -923,79 +923,134 @@ function EventEditor({
   return (
     <div className="event-list">
       {eventos.map((event, index) => (
-        <div key={event.id} className="event-row">
-          <input
-            value={event.minuto}
-            onChange={(e) => onUpdate(index, { minuto: e.target.value })}
-            placeholder="Min."
-          />
-          <select value={event.tipo} onChange={(e) => onUpdate(index, { tipo: e.target.value as ActaEventType })}>
-            {typeOptions.map((type) => <option key={type} value={type}>{type}</option>)}
-          </select>
-          <select value={event.isRival ? "rival" : "santiso"} onChange={(e) => onUpdate(index, { isRival: e.target.value === "rival" })}>
-            <option value="santiso">Santiso</option>
-            <option value="rival">Rival</option>
-          </select>
+        <div key={event.id} className="event-card">
+          <div className="event-card-header">
+            <div className="event-meta">
+              <input
+                value={event.minuto}
+                onChange={(e) => onUpdate(index, { minuto: e.target.value })}
+                placeholder="Min."
+                className="minuto-input"
+              />
+              <select 
+                value={event.tipo} 
+                onChange={(e) => onUpdate(index, { tipo: e.target.value as ActaEventType })}
+                className="tipo-select"
+              >
+                {typeOptions.map((type) => <option key={type} value={type}>{type}</option>)}
+              </select>
+            </div>
+            
+            <div className="event-actions">
+              <select 
+                value={event.isRival ? "rival" : "santiso"} 
+                onChange={(e) => onUpdate(index, { isRival: e.target.value === "rival" })}
+                className="equipo-select"
+              >
+                <option value="santiso">Santiso</option>
+                <option value="rival">Rival</option>
+              </select>
+              <button className="row-delete" onClick={() => onRemove(index)}>Quitar</button>
+            </div>
+          </div>
 
-          {event.isRival ? (
-            <input
-              value={event.nombreRival || ""}
-              onChange={(e) => onUpdate(index, { nombreRival: e.target.value })}
-              placeholder="Nombre rival"
-            />
-          ) : event.tipo === "cambio" ? (
-            <>
+          <div className="event-card-body">
+            {event.isRival ? (
+              <input
+                value={event.nombreRival || ""}
+                onChange={(e) => onUpdate(index, { nombreRival: e.target.value })}
+                placeholder="Nombre jugador rival"
+                className="rival-input"
+              />
+            ) : event.tipo === "cambio" ? (
+              <div className="cambio-grid">
+                <PlayerSelect
+                  jugadores={jugadores}
+                  value={event.jugadorSale?.jugadorId || ""}
+                  label="Sale del campo..."
+                  onChange={(playerId) => onSetPlayer(index, "jugadorSale", playerId)}
+                />
+                <PlayerSelect
+                  jugadores={jugadores}
+                  value={event.jugadorEntra?.jugadorId || ""}
+                  label="Entra al campo..."
+                  onChange={(playerId) => onSetPlayer(index, "jugadorEntra", playerId)}
+                />
+              </div>
+            ) : (
               <PlayerSelect
                 jugadores={jugadores}
-                value={event.jugadorSale?.jugadorId || ""}
-                label="Sale..."
-                onChange={(playerId) => onSetPlayer(index, "jugadorSale", playerId)}
+                value={event.jugador?.jugadorId || ""}
+                label="Selecciona jugador implicado..."
+                onChange={(playerId) => onSetPlayer(index, "jugador", playerId)}
               />
-              <PlayerSelect
-                jugadores={jugadores}
-                value={event.jugadorEntra?.jugadorId || ""}
-                label="Entra..."
-                onChange={(playerId) => onSetPlayer(index, "jugadorEntra", playerId)}
-              />
-            </>
-          ) : (
-            <PlayerSelect
-              jugadores={jugadores}
-              value={event.jugador?.jugadorId || ""}
-              label="Jugador..."
-              onChange={(playerId) => onSetPlayer(index, "jugador", playerId)}
-            />
-          )}
-
-          <button className="row-delete" onClick={() => onRemove(index)}>Quitar</button>
+            )}
+          </div>
         </div>
       ))}
       <style jsx>{`
         .event-list {
           display: flex;
           flex-direction: column;
-          gap: 0.6rem;
+          gap: 1rem;
         }
-        .event-row {
-          display: grid;
-          grid-template-columns: 70px 150px 110px minmax(180px, 1fr) minmax(180px, 1fr) auto;
-          gap: 0.5rem;
+        .event-card {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 12px;
+          padding: 1rem;
+        }
+        .event-card-header {
+          display: flex;
+          justify-content: space-between;
           align-items: center;
+          margin-bottom: 0.8rem;
+          padding-bottom: 0.8rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          gap: 1rem;
         }
-        .event-row:has(input[placeholder="Nombre rival"]) {
-          grid-template-columns: 70px 150px 110px minmax(220px, 1fr) auto;
+        .event-meta, .event-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.8rem;
+        }
+        .minuto-input {
+          width: 60px;
+          text-align: center;
+          font-weight: 800;
+        }
+        .tipo-select {
+          min-width: 140px;
+        }
+        .equipo-select {
+          min-width: 120px;
+        }
+        .cambio-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+        }
+        .rival-input {
+          width: 100%;
         }
         .row-delete {
           background: transparent;
           color: #fca5a5;
           border: 1px solid rgba(239, 68, 68, 0.25);
           border-radius: 8px;
-          padding: 0.55rem 0.7rem;
+          padding: 0.4rem 0.6rem;
+          font-size: 0.8rem;
           cursor: pointer;
         }
-        @media (max-width: 980px) {
-          .event-row,
-          .event-row:has(input[placeholder="Nombre rival"]) {
+        @media (max-width: 640px) {
+          .event-card-header {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .event-meta, .event-actions {
+            justify-content: space-between;
+          }
+          .cambio-grid {
             grid-template-columns: 1fr;
           }
         }
