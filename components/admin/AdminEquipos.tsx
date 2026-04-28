@@ -73,11 +73,10 @@ export default function AdminEquipos({
     fetchEquipos();
   }, [categoria, selectedLiga]);
 
-  async function fetchAllTeamsByCategory() {
+  async function fetchAllTeams() {
     const { data } = await supabase
       .from("equipos")
       .select("*")
-      .eq("categoria", categoria)
       .order("nombre", { ascending: true });
     const teams = (data || []) as Equipo[];
     setAllCategoryTeams(teams);
@@ -86,7 +85,7 @@ export default function AdminEquipos({
 
   async function fetchEquipos() {
     setIsFetching(true);
-    const teams = await fetchAllTeamsByCategory();
+    const teams = await fetchAllTeams();
 
     const { data: relData, error: relError } = await supabase
       .from("equipo_competiciones")
@@ -448,10 +447,10 @@ export default function AdminEquipos({
               onChange={(e) => setSelectedExistingId(e.target.value)}
               disabled={loading}
             >
-              <option value="">Seleccionar equipo...</option>
+              <option value="">Seleccionar equipo de la base de datos...</option>
               {availableTeams.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.nombre}
+                  {t.nombre} {t.categoria ? `(${t.categoria})` : ""}
                 </option>
               ))}
             </select>

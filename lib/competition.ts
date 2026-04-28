@@ -52,6 +52,7 @@ export function getCompeticionLabelsForQuery(categoria: string, canonicalCompeti
     out.add("LGF 2A División");
   }
   if (key === "Senior" && canonicalCompeticion === senMain) {
+    out.add("Terceira Galicia - Santiago - Grupo 4");
     honorDe.forEach((t) => out.add(t));
   }
   if (key === "Senior" && canonicalCompeticion === senCopa) {

@@ -10,6 +10,7 @@ import {
   fetchTeamsForCompetition,
   mergeMissingTeams,
 } from "@/lib/supabase-queries";
+import { getCompeticionLabelsForQuery } from "@/lib/competition";
 
 interface AdminJornadasProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -62,6 +63,9 @@ export default function AdminJornadas({
   const [campoId, setCampoId] = useState("");
   const [descansos, setDescansos] = useState<any[]>([]);
   const [descansoEquipoId, setDescansoEquipoId] = useState("");
+
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkCount, setBulkCount] = useState(30);
 
   useEffect(() => {
     fetchBaseData();
@@ -129,8 +133,8 @@ export default function AdminJornadas({
     setIsFetching(false);
   }
 
-  async function handleCreateTemporada(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleCreateTemporada(e?: React.FormEvent) {
+    if (e) e.preventDefault();
     if (!nuevaTemporadaNombre) return;
     setBusyText("Creando temporada...");
     setLoading(true);
@@ -234,8 +238,8 @@ export default function AdminJornadas({
     setIsFetching(false);
   }
 
-  async function handleCreateJornada(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleCreateJornada(e?: React.FormEvent) {
+    if (e) e.preventDefault();
     if (!temporadaActiva) return showToast("No hay temporada activa", "error");
     setBusyText("Creando jornada...");
     setLoading(true);
@@ -390,6 +394,58 @@ export default function AdminJornadas({
     );
   }
 
+  async function handleBulkCreateJornadas() {
+    if (!temporadaActiva || !selectedCompeticion) return;
+    setBusyText(`Verificando jornadas existentes...`);
+    setLoading(true);
+
+    try {
+      // 1. Obtener jornadas que ya existen (incluyendo aliases históricos)
+      const labels = getCompeticionLabelsForQuery(categoria, selectedCompeticion);
+      const { data: existing } = await supabase
+        .from("jornadas")
+        .select("numero")
+        .eq("temporada_id", temporadaActiva.id)
+        .eq("categoria", categoria)
+        .in("competicion", labels);
+
+      const existingNums = new Set(existing?.map(j => j.numero) || []);
+      
+      // 2. Filtrar las que faltan de 1..bulkCount
+      const toInsert = [];
+      for (let i = 1; i <= bulkCount; i++) {
+        if (!existingNums.has(i)) {
+          toInsert.push({
+            temporada_id: temporadaActiva.id,
+            categoria,
+            competicion: selectedCompeticion,
+            numero: i,
+          });
+        }
+      }
+
+      if (toInsert.length === 0) {
+        showToast("Las jornadas ya estaban creadas");
+        setShowBulkModal(false);
+        setLoading(false);
+        return;
+      }
+
+      setBusyText(`Insertando ${toInsert.length} nuevas jornadas...`);
+      const { error } = await supabase.from("jornadas").insert(toInsert);
+      
+      if (error) throw error;
+
+      showToast(`Generadas ${toInsert.length} jornadas faltantes`);
+      setShowBulkModal(false);
+      fetchJornadas();
+    } catch (err: any) {
+      showToast("Error al crear jornadas: " + err.message, "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const teamsById = useMemo(
     () => new Map(equipos.map((e: any) => [e.id, e])),
     [equipos],
@@ -434,151 +490,111 @@ export default function AdminJornadas({
         text={isFetching ? "Cargando jornadas y partidos..." : busyText}
       />
       <div
-        className="input-group"
-        style={{ marginBottom: "1rem", maxWidth: "480px" }}
-      >
-        <label>Competición</label>
-        <select
-          value={selectedCompeticion}
-          onChange={(e) => {
-            setSelectedJornada(null);
-            setPartidos([]);
-            setDescansos([]);
-            setSelectedCompeticion(e.target.value);
-          }}
-          disabled={loading || isFetching}
-        >
-          {competitions.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* BARRA DE HERRAMIENTAS SUPERIOR (TOOLBAR) */}
-      <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "2.5rem",
-          paddingBottom: "2.5rem",
+          display: "flex",
+          flexDirection: "column",
+          gap: "1.5rem",
           marginBottom: "3rem",
+          paddingBottom: "2rem",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}
       >
-        {/* Bloque Temporada */}
-        <div className="control-group">
-          <label
-            style={{
-              fontSize: "0.8rem",
-              color: "var(--primary)",
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: "1px",
-              marginBottom: "1rem",
-              display: "block",
-            }}
-          >
-            🏆 Gestión de Temporada
-          </label>
-          <div style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
+        {/* FILA 1: CONFIGURACIÓN GLOBAL */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "1rem", alignItems: "flex-end" }}>
+          {/* Bloque Temporada */}
+          <div className="input-group">
+            <label style={{ color: "#888", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", marginBottom: "0.6rem", display: "block" }}>
+              🏆 Temporada
+            </label>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <select
+                value={temporadaActiva?.id || ""}
+                onChange={(e) => toggleTemporadaActiva(e.target.value)}
+                style={{ flex: 1, height: "48px", background: "rgba(0,0,0,0.4)", borderRadius: "10px", fontWeight: 600 }}
+              >
+                {temporadas.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nombre} {t.activa ? "✓" : ""}
+                  </option>
+                ))}
+              </select>
+              {showNewTemporada && (
+                <input
+                  type="text"
+                  placeholder="Ej: 26/27"
+                  value={nuevaTemporadaNombre}
+                  onChange={(e) => setNuevaTemporadaNombre(e.target.value)}
+                  autoFocus
+                  style={{ width: "100px", height: "48px", borderRadius: "10px", background: "rgba(250,204,21,0.05)", border: "1px solid rgba(250,204,21,0.2)" }}
+                />
+              )}
+              <button
+                onClick={() => {
+                  if (showNewTemporada && nuevaTemporadaNombre.trim()) {
+                    handleCreateTemporada();
+                    setShowNewTemporada(false);
+                  } else {
+                    setShowNewTemporada((v) => !v);
+                  }
+                }}
+                className="btn-primary"
+                style={{ height: "48px", width: "48px", borderRadius: "10px", flexShrink: 0 }}
+              >
+                {showNewTemporada ? "✓" : "+"}
+              </button>
+            </div>
+          </div>
+
+          {/* Bloque Competición */}
+          <div className="input-group">
+            <label style={{ color: "#888", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", marginBottom: "0.6rem", display: "block" }}>
+              ⚔️ Competición
+            </label>
             <select
-              value={temporadaActiva?.id || ""}
-              onChange={(e) => toggleTemporadaActiva(e.target.value)}
-              style={{
-                flex: 1,
-                height: "48px",
-                background: "rgba(0,0,0,0.4)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "white",
-                padding: "0 1.2rem",
-                borderRadius: "10px",
-                fontSize: "0.95rem",
-                fontWeight: 600,
+              value={selectedCompeticion}
+              onChange={(e) => {
+                setSelectedJornada(null);
+                setPartidos([]);
+                setDescansos([]);
+                setSelectedCompeticion(e.target.value);
               }}
+              disabled={loading || isFetching}
+              style={{ height: "48px", background: "rgba(0,0,0,0.4)", borderRadius: "10px", fontWeight: 600 }}
             >
-              {temporadas.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nombre} {t.activa ? "✓" : ""}
-                </option>
+              {competitions.map((c) => (
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
-            {showNewTemporada && (
-              <input
-                type="text"
-                placeholder="Ej: 26/27"
-                value={nuevaTemporadaNombre}
-                onChange={(e) => setNuevaTemporadaNombre(e.target.value)}
-                autoFocus
-                style={{
-                  width: "110px",
-                  height: "48px",
-                  padding: "0 1rem",
-                  background: "rgba(250,204,21,0.08)",
-                  border: "1px solid rgba(250,204,21,0.3)",
-                  color: "white",
-                  fontSize: "0.9rem",
-                  borderRadius: "10px",
-                }}
-              />
-            )}
-            <button
-              onClick={() => {
-                if (showNewTemporada && nuevaTemporadaNombre.trim()) {
-                  handleCreateTemporada();
-                  setShowNewTemporada(false);
-                } else {
-                  setShowNewTemporada((v) => !v);
-                }
-              }}
-              className="btn-primary"
-              title={showNewTemporada ? "Crear temporada" : "Nueva temporada"}
-              style={{ height: "48px", width: "48px", borderRadius: "10px", fontSize: "1.3rem", flexShrink: 0 }}
-            >
-              {showNewTemporada ? "✓" : "+"}
-            </button>
           </div>
+
+          {/* Botón Configuración */}
+          <button 
+            className="btn-secondary" 
+            onClick={() => setShowBulkModal(true)}
+            style={{ height: "48px", padding: "0 1.2rem", borderRadius: "10px", display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Configurar Liga
+          </button>
         </div>
 
-        {/* Bloque Jornada */}
-        <div className="control-group">
-          <label
-            style={{
-              fontSize: "0.8rem",
-              color: "var(--primary)",
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: "1px",
-              marginBottom: "1rem",
-              display: "block",
-            }}
-          >
-            📅 Selección de Jornada
-          </label>
-          <div style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
+        {/* FILA 2: SELECCIÓN DE JORNADA */}
+        <div style={{ background: "rgba(255,255,255,0.02)", padding: "1.2rem", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", flex: 1 }}>
+            <span style={{ fontSize: "1.2rem" }}>📅</span>
             <select
               value={selectedJornada || ""}
               onChange={(e) => setSelectedJornada(e.target.value)}
-              style={{
-                flex: 1,
-                height: "48px",
-                background: "rgba(0,0,0,0.4)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "white",
-                padding: "0 1.2rem",
-                borderRadius: "10px",
-                fontSize: "1rem",
-                fontWeight: 700,
-              }}
+              style={{ flex: 1, height: "45px", background: "none", border: "none", fontSize: "1.1rem", fontWeight: 800, color: "var(--primary)" }}
             >
-              <option value="">Selecciona jornada...</option>
+              <option value="">Selecciona una jornada...</option>
               {jornadas.map((j) => (
-                <option key={j.id} value={j.id}>
-                  Jornada {j.numero}
-                </option>
+                <option key={j.id} value={j.id}>Jornada {j.numero}</option>
               ))}
             </select>
+          </div>
+          
+          <div style={{ display: "flex", gap: "0.5rem" }}>
             {showNewJornada && (
               <input
                 type="number"
@@ -586,18 +602,7 @@ export default function AdminJornadas({
                 value={numJornada}
                 onChange={(e) => setNumJornada(e.target.value)}
                 autoFocus
-                min={1}
-                style={{
-                  width: "72px",
-                  height: "48px",
-                  padding: "0 0.8rem",
-                  background: "rgba(250,204,21,0.08)",
-                  border: "1px solid rgba(250,204,21,0.3)",
-                  color: "white",
-                  fontSize: "1rem",
-                  borderRadius: "10px",
-                  textAlign: "center",
-                }}
+                style={{ width: "60px", height: "40px", borderRadius: "8px", background: "rgba(0,0,0,0.3)", textAlign: "center" }}
               />
             )}
             <button
@@ -610,28 +615,14 @@ export default function AdminJornadas({
                 }
               }}
               className="btn-primary"
-              title={showNewJornada ? "Crear jornada" : "Nueva jornada"}
-              style={{ height: "48px", width: "48px", borderRadius: "10px", fontSize: "1.3rem", flexShrink: 0 }}
+              style={{ height: "40px", width: "40px", borderRadius: "8px", fontSize: "1.1rem" }}
             >
               {showNewJornada ? "✓" : "+"}
             </button>
             {selectedJornada && (
               <button
                 onClick={() => handleDeleteJornada(selectedJornada)}
-                disabled={loading}
-                title="Eliminar jornada"
-                style={{
-                  height: "48px",
-                  width: "48px",
-                  borderRadius: "10px",
-                  background: "rgba(239,68,68,0.1)",
-                  border: "1px solid rgba(239,68,68,0.25)",
-                  color: "#f87171",
-                  fontSize: "1.1rem",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  opacity: loading ? 0.6 : 1,
-                  flexShrink: 0,
-                }}
+                style={{ height: "40px", width: "40px", borderRadius: "8px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}
               >
                 🗑️
               </button>
@@ -1242,41 +1233,107 @@ export default function AdminJornadas({
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              height: "360px",
-              color: "#444",
+              height: "400px",
               background: "rgba(255,255,255,0.01)",
               borderRadius: "24px",
-              border: "2px dashed rgba(255,255,255,0.06)",
-              gap: "0.8rem",
+              border: "1px solid rgba(255,255,255,0.03)",
+              gap: "1.5rem",
+              textAlign: "center",
+              padding: "2rem"
             }}
           >
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ opacity: 0.18 }}>
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
+            <div style={{ width: "80px", height: "80px", background: "rgba(255,255,255,0.03)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "0.5rem" }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5">
+                <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
+              </svg>
+            </div>
             {jornadas.length === 0 && !isFetching ? (
               <>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#555", margin: 0 }}>Sin jornadas</h3>
-                <p style={{ margin: 0, fontSize: "0.85rem", color: "#444" }}>Esta competición no tiene jornadas aún.</p>
+                <div style={{ maxWidth: "300px" }}>
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 800, color: "white", margin: "0 0 0.5rem 0" }}>Sin jornadas</h3>
+                  <p style={{ margin: 0, fontSize: "0.9rem", color: "#666", lineHeight: "1.5" }}>
+                    Esta competición aún no tiene jornadas registradas en la temporada activa.
+                  </p>
+                </div>
                 <button
-                  onClick={() => setShowNewJornada(true)}
+                  onClick={() => setShowBulkModal(true)}
                   className="btn-primary"
-                  style={{ marginTop: "0.5rem", padding: "0.6rem 1.5rem", borderRadius: "10px", fontSize: "0.9rem" }}
+                  style={{ padding: "0.8rem 2rem", borderRadius: "12px", fontSize: "0.9rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px" }}
                 >
-                  + Crear primera jornada
+                  🚀 Configurar jornadas ahora
                 </button>
               </>
             ) : (
-              <>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#555", margin: 0 }}>Selecciona una jornada</h3>
-                <p style={{ margin: 0, fontSize: "0.85rem", color: "#444" }}>Elige una jornada arriba para gestionar los partidos.</p>
-              </>
+              <div style={{ maxWidth: "300px" }}>
+                <h3 style={{ fontSize: "1.2rem", fontWeight: 800, color: "white", margin: "0 0 0.5rem 0" }}>Selecciona una jornada</h3>
+                <p style={{ margin: 0, fontSize: "0.9rem", color: "#666", lineHeight: "1.5" }}>
+                  Elige una jornada en el selector superior para gestionar sus partidos y resultados.
+                </p>
+              </div>
             )}
           </div>
         )}
       </div>
+
+      {/* MODAL CONFIGURACIÓN LIGA (BULK JORNADAS) */}
+      {showBulkModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '400px' }}>
+            <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Configurar Competición</h3>
+            <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '2rem' }}>
+              Se generarán jornadas vacías para <strong>{selectedCompeticion}</strong> en la temporada activa.
+            </p>
+
+            <div className="input-group" style={{ marginBottom: '2rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#666', textTransform: 'uppercase' }}>Número de Jornadas</label>
+              <input 
+                type="number" 
+                value={bulkCount}
+                onChange={e => setBulkCount(parseInt(e.target.value) || 0)}
+                style={{ width: '100%', height: '50px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white', padding: '0 1rem', fontSize: '1.2rem', fontWeight: 800 }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button className="btn-secondary" onClick={() => setShowBulkModal(false)} style={{ flex: 1, height: '48px' }}>Cancelar</button>
+              <button className="btn-primary" onClick={handleBulkCreateJornadas} disabled={loading || bulkCount <= 0} style={{ flex: 1, height: '48px' }}>
+                {loading ? "Generando..." : "Generar Jornadas"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        .modal-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.85);
+          backdrop-filter: blur(10px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+        }
+        .modal-content {
+          background: #111;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 24px;
+          padding: 2.5rem;
+          width: 90%;
+          box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+        }
+        .control-group {
+          background: rgba(255,255,255,0.02);
+          padding: 1.5rem;
+          border-radius: 18px;
+          border: 1px solid rgba(255,255,255,0.05);
+        }
+        .form-grid-4 {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+      `}</style>
     </div>
   );
 }

@@ -131,30 +131,45 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
     setBusy(true);
     setBusyText("Cargando datos...");
 
-    const { active } = await fetchSeasons();
-    if (!active) { setBusy(false); return; }
+    try {
+      // Usar directamente el cliente de browser para evitar líos de sesión
+      const { data: seasons, error: sErr } = await supabase
+        .from("temporadas")
+        .select("*")
+        .order("created_at", { ascending: false });
+        
+      if (sErr) throw sErr;
+      const active = seasons?.find(s => s.activa) || seasons?.[0];
+      if (!active) {
+        setBusy(false);
+        return;
+      }
 
-    const [equiposData, jornadasResult, cRes] = await Promise.all([
-      fetchTeamsForCompetition(categoria, competicion),
-      fetchMatchdaysForCompetition(active.id, categoria, competicion),
-      supabase
-        .from("campos_futbol")
-        .select("id, nombre, poblacion")
-        .order("nombre"),
-    ]);
+      const [equiposData, jornadasResult, cRes] = await Promise.all([
+        fetchTeamsForCompetition(categoria, competicion),
+        fetchMatchdaysForCompetition(active.id, categoria, competicion),
+        supabase
+          .from("campos_futbol")
+          .select("id, nombre, poblacion")
+          .order("nombre"),
+      ]);
 
-    setEquipos(equiposData);
-    setJornadas(jornadasResult.data);
-    if (jornadasResult.data.length > 0) {
-      setSelectedJornadaId((prev) =>
-        jornadasResult.data.some((j) => j.id === prev)
-          ? prev
-          : jornadasResult.data[jornadasResult.data.length - 1].id,
-      );
+      setEquipos(equiposData);
+      setJornadas(jornadasResult.data);
+      if (jornadasResult.data.length > 0) {
+        setSelectedJornadaId((prev) =>
+          jornadasResult.data.some((j) => j.id === prev)
+            ? prev
+            : jornadasResult.data[jornadasResult.data.length - 1].id,
+        );
+      }
+      if (cRes.data) setCampos(cRes.data as CampoDB[]);
+    } catch (err) {
+      console.error("Error en fetchBaseData:", err);
+      showToast("Error al cargar datos de la liga", "error");
+    } finally {
+      setBusy(false);
     }
-    if (cRes.data) setCampos(cRes.data as CampoDB[]);
-
-    setBusy(false);
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -246,7 +261,54 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
     }
   }
 
-  function buildRows(data: JornadaGeminiResponse, currentEquipos: EquipoDB[]) {
+  async function createJornada(numero: number) {
+  if (!competicion) return;
+  setBusy(true);
+  setBusyText(`Creando jornada ${numero}...`);
+  try {
+    const { data: seasons, error: sErr } = await supabase
+      .from("temporadas")
+      .select("*")
+      .order("created_at", { ascending: false });
+      
+    if (sErr) throw sErr;
+    const active = seasons?.find(s => s.activa) || seasons?.[0];
+    if (!active) throw new Error("No hay temporada activa configurada");
+    
+    const { data, error } = await supabase
+      .from("jornadas")
+      .insert({
+        temporada_id: active.id,
+        categoria,
+        competicion,
+        numero
+      })
+      .select("id")
+      .maybeSingle();
+      
+    if (error) {
+      if (error.code === "23505") {
+        showToast(`La jornada ${numero} ya existe. Refrescando...`);
+        await fetchBaseData();
+        return;
+      }
+      throw error;
+    }
+
+    showToast(`Jornada ${numero} creada correctamente`);
+    await fetchBaseData();
+    if (data?.id) setSelectedJornadaId(data.id);
+  } catch (err: any) {
+    console.error("Error detallado al crear jornada:", err);
+    showToast(err.message || "Error al crear jornada", "error");
+  } finally {
+    setBusy(false);
+  }
+}
+
+
+
+function buildRows(data: JornadaGeminiResponse, currentEquipos: EquipoDB[]) {
     const newRows: ReviewRow[] = data.partidos.map((p, i) => {
       const localId = bestMatch(p.localNombre, currentEquipos);
       const visitanteId = bestMatch(p.visitanteNombre, currentEquipos);
@@ -284,6 +346,14 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
     const toSave = rows.filter(
       (r) => r.selected && !r.extracted.descansa && r.localId && r.visitanteId,
     );
+
+    // Validación extra para evitar errores de BD
+    for (const r of toSave) {
+      if (r.localId === r.visitanteId) {
+        showToast(`Error: ${r.extracted.localNombre} no puede jugar contra sí mismo.`, "error");
+        return;
+      }
+    }
 
     if (!toSave.length) {
       showToast("No hay filas seleccionadas con datos válidos", "error");
@@ -504,7 +574,18 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
             </div>
 
             <div className="input-group wide">
-              <label style={{ color: "#facc15" }}>Jornada Detectada</label>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "0.4rem" }}>
+                <label style={{ color: "#facc15", margin: 0 }}>Jornada Detectada</label>
+                {extracted?.jornada && !jornadas.some(j => j.numero === parseInt(extracted.jornada, 10)) && (
+                  <button 
+                    className="btn-primary" 
+                    style={{ padding: "0.2rem 0.6rem", fontSize: "0.7rem", height: "auto" }}
+                    onClick={() => createJornada(parseInt(extracted.jornada, 10))}
+                  >
+                    + Crear Jornada {extracted.jornada}
+                  </button>
+                )}
+              </div>
               <select
                 value={selectedJornadaId}
                 onChange={(e) => setSelectedJornadaId(e.target.value)}
@@ -573,16 +654,19 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
                         <span className="team-detected" title="Texto detectado en la imagen">
                           {row.extracted.localNombre}
                         </span>
-                        <select
-                          value={row.localId}
-                          onChange={(e) => patchRow(idx, { localId: e.target.value })}
-                          className={row.localId ? "ok" : "warn"}
-                        >
-                          <option value="">Enlazar con BD...</option>
-                          {equipos.map((e) => (
-                            <option key={e.id} value={e.id}>{e.nombre}</option>
-                          ))}
-                        </select>
+                        <div className="team-select-row" style={{ display: "flex", gap: "0.4rem", width: "100%", justifyContent: "flex-end" }}>
+                          <select
+                            value={row.localId}
+                            onChange={(e) => patchRow(idx, { localId: e.target.value })}
+                            className={row.localId ? "ok" : "warn"}
+                            style={{ flex: 1, maxWidth: "160px" }}
+                          >
+                            <option value="">Enlazar...</option>
+                            {equipos.map((e) => (
+                              <option key={e.id} value={e.id}>{e.nombre}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
 
                       {/* SCORE */}
@@ -609,16 +693,31 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
                         <span className="team-detected" title="Texto detectado en la imagen">
                           {row.extracted.visitanteNombre}
                         </span>
-                        <select
-                          value={row.visitanteId}
-                          onChange={(e) => patchRow(idx, { visitanteId: e.target.value })}
-                          className={row.visitanteId ? "ok" : "warn"}
-                        >
-                          <option value="">Enlazar con BD...</option>
-                          {equipos.map((e) => (
-                            <option key={e.id} value={e.id}>{e.nombre}</option>
-                          ))}
-                        </select>
+                        <div className="team-select-row" style={{ display: "flex", gap: "0.4rem", width: "100%", justifyContent: "flex-start" }}>
+                          <select
+                            value={row.visitanteId}
+                            onChange={(e) => patchRow(idx, { visitanteId: e.target.value })}
+                            className={row.visitanteId ? "ok" : "warn"}
+                            style={{ flex: 1, maxWidth: "160px" }}
+                          >
+                            <option value="">Enlazar...</option>
+                            {equipos.map((e) => (
+                              <option key={e.id} value={e.id}>{e.nombre}</option>
+                            ))}
+                          </select>
+                          {!row.visitanteId && (
+                            <button 
+                              className="btn-quick-add" 
+                              title="Añadir equipo a BD"
+                              onClick={() => {
+                                setTeamToCreate({ name: row.extracted.visitanteNombre, rowIndex: idx, side: 'visitante' });
+                                setNewTeamData({ nombre: row.extracted.visitanteNombre, escudo_url: "" });
+                              }}
+                            >
+                              +
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -706,6 +805,7 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
           </button>
         </div>
       )}
+
 
       <style jsx>{`
         .ji-header {
@@ -935,6 +1035,48 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
           .ji-card-footer { grid-template-columns: 1fr; }
           .campo-libre { flex-direction: column; }
         }
+        .btn-quick-add {
+          background: rgba(250, 204, 21, 0.15);
+          color: #facc15;
+          border: 1px solid rgba(250, 204, 21, 0.3);
+          border-radius: 6px;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 800;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .btn-quick-add:hover {
+          background: rgba(250, 204, 21, 0.25);
+          transform: scale(1.05);
+        }
+
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.8);
+          backdrop-filter: blur(12px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+        }
+        .modal-content {
+          background: #111;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 24px;
+          padding: 2.5rem;
+          width: 90%;
+          max-width: 450px;
+          box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+        }
+        .modal-content h3 { margin-top: 0; color: #facc15; font-size: 1.5rem; margin-bottom: 0.5rem; }
       `}</style>
     </div>
   );

@@ -105,26 +105,27 @@ export async function fetchTeamsForCompetition(
   competicion: string,
 ) {
   const labels = getCompetitionQueryLabels(categoria, competicion);
-  const { data: relData, error: relError } = await supabase
+  
+  // Obtenemos los IDs de los equipos vinculados a estas etiquetas de competición
+  const { data: relations, error: relErr } = await supabase
     .from("equipo_competiciones")
     .select("equipo_id")
-    .eq("categoria", categoria)
     .in("competicion", labels);
 
-  if (!relError && relData && relData.length > 0) {
-    const teams = await fetchTeamsByIds(
-      relData.map((r: { equipo_id: string }) => r.equipo_id),
-    );
-    if (teams.length > 0) return teams;
-  }
+  if (relErr || !relations) return [];
+  const teamIds = relations.map(r => r.equipo_id);
+  
+  if (teamIds.length === 0) return [];
 
-  const { data } = await supabase
+  // Ahora obtenemos los datos de esos equipos
+  const { data: teams, error: teamsErr } = await supabase
     .from("equipos")
     .select("*")
-    .eq("categoria", categoria)
+    .in("id", teamIds)
     .order("nombre", { ascending: true });
 
-  return (data || []) as Team[];
+  if (teamsErr || !teams) return [];
+  return teams as Team[];
 }
 
 export async function mergeMissingTeams(current: Team[], ids: string[]) {

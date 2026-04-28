@@ -60,7 +60,7 @@ export interface AssetUrls {
 
 export const COMPETICIONS: Record<string, string[]> = {
   "Senior": [
-    "Terceira Galicia - Santiago - Grupo 4",
+    "Terceira Galicia - Santiago - Fase Previa - Grupo 4",
     "Terceira Galicia - Santiago - Fase Copa - Grupo 4"
   ],
   "Veteranos": [
