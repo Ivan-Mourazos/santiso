@@ -11,18 +11,60 @@ interface AdminLeagueProps {
   categoria: string;
 }
 
+interface LeagueRule {
+  id: string;
+  nombre: string;
+  puestos: number[];
+  color: string;
+}
+
 export default function AdminLeague({ showToast, showConfirm, categoria }: AdminLeagueProps) {
   const [equipos, setEquipos] = useState<any[]>([]);
   const [competiciones, setCompeticiones] = useState<string[]>([]);
   const [competicion, setCompeticion] = useState("");
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [leagueRules, setLeagueRules] = useState<LeagueRule[]>([]);
+  const [temporadaActiva, setTemporadaActiva] = useState<string | null>(null);
 
   useEffect(() => {
     const opts = getCompetitionsByCategory(categoria);
     setCompeticiones(opts);
     setCompeticion(opts[0] || "");
   }, [categoria]);
+
+  // Cargar temporada activa
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase
+        .from("temporadas")
+        .select("id")
+        .eq("activa", true)
+        .single();
+      if (data) setTemporadaActiva(data.id);
+    }
+    load();
+  }, []);
+
+  // Cargar reglas de liga
+  useEffect(() => {
+    if (!temporadaActiva || !competicion) return;
+    async function load() {
+      const { data } = await supabase
+        .from("reglas_liga")
+        .select("reglas")
+        .eq("temporada_id", temporadaActiva)
+        .eq("categoria", categoria)
+        .eq("competicion", competicion)
+        .maybeSingle();
+      if (data?.reglas && Array.isArray(data.reglas)) {
+        setLeagueRules(data.reglas as LeagueRule[]);
+      } else {
+        setLeagueRules([]);
+      }
+    }
+    load();
+  }, [temporadaActiva, competicion]);
 
   useEffect(() => {
     if (!competicion) return;
@@ -44,8 +86,6 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
   async function handleSaveLeague() {
     setLoading(true);
     try {
-      // Usamos una promesa múltiple para actualizar todos los equipos. 
-      // En Supabase, el bulk update por ID es más complejo, así que vamos secuencialmente por simplicidad y robustez.
       const updates = equipos.map(eq => 
         supabase.from("equipos").update({
           pts: eq.pts,
@@ -69,6 +109,23 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
     }
   }
 
+  // Ordenar equipos por puntos descendente
+  const equiposOrdenados = [...equipos].sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    const dgA = (a.gf || 0) - (a.gc || 0);
+    const dgB = (b.gf || 0) - (b.gc || 0);
+    if (dgB !== dgA) return dgB - dgA;
+    return (b.gf || 0) - (a.gf || 0);
+  });
+
+  // Buscar la regla que aplica a una posición dada
+  function getRuleForPosition(pos: number): LeagueRule | null {
+    for (const rule of leagueRules) {
+      if (rule.puestos.includes(pos)) return rule;
+    }
+    return null;
+  }
+
   return (
     <div className="card full-width glass" style={{ marginBottom: '2rem' }}>
       <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando clasificación..." : "Guardando clasificación..."} />
@@ -78,6 +135,51 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
           {competiciones.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
+
+      {/* LEYENDA DE REGLAS */}
+      {leagueRules.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "1.5rem",
+            flexWrap: "wrap",
+            padding: "0.8rem 1.2rem",
+            marginBottom: "1.5rem",
+            background: "rgba(255,255,255,0.02)",
+            borderRadius: "10px",
+            border: "1px solid rgba(255,255,255,0.05)",
+          }}
+        >
+          <span style={{ fontSize: "0.7rem", color: "#666", fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px" }}>
+            Reglas
+          </span>
+          {leagueRules.map((rule) => (
+            <span
+              key={rule.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                fontSize: "0.8rem",
+                color: "#a3a3a3",
+              }}
+            >
+              <span
+                style={{
+                  width: "12px",
+                  height: "12px",
+                  borderRadius: "3px",
+                  background: rule.color,
+                  flexShrink: 0,
+                }}
+              />
+              {rule.nombre} ({rule.puestos.sort((a, b) => a - b).join(", ")})
+            </span>
+          ))}
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
           <h3>Editor de Clasificación de la Liga</h3>
@@ -92,6 +194,7 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
         <table className="admin-table league-editor">
           <thead>
             <tr>
+              <th style={{ width: '40px' }}>#</th>
               <th style={{ width: '40px' }}>Logo</th>
               <th>Equipo</th>
               <th title="Puntos">PTS</th>
@@ -105,22 +208,39 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
             </tr>
           </thead>
           <tbody>
-            {equipos.map(eq => (
-              <tr key={eq.id}>
-                <td>{eq.escudo_url && eq.escudo_url !== "" && <img src={eq.escudo_url} alt="" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />}</td>
-                <td style={{ fontWeight: 700 }}>{eq.nombre}</td>
-                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pts} onChange={(e) => handleInputChange(eq.id, 'pts', e.target.value)} /></td>
-                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pj}  onChange={(e) => handleInputChange(eq.id, 'pj',  e.target.value)} /></td>
-                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pg}  onChange={(e) => handleInputChange(eq.id, 'pg',  e.target.value)} /></td>
-                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pe}  onChange={(e) => handleInputChange(eq.id, 'pe',  e.target.value)} /></td>
-                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pp}  onChange={(e) => handleInputChange(eq.id, 'pp',  e.target.value)} /></td>
-                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.gf}  onChange={(e) => handleInputChange(eq.id, 'gf',  e.target.value)} /></td>
-                <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.gc}  onChange={(e) => handleInputChange(eq.id, 'gc',  e.target.value)} /></td>
-                <td style={{ fontWeight: 800, color: (eq.gf - eq.gc) >= 0 ? '#10b981' : '#ef4444' }}>
-                  {eq.gf - eq.gc}
-                </td>
-              </tr>
-            ))}
+            {equiposOrdenados.map((eq, index) => {
+              const posicion = index + 1;
+              const rule = getRuleForPosition(posicion);
+              return (
+                <tr
+                  key={eq.id}
+                  style={
+                    rule
+                      ? {
+                          borderLeft: `3px solid ${rule.color}`,
+                          background: `${rule.color}0d`,
+                        }
+                      : undefined
+                  }
+                >
+                  <td style={{ fontWeight: 800, color: rule ? rule.color : "#666", textAlign: "center" }}>
+                    {posicion}
+                  </td>
+                  <td>{eq.escudo_url && eq.escudo_url !== "" && <img src={eq.escudo_url} alt="" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />}</td>
+                  <td style={{ fontWeight: 700, color: rule ? rule.color : "white" }}>{eq.nombre}</td>
+                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pts} onChange={(e) => handleInputChange(eq.id, 'pts', e.target.value)} /></td>
+                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pj}  onChange={(e) => handleInputChange(eq.id, 'pj',  e.target.value)} /></td>
+                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pg}  onChange={(e) => handleInputChange(eq.id, 'pg',  e.target.value)} /></td>
+                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pe}  onChange={(e) => handleInputChange(eq.id, 'pe',  e.target.value)} /></td>
+                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pp}  onChange={(e) => handleInputChange(eq.id, 'pp',  e.target.value)} /></td>
+                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.gf}  onChange={(e) => handleInputChange(eq.id, 'gf',  e.target.value)} /></td>
+                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.gc}  onChange={(e) => handleInputChange(eq.id, 'gc',  e.target.value)} /></td>
+                  <td style={{ fontWeight: 800, color: (eq.gf - eq.gc) >= 0 ? '#10b981' : '#ef4444' }}>
+                    {eq.gf - eq.gc}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

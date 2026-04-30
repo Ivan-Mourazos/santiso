@@ -222,6 +222,7 @@ export default function Home() {
                     title={s.nombre}
                     width={350}
                     height={180}
+                    style={{ objectFit: 'contain' }}
                   />
                 </div>
               </a>

@@ -64,8 +64,97 @@ export default function AdminJornadas({
   const [descansos, setDescansos] = useState<any[]>([]);
   const [descansoEquipoId, setDescansoEquipoId] = useState("");
 
-  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [showLeagueRules, setShowLeagueRules] = useState(false);
   const [bulkCount, setBulkCount] = useState(30);
+
+  // Reglas de desarrollo de liga (flexibles)
+  interface LeagueRule {
+    id: string;
+    nombre: string;
+    puestos: number[];
+    color: string;
+  }
+  const [leagueRules, setLeagueRules] = useState<LeagueRule[]>([]);
+  const [savingRules, setSavingRules] = useState(false);
+  const [newRule, setNewRule] = useState<Omit<LeagueRule, "id">>({
+    nombre: "",
+    puestos: [],
+    color: "#10b981",
+  });
+  const [ruleFormPuestos, setRuleFormPuestos] = useState("");
+
+  // Colores predefinidos para elegir
+  const colorPalette = [
+    "#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#ec4899",
+    "#8b5cf6", "#06b6d4", "#f97316", "#14b8a6", "#6366f1",
+  ];
+
+  // Cargar reglas de liga existentes
+  useEffect(() => {
+    if (!temporadaActiva || !selectedCompeticion) return;
+    async function load() {
+      const { data } = await supabase
+        .from("reglas_liga")
+        .select("*")
+        .eq("temporada_id", temporadaActiva.id)
+        .eq("categoria", categoria)
+        .eq("competicion", selectedCompeticion)
+        .maybeSingle();
+      if (data?.reglas) {
+        setLeagueRules(Array.isArray(data.reglas) ? data.reglas : []);
+      } else {
+        setLeagueRules([]);
+      }
+    }
+    load();
+  }, [temporadaActiva, selectedCompeticion]);
+
+  async function handleSaveLeagueRules() {
+    if (!temporadaActiva) return;
+    setSavingRules(true);
+
+    // Primero intentamos insertar, si falla por conflicto, actualizamos
+    const { error } = await supabase.from("reglas_liga").upsert(
+      {
+        temporada_id: temporadaActiva.id,
+        categoria,
+        competicion: selectedCompeticion,
+        reglas: leagueRules,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "temporada_id,categoria,competicion" },
+    );
+    if (!error) showToast("Reglas de liga guardadas");
+    else showToast("Error al guardar reglas: " + error.message, "error");
+    setSavingRules(false);
+  }
+
+  function addRule() {
+    if (!newRule.nombre.trim()) return;
+    const puestos = ruleFormPuestos
+      .split(",")
+      .map((s) => parseInt(s.trim()))
+      .filter((n) => !isNaN(n) && n > 0);
+    if (puestos.length === 0) return;
+
+    setLeagueRules((prev) => [
+      ...prev,
+      { ...newRule, id: crypto.randomUUID(), puestos },
+    ]);
+    setNewRule({ nombre: "", puestos: [], color: "#10b981" });
+    setRuleFormPuestos("");
+  }
+
+  function removeRule(id: string) {
+    setLeagueRules((prev) => prev.filter((r) => r.id !== id));
+  }
+
+  function updateRule(id: string, field: keyof LeagueRule, value: string | number[]) {
+    setLeagueRules((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
+    );
+  }
 
   useEffect(() => {
     fetchBaseData();
@@ -426,7 +515,7 @@ export default function AdminJornadas({
 
       if (toInsert.length === 0) {
         showToast("Las jornadas ya estaban creadas");
-        setShowBulkModal(false);
+        setShowConfigPanel(false);
         setLoading(false);
         return;
       }
@@ -437,7 +526,7 @@ export default function AdminJornadas({
       if (error) throw error;
 
       showToast(`Generadas ${toInsert.length} jornadas faltantes`);
-      setShowBulkModal(false);
+      setShowConfigPanel(false);
       fetchJornadas();
     } catch (err: any) {
       showToast("Error al crear jornadas: " + err.message, "error");
@@ -567,16 +656,299 @@ export default function AdminJornadas({
             </select>
           </div>
 
-          {/* Botón Configuración */}
-          <button 
-            className="btn-secondary" 
-            onClick={() => setShowBulkModal(true)}
-            style={{ height: "48px", padding: "0 1.2rem", borderRadius: "10px", display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px" }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-            Configurar Liga
-          </button>
+          {/* Botones de configuración */}
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-end" }}>
+            <button 
+              className="btn-secondary" 
+              onClick={() => { setShowConfigPanel(v => !v); setShowLeagueRules(false); }}
+              style={{ height: "48px", padding: "0 1.2rem", borderRadius: "10px", display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              {showConfigPanel ? "▲ Cerrar" : "Jornadas"}
+            </button>
+            <button 
+              className="btn-secondary" 
+              onClick={() => { setShowLeagueRules(v => !v); setShowConfigPanel(false); }}
+              style={{ height: "48px", padding: "0 1.2rem", borderRadius: "10px", display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+              {showLeagueRules ? "▲ Cerrar" : "Reglas Liga"}
+            </button>
+          </div>
         </div>
+
+        {/* PANEL DESPLEGABLE: CONFIGURAR JORNADAS */}
+        {showConfigPanel && (
+          <div
+            style={{
+              background: "linear-gradient(180deg, rgba(250,204,21,0.04) 0%, rgba(255,255,255,0.01) 100%)",
+              padding: "2rem",
+              borderRadius: "18px",
+              border: "1px solid rgba(250,204,21,0.15)",
+              marginBottom: "1rem",
+              animation: "slideDown 0.25s ease-out",
+            }}
+          >
+            <h3 style={{ color: "var(--primary)", marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 800 }}>Configurar Jornadas</h3>
+            <p style={{ color: "#888", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+              Se generarán jornadas vacías para <strong>{selectedCompeticion}</strong> en la temporada activa.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: "1rem", alignItems: "flex-end" }}>
+              <div className="input-group">
+                <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "#666", textTransform: "uppercase" }}>Número de Jornadas</label>
+                <input 
+                  type="number" 
+                  value={bulkCount}
+                  onChange={e => setBulkCount(parseInt(e.target.value) || 0)}
+                  style={{ width: "100%", height: "50px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", color: "white", padding: "0 1rem", fontSize: "1.2rem", fontWeight: 800 }}
+                />
+              </div>
+              <button 
+                className="btn-secondary" 
+                onClick={() => setShowConfigPanel(false)}
+                style={{ height: "50px", padding: "0 1.5rem", borderRadius: "12px", fontWeight: 700 }}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={async () => {
+                  await handleBulkCreateJornadas();
+                  setShowConfigPanel(false);
+                }} 
+                disabled={loading || bulkCount <= 0} 
+                style={{ height: "50px", padding: "0 1.5rem", borderRadius: "12px", fontWeight: 800 }}
+              >
+                {loading ? "Generando..." : "Generar Jornadas"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* PANEL DESPLEGABLE: REGLAS DE DESARROLLO DE LIGA */}
+        {showLeagueRules && (
+          <div
+            style={{
+              background: "linear-gradient(180deg, rgba(139,92,246,0.06) 0%, rgba(255,255,255,0.01) 100%)",
+              padding: "2rem",
+              borderRadius: "18px",
+              border: "1px solid rgba(139,92,246,0.2)",
+              marginBottom: "1rem",
+              animation: "slideDown 0.25s ease-out",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
+              <div>
+                <h3 style={{ color: "#a78bfa", marginBottom: "0.3rem", fontSize: "1rem", fontWeight: 800 }}>
+                  🏆 Reglas de Desarrollo de Liga
+                </h3>
+                <p style={{ color: "#888", fontSize: "0.85rem", margin: 0 }}>
+                  Crea reglas personalizadas con nombre, puestos y color para <strong>{selectedCompeticion}</strong>.
+                </p>
+              </div>
+              <button
+                className="btn-primary"
+                onClick={handleSaveLeagueRules}
+                disabled={savingRules}
+                style={{ height: "44px", padding: "0 1.5rem", borderRadius: "10px", fontWeight: 800, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px", flexShrink: 0 }}
+              >
+                {savingRules ? "Guardando..." : "Guardar Todo"}
+              </button>
+            </div>
+
+            {/* FORMULARIO AÑADIR REGLA */}
+            <div
+              style={{
+                background: "rgba(0,0,0,0.25)",
+                padding: "1.5rem",
+                borderRadius: "14px",
+                border: "1px dashed rgba(139,92,246,0.3)",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 120px auto",
+                gap: "1rem",
+                alignItems: "flex-end",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <div className="input-group">
+                <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "#a78bfa", textTransform: "uppercase", marginBottom: "0.4rem", display: "block" }}>
+                  Nombre de la regla
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Campeón, Ascenso directo, Promoción..."
+                  value={newRule.nombre}
+                  onChange={(e) => setNewRule((prev) => ({ ...prev, nombre: e.target.value }))}
+                  style={{ width: "100%", height: "44px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", color: "white", padding: "0 1rem", fontSize: "0.9rem" }}
+                />
+              </div>
+
+              <div className="input-group">
+                <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "#a78bfa", textTransform: "uppercase", marginBottom: "0.4rem", display: "block" }}>
+                  Puestos (separados por coma)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: 1  o  2,3,4"
+                  value={ruleFormPuestos}
+                  onChange={(e) => setRuleFormPuestos(e.target.value)}
+                  style={{ width: "100%", height: "44px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", color: "white", padding: "0 1rem", fontSize: "0.9rem" }}
+                />
+              </div>
+
+              <div className="input-group">
+                <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "#a78bfa", textTransform: "uppercase", marginBottom: "0.4rem", display: "block" }}>
+                  Color
+                </label>
+                <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap", marginBottom: "0.4rem" }}>
+                  {colorPalette.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setNewRule((prev) => ({ ...prev, color }))}
+                      style={{
+                        width: "22px",
+                        height: "22px",
+                        borderRadius: "6px",
+                        background: color,
+                        border: newRule.color === color ? "2px solid white" : "2px solid transparent",
+                        cursor: "pointer",
+                        transition: "all 0.15s",
+                      }}
+                    />
+                  ))}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "6px",
+                      background: newRule.color,
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <input
+                    type="text"
+                    value={newRule.color}
+                    onChange={(e) => setNewRule((prev) => ({ ...prev, color: e.target.value }))}
+                    style={{ flex: 1, height: "32px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "white", padding: "0 0.5rem", fontSize: "0.8rem", fontFamily: "monospace" }}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={addRule}
+                className="btn-primary"
+                style={{ height: "44px", borderRadius: "10px", fontWeight: 800, fontSize: "0.85rem", padding: "0 1.2rem" }}
+              >
+                + Añadir
+              </button>
+            </div>
+
+            {/* LISTA DE REGLAS CREADAS */}
+            {leagueRules.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "2rem", color: "#666", fontSize: "0.9rem", background: "rgba(0,0,0,0.15)", borderRadius: "12px" }}>
+                No hay reglas definidas. Añade la primera arriba.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                {leagueRules.map((rule) => (
+                  <div
+                    key={rule.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "1rem",
+                      background: "rgba(0,0,0,0.2)",
+                      padding: "0.8rem 1.2rem",
+                      borderRadius: "12px",
+                      border: `1px solid ${rule.color}22`,
+                      borderLeft: `4px solid ${rule.color}`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "14px",
+                        height: "14px",
+                        borderRadius: "4px",
+                        background: rule.color,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: "0.9rem", color: "white" }}>
+                        {rule.nombre}
+                      </div>
+                      <div style={{ fontSize: "0.75rem", color: "#888", marginTop: "0.15rem" }}>
+                        Puestos: {rule.puestos.sort((a, b) => a - b).join(", ")}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeRule(rule.id)}
+                      style={{
+                        background: "rgba(239,68,68,0.1)",
+                        border: "1px solid rgba(239,68,68,0.2)",
+                        color: "#f87171",
+                        borderRadius: "8px",
+                        width: "32px",
+                        height: "32px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        fontSize: "1.1rem",
+                        fontWeight: 800,
+                        flexShrink: 0,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* LEYENDA PREVIEW */}
+            {leagueRules.length > 0 && (
+              <div
+                style={{
+                  marginTop: "1.5rem",
+                  background: "rgba(255,255,255,0.02)",
+                  padding: "1rem 1.5rem",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(255,255,255,0.04)",
+                  display: "flex",
+                  gap: "1.5rem",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                }}
+              >
+                <span style={{ fontSize: "0.75rem", color: "#666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}>
+                  Leyenda
+                </span>
+                {leagueRules.map((rule) => (
+                  <span
+                    key={rule.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.4rem",
+                      fontSize: "0.8rem",
+                      color: "#a3a3a3",
+                    }}
+                  >
+                    <span style={{ width: 10, height: 10, borderRadius: 3, background: rule.color }} />
+                    {rule.nombre} ({rule.puestos.sort((a, b) => a - b).join(",")})
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* FILA 2: SELECCIÓN DE JORNADA */}
         <div style={{ background: "rgba(255,255,255,0.02)", padding: "1.2rem", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: "1rem" }}>
@@ -1256,7 +1628,7 @@ export default function AdminJornadas({
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowBulkModal(true)}
+                  onClick={() => setShowConfigPanel(true)}
                   className="btn-primary"
                   style={{ padding: "0.8rem 2rem", borderRadius: "12px", fontSize: "0.9rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px" }}
                 >
@@ -1275,54 +1647,7 @@ export default function AdminJornadas({
         )}
       </div>
 
-      {/* MODAL CONFIGURACIÓN LIGA (BULK JORNADAS) */}
-      {showBulkModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '400px' }}>
-            <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Configurar Competición</h3>
-            <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '2rem' }}>
-              Se generarán jornadas vacías para <strong>{selectedCompeticion}</strong> en la temporada activa.
-            </p>
-
-            <div className="input-group" style={{ marginBottom: '2rem' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#666', textTransform: 'uppercase' }}>Número de Jornadas</label>
-              <input 
-                type="number" 
-                value={bulkCount}
-                onChange={e => setBulkCount(parseInt(e.target.value) || 0)}
-                style={{ width: '100%', height: '50px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white', padding: '0 1rem', fontSize: '1.2rem', fontWeight: 800 }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button className="btn-secondary" onClick={() => setShowBulkModal(false)} style={{ flex: 1, height: '48px' }}>Cancelar</button>
-              <button className="btn-primary" onClick={handleBulkCreateJornadas} disabled={loading || bulkCount <= 0} style={{ flex: 1, height: '48px' }}>
-                {loading ? "Generando..." : "Generar Jornadas"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <style jsx>{`
-        .modal-overlay {
-          position: fixed;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.85);
-          backdrop-filter: blur(10px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 9999;
-        }
-        .modal-content {
-          background: #111;
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 24px;
-          padding: 2.5rem;
-          width: 90%;
-          box-shadow: 0 40px 80px rgba(0,0,0,0.5);
-        }
         .control-group {
           background: rgba(255,255,255,0.02);
           padding: 1.5rem;
@@ -1332,6 +1657,10 @@ export default function AdminJornadas({
         .form-grid-4 {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
