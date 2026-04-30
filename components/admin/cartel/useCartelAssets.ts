@@ -7,6 +7,15 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase-browser";
 import type { AssetUrls, TemplateId } from "./types";
 
+/** Fila mínima devuelta por `cartel_assets`. */
+interface CartelAssetRow {
+  tipo: string;
+  subtipo: string;
+  url?: string | null;
+  orden?: number | null;
+  nombre?: string | null;
+}
+
 const DEFAULT_URLS: AssetUrls = {
   fondo: "/fondo-cartel.png",
   xunta: "",
@@ -33,14 +42,18 @@ export function useCartelAssets(tipo: TemplateId, refreshKey = 0) {
         return;
       }
 
-      const fondoRow = rows.find(r => r.tipo === "fondo" && r.subtipo === tipo);
-      const xunta    = rows.find(r => r.tipo === "logo_institucional" && r.subtipo === "xunta")?.url || "";
-      const rfgf     = rows.find(r => r.tipo === "logo_institucional" && r.subtipo === "rfgf")?.url  || "";
-      const sponsors = rows.filter(r => r.tipo === "logo_patrocinador")
-                           .sort((a, b) => (a.orden || 0) - (b.orden || 0))
-                           .map(r => r.url);
+      const list = rows as CartelAssetRow[];
 
-      const configRow = rows.find(r => r.tipo === "config" && r.subtipo === "logo_order");
+      const fondoRow = list.find((r) => r.tipo === "fondo" && r.subtipo === tipo);
+      const xunta    = list.find((r) => r.tipo === "logo_institucional" && r.subtipo === "xunta")?.url || "";
+      const rfgf     = list.find((r) => r.tipo === "logo_institucional" && r.subtipo === "rfgf")?.url  || "";
+      const sponsors = list
+        .filter((r) => r.tipo === "logo_patrocinador")
+        .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+        .map((r) => r.url)
+        .filter((u): u is string => typeof u === "string" && u.length > 0);
+
+      const configRow = list.find((r) => r.tipo === "config" && r.subtipo === "logo_order");
       const xuntaIsLeft = configRow ? configRow.nombre === "xunta_left" : true;
 
       setAssetUrls({

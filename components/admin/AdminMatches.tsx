@@ -1,9 +1,13 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase-browser";
 import BusyBanner from "./BusyBanner";
-import { getCompetitionsByCategory } from "@/lib/competition";
-import { fetchTeamsForCompetition } from "@/lib/supabase-queries";
+import {
+  competitionsForCategory,
+  pickDefaultCompetitionId,
+  type CompetenciaRow,
+} from "@/lib/competition";
+import { fetchCompeticiones, fetchTeamsForCompetition } from "@/lib/supabase-queries";
 
 interface AdminMatchesProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -17,34 +21,77 @@ export default function AdminMatches({ showToast, showConfirm, categoria }: Admi
   const [fecha, setFecha] = useState("");
   const [lugar, setLugar] = useState("");
   const [equipos, setEquipos] = useState<any[]>([]);
-  const [competiciones, setCompeticiones] = useState<string[]>([]);
-  const [competicion, setCompeticion] = useState("");
+  const [competicionesCatalog, setCompeticionesCatalog] = useState<
+    CompetenciaRow[]
+  >([]);
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [busyText, setBusyText] = useState("Cargando partidos...");
   const [rowBusy, setRowBusy] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const opts = getCompetitionsByCategory(categoria);
-    setCompeticiones(opts);
-    setCompeticion(opts[0] || "");
-  }, [categoria]);
+    let cancelled = false;
+    (async () => {
+      const list = await fetchCompeticiones();
+      if (!cancelled) setCompeticionesCatalog(list);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
-    if (!competicion) return;
+    if (competicionesCatalog.length === 0) return;
+    const def = pickDefaultCompetitionId(competicionesCatalog, categoria);
+    setSelectedCompetitionId((prev) => {
+      const opts = competitionsForCategory(competicionesCatalog, categoria);
+      if (prev && opts.some((o) => o.id === prev)) return prev;
+      return def;
+    });
+  }, [categoria, competicionesCatalog]);
+
+  const competicionNombreLegacy = useMemo(
+    () =>
+      competicionesCatalog.find((c) => c.id === selectedCompetitionId)?.nombre ??
+      "",
+    [competicionesCatalog, selectedCompetitionId],
+  );
+
+  const competicionesEnCategoria = useMemo(
+    () => competitionsForCategory(competicionesCatalog, categoria),
+    [competicionesCatalog, categoria],
+  );
+
+  useEffect(() => {
+    if (!competicionNombreLegacy) return;
     fetchPartidos();
     fetchEquipos();
-  }, [categoria, competicion]);
+  }, [categoria, competicionNombreLegacy, selectedCompetitionId]);
 
   async function fetchPartidos() {
+    if (!competicionNombreLegacy) {
+      setPartidos([]);
+      setIsFetching(false);
+      return;
+    }
     setIsFetching(true);
-    const { data } = await supabase.from("partidos").select("*").eq("categoria", categoria).eq("competicion", competicion).order("fecha", { ascending: true });
+    const { data } = await supabase
+      .from("partidos")
+      .select("*")
+      .eq("categoria", categoria)
+      .eq("competicion", competicionNombreLegacy)
+      .order("fecha", { ascending: true });
     if (data) setPartidos(data);
     setIsFetching(false);
   }
 
   async function fetchEquipos() {
-    const data = await fetchTeamsForCompetition(categoria, competicion);
+    if (!selectedCompetitionId) {
+      setEquipos([]);
+      return;
+    }
+    const data = await fetchTeamsForCompetition(categoria, selectedCompetitionId);
     setEquipos(data);
   }
 
@@ -62,6 +109,10 @@ export default function AdminMatches({ showToast, showConfirm, categoria }: Admi
 
   async function handleAddPartido(e: React.FormEvent) {
     e.preventDefault();
+    if (!competicionNombreLegacy) {
+      showToast("Selecciona competición", "error");
+      return;
+    }
     setBusyText("Guardando nuevo partido...");
     setLoading(true);
 
@@ -70,7 +121,7 @@ export default function AdminMatches({ showToast, showConfirm, categoria }: Admi
     if (equipoEncontrado) rival_escudo_url = equipoEncontrado.escudo_url;
 
     const { error } = await supabase.from("partidos").insert([{ 
-      rival, fecha, lugar, categoria, competicion, rival_escudo_url 
+      rival, fecha, lugar, categoria, competicion: competicionNombreLegacy, rival_escudo_url 
     }]);
 
     if (!error) {
@@ -113,8 +164,10 @@ export default function AdminMatches({ showToast, showConfirm, categoria }: Admi
       <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando partidos..." : busyText} />
       <div className="input-group" style={{ marginBottom: "1rem", maxWidth: "480px" }}>
         <label>Competición</label>
-        <select value={competicion} onChange={(e) => setCompeticion(e.target.value)} disabled={loading || isFetching}>
-          {competiciones.map(c => <option key={c} value={c}>{c}</option>)}
+        <select value={selectedCompetitionId} onChange={(e) => setSelectedCompetitionId(e.target.value)} disabled={loading || isFetching}>
+          {competicionesEnCategoria.map((c) => (
+            <option key={c.id} value={c.id}>{c.nombre}</option>
+          ))}
         </select>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>

@@ -1,10 +1,15 @@
 "use client";
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase-browser";
 import { processAndUploadImage } from "@/lib/image-utils";
 import { v4 as uuidv4 } from "uuid";
 import BusyBanner from "./BusyBanner";
-import { COMPETICIONS } from "./cartel/types";
+import {
+  competitionsForCategory,
+  pickDefaultCompetitionId,
+  type CompetenciaRow,
+} from "@/lib/competition";
+import { fetchCompeticiones } from "@/lib/supabase-queries";
 
 interface AdminEquiposProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -23,22 +28,6 @@ interface EquipoCompeticion {
   equipo_id: string;
 }
 
-function normalizeCategoryKey(value: string) {
-  const normalized = (value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-  if (normalized.startsWith("sen")) return "Senior";
-  if (normalized.startsWith("fem")) return "Femenino";
-  if (normalized.startsWith("vet")) return "Veteranos";
-  return "Senior";
-}
-
-function getCompetitionOptions(categoria: string) {
-  const key = normalizeCategoryKey(categoria);
-  return COMPETICIONS[key] ?? ["Liga principal"];
-}
-
 export default function AdminEquipos({
   showToast,
   showConfirm,
@@ -46,8 +35,10 @@ export default function AdminEquipos({
 }: AdminEquiposProps) {
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [allCategoryTeams, setAllCategoryTeams] = useState<Equipo[]>([]);
-  const [ligaOptions, setLigaOptions] = useState<string[]>([]);
-  const [selectedLiga, setSelectedLiga] = useState("");
+  const [competicionesCatalog, setCompeticionesCatalog] = useState<
+    CompetenciaRow[]
+  >([]);
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
   const [selectedExistingId, setSelectedExistingId] = useState("");
 
   const [nombreEquipo, setNombreEquipo] = useState("");
@@ -63,16 +54,42 @@ export default function AdminEquipos({
   );
 
   useEffect(() => {
-    const options = getCompetitionOptions(categoria);
-    setLigaOptions(options);
-    setSelectedLiga(options[0] || "");
-  }, [categoria]);
+    let cancelled = false;
+    (async () => {
+      const list = await fetchCompeticiones();
+      if (!cancelled) setCompeticionesCatalog(list);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
-    if (!selectedLiga) return;
-    fetchEquipos();
-  }, [categoria, selectedLiga]);
+    if (competicionesCatalog.length === 0) return;
+    const def = pickDefaultCompetitionId(competicionesCatalog, categoria);
+    setSelectedCompetitionId((prev) => {
+      const opts = competitionsForCategory(competicionesCatalog, categoria);
+      if (prev && opts.some((o) => o.id === prev)) return prev;
+      return def;
+    });
+  }, [categoria, competicionesCatalog]);
 
+  const competicionesEnCategoria = useMemo(
+    () => competitionsForCategory(competicionesCatalog, categoria),
+    [competicionesCatalog, categoria],
+  );
+
+  const selectedCompeticionNombre = useMemo(
+    () =>
+      competicionesCatalog.find((c) => c.id === selectedCompetitionId)?.nombre ??
+      "",
+    [competicionesCatalog, selectedCompetitionId],
+  );
+
+  useEffect(() => {
+    if (!selectedCompetitionId) return;
+    fetchEquipos();
+  }, [categoria, selectedCompetitionId]);
   async function fetchAllTeams() {
     const { data } = await supabase
       .from("equipos")
@@ -91,7 +108,7 @@ export default function AdminEquipos({
       .from("equipo_competiciones")
       .select("equipo_id")
       .eq("categoria", categoria)
-      .eq("competicion", selectedLiga);
+      .eq("competicion_id", selectedCompetitionId);
 
     if (relError) {
       setRelationEnabled(false);
@@ -125,12 +142,15 @@ export default function AdminEquipos({
   );
 
   async function ensureTeamInLeague(teamId: string) {
-    if (!relationEnabled) return;
+    if (!relationEnabled || !selectedCompetitionId) return;
     const { error } = await supabase
       .from("equipo_competiciones")
-      .upsert([{ equipo_id: teamId, categoria, competicion: selectedLiga }], {
-        onConflict: "equipo_id,categoria,competicion",
-      });
+      .upsert(
+        [{ equipo_id: teamId, categoria, competicion_id: selectedCompetitionId }],
+        {
+          onConflict: "equipo_id,competicion_id",
+        },
+      );
     if (error) throw error;
   }
 
@@ -249,7 +269,7 @@ export default function AdminEquipos({
             .delete()
             .eq("equipo_id", id)
             .eq("categoria", categoria)
-            .eq("competicion", selectedLiga);
+            .eq("competicion_id", selectedCompetitionId);
           showToast("Equipo quitado de liga");
         } else {
           await supabase.from("equipos").delete().eq("id", id);
@@ -419,13 +439,13 @@ export default function AdminEquipos({
       <div className="input-group" style={{ marginBottom: "1rem" }}>
         <label>Liga / Competición</label>
         <select
-          value={selectedLiga}
-          onChange={(e) => setSelectedLiga(e.target.value)}
+          value={selectedCompetitionId}
+          onChange={(e) => setSelectedCompetitionId(e.target.value)}
           disabled={loading || isFetching}
         >
-          {ligaOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
+          {competicionesEnCategoria.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {opt.nombre}
             </option>
           ))}
         </select>
@@ -564,7 +584,7 @@ export default function AdminEquipos({
             letterSpacing: "1px",
           }}
         >
-          Equipos en {selectedLiga}
+          Equipos en {selectedCompeticionNombre || "..."}
         </h4>
         <div
           className="equipos-list"

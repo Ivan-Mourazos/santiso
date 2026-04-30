@@ -23,6 +23,8 @@ export interface FormState {
   jugadorZoom:    number;
   showCarouselIndicator: boolean;
   // Partido / Resumo / Cronoloxia
+  competicion_id: string;
+  /** Nombre visible (sincronizado con catálogo o partido cargado). */
   competicion:    string;
   jornada:        string;
   rivalNombre:    string;
@@ -57,17 +59,3 @@ export interface AssetUrls {
   santiso:  string;
   sponsors: string[];
 }
-
-export const COMPETICIONS: Record<string, string[]> = {
-  "Senior": [
-    "Terceira Galicia - Santiago - Fase Previa - Grupo 4",
-    "Terceira Galicia - Santiago - Fase Copa - Grupo 4"
-  ],
-  "Veteranos": [
-    "División Da Honra - Veteranos - Santiago",
-    "Veteranos Copa - Santiago"
-  ],
-  "Femenino": [
-    "Segunda División Galega - Grupo 2"
-  ]
-};

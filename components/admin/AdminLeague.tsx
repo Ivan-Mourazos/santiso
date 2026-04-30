@@ -1,9 +1,13 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase-browser";
 import BusyBanner from "./BusyBanner";
-import { getCompetitionsByCategory } from "@/lib/competition";
-import { fetchTeamsForCompetition } from "@/lib/supabase-queries";
+import {
+  competitionsForCategory,
+  pickDefaultCompetitionId,
+  type CompetenciaRow,
+} from "@/lib/competition";
+import { fetchCompeticiones, fetchTeamsForCompetition } from "@/lib/supabase-queries";
 
 interface AdminLeagueProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -20,18 +24,40 @@ interface LeagueRule {
 
 export default function AdminLeague({ showToast, showConfirm, categoria }: AdminLeagueProps) {
   const [equipos, setEquipos] = useState<any[]>([]);
-  const [competiciones, setCompeticiones] = useState<string[]>([]);
-  const [competicion, setCompeticion] = useState("");
+  const [competicionesCatalog, setCompeticionesCatalog] = useState<
+    CompetenciaRow[]
+  >([]);
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [leagueRules, setLeagueRules] = useState<LeagueRule[]>([]);
   const [temporadaActiva, setTemporadaActiva] = useState<string | null>(null);
 
   useEffect(() => {
-    const opts = getCompetitionsByCategory(categoria);
-    setCompeticiones(opts);
-    setCompeticion(opts[0] || "");
-  }, [categoria]);
+    let cancelled = false;
+    (async () => {
+      const list = await fetchCompeticiones();
+      if (!cancelled) setCompeticionesCatalog(list);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (competicionesCatalog.length === 0) return;
+    const def = pickDefaultCompetitionId(competicionesCatalog, categoria);
+    setSelectedCompetitionId((prev) => {
+      const opts = competitionsForCategory(competicionesCatalog, categoria);
+      if (prev && opts.some((o) => o.id === prev)) return prev;
+      return def;
+    });
+  }, [categoria, competicionesCatalog]);
+
+  const competicionesEnCategoria = useMemo(
+    () => competitionsForCategory(competicionesCatalog, categoria),
+    [competicionesCatalog, categoria],
+  );
 
   // Cargar temporada activa
   useEffect(() => {
@@ -48,14 +74,14 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
 
   // Cargar reglas de liga
   useEffect(() => {
-    if (!temporadaActiva || !competicion) return;
+    if (!temporadaActiva || !selectedCompetitionId) return;
     async function load() {
       const { data } = await supabase
         .from("reglas_liga")
         .select("reglas")
         .eq("temporada_id", temporadaActiva)
         .eq("categoria", categoria)
-        .eq("competicion", competicion)
+        .eq("competicion_id", selectedCompetitionId)
         .maybeSingle();
       if (data?.reglas && Array.isArray(data.reglas)) {
         setLeagueRules(data.reglas as LeagueRule[]);
@@ -64,16 +90,16 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
       }
     }
     load();
-  }, [temporadaActiva, competicion]);
+  }, [temporadaActiva, selectedCompetitionId, categoria]);
 
   useEffect(() => {
-    if (!competicion) return;
+    if (!selectedCompetitionId) return;
     fetchEquipos();
-  }, [categoria, competicion]);
+  }, [categoria, selectedCompetitionId]);
 
   async function fetchEquipos() {
     setIsFetching(true);
-    const data = await fetchTeamsForCompetition(categoria, competicion);
+    const data = await fetchTeamsForCompetition(categoria, selectedCompetitionId);
     setEquipos(data);
     setIsFetching(false);
   }
@@ -131,8 +157,14 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
       <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando clasificación..." : "Guardando clasificación..."} />
       <div className="input-group" style={{ marginBottom: "1rem", maxWidth: "480px" }}>
         <label>Competición</label>
-        <select value={competicion} onChange={(e) => setCompeticion(e.target.value)} disabled={loading || isFetching}>
-          {competiciones.map(c => <option key={c} value={c}>{c}</option>)}
+        <select
+          value={selectedCompetitionId}
+          onChange={(e) => setSelectedCompetitionId(e.target.value)}
+          disabled={loading || isFetching}
+        >
+          {competicionesEnCategoria.map((c) => (
+            <option key={c.id} value={c.id}>{c.nombre}</option>
+          ))}
         </select>
       </div>
 

@@ -3,8 +3,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
 import BusyBanner from "./BusyBanner";
-import { getCompetitionsByCategory } from "@/lib/competition";
-import { fetchMatchdaysForCompetition, fetchSeasons, fetchTeamsForCompetition, type Team } from "@/lib/supabase-queries";
+import {
+  competitionsForCategory,
+  pickDefaultCompetitionId,
+  type CompetenciaRow,
+} from "@/lib/competition";
+import {
+  fetchCompeticiones,
+  fetchMatchdaysForCompetition,
+  fetchSeasons,
+  fetchTeamsForCompetition,
+  type Team,
+} from "@/lib/supabase-queries";
 import type { JornadaGeminiResponse, JornadaMatchExtracted } from "@/app/api/admin/jornada-gemini/route";
 
 interface Props {
@@ -96,7 +106,10 @@ function normalizeFecha(raw: string): string {
 
 export default function AdminJornadaImporter({ showToast, showConfirm }: Props) {
   const [categoria, setCategoria] = useState("Femenino");
-  const [competicion, setCompeticion] = useState("");
+  const [competicionesCatalog, setCompeticionesCatalog] = useState<
+    CompetenciaRow[]
+  >([]);
+  const [competicionId, setCompeticionId] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -112,22 +125,39 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
   const [rows, setRows] = useState<ReviewRow[]>([]);
   const [usedModel, setUsedModel] = useState("");
 
-  const competitions = useMemo(
-    () => getCompetitionsByCategory(categoria),
-    [categoria],
-  );
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const list = await fetchCompeticiones();
+      if (!cancelled) setCompeticionesCatalog(list);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
-    setCompeticion(competitions[0] || "");
-  }, [competitions]);
+    if (competicionesCatalog.length === 0) return;
+    const def = pickDefaultCompetitionId(competicionesCatalog, categoria);
+    setCompeticionId((prev) => {
+      const opts = competitionsForCategory(competicionesCatalog, categoria);
+      if (prev && opts.some((o) => o.id === prev)) return prev;
+      return def;
+    });
+  }, [categoria, competicionesCatalog]);
+
+  const competitionOptions = useMemo(
+    () => competitionsForCategory(competicionesCatalog, categoria),
+    [competicionesCatalog, categoria],
+  );
 
   useEffect(() => {
     fetchBaseData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoria, competicion]);
+  }, [categoria, competicionId]);
 
   async function fetchBaseData() {
-    if (!competicion) return;
+    if (!competicionId) return;
     setBusy(true);
     setBusyText("Cargando datos...");
 
@@ -139,15 +169,15 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
         .order("created_at", { ascending: false });
         
       if (sErr) throw sErr;
-      const active = seasons?.find(s => s.activa) || seasons?.[0];
+      const active = seasons?.find((s: { activa?: boolean }) => s.activa) || seasons?.[0];
       if (!active) {
         setBusy(false);
         return;
       }
 
       const [equiposData, jornadasResult, cRes] = await Promise.all([
-        fetchTeamsForCompetition(categoria, competicion),
-        fetchMatchdaysForCompetition(active.id, categoria, competicion),
+        fetchTeamsForCompetition(categoria, competicionId),
+        fetchMatchdaysForCompetition(active.id, categoria, competicionId),
         supabase
           .from("campos_futbol")
           .select("id, nombre, poblacion")
@@ -211,29 +241,29 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
       // Auto-detect Category & Competition
       if (data.competicion) {
         let bestCat = categoria;
-        let bestComp = competicion;
+        let bestCompId = competicionId;
         let bestScore = 0;
         
         for (const cat of CATEGORIES) {
-          const comps = getCompetitionsByCategory(cat);
-          for (const c of comps) {
-            const score = tokenScore(data.competicion, c);
+          const comps = competitionsForCategory(competicionesCatalog, cat);
+          for (const row of comps) {
+            const score = tokenScore(data.competicion, row.nombre);
             if (score > bestScore && score >= 0.3) {
               bestScore = score;
               bestCat = cat;
-              bestComp = c;
+              bestCompId = row.id;
             }
           }
         }
         
-        if (bestCat !== categoria || bestComp !== competicion) {
+        if (bestCat !== categoria || bestCompId !== competicionId) {
           setCategoria(bestCat);
-          setCompeticion(bestComp);
+          setCompeticionId(bestCompId);
           const { active } = await fetchSeasons();
           if (active) {
             const [newEquipos, newJornadas] = await Promise.all([
-              fetchTeamsForCompetition(bestCat, bestComp),
-              fetchMatchdaysForCompetition(active.id, bestCat, bestComp)
+              fetchTeamsForCompetition(bestCat, bestCompId),
+              fetchMatchdaysForCompetition(active.id, bestCat, bestCompId)
             ]);
             currentEquipos = newEquipos;
             currentJornadas = newJornadas.data;
@@ -262,7 +292,7 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
   }
 
   async function createJornada(numero: number) {
-  if (!competicion) return;
+  if (!competicionId) return;
   setBusy(true);
   setBusyText(`Creando jornada ${numero}...`);
   try {
@@ -272,7 +302,7 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
       .order("created_at", { ascending: false });
       
     if (sErr) throw sErr;
-    const active = seasons?.find(s => s.activa) || seasons?.[0];
+    const active = seasons?.find((s: { activa?: boolean }) => s.activa) || seasons?.[0];
     if (!active) throw new Error("No hay temporada activa configurada");
     
     const { data, error } = await supabase
@@ -280,7 +310,7 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
       .insert({
         temporada_id: active.id,
         categoria,
-        competicion,
+        competicion_id: competicionId,
         numero
       })
       .select("id")
@@ -416,7 +446,7 @@ function buildRows(data: JornadaGeminiResponse, currentEquipos: EquipoDB[]) {
       const payload = {
         jornada_id: selectedJornadaId,
         categoria,
-        competicion,
+        competicion_id: competicionId,
         equipo_local_id: row.localId,
         equipo_visitante_id: row.visitanteId,
         goles_local: row.golesLocal !== "" ? parseInt(row.golesLocal, 10) : null,
@@ -568,19 +598,25 @@ function buildRows(data: JornadaGeminiResponse, currentEquipos: EquipoDB[]) {
 
             <div className="input-group">
               <label style={{ color: "#facc15" }}>Competición Detectada</label>
-              <select value={competicion} onChange={(e) => setCompeticion(e.target.value)}>
-                {competitions.map((c) => <option key={c} value={c}>{c}</option>)}
+              <select value={competicionId} onChange={(e) => setCompeticionId(e.target.value)}>
+                {competitionOptions.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
               </select>
             </div>
 
             <div className="input-group wide">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "0.4rem" }}>
                 <label style={{ color: "#facc15", margin: 0 }}>Jornada Detectada</label>
-                {extracted?.jornada && !jornadas.some(j => j.numero === parseInt(extracted.jornada, 10)) && (
+                {extracted?.jornada &&
+                  !jornadas.some(
+                    (j) =>
+                      j.numero === parseInt(String(extracted.jornada), 10),
+                  ) && (
                   <button 
                     className="btn-primary" 
                     style={{ padding: "0.2rem 0.6rem", fontSize: "0.7rem", height: "auto" }}
-                    onClick={() => createJornada(parseInt(extracted.jornada, 10))}
+                    onClick={() =>
+                      createJornada(parseInt(String(extracted.jornada), 10))
+                    }
                   >
                     + Crear Jornada {extracted.jornada}
                   </button>
@@ -705,18 +741,6 @@ function buildRows(data: JornadaGeminiResponse, currentEquipos: EquipoDB[]) {
                               <option key={e.id} value={e.id}>{e.nombre}</option>
                             ))}
                           </select>
-                          {!row.visitanteId && (
-                            <button 
-                              className="btn-quick-add" 
-                              title="Añadir equipo a BD"
-                              onClick={() => {
-                                setTeamToCreate({ name: row.extracted.visitanteNombre, rowIndex: idx, side: 'visitante' });
-                                setNewTeamData({ nombre: row.extracted.visitanteNombre, escudo_url: "" });
-                              }}
-                            >
-                              +
-                            </button>
-                          )}
                         </div>
                       </div>
                     </div>

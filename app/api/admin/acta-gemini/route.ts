@@ -72,11 +72,41 @@ function safeString(value: unknown) {
   return typeof value === "string" ? value : "";
 }
 
+function normalizeForFuzzy(text: string) {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function tokenScore(left: string, right: string) {
+  const a = new Set(normalizeForFuzzy(left).split(" ").filter(Boolean));
+  const b = new Set(normalizeForFuzzy(right).split(" ").filter(Boolean));
+  if (a.size === 0 || b.size === 0) return 0;
+  let hits = 0;
+  for (const t of a) if (b.has(t)) hits++;
+  return hits / Math.max(a.size, b.size);
+}
+
+function isSantisoPlayer(rawName: string, jugadores: ActaPlayerDb[]): boolean {
+  const best = jugadores
+    .map((p) => Math.max(
+      tokenScore(rawName, p.nombre),
+      p.apodo ? tokenScore(rawName, p.apodo) : 0,
+    ))
+    .reduce((max, s) => Math.max(max, s), 0);
+  return best >= 0.4;
+}
+
 function toParsedActa(
   data: GeminiActaResponse,
   jugadores: ActaPlayerDb[],
 ): ParsedActa {
   const playersById = new Map(jugadores.map((player) => [player.id, player]));
+  const warnings: string[] = Array.isArray(data.warnings) ? data.warnings.map(String) : [];
+
   const makePlayerRef = (player: GeminiActaPlayer) => {
     const dbPlayer = player.jugadorId ? playersById.get(player.jugadorId) : null;
     return {
@@ -86,6 +116,21 @@ function toParsedActa(
       jugadorId: dbPlayer?.id,
       displayName: dbPlayer ? getDisplayName(dbPlayer) : undefined,
     };
+  };
+
+  const filterSantisoOnly = (players: GeminiActaPlayer[], section: string) => {
+    const valid: GeminiActaPlayer[] = [];
+    for (const p of players) {
+      const hasValidId = Boolean(p.jugadorId && playersById.has(p.jugadorId));
+      const rawName = safeString(p.rawName);
+      const nameMatchesSantiso = rawName ? isSantisoPlayer(rawName, jugadores) : false;
+      if (hasValidId || nameMatchesSantiso) {
+        valid.push(p);
+      } else {
+        warnings.push(`⚠ Jugador descartado (probable rival en ${section}): dorsal ${p.dorsal ?? "?"} "${rawName}"`);
+      }
+    }
+    return valid.map(makePlayerRef);
   };
 
   const makeEventPlayer = (playerId?: string, rawName?: string) => {
@@ -106,29 +151,56 @@ function toParsedActa(
     campoNombre: safeString(data.campoNombre),
     campoPoblacion: safeString(data.campoPoblacion),
     titulares: Array.isArray(data.titulares)
-      ? data.titulares.map(makePlayerRef)
+      ? filterSantisoOnly(data.titulares, "titulares")
       : [],
     suplentes: Array.isArray(data.suplentes)
-      ? data.suplentes.map(makePlayerRef)
+      ? filterSantisoOnly(data.suplentes, "suplentes")
       : [],
     eventos: Array.isArray(data.eventos)
-      ? data.eventos.map((event) => ({
-          id: crypto.randomUUID(),
-          tipo: event.tipo,
-          minuto: safeString(event.minuto),
-          isRival: Boolean(event.isRival),
-          jugador: makeEventPlayer(event.jugadorId),
-          jugadorSale: makeEventPlayer(event.jugadorSaleId),
-          jugadorEntra: makeEventPlayer(event.jugadorEntraId),
-          nombreRival: safeString(event.nombreRival) || undefined,
-          scoreAfter: safeString(event.scoreAfter) || undefined,
-          confidence: event.confidence || "media",
-        }))
+      ? (() => {
+          const result = [];
+          for (const event of data.eventos) {
+            const isRival = Boolean(event.isRival);
+            const tipo = event.tipo;
+            const minutoRaw = safeString(event.minuto).replace(/[^0-9]/g, "");
+            const minutoNum = parseInt(minutoRaw, 10);
+            const validMinuto = !isNaN(minutoNum) && minutoNum >= 1 && minutoNum <= 999;
+
+            if (!validMinuto) {
+              warnings.push(`⚠ Evento descartado (minuto inválido "${event.minuto}"): ${tipo}`);
+              continue;
+            }
+
+            // Rival: solo goles y tarjetas. Cambios rival → fuera.
+            if (isRival && tipo === "cambio") {
+              continue;
+            }
+
+            result.push({
+              id: crypto.randomUUID(),
+              tipo,
+              minuto: minutoRaw,
+              isRival,
+              jugador: makeEventPlayer(event.jugadorId),
+              jugadorSale: makeEventPlayer(event.jugadorSaleId),
+              jugadorEntra: makeEventPlayer(event.jugadorEntraId),
+              nombreRival: safeString(event.nombreRival) || undefined,
+              scoreAfter: safeString(event.scoreAfter) || undefined,
+              confidence: event.confidence || "media",
+            });
+          }
+          // Ordenar por minuto
+          result.sort((a, b) => parseInt(a.minuto, 10) - parseInt(b.minuto, 10));
+          return result;
+        })()
+
+
       : [],
-    warnings: Array.isArray(data.warnings) ? data.warnings.map(String) : [],
+    warnings,
     rawText: "Analizado con Gemini",
   };
 }
+
 
 function buildPrompt({
   match,
@@ -176,18 +248,22 @@ ${JSON.stringify(campos.map((campo) => ({
 Extrae:
 - marcadorLocal y marcadorVisitante.
 - campoId si coincide con campos existentes; si no campoNombre y campoPoblacion.
-- titulares y suplentes del Santiso con dorsal, rawName y jugadorId de la lista.
-- eventos: goles, tarjetas amarillas/rojas y cambios.
+Reglas CRÍTICAS DE EQUIPO:
+- Santiso es el equipo "${santisoLocal ? match.equipo_local?.nombre : match.equipo_visitante?.nombre}".
+- En la imagen del acta, LOCAL está a la izquierda y VISITANTE a la derecha. 
+- Santiso juega como ${santisoLocal ? "LOCAL" : "VISITANTE"}. 
+- LOCALIZA los nombres de los equipos en el acta. EXTRAE ÚNICAMENTE los jugadores que están bajo el bando de Santiso.
+- PROHIBIDO: No incluyas jugadores del equipo rival (${santisoLocal ? match.equipo_visitante?.nombre : match.equipo_local?.nombre}) en titulares o suplentes.
+- VALIDACIÓN: Si un dorsal detectado en el acta NO tiene un nombre que coincida razonablemente con la lista de "Jugadores Santiso disponibles", NO lo incluyas en la plantilla de Santiso (podría ser del rival).
 
-Reglas:
+Regras de formato y otros:
 - tipo debe ser: "gol", "tarjeta_amarilla", "tarjeta_roja" o "cambio".
 - minuto debe ser texto numérico, conserva 999 si aparece.
-- isRival=true solo para eventos del rival.
-- En goles/tarjetas del Santiso usa jugadorId.
+- isRival=true para eventos de "${santisoLocal ? match.equipo_visitante?.nombre : match.equipo_local?.nombre}".
 - En cambios del Santiso usa jugadorSaleId y jugadorEntraId.
-- En eventos del rival usa nombreRival y no uses jugadorId.
-- Si no estás seguro, deja el jugadorId vacío y añade warning.
-- No uses nombres del acta para jugadores del Santiso si puedes enlazar con BD.
+- Ordenación: La plantilla debe ir en el MISMO ORDEN visual que el acta. Eventos por MINUTO.
+- Si no estás seguro de un jugador Santiso, deja jugadorId vacío y añade warning.
+- No uses nombres del acta para jugadores del Santiso si puedes enlazar con la lista de IDs.
 
 Formato exacto:
 {

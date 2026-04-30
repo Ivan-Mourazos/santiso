@@ -58,6 +58,7 @@ export interface ActaMatchDb {
   id: string;
   categoria: string;
   competicion?: string | null;
+  competicion_id?: string | null;
   equipo_local_id: string | null;
   equipo_visitante_id: string | null;
   goles_local: number | null;
@@ -69,6 +70,7 @@ export interface ActaMatchDb {
   jornada?: {
     numero?: number | string | null;
     competicion?: string | null;
+    competicion_id?: string | null;
     temporada_id?: string | null;
   } | null;
   campo?: { nombre?: string | null; poblacion?: string | null } | null;

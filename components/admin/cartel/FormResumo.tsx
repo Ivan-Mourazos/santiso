@@ -5,6 +5,7 @@
 
 import React from "react";
 import type { FormState } from "./types";
+import type { CompetenciaRow } from "@/lib/competition";
 import { FormPartido } from "./FormPartido";
 import { SectionLabel, MatchSelector } from "./Common";
 import type { SelectorMatch } from "./Common";
@@ -18,6 +19,7 @@ interface Props {
   dbMatches: SelectorMatch[];
   loadMatchFromDb: (m: SelectorMatch) => void;
   campos: { id: string; nombre: string; poblacion: string }[];
+  competiciones: CompetenciaRow[];
 }
 
 export const FormResumo = (props: Props & { tipo: string }) => {
@@ -28,7 +30,7 @@ export const FormResumo = (props: Props & { tipo: string }) => {
         dbMatches={dbMatches}
         onSelect={loadMatchFromDb}
         categoria={form.categoria}
-        competicion={form.competicion}
+        competicionId={form.competicion_id}
         tipo={tipo}
         santisoOnly
       />

@@ -883,22 +883,31 @@ input[type="number"] {
   line-height: 1;
 }
 
-.fifa-capitan-badge {
-  position: absolute;
-  top: 15%;
-  right: 10%;
-  background: var(--primary);
-  color: black;
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.fifa-capitan-indicator {
+  font-size: 0.58rem;
   font-weight: 900;
-  font-size: 0.7rem;
-  z-index: 6;
-  box-shadow: 0 0 15px rgba(250, 204, 21, 0.5);
+  color: var(--primary);
+  letter-spacing: 0.12em;
+  border-top: 1px solid rgba(250, 204, 21, 0.2);
+  padding-top: 4px;
+  margin-top: 4px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Staff Cards */
+.no-scale .fifa-card:hover {
+  transform: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 40px rgba(250, 204, 21, 0.08),
+    0 18px 45px rgba(0, 0, 0, 0.45);
+  filter: none;
+}
+
+.detail-left .fifa-card {
+  width: 260px;
+  height: 385px;
 }
 
 /* Staff Cards (Más simples pero elegantes) */
@@ -1020,9 +1029,11 @@ input[type="number"] {
 .detail-right {
   flex: 1.1;
   padding: 3rem;
+  padding-top: 4.5rem;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow-y: auto;
 }
 
 .rating-legend {
@@ -1315,3 +1326,92 @@ input[type="number"] {
     opacity: 1;
   }
 }
+
+/* --- EDIT PANEL JUGADOR --- */
+.edit-toggle-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #a1a1aa;
+  padding: 0.35rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.edit-toggle-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.edit-panel {
+  background: rgba(250, 204, 21, 0.04);
+  border: 1px solid rgba(250, 204, 21, 0.18);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.edit-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #a1a1aa;
+}
+
+.edit-input,
+.edit-textarea {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #fff;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.82rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.edit-input:focus,
+.edit-textarea:focus {
+  border-color: rgba(250, 204, 21, 0.5);
+}
+.edit-textarea {
+  resize: vertical;
+  margin-bottom: 0.75rem;
+}
+
+.edit-save-btn {
+  background: var(--primary);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1.2rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.edit-save-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.edit-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

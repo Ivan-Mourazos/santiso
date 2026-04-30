@@ -1,8 +1,7 @@
-import {
-  getCompeticionLabelsForQuery,
-  getMainCompetitionForCategory,
-} from "@/lib/competition";
+import type { CompetenciaRow } from "@/lib/competition";
 import { supabase } from "@/lib/supabase";
+
+export type { CompetenciaRow };
 
 export interface Team {
   id: string;
@@ -24,6 +23,7 @@ export interface Matchday {
   temporada_id: string;
   categoria: string;
   numero: number;
+  competicion_id?: string | null;
   competicion?: string | null;
   fecha_inicio?: string | null;
   [key: string]: unknown;
@@ -33,6 +33,7 @@ export interface LeagueMatch {
   id: string;
   jornada_id: string;
   categoria: string;
+  competicion_id?: string | null;
   competicion?: string | null;
   equipo_local_id?: string | null;
   equipo_visitante_id?: string | null;
@@ -47,18 +48,20 @@ export interface LeagueMatch {
   visitante?: Team | null;
   campo?: { id: string; nombre: string; poblacion?: string | null } | null;
   jornada?: Matchday | null;
+  /** Join opcional desde `partidos_liga.competicion_id`. */
+  competiciones?: { id: string; nombre: string } | null;
   [key: string]: unknown;
 }
 
-export function getCompetitionQueryLabels(
-  categoria: string,
-  competicion: string,
-) {
-  const labels = new Set(getCompeticionLabelsForQuery(categoria, competicion));
-  if (competicion === getMainCompetitionForCategory(categoria)) {
-    labels.add("Liga principal");
-  }
-  return [...labels].filter(Boolean);
+export async function fetchCompeticiones(): Promise<CompetenciaRow[]> {
+  const { data, error } = await supabase
+    .from("competiciones")
+    .select("id,categoria,nombre,orden,activa")
+    .order("categoria", { ascending: true })
+    .order("orden", { ascending: true });
+
+  if (error || !data) return [];
+  return (data as CompetenciaRow[]).filter((r) => r.activa !== false);
 }
 
 export function sortTeamsByName<T extends { nombre?: string | null }>(
@@ -102,22 +105,19 @@ export async function fetchTeamsByIds(ids: string[]) {
 
 export async function fetchTeamsForCompetition(
   categoria: string,
-  competicion: string,
+  competicionId: string,
 ) {
-  const labels = getCompetitionQueryLabels(categoria, competicion);
-  
-  // Obtenemos los IDs de los equipos vinculados a estas etiquetas de competición
   const { data: relations, error: relErr } = await supabase
     .from("equipo_competiciones")
     .select("equipo_id")
-    .in("competicion", labels);
+    .eq("categoria", categoria)
+    .eq("competicion_id", competicionId);
 
   if (relErr || !relations) return [];
-  const teamIds = relations.map(r => r.equipo_id);
-  
+  const teamIds = relations.map((r) => r.equipo_id);
+
   if (teamIds.length === 0) return [];
 
-  // Ahora obtenemos los datos de esos equipos
   const { data: teams, error: teamsErr } = await supabase
     .from("equipos")
     .select("*")
@@ -142,15 +142,14 @@ export async function mergeMissingTeams(current: Team[], ids: string[]) {
 export async function fetchMatchdaysForCompetition(
   temporadaId: string,
   categoria: string,
-  competicion: string,
+  competicionId: string,
 ) {
-  const labels = getCompetitionQueryLabels(categoria, competicion);
   const { data, error } = await supabase
     .from("jornadas")
     .select("*")
     .eq("temporada_id", temporadaId)
     .eq("categoria", categoria)
-    .in("competicion", labels)
+    .eq("competicion_id", competicionId)
     .order("numero", { ascending: true });
 
   return { data: (data || []) as Matchday[], error };
@@ -159,14 +158,11 @@ export async function fetchMatchdaysForCompetition(
 export async function fetchMatchesForMatchday(
   jornadaId: string,
   categoria: string,
-  competicion: string,
-  options: { embed?: boolean; jornadaCompeticion?: string | null } = {},
+  competicionId: string,
+  options: { embed?: boolean } = {},
 ) {
-  const labels = new Set(getCompetitionQueryLabels(categoria, competicion));
-  if (options.jornadaCompeticion) labels.add(options.jornadaCompeticion);
-
   const select = options.embed
-    ? "*,equipo_local:equipo_local_id(*),equipo_visitante:equipo_visitante_id(*),campo:campo_id(*)"
+    ? "*,equipo_local:equipo_local_id(*),equipo_visitante:equipo_visitante_id(*),campo:campo_id(*),competiciones:competicion_id(id,nombre)"
     : "*";
 
   const { data, error } = await supabase
@@ -174,7 +170,7 @@ export async function fetchMatchesForMatchday(
     .select(select)
     .eq("jornada_id", jornadaId)
     .eq("categoria", categoria)
-    .in("competicion", [...labels])
+    .eq("competicion_id", competicionId)
     .order("fecha", { ascending: true });
 
   return { data: (data || []) as unknown as LeagueMatch[], error };
@@ -199,7 +195,7 @@ export async function fetchCurrentSantisoMatches() {
       *,
       local:equipo_local_id(nombre, escudo_url),
       visitante:equipo_visitante_id(nombre, escudo_url),
-      jornada:jornada_id(id, temporada_id, numero, competicion)
+      jornada:jornada_id(id, temporada_id, numero, competicion, competicion_id)
     `,
     )
     .gte("fecha", today)

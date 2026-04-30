@@ -4,7 +4,6 @@
  */
 
 import React from "react";
-import { getCompetitionQueryLabels } from "@/lib/supabase-queries";
 
 export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <p style={{
@@ -41,7 +40,9 @@ export const Toggle: React.FC<{ label: string; active: boolean; onClick: () => v
 export interface SelectorMatch {
   id: string;
   categoria?: string | null;
+  competicion_id?: string | null;
   competicion?: string | null;
+  competiciones?: { id?: string; nombre?: string } | null;
   estado?: string | null;
   fecha?: string | null;
   lugar?: string | null;
@@ -52,6 +53,7 @@ export interface SelectorMatch {
   jornada?: {
     numero?: number | string | null;
     competicion?: string | null;
+    competicion_id?: string | null;
     temporada_id?: string | null;
   } | null;
   campo?: { nombre?: string | null } | null;
@@ -61,11 +63,10 @@ export const MatchSelector: React.FC<{
   dbMatches: SelectorMatch[]; 
   onSelect: (m: SelectorMatch) => void;
   categoria: string;
-  competicion?: string;
+  competicionId?: string;
   tipo: string;
   santisoOnly?: boolean;
-}> = ({ dbMatches, onSelect, categoria, competicion, tipo, santisoOnly }) => {
-  const labels = competicion ? getCompetitionQueryLabels(categoria, competicion) : [];
+}> = ({ dbMatches, onSelect, categoria, competicionId, tipo, santisoOnly }) => {
   const isSantisoMatch = (m: SelectorMatch) => {
     const local = m.equipo_local?.nombre?.toLowerCase() || "";
     const visitante = m.equipo_visitante?.nombre?.toLowerCase() || "";
@@ -74,7 +75,10 @@ export const MatchSelector: React.FC<{
   const filtered = dbMatches?.filter(m => {
     const isCat = m.categoria === categoria;
     if (!isCat) return false;
-    if (competicion && !labels.includes(m.competicion || "")) return false;
+    if (competicionId) {
+      const mid = m.competicion_id || m.jornada?.competicion_id;
+      if (mid && mid !== competicionId) return false;
+    }
     if (santisoOnly && !isSantisoMatch(m)) return false;
     
     // Filtrar por estado según el tipo de cartel

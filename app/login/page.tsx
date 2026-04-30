@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-export default function LoginPage() {
+function LoginFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/admin";
@@ -159,5 +159,29 @@ export default function LoginPage() {
         }
       `}</style>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main
+          className="login-root"
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#000",
+            color: "#666",
+          }}
+        >
+          Cargando…
+        </main>
+      }
+    >
+      <LoginFormInner />
+    </Suspense>
   );
 }

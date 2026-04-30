@@ -3,8 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
 import BusyBanner from "./BusyBanner";
-import { getCompetitionsByCategory } from "@/lib/competition";
-import { fetchSeasons } from "@/lib/supabase-queries";
+import {
+  competitionsForCategory,
+  pickDefaultCompetitionId,
+  type CompetenciaRow,
+} from "@/lib/competition";
+import { fetchCompeticiones, fetchSeasons } from "@/lib/supabase-queries";
 import { parseFutgalActaText } from "@/lib/actas/futgal-parser";
 import { saveReviewedActa } from "@/lib/actas/save-acta";
 import type {
@@ -143,6 +147,7 @@ function resolveCampo(acta: ParsedActa, campos: ActaCampoDb[]) {
 }
 
 async function preprocessImage(file: File) {
+  if (file.type === "application/pdf") return file;
   const imageUrl = URL.createObjectURL(file);
   try {
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -225,7 +230,10 @@ export default function AdminActaImporter({
   showConfirm,
 }: AdminActaImporterProps) {
   const [categoria, setCategoria] = useState<ActaCategoria>("Veteranos");
-  const [competicion, setCompeticion] = useState("");
+  const [competicionesCatalog, setCompeticionesCatalog] = useState<
+    CompetenciaRow[]
+  >([]);
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
   const [matches, setMatches] = useState<ActaMatchDb[]>([]);
   const [jugadores, setJugadores] = useState<ActaPlayerDb[]>([]);
   const [campos, setCampos] = useState<ActaCampoDb[]>([]);
@@ -237,18 +245,39 @@ export default function AdminActaImporter({
   const [busyText, setBusyText] = useState("Cargando datos...");
   const [progress, setProgress] = useState<number | undefined>(undefined);
 
-  const competitions = useMemo(() => getCompetitionsByCategory(categoria), [categoria]);
   const selectedMatch = matches.find((match) => match.id === selectedMatchId);
   const santisoLocal = isSantisoLocal(selectedMatch);
 
-  useEffect(() => {
-    setCompeticion(competitions[0] || "");
-  }, [competitions]);
+  const competitionsInCategory = useMemo(
+    () => competitionsForCategory(competicionesCatalog, categoria),
+    [competicionesCatalog, categoria],
+  );
 
   useEffect(() => {
-    if (!competicion) return;
+    let cancelled = false;
+    (async () => {
+      const list = await fetchCompeticiones();
+      if (!cancelled) setCompeticionesCatalog(list);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (competicionesCatalog.length === 0) return;
+    const def = pickDefaultCompetitionId(competicionesCatalog, categoria);
+    setSelectedCompetitionId((prev) => {
+      const opts = competitionsForCategory(competicionesCatalog, categoria);
+      if (prev && opts.some((o) => o.id === prev)) return prev;
+      return def;
+    });
+  }, [categoria, competicionesCatalog]);
+
+  useEffect(() => {
+    if (!selectedCompetitionId) return;
     fetchBaseData();
-  }, [categoria, competicion]);
+  }, [categoria, selectedCompetitionId]);
 
   async function fetchBaseData() {
     setBusy(true);
@@ -264,7 +293,7 @@ export default function AdminActaImporter({
       supabase
         .from("partidos_liga")
         .select(
-          "id, categoria, competicion, estado, fecha, goles_local, goles_visitante, campo_id, equipo_local_id, equipo_visitante_id, equipo_local:equipo_local_id(nombre), equipo_visitante:equipo_visitante_id(nombre), jornada:jornada_id(numero, competicion, temporada_id), campo:campo_id(nombre, poblacion)",
+          "id, categoria, competicion, competicion_id, estado, fecha, goles_local, goles_visitante, campo_id, equipo_local_id, equipo_visitante_id, equipo_local:equipo_local_id(nombre), equipo_visitante:equipo_visitante_id(nombre), jornada:jornada_id(numero, competicion, competicion_id, temporada_id), campo:campo_id(nombre, poblacion)",
         )
         .eq("categoria", categoria)
         .order("fecha", { ascending: false }),
@@ -284,10 +313,10 @@ export default function AdminActaImporter({
         const isSantiso = local.includes("santiso") || visitante.includes("santiso");
         const sameSeason = active?.id ? match.jornada?.temporada_id === active.id : true;
         const sameCompetition =
-          !competicion ||
-          match.competicion === competicion ||
-          match.jornada?.competicion === competicion ||
-          match.jornada?.competicion === null;
+          !selectedCompetitionId ||
+          match.competicion_id === selectedCompetitionId ||
+          match.jornada?.competicion_id === selectedCompetitionId ||
+          match.jornada?.competicion_id === null;
         return isSantiso && sameSeason && sameCompetition;
       });
       setMatches(data);
@@ -511,9 +540,9 @@ export default function AdminActaImporter({
 
         <div className="input-group">
           <label>Competición</label>
-          <select value={competicion} onChange={(e) => setCompeticion(e.target.value)}>
-            {competitions.map((item) => (
-              <option key={item} value={item}>{item}</option>
+          <select value={selectedCompetitionId} onChange={(e) => setSelectedCompetitionId(e.target.value)}>
+            {competitionsInCategory.map((item) => (
+              <option key={item.id} value={item.id}>{item.nombre}</option>
             ))}
           </select>
         </div>
@@ -571,7 +600,7 @@ export default function AdminActaImporter({
             <input
               id="acta-file-input"
               type="file"
-              accept="image/*"
+              accept="image/*,application/pdf"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
               style={{ display: "none" }}
             />
@@ -587,13 +616,13 @@ export default function AdminActaImporter({
       <div style={{ textAlign: "center", marginTop: "0.5rem" }}>
         <button
           onClick={analyzeWithLocalOcr}
-          disabled={busy || !file || !selectedMatchId}
+          disabled={busy || !file || !selectedMatchId || file.type === "application/pdf"}
           style={{
             background: "none",
             border: "none",
-            color: busy || !file || !selectedMatchId ? "#333" : "#555",
+            color: busy || !file || !selectedMatchId || file.type === "application/pdf" ? "#333" : "#555",
             fontSize: "0.78rem",
-            cursor: busy || !file || !selectedMatchId ? "not-allowed" : "pointer",
+            cursor: busy || !file || !selectedMatchId || file.type === "application/pdf" ? "not-allowed" : "pointer",
             textDecoration: "underline",
             padding: "0.3rem 0.5rem",
           }}
@@ -603,75 +632,79 @@ export default function AdminActaImporter({
       </div>
 
       {acta.rawText && (
-        <div className="review-grid">
-          <section className="review-card">
-            <h4>Datos del partido</h4>
-            <div className="mini-grid">
-              <label>
-                Goles local
-                <input
-                  value={acta.marcadorLocal}
-                  onChange={(e) => setActa((current) => ({ ...current, marcadorLocal: e.target.value }))}
-                />
-              </label>
-              <label>
-                Goles visitante
-                <input
-                  value={acta.marcadorVisitante}
-                  onChange={(e) => setActa((current) => ({ ...current, marcadorVisitante: e.target.value }))}
-                />
-              </label>
-              <label>
-                Campo
-                <select
-                  value={acta.campoId || ""}
-                  onChange={(e) => selectCampo(e.target.value)}
-                >
-                  <option value="">Crear nuevo / usar texto detectado</option>
-                  {campos.map((campo) => (
-                    <option key={campo.id} value={campo.id}>
-                      {campo.nombre}{campo.poblacion ? ` (${campo.poblacion})` : ""}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  value={acta.campoNombre}
-                  disabled={Boolean(acta.campoId)}
-                  onChange={(e) => setActa((current) => ({ ...current, campoNombre: e.target.value }))}
-                />
-              </label>
-              <label>
-                Población
-                <input
-                  value={acta.campoPoblacion}
-                  disabled={Boolean(acta.campoId)}
-                  onChange={(e) => setActa((current) => ({ ...current, campoPoblacion: e.target.value }))}
-                />
-              </label>
-            </div>
-          </section>
+        <div className="review-wrapper">
+          <div className="review-col">
+            <section className="review-card">
+              <h4>Datos del partido</h4>
+              <div className="mini-grid">
+                <label>
+                  Goles local
+                  <input
+                    value={acta.marcadorLocal}
+                    onChange={(e) => setActa((current) => ({ ...current, marcadorLocal: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  Goles visitante
+                  <input
+                    value={acta.marcadorVisitante}
+                    onChange={(e) => setActa((current) => ({ ...current, marcadorVisitante: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  Campo
+                  <select
+                    value={acta.campoId || ""}
+                    onChange={(e) => selectCampo(e.target.value)}
+                  >
+                    <option value="">Crear nuevo / texto detectado</option>
+                    {campos.map((campo) => (
+                      <option key={campo.id} value={campo.id}>
+                        {campo.nombre}{campo.poblacion ? ` (${campo.poblacion})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    value={acta.campoNombre}
+                    disabled={Boolean(acta.campoId)}
+                    onChange={(e) => setActa((current) => ({ ...current, campoNombre: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  Población
+                  <input
+                    value={acta.campoPoblacion}
+                    disabled={Boolean(acta.campoId)}
+                    onChange={(e) => setActa((current) => ({ ...current, campoPoblacion: e.target.value }))}
+                  />
+                </label>
+              </div>
+            </section>
 
-          <section className="review-card">
-            <h4>Titulares</h4>
-            <LineupEditor
-              players={acta.titulares}
-              jugadores={jugadores}
-              onChange={(index, playerId) => setPlayerFromDb("titulares", index, playerId)}
-              onRemove={(index) => removeLineupPlayer("titulares", index)}
-            />
-            <button className="btn-secondary" onClick={() => addLineupPlayer("titulares")}>Añadir titular</button>
-          </section>
+            <section className="review-card">
+              <h4>Suplentes</h4>
+              <LineupEditor
+                players={acta.suplentes}
+                jugadores={jugadores}
+                onChange={(index, playerId) => setPlayerFromDb("suplentes", index, playerId)}
+                onRemove={(index) => removeLineupPlayer("suplentes", index)}
+              />
+              <button className="btn-secondary" onClick={() => addLineupPlayer("suplentes")}>Añadir suplente</button>
+            </section>
+          </div>
 
-          <section className="review-card">
-            <h4>Suplentes</h4>
-            <LineupEditor
-              players={acta.suplentes}
-              jugadores={jugadores}
-              onChange={(index, playerId) => setPlayerFromDb("suplentes", index, playerId)}
-              onRemove={(index) => removeLineupPlayer("suplentes", index)}
-            />
-            <button className="btn-secondary" onClick={() => addLineupPlayer("suplentes")}>Añadir suplente</button>
-          </section>
+          <div className="review-col">
+            <section className="review-card">
+              <h4>Titulares</h4>
+              <LineupEditor
+                players={acta.titulares}
+                jugadores={jugadores}
+                onChange={(index, playerId) => setPlayerFromDb("titulares", index, playerId)}
+                onRemove={(index) => removeLineupPlayer("titulares", index)}
+              />
+              <button className="btn-secondary" onClick={() => addLineupPlayer("titulares")}>Añadir titular</button>
+            </section>
+          </div>
 
           <section className="review-card wide-review">
             <div className="card-title-row">
@@ -701,7 +734,7 @@ export default function AdminActaImporter({
         <div className="warnings">
           {[...acta.warnings, `${unresolvedLineup.length} jugadores sin enlazar`, `${unresolvedEvents.length} eventos sin resolver`]
             .filter((warning) => !warning.startsWith("0 "))
-            .map((warning) => <p key={warning}>{warning}</p>)}
+            .map((warning, idx) => <p key={`${warning}-${idx}`}>{warning}</p>)}
         </div>
       )}
 
@@ -719,43 +752,84 @@ export default function AdminActaImporter({
         .acta-header {
           display: flex;
           justify-content: space-between;
-          gap: 1rem;
+          align-items: center;
           margin-bottom: 1.5rem;
+          padding-bottom: 1rem;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .acta-header h3 {
+          margin: 0;
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #facc15;
         }
         .acta-header p {
-          color: #a3a3a3;
-          margin: 0.3rem 0 0;
-          font-size: 0.9rem;
+          color: #a1a1aa;
+          margin: 0.5rem 0 0;
+          font-size: 0.85rem;
         }
         .acta-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 1rem;
+          gap: 1.25rem;
         }
         .wide {
           grid-column: span 2;
         }
-        .analyze-actions {
-          display: grid;
-          grid-template-columns: 2fr 1fr;
-          gap: 0.8rem;
-          margin-top: 1rem;
+        .input-group label {
+          display: block;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: #a1a1aa;
+          margin-bottom: 0.5rem;
         }
-        .analyze-btn,
-        .save-btn {
+        .input-group select, .input-group input {
           width: 100%;
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          padding: 0.75rem;
+          color: #fff;
+          font-size: 0.9rem;
+          transition: border-color 0.2s;
         }
-        .review-grid {
+        .input-group select:focus, .input-group input:focus {
+          outline: none;
+          border-color: rgba(250, 204, 21, 0.5);
+        }
+        .analyze-actions {
+          margin-top: 1.5rem;
+        }
+        .review-wrapper {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 1rem;
-          margin-top: 2rem;
+          gap: 1.25rem;
+          margin-top: 2.5rem;
+          align-items: start;
+        }
+        .review-col {
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
         }
         .review-card {
-          background: rgba(0, 0, 0, 0.22);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 14px;
-          padding: 1rem;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 12px;
+          padding: 1.25rem;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .review-card h4 {
+          margin: 0 0 1rem 0;
+          font-size: 0.9rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: #facc15;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          padding-bottom: 0.5rem;
         }
         .wide-review {
           grid-column: span 2;
@@ -763,58 +837,80 @@ export default function AdminActaImporter({
         .mini-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 0.8rem;
+          gap: 1rem;
         }
         .mini-grid label {
           display: flex;
           flex-direction: column;
-          gap: 0.35rem;
-          color: #a3a3a3;
-          font-size: 0.78rem;
-          font-weight: 800;
+          gap: 0.4rem;
+          color: #a1a1aa;
+          font-size: 0.75rem;
+          font-weight: 600;
           text-transform: uppercase;
+        }
+        .mini-grid input, .mini-grid select {
+          background: rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 6px;
+          padding: 0.6rem;
+          color: #fff;
+          font-size: 0.85rem;
+          transition: border-color 0.2s;
+        }
+        .mini-grid input:focus, .mini-grid select:focus {
+          outline: none;
+          border-color: rgba(250, 204, 21, 0.4);
         }
         .card-title-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          gap: 1rem;
+          margin-bottom: 1rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          padding-bottom: 0.5rem;
+        }
+        .card-title-row h4 {
+          border-bottom: none;
+          margin: 0;
+          padding: 0;
         }
         textarea {
           width: 100%;
-          background: rgba(0, 0, 0, 0.4);
+          background: rgba(0, 0, 0, 0.3);
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-          color: #fff;
-          padding: 0.8rem;
-          font-family: monospace;
+          border-radius: 8px;
+          color: #d4d4d8;
+          padding: 1rem;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+          font-size: 0.8rem;
           resize: vertical;
+          line-height: 1.5;
+        }
+        textarea:focus {
+          outline: none;
+          border-color: rgba(250, 204, 21, 0.4);
         }
         .warnings {
-          margin-top: 1rem;
+          margin-top: 1.5rem;
           padding: 1rem;
-          border-radius: 12px;
-          border: 1px solid rgba(250, 204, 21, 0.25);
-          background: rgba(250, 204, 21, 0.08);
-          color: #facc15;
+          border-radius: 8px;
+          border-left: 4px solid #facc15;
+          background: rgba(250, 204, 21, 0.1);
+          color: #fef08a;
           font-size: 0.85rem;
         }
         .warnings p {
-          margin: 0.2rem 0;
+          margin: 0.3rem 0;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .warnings p::before {
+          content: "•";
         }
         @media (max-width: 780px) {
-          .acta-grid,
-          .review-grid,
-          .mini-grid {
-            grid-template-columns: 1fr;
-          }
-          .analyze-actions {
-            grid-template-columns: 1fr;
-          }
-          .wide,
-          .wide-review {
-            grid-column: auto;
-          }
+          .acta-grid, .review-wrapper, .mini-grid { grid-template-columns: 1fr; }
+          .wide, .wide-review { grid-column: auto; }
         }
       `}</style>
     </div>
@@ -854,42 +950,72 @@ function LineupEditor({
           display: flex;
           flex-direction: column;
           gap: 0.5rem;
-          margin-bottom: 0.8rem;
+          margin-bottom: 1rem;
         }
         .editor-row {
-          display: grid;
-          grid-template-columns: 42px minmax(120px, 0.8fr) minmax(160px, 1fr) auto;
-          gap: 0.5rem;
+          display: flex;
           align-items: center;
+          gap: 0.75rem;
+          padding: 0.5rem;
+          background: rgba(0, 0, 0, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 8px;
+          transition: background 0.2s;
+        }
+        .editor-row:hover {
+          background: rgba(255, 255, 255, 0.03);
         }
         .ocr-name {
-          color: #a3a3a3;
-          font-size: 0.82rem;
+          flex: 1;
+          color: #d4d4d8;
+          font-size: 0.8rem;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
+        .editor-row select {
+          flex: 1.2;
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 6px;
+          color: #fff;
+          font-size: 0.8rem;
+          padding: 0.4rem;
+        }
+        .editor-row select:focus {
+          outline: none;
+          border-color: rgba(250, 204, 21, 0.4);
+        }
         .status {
-          height: 38px;
-          border-radius: 8px;
-          display: inline-flex;
+          width: 30px;
+          height: 30px;
+          border-radius: 6px;
+          display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(239, 68, 68, 0.16);
-          color: #fca5a5;
-          font-weight: 900;
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+          font-weight: 700;
+          font-size: 0.8rem;
         }
         .status.ok {
-          background: rgba(34, 197, 94, 0.14);
-          color: #86efac;
+          background: rgba(34, 197, 94, 0.15);
+          color: #4ade80;
         }
         .row-delete {
           background: transparent;
-          color: #fca5a5;
-          border: 1px solid rgba(239, 68, 68, 0.25);
-          border-radius: 8px;
-          padding: 0.55rem 0.7rem;
+          color: #a1a1aa;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 6px;
+          padding: 0.4rem 0.6rem;
+          font-size: 0.75rem;
           cursor: pointer;
+          transition: all 0.2s;
+        }
+        .row-delete:hover {
+          color: #ef4444;
+          border-color: rgba(239, 68, 68, 0.3);
+          background: rgba(239, 68, 68, 0.05);
         }
       `}</style>
     </div>
@@ -992,55 +1118,77 @@ function EventEditor({
         .event-list {
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          gap: 0.75rem;
         }
         .event-card {
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          border-radius: 12px;
+          background: rgba(0, 0, 0, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 8px;
           padding: 1rem;
+          transition: background 0.2s;
+        }
+        .event-card:hover {
+          background: rgba(255, 255, 255, 0.03);
         }
         .event-card-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 0.8rem;
-          padding-bottom: 0.8rem;
+          margin-bottom: 0.75rem;
+          padding-bottom: 0.75rem;
           border-bottom: 1px solid rgba(255, 255, 255, 0.05);
           gap: 1rem;
         }
         .event-meta, .event-actions {
           display: flex;
           align-items: center;
-          gap: 0.8rem;
+          gap: 0.5rem;
+        }
+        .event-card select, .event-card input {
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 6px;
+          color: #fff;
+          font-size: 0.8rem;
+          padding: 0.4rem;
+        }
+        .event-card select:focus, .event-card input:focus {
+          outline: none;
+          border-color: rgba(250, 204, 21, 0.4);
         }
         .minuto-input {
-          width: 60px;
+          width: 50px;
           text-align: center;
-          font-weight: 800;
+          font-weight: 700;
         }
         .tipo-select {
-          min-width: 140px;
+          min-width: 130px;
         }
         .equipo-select {
-          min-width: 120px;
+          min-width: 110px;
         }
         .cambio-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 1rem;
+          gap: 0.75rem;
         }
         .rival-input {
           width: 100%;
         }
         .row-delete {
           background: transparent;
-          color: #fca5a5;
-          border: 1px solid rgba(239, 68, 68, 0.25);
-          border-radius: 8px;
+          color: #a1a1aa;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 6px;
           padding: 0.4rem 0.6rem;
-          font-size: 0.8rem;
+          font-size: 0.75rem;
           cursor: pointer;
+          transition: all 0.2s;
+        }
+        .row-delete:hover {
+          color: #ef4444;
+          border-color: rgba(239, 68, 68, 0.3);
+          background: rgba(239, 68, 68, 0.05);
         }
         @media (max-width: 640px) {
           .event-card-header {

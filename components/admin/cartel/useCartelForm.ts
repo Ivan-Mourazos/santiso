@@ -6,10 +6,11 @@
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/lib/supabase-browser";
-import { COMPETICIONS, type FormState } from "./types";
+import type { FormState } from "./types";
 import type { SelectorMatch } from "./Common";
 import type { Player, CronEvent, NextMatch } from "@/lib/cartel-draw";
-import { fetchSeasons } from "@/lib/supabase-queries";
+import { fetchSeasons, fetchCompeticiones, type CompetenciaRow } from "@/lib/supabase-queries";
+import { pickDefaultCompetitionId } from "@/lib/competition";
 
 interface CartelPlayer {
   id: string;
@@ -105,7 +106,8 @@ function toCartelPlayer(player: CartelPlayer): Player {
 
 const DEFAULT_FORM: FormState = {
   categoria: "Senior",
-  competicion: COMPETICIONS["Senior"][0],
+  competicion_id: "",
+  competicion: "",
   jornada: "1",
   rivalNombre: "",
   rivalEscudoUrl: "",
@@ -137,12 +139,22 @@ export function useCartelForm() {
   const [jugadores, setJugadores] = useState<CartelPlayer[]>([]);
   const [dbMatches, setDbMatches] = useState<SelectorMatch[]>([]);
   const [campos, setCampos] = useState<CartelField[]>([]);
+  const [competicionesCatalog, setCompeticionesCatalog] = useState<
+    CompetenciaRow[]
+  >([]);
+  const catalogRef = useRef<CompetenciaRow[]>([]);
   const [jugFileName, setJugFileName] = useState("");
   const fileUrlRef = useRef<string>("");
 
   useEffect(() => {
+    catalogRef.current = competicionesCatalog;
+  }, [competicionesCatalog]);
+
+  useEffect(() => {
     async function loadData() {
       const { active } = await fetchSeasons();
+      const comps = await fetchCompeticiones();
+      setCompeticionesCatalog(comps);
 
       const { data: jData } = await supabase.from("jugadores").select("*");
       if (jData) setJugadores(jData);
@@ -156,7 +168,7 @@ export function useCartelForm() {
       const { data: mData } = await supabase
         .from("partidos_liga")
         .select(
-          "*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*), jornada:jornada_id(*), campo:campo_id(*)",
+          "*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*), jornada:jornada_id(*), campo:campo_id(*), competiciones:competicion_id(id, nombre)",
         )
         .order("fecha", { ascending: false });
       if (mData) {
@@ -171,6 +183,23 @@ export function useCartelForm() {
   }, []);
 
   useEffect(() => {
+    if (competicionesCatalog.length === 0) return;
+    setForm((prev) => {
+      if (prev.competicion_id) return prev;
+      const id = pickDefaultCompetitionId(
+        competicionesCatalog,
+        prev.categoria,
+      );
+      const row = competicionesCatalog.find((c) => c.id === id);
+      return {
+        ...prev,
+        competicion_id: id,
+        competicion: row?.nombre ?? "",
+      };
+    });
+  }, [competicionesCatalog]);
+
+  useEffect(() => {
     return () => {
       if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
     };
@@ -179,15 +208,30 @@ export function useCartelForm() {
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
     setForm((p) => {
       const next = { ...p, [k]: v };
+      const cat = catalogRef.current;
       if (k === "categoria" && typeof v === "string") {
-        next.competicion = COMPETICIONS[v]?.[0] || "";
+        const id = pickDefaultCompetitionId(cat, v);
+        const row = cat.find((c) => c.id === id);
+        next.competicion_id = id;
+        next.competicion = row?.nombre ?? "";
+      }
+      if (k === "competicion_id" && typeof v === "string") {
+        const row = cat.find((c) => c.id === v);
+        next.competicion = row?.nombre ?? next.competicion;
       }
       return next;
     });
   }
 
   function resetForm() {
-    setForm(DEFAULT_FORM);
+    const cat = catalogRef.current;
+    const id = pickDefaultCompetitionId(cat, "Senior");
+    const row = cat.find((c) => c.id === id);
+    setForm({
+      ...DEFAULT_FORM,
+      competicion_id: id,
+      competicion: row?.nombre ?? "",
+    });
     setJugFileName("");
     if (fileUrlRef.current) {
       URL.revokeObjectURL(fileUrlRef.current);
@@ -264,11 +308,17 @@ export function useCartelForm() {
     const rival = isSantisoLocal ? match.equipo_visitante : match.equipo_local;
     const campoNombre = match.campo?.nombre || match.lugar || "";
 
+    const compNombre =
+      match.competiciones?.nombre ??
+      match.competicion ??
+      "";
+    const compId = match.competicion_id ?? "";
+
     setForm((p) => ({
       ...p,
       categoria: match.categoria || p.categoria,
-      competicion:
-        match.competicion || match.jornada?.competicion || p.competicion,
+      competicion_id: compId || p.competicion_id,
+      competicion: compNombre || p.competicion,
       jornada: match.jornada?.numero?.toString() || "1",
       rivalNombre: rival?.nombre || "",
       rivalEscudoUrl: rival?.escudo_url || "",
@@ -299,7 +349,7 @@ export function useCartelForm() {
       )
       .eq("partido_id", match.id)
       .order("minuto", { ascending: true })
-      .then(({ data, error }) => {
+      .then(({ data, error }: { data: unknown; error: { message: string } | null }) => {
         if (error || !data) return;
 
         const rows = data as DbCronEventRow[];
@@ -338,8 +388,8 @@ export function useCartelForm() {
       `,
       )
       .eq("partido_id", match.id)
-      .then(({ data, error }) => {
-        if (error || !data || data.length === 0) return;
+      .then(({ data, error }: { data: unknown; error: { message: string } | null }) => {
+        if (error || !Array.isArray(data) || data.length === 0) return;
 
         const rows = (data as DbLineupRow[])
           .map((row) => ({
@@ -397,5 +447,6 @@ export function useCartelForm() {
     campos,
     loadMatchFromDb,
     resetForm,
+    competicionesCatalog,
   };
 }

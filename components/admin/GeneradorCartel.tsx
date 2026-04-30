@@ -51,6 +51,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
     dbMatches,
     loadMatchFromDb,
     resetForm,
+    competicionesCatalog,
   } = useCartelForm();
 
   const [tipoInternal, setTipoInternal] = useState<string>("partido");
@@ -262,8 +263,8 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
         <div className="gen-layout">
           <div className="gen-form card glass">
             {/* Template-specific fields */}
-            {tipo === "partido"    && <FormPartido form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} tipo={tipo} />}
-            {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} tipo={tipo} />}
+            {tipo === "partido"    && <FormPartido form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} competiciones={competicionesCatalog} tipo={tipo} />}
+            {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} competiciones={competicionesCatalog} tipo={tipo} />}
             {tipo === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}
             {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} dbMatches={dbMatches} />}
             {tipo === "noso11"     && <FormNoso11 form={form} set={set} jugadores={jugadores} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}

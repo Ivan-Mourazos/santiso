@@ -4,9 +4,9 @@
  */
 
 import React, { useState } from "react";
-import { COMPETICIONS, type FormState } from "./types";
+import type { FormState } from "./types";
 import { CategorySelector } from "./Common";
-import { getCompetitionQueryLabels } from "@/lib/supabase-queries";
+import { competitionsForCategory, type CompetenciaRow } from "@/lib/competition";
 
 interface Props {
   form: FormState;
@@ -17,6 +17,8 @@ interface Props {
   dbMatches: any[];
   loadMatchFromDb: (m: any) => void;
   campos: { id: string; nombre: string; poblacion: string }[];
+  /** Desde catálogo BD */
+  competiciones: CompetenciaRow[];
 }
 
 export const RivalSelector = ({
@@ -62,12 +64,11 @@ export const RivalSelector = ({
   );
 };
 
-export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equipos, handleRivalSelect, handleRivalFile, dbMatches, loadMatchFromDb, campos, tipo }) => {
+export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equipos, handleRivalSelect, handleRivalFile, dbMatches, loadMatchFromDb, campos, competiciones, tipo }) => {
   const [autoFillMessage, setAutoFillMessage] = useState("");
 
   function handleLoadNextMatch() {
     setAutoFillMessage("");
-    const labels = getCompetitionQueryLabels(form.categoria, form.competicion);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -75,7 +76,8 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
       .filter((match) => {
         if (!match.fecha) return false;
         if (match.categoria !== form.categoria) return false;
-        if (!labels.includes(match.competicion || match.jornada?.competicion || "")) return false;
+        const mid = match.competicion_id || match.jornada?.competicion_id;
+        if (!form.competicion_id || mid !== form.competicion_id) return false;
         if (["finalizado", "cancelado", "aplazado"].includes((match.estado || "").toLowerCase().trim())) return false;
 
         const localName = match.equipo_local?.nombre?.toLowerCase() || "";
@@ -139,10 +141,15 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
       
       <div className="input-group" style={{ marginBottom: "1rem" }}>
         <label>Competición</label>
-        <select value={form.competicion} onChange={e => set("competicion", e.target.value)}>
+        <select
+          value={form.competicion_id}
+          onChange={(e) => set("competicion_id", e.target.value)}
+        >
           <option value="">— Seleccionar —</option>
-          {(COMPETICIONS[form.categoria] || []).map(c => (
-            <option key={c} value={c}>{c}</option>
+          {competitionsForCategory(competiciones, form.categoria).map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.nombre}
+            </option>
           ))}
         </select>
       </div>

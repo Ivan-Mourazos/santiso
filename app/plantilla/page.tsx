@@ -426,12 +426,35 @@ function getLegendTextByPlayer(player: Jugador) {
     : getLegendTextForOutfield();
 }
 
+function calculateVeteraniaFromHistorial(player: Jugador): string {
+  const h = player.historial_deportivo;
+  if (!h || h.length === 0) return "Sin registrar";
+  // Extract individual season codes (e.g. 2022/23) from each entry
+  const seasonRegex = /(\d{4}\/(\d{2}))/g;
+  const allSeasons = new Set<string>();
+  for (const entry of h) {
+    // Handle ranges like "2019/20 - 2021/22"
+    const rangeMatch = entry.match(/(\d{4})\/(\d{2})\s*[-–]\s*(\d{4})\/(\d{2})/);
+    if (rangeMatch) {
+      const startYear = parseInt(rangeMatch[1]);
+      const endYear = parseInt(rangeMatch[3]);
+      for (let y = startYear; y <= endYear; y++) {
+        allSeasons.add(`${y}/${String(y + 1).slice(-2)}`);
+      }
+    } else {
+      const matches = entry.matchAll(seasonRegex);
+      for (const m of matches) allSeasons.add(m[1]);
+    }
+  }
+  const count = allSeasons.size || h.length;
+  return `${count} ${count === 1 ? "temporada" : "temporadas"}`;
+}
+
 function getPlayerInfoRows(player: Jugador) {
   return [
     { label: "Posición", value: player.posicion },
     { label: "Edad", value: getAgeLabel(player) },
-    { label: "Año llegada", value: getEntrySeasonLabel(player) },
-    { label: "Veteranía", value: getCareerYearsLabel(player) },
+    { label: "Veteranía", value: calculateVeteraniaFromHistorial(player) },
   ];
 }
 
@@ -565,9 +588,7 @@ export default function PlantillaPage() {
   const [cardStats, setCardStats] = useState<Record<string, PlayerCardStats>>({});
   const [faseActiva, setFaseActiva] = useState("Total");
   const [fasesDisponibles, setFasesDisponibles] = useState<string[]>([]);
-  const [playerStats, setPlayerStats] = useState({
-    ...emptyPlayerStats(),
-  });
+  const [playerStats, setPlayerStats] = useState({ ...emptyPlayerStats() });
 
   useEffect(() => {
     async function fetchData() {
@@ -789,15 +810,13 @@ export default function PlantillaPage() {
       >
         <div className={`fifa-card premium-card ${categoriaActiva.toLowerCase()}`}>
           <div className="fifa-shine" />
-          {!isStaff && (j.capitan ?? 0) > 0 && (
-            <div className="fifa-capitan-badge" title={`Capitán ${j.capitan}`}>
-              C
-            </div>
-          )}
           {!isStaff && (
             <div className="fifa-meta">
               <span className="fifa-dorsal">{rating}</span>
               <span className="fifa-pos">{j.posicion}</span>
+              {(j.capitan ?? 0) > 0 && (
+                <span className="fifa-capitan-indicator" title={`Capitán ${j.capitan}`}>C</span>
+              )}
             </div>
           )}
           {!isStaff && <div className="fifa-shirt-badge">#{j.dorsal}</div>}
@@ -1011,42 +1030,22 @@ export default function PlantillaPage() {
             </div>
 
             <div className="detail-right">
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                }}
-              >
+              {/* HEADER */}
+              <div className="detail-header">
                 <div>
-                  <h2
-                    className="detail-name"
-                    style={{
-                      fontSize: "2.5rem",
-                      fontWeight: 900,
-                      marginBottom: "0.2rem",
-                    }}
-                  >
-                    {getPlayerDetailTitle(selectedPlayer)}
-                  </h2>
-                  <p
-                    className="detail-nickname"
-                    style={{
-                      color: "var(--primary)",
-                      fontSize: "1.2rem",
-                      fontWeight: 700,
-                      marginBottom: "1rem",
-                    }}
-                  >
-                    {getPlayerNickname(selectedPlayer)}
-                  </p>
+                  <h2 className="detail-name">{getPlayerDetailTitle(selectedPlayer)}</h2>
+                  <p className="detail-nickname">{selectedPlayer.apodo || selectedPlayer.posicion}</p>
                   <p className="detail-micro-subtitle">
-                    {getPlayerHeaderDetail(selectedPlayer)}
+                    {[
+                      selectedPlayer.posicion,
+                      selectedPlayer.fecha_nacimiento ? `${calculateAge(selectedPlayer.fecha_nacimiento)} años` : null,
+                      selectedPlayer.temporada_alta ? `${calculateYearsInClub(selectedPlayer.temporada_alta)} en el club` : null,
+                    ].filter(Boolean).join(" · ")}
                   </p>
                 </div>
-                <div className="fase-pill-selector">
-                  {["Total", ...fasesDisponibles].length > 2 &&
-                    ["Total", ...fasesDisponibles].map((f) => (
+                {["Total", ...fasesDisponibles].length > 2 && (
+                  <div className="fase-pill-selector">
+                    {["Total", ...fasesDisponibles].map((f) => (
                       <button
                         key={f}
                         className={`fase-pill ${faseActiva === f ? "active" : ""}`}
@@ -1055,80 +1054,51 @@ export default function PlantillaPage() {
                         {f}
                       </button>
                     ))}
-                </div>
+                  </div>
+                )}
               </div>
 
-              <div
-                className="stats-sections-grid"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "1.5rem",
-                }}
-              >
-                {/* BLOQUE PARTICIPACIÓN */}
-                <div className="stats-block">
-                  <p className="block-title">Participación</p>
-                  <div className="stats-row-mini">
-                    <div className="mini-box">
-                      <span>{playerStats.convocado}</span>
-                      <label>Convocados</label>
-                    </div>
-                    <div className="mini-box">
-                      <span>{playerStats.titular}</span>
-                      <label>Titulares</label>
-                    </div>
-                    <div className="mini-box">
-                      <span>{playerStats.suplente}</span>
-                      <label>Suplentes</label>
-                    </div>
-                  </div>
+              {/* STATS PRINCIPALES */}
+              <div className="stats-hero">
+                <div className="stat-hero-item">
+                  <span className="stat-hero-value">{playerStats.pj}</span>
+                  <span className="stat-hero-label">Partidos jugados</span>
                 </div>
-
-                {/* BLOQUE GOLES / PORTERÍA */}
-                <div className="stats-block">
-                  <p className="block-title">{getPlayerMainLabel(selectedPlayer)}</p>
-                  <div className="stats-row-mini">
-                    {getGoalkeeperBlockVisible(selectedPlayer) ? (
-                      <>
-                        <div className="mini-box">
-                          <span>{playerStats.golesEncajados}</span>
-                          <label>GC</label>
-                        </div>
-                        <div className="mini-box">
-                          <span>
-                            {getPlayerMainAverage(selectedPlayer, playerStats)}
-                          </span>
-                          <label>{getPlayerMainAverageLabel(selectedPlayer)}</label>
-                        </div>
-                        <div className="mini-box">
-                          <span>{playerStats.porteriasCero}</span>
-                          <label>Porterías a cero</label>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="mini-box">
-                          <span>{playerStats.goles}</span>
-                          <label>Goles</label>
-                        </div>
-                        <div className="mini-box">
-                          <span>
-                            {getPlayerMainAverage(selectedPlayer, playerStats)}
-                          </span>
-                          <label>{getPlayerMainAverageLabel(selectedPlayer)}</label>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                <div className="stat-hero-item">
+                  <span className="stat-hero-value">{playerStats.titular}</span>
+                  <span className="stat-hero-label">De titular</span>
                 </div>
+                <div className="stat-hero-item">
+                  <span className="stat-hero-value">{playerStats.suplente}</span>
+                  <span className="stat-hero-label">De suplente</span>
+                </div>
+                {isGoalkeeper(selectedPlayer) ? (
+                  <>
+                    <div className="stat-hero-item accent">
+                      <span className="stat-hero-value">{playerStats.porteriasCero}</span>
+                      <span className="stat-hero-label">P. a cero</span>
+                    </div>
+                    <div className="stat-hero-item">
+                      <span className="stat-hero-value">{playerStats.golesEncajados}</span>
+                      <span className="stat-hero-label">G. encajados</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="stat-hero-item accent">
+                    <span className="stat-hero-value">{playerStats.goles}</span>
+                    <span className="stat-hero-label">Goles</span>
+                  </div>
+                )}
+              </div>
 
+              {/* BLOQUE RENDIMIENTO */}
+              <div className="stats-secondary-grid">
                 <div className="stats-block">
-                  <p className="block-title">{getCardDisplayZone(selectedPlayer)}</p>
-                  <div className="stats-row-mini">
+                  <p className="block-title">Rendimiento ({faseActiva})</p>
+                  <div className="mini-box-grid">
                     <div className="mini-box">
                       <span>{getPointsWithPlayer(cardStats[selectedPlayer.id])}</span>
-                      <label>Puntos con jugador</label>
+                      <label>Puntos totales</label>
                     </div>
                     <div className="mini-box">
                       <span>{getPointsRateDetail(cardStats[selectedPlayer.id])}</span>
@@ -1138,77 +1108,53 @@ export default function PlantillaPage() {
                       <span>{getCommitmentPercent(cardStats[selectedPlayer.id])}%</span>
                       <label>Compromiso</label>
                     </div>
+                    <div className="mini-box">
+                      <span>{playerStats.minutos}'</span>
+                      <label>Minutos totales</label>
+                    </div>
+                    <div className="mini-box">
+                      <span>{(playerStats.minutos / (playerStats.pj || 1)).toFixed(0)}'</span>
+                      <label>Min / partido</label>
+                    </div>
+                    {isGoalkeeper(selectedPlayer) && (
+                      <div className="mini-box">
+                        <span>{getAverageGoalsAgainstPerMatch(selectedPlayer, playerStats)}</span>
+                        <label>GC / partido</label>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* BLOQUE TIEMPO DE JUEGO */}
-                <div className="stats-block" style={{ gridColumn: "span 2" }}>
-                  <p className="block-title">Tiempo de Juego ({faseActiva})</p>
-                  <div className="stats-row-mini">
-                    <div className="mini-box" style={{ flex: 1 }}>
-                      <span>{playerStats.minutos} min</span>
-                      <label>Minutos Totales</label>
-                    </div>
-                    <div className="mini-box" style={{ flex: 1 }}>
-                      <span>
-                        {(playerStats.minutos / (playerStats.pj || 1)).toFixed(
-                          1,
-                        )}{" "}
-                        min
-                      </span>
-                      <label>Promedio / Partido</label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="player-back-card player-back-card--detail">
-                <div className="back-card-header">
-                  <span>Reverso profesional</span>
-                  <strong>{getPlayerScore(selectedPlayer, cardStats[selectedPlayer.id])}</strong>
-                </div>
-                <p className="back-legend">{getLegendHeader(selectedPlayer)}: {getLegendLine(selectedPlayer)}</p>
-                <div className="back-card-grid">
-                  {getPlayerInfoTable(selectedPlayer).map((row) => (
-                    <div key={row.label}>
-                      <small>{row.label}</small>
-                      <b>{row.value}</b>
-                    </div>
-                  ))}
-                </div>
-                <div className="back-card-grid back-card-grid--metrics">
-                  {getPlayerStatsRows(selectedPlayer, cardStats[selectedPlayer.id]).map((row) => (
-                    <div key={row.label}>
-                      <small>{row.label}</small>
-                      <b>{row.value}</b>
-                    </div>
-                  ))}
-                </div>
-                <div className="back-card-section">
-                  <small>Historia deportiva</small>
-                  <p>{getPlayerBio(selectedPlayer)}</p>
-                  <ul>
-                    {getPlayerCareerRows(selectedPlayer).map((item) => (
-                      <li key={item}>{item}</li>
+                <div className="stats-block">
+                  <p className="block-title">Perfil</p>
+                  <div className="player-info-list">
+                    {getPlayerInfoTable(selectedPlayer).map((row) => (
+                      <div key={row.label} className="player-info-row">
+                        <span className="info-label">{row.label}</span>
+                        <span className="info-value">{row.value}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               </div>
 
-              <div
-                className="detail-footer"
-                style={{
-                  marginTop: "auto",
-                  paddingTop: "1.5rem",
-                  borderTop: "1px solid rgba(255,255,255,0.05)",
-                  fontSize: "0.75rem",
-                  color: "#444",
-                }}
-              >
-                <p>
-                  Datos oficiales de la Temporada {temporadaActiva?.nombre} (
-                  {faseActiva})
-                </p>
+              {/* BIO */}
+              {(selectedPlayer.bio_deportiva || (getPlayerCareerRows(selectedPlayer).length > 0 && getPlayerCareerRows(selectedPlayer)[0] !== "Sin etapas registradas todavía.")) && (
+                <div className="player-bio-block">
+                  <p className="block-title">Historia deportiva</p>
+                  {selectedPlayer.bio_deportiva && <p className="bio-text">{selectedPlayer.bio_deportiva}</p>}
+                  {getPlayerCareerRows(selectedPlayer).length > 0 && (
+                    <ul className="career-list">
+                      {getPlayerCareerRows(selectedPlayer).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              <div className="detail-footer">
+                Datos temporada {temporadaActiva?.nombre} · {faseActiva}
               </div>
             </div>
           </div>
@@ -1280,52 +1226,200 @@ export default function PlantillaPage() {
         }
 
         .block-title {
-          color: #555;
-          font-weight: 800;
+          color: #71717a;
+          font-weight: 700;
           font-size: 0.65rem;
           text-transform: uppercase;
           letter-spacing: 1.5px;
-          margin-bottom: 1rem;
+          margin-bottom: 0.75rem;
         }
-        .stats-row-mini {
+
+        /* Modal header */
+        .detail-header {
           display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 1.5rem;
+        }
+        .detail-name {
+          font-size: 2rem;
+          font-weight: 900;
+          margin: 0 0 0.2rem;
+          line-height: 1.1;
+        }
+        .detail-nickname {
+          color: var(--primary);
+          font-size: 1rem;
+          font-weight: 700;
+          margin: 0 0 0.4rem;
+        }
+        .detail-micro-subtitle {
+          color: #71717a;
+          font-size: 0.85rem;
+          margin: 0;
+        }
+
+        /* Stats hero row */
+        .stats-hero {
+          display: flex;
+          gap: 0.75rem;
+          margin-bottom: 1.5rem;
+          padding: 1.25rem;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 12px;
+        }
+        .stat-hero-item {
+          flex: 1;
+          text-align: center;
+        }
+        .stat-hero-item.accent .stat-hero-value {
+          color: var(--primary);
+        }
+        .stat-hero-value {
+          display: block;
+          font-size: 2rem;
+          font-weight: 900;
+          line-height: 1;
+          color: #fff;
+          margin-bottom: 0.3rem;
+        }
+        .stat-hero-label {
+          display: block;
+          font-size: 0.6rem;
+          text-transform: uppercase;
+          letter-spacing: 0.07em;
+          color: #71717a;
+          font-weight: 600;
+        }
+
+        /* Secondary stats */
+        .stats-secondary-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
           gap: 1rem;
+          margin-bottom: 1.25rem;
+        }
+        .stats-block {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+          padding: 1rem;
+        }
+        .mini-box-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 0.5rem;
         }
         .mini-box {
-          background: rgba(255, 255, 255, 0.02);
-          padding: 0.8rem;
-          border-radius: 0.8rem;
-          border: 1px solid rgba(255, 255, 255, 0.05);
+          background: rgba(0, 0, 0, 0.2);
+          padding: 0.6rem 0.5rem;
+          border-radius: 8px;
           text-align: center;
-          flex: 1;
         }
         .mini-box span {
           display: block;
-          font-size: 1.4rem;
+          font-size: 1.2rem;
           font-weight: 900;
           color: white;
           line-height: 1;
-          margin-bottom: 0.3rem;
+          margin-bottom: 0.25rem;
         }
         .mini-box label {
           font-size: 0.55rem;
           text-transform: uppercase;
-          color: #666;
+          color: #71717a;
           font-weight: 700;
           letter-spacing: 0.5px;
         }
 
+        /* Player info list */
+        .player-info-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        .player-info-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.4rem 0;
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+          font-size: 0.8rem;
+        }
+        .player-info-row:last-child { border-bottom: none; }
+        .info-label { color: #71717a; }
+        .info-value { font-weight: 700; color: #e4e4e7; }
+
+        /* Bio block */
+        .player-bio-block {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+          padding: 1rem;
+          margin-bottom: 1rem;
+        }
+        .bio-text {
+          font-size: 0.8rem;
+          color: #a1a1aa;
+          line-height: 1.6;
+          margin: 0 0 0.5rem;
+        }
+        .career-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          font-size: 0.8rem;
+        }
+        .career-list li {
+          color: #a1a1aa;
+          padding: 0.2rem 0;
+        }
+        .career-list li::before {
+          content: '→ ';
+          color: var(--primary);
+        }
+
+        /* Detail footer */
+        .detail-footer {
+          margin-top: auto;
+          padding-top: 1rem;
+          border-top: 1px solid rgba(255,255,255,0.05);
+          font-size: 0.72rem;
+          color: #52525b;
+        }
+
+        /* Fase pills */
+        .fase-pill-selector {
+          display: flex;
+          gap: 0.4rem;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+        .fase-pill {
+          padding: 0.3rem 0.7rem;
+          border-radius: 20px;
+          border: 1px solid rgba(255,255,255,0.1);
+          background: transparent;
+          color: #71717a;
+          font-size: 0.72rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .fase-pill.active {
+          background: var(--primary);
+          color: #000;
+          border-color: var(--primary);
+        }
+
         @media (max-width: 768px) {
-          .main-title {
-            font-size: 3rem;
-          }
-          .stats-sections-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .player-detail-card {
-            flex-direction: column;
-            overflow-y: auto;
-          }
+          .main-title { font-size: 3rem; }
+          .stats-secondary-grid { grid-template-columns: 1fr; }
+          .player-detail-card { flex-direction: column; overflow-y: auto; }
+          .stats-hero { flex-wrap: wrap; }
         }
       `}</style>
     </main>

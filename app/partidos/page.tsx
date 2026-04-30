@@ -1,12 +1,14 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import {
-  getCompetitionsByCategory,
-  getDefaultUiCompetitionForCategory,
+  competitionsForCategory,
+  pickDefaultCompetitionId,
+  type CompetenciaRow,
 } from "@/lib/competition";
 import {
+  fetchCompeticiones,
   fetchMatchdaysForCompetition,
   fetchMatchesForMatchday,
   fetchSeasons,
@@ -20,12 +22,8 @@ export default function PartidosPage() {
   const [descansos, setDescansos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [temporadaActiva, setTemporadaActiva] = useState<any>(null);
-  const [competiciones, setCompeticiones] = useState<string[]>([]);
-  const [competicion, setCompeticion] = useState(() =>
-    getDefaultUiCompetitionForCategory("Senior"),
-  );
-  /** Datos antiguos guardados como "Liga principal" mientras la web muestra otro nombre */
-  const [usingLegacyCompeticion, setUsingLegacyCompeticion] = useState(false);
+  const [competicionesLista, setCompeticionesLista] = useState<CompetenciaRow[]>([]);
+  const [competicionId, setCompeticionId] = useState("");
   const jornadasFetchGen = useRef(0);
   const partidosFetchGen = useRef(0);
 
@@ -36,8 +34,25 @@ export default function PartidosPage() {
   ];
 
   useEffect(() => {
-    setCompeticiones(getCompetitionsByCategory(categoria));
-  }, [categoria]);
+    let cancelled = false;
+    (async () => {
+      const list = await fetchCompeticiones();
+      if (!cancelled) setCompeticionesLista(list);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (competicionesLista.length === 0) return;
+    const def = pickDefaultCompetitionId(competicionesLista, categoria);
+    setCompeticionId((prev) => {
+      const opts = competitionsForCategory(competicionesLista, categoria);
+      if (prev && opts.some((o) => o.id === prev)) return prev;
+      return def;
+    });
+  }, [categoria, competicionesLista]);
 
   useEffect(() => {
     async function init() {
@@ -48,34 +63,27 @@ export default function PartidosPage() {
   }, []);
 
   useEffect(() => {
-    if (temporadaActiva && competicion) {
+    if (temporadaActiva && competicionId) {
       fetchJornadas();
     }
-  }, [categoria, temporadaActiva, competicion]);
+  }, [categoria, temporadaActiva, competicionId]);
 
   useEffect(() => {
-    if (!jornadaSeleccionada?.id || !competicion) return;
-    fetchPartidos(
-      jornadaSeleccionada.id,
-      jornadaSeleccionada.competicion ?? null,
-    );
-  }, [jornadaSeleccionada?.id, competicion, categoria, usingLegacyCompeticion]);
+    if (!jornadaSeleccionada?.id || !competicionId) return;
+    fetchPartidos(jornadaSeleccionada.id);
+  }, [jornadaSeleccionada?.id, competicionId, categoria]);
 
   async function fetchJornadas() {
     const gen = ++jornadasFetchGen.current;
     setLoading(true);
-    setUsingLegacyCompeticion(false);
 
     const { data: jData } = await fetchMatchdaysForCompetition(
       temporadaActiva.id,
       categoria,
-      competicion,
+      competicionId,
     );
-    const legacy = jData.some((j: any) => j.competicion === "Liga principal");
 
     if (gen !== jornadasFetchGen.current) return;
-
-    if (legacy) setUsingLegacyCompeticion(true);
 
     if (jData && jData.length > 0) {
       setJornadas(jData);
@@ -92,18 +100,14 @@ export default function PartidosPage() {
     setLoading(false);
   }
 
-  async function fetchPartidos(
-    jornadaId: string,
-    jornadaCompeticion?: string | null,
-  ) {
+  async function fetchPartidos(jornadaId: string) {
     const gen = ++partidosFetchGen.current;
     const { data: pData } = await fetchMatchesForMatchday(
       jornadaId,
       categoria,
-      competicion,
+      competicionId,
       {
         embed: true,
-        jornadaCompeticion,
       },
     );
 
@@ -130,6 +134,12 @@ export default function PartidosPage() {
       cancelled = true;
     };
   }, [jornadaSeleccionada?.id]);
+
+  const competicionNombre = useMemo(
+    () =>
+      competicionesLista.find((c) => c.id === competicionId)?.nombre ?? "",
+    [competicionesLista, competicionId],
+  );
 
   const navegarJornada = (direccion: number) => {
     const currentIndex = jornadas.findIndex(
@@ -160,8 +170,11 @@ export default function PartidosPage() {
                 className={`tab-btn-public ${categoria === cat.id ? "active" : ""}`}
                 onClick={() => {
                   setCategoria(cat.id);
-                  setCompeticion(getDefaultUiCompetitionForCategory(cat.id));
-                  setUsingLegacyCompeticion(false);
+                  const def = pickDefaultCompetitionId(
+                    competicionesLista,
+                    cat.id,
+                  );
+                  setCompeticionId(def);
                 }}
               >
                 {cat.label}
@@ -170,27 +183,17 @@ export default function PartidosPage() {
           </div>
           <div style={{ marginTop: "1rem" }}>
             <select
-              value={competicion}
-              onChange={(e) => {
-                setUsingLegacyCompeticion(false);
-                setCompeticion(e.target.value);
-              }}
+              value={competicionId}
+              onChange={(e) => setCompeticionId(e.target.value)}
               className="competition-select"
             >
-              {competiciones.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              {competitionsForCategory(competicionesLista, categoria).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
                 </option>
               ))}
             </select>
           </div>
-          {usingLegacyCompeticion && (
-            <p className="legacy-competicion-hint">
-              Mostrando jornadas guardadas como «Liga principal». Ejecuta{" "}
-              <code>scripts/fix_competicion_legacy.sql</code> en Supabase para
-              alinear el nombre con la competición.
-            </p>
-          )}
         </div>
       </section>
 
@@ -204,20 +207,15 @@ export default function PartidosPage() {
           ) : jornadas.length === 0 ? (
             <div className="empty-state glass">
               <p>
-                No hay jornadas para <strong>{competicion}</strong> en esta
+                No hay jornadas para <strong>{competicionNombre}</strong> en esta
                 categoría y temporada.
               </p>
               <p className="empty-hint">
-                Si tenías datos antes de la migración, en base pueden estar como
-                «Liga principal». Actualiza <code>jornadas.competicion</code> y{" "}
-                <code>partidos_liga.competicion</code> al texto exacto del
-                desplegable, o usa{" "}
-                <code>scripts/fix_competicion_legacy.sql</code>.
-              </p>
-              <p className="empty-hint">
-                Las competiciones nuevas se definen en código:{" "}
-                <code>components/admin/cartel/types.ts</code> →{" "}
-                <code>COMPETICIONS</code>.
+                Comprueba que la migración{" "}
+                <code>scripts/migration_competiciones_catalog.sql</code> esté
+                aplicada y que existan filas en{" "}
+                <code>public.competiciones</code>. Crea jornadas desde el panel
+                Admin.
               </p>
             </div>
           ) : (

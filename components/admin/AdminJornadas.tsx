@@ -2,15 +2,19 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase-browser";
 import BusyBanner from "./BusyBanner";
-import { getCompetitionsByCategory, getDefaultUiCompetitionForCategory } from "@/lib/competition";
 import {
+  competitionsForCategory,
+  pickDefaultCompetitionId,
+  type CompetenciaRow,
+} from "@/lib/competition";
+import {
+  fetchCompeticiones,
   fetchMatchdaysForCompetition,
   fetchMatchesForMatchday,
   fetchSeasons,
   fetchTeamsForCompetition,
   mergeMissingTeams,
 } from "@/lib/supabase-queries";
-import { getCompeticionLabelsForQuery } from "@/lib/competition";
 
 interface AdminJornadasProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -44,8 +48,10 @@ export default function AdminJornadas({
   const [busyText, setBusyText] = useState("Cargando jornadas y partidos...");
   const [rowBusy, setRowBusy] = useState<Record<string, boolean>>({});
   const [selectedJornada, setSelectedJornada] = useState<string | null>(null);
-  const [competitions, setCompetitions] = useState<string[]>([]);
-  const [selectedCompeticion, setSelectedCompeticion] = useState("");
+  const [competicionesCatalog, setCompeticionesCatalog] = useState<
+    CompetenciaRow[]
+  >([]);
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
 
   // New Matchday form
   const [numJornada, setNumJornada] = useState("");
@@ -90,16 +96,49 @@ export default function AdminJornadas({
     "#8b5cf6", "#06b6d4", "#f97316", "#14b8a6", "#6366f1",
   ];
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const list = await fetchCompeticiones();
+      if (!cancelled) setCompeticionesCatalog(list);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (competicionesCatalog.length === 0) return;
+    const def = pickDefaultCompetitionId(competicionesCatalog, categoria);
+    setSelectedCompetitionId((prev) => {
+      const opts = competitionsForCategory(competicionesCatalog, categoria);
+      if (prev && opts.some((o) => o.id === prev)) return prev;
+      return def;
+    });
+  }, [categoria, competicionesCatalog]);
+
+  const selectedCompeticionNombre = useMemo(
+    () =>
+      competicionesCatalog.find((c) => c.id === selectedCompetitionId)?.nombre ??
+      "",
+    [competicionesCatalog, selectedCompetitionId],
+  );
+
+  const competicionesEnCategoria = useMemo(
+    () => competitionsForCategory(competicionesCatalog, categoria),
+    [competicionesCatalog, categoria],
+  );
+
   // Cargar reglas de liga existentes
   useEffect(() => {
-    if (!temporadaActiva || !selectedCompeticion) return;
+    if (!temporadaActiva || !selectedCompetitionId) return;
     async function load() {
       const { data } = await supabase
         .from("reglas_liga")
         .select("*")
         .eq("temporada_id", temporadaActiva.id)
         .eq("categoria", categoria)
-        .eq("competicion", selectedCompeticion)
+        .eq("competicion_id", selectedCompetitionId)
         .maybeSingle();
       if (data?.reglas) {
         setLeagueRules(Array.isArray(data.reglas) ? data.reglas : []);
@@ -108,23 +147,44 @@ export default function AdminJornadas({
       }
     }
     load();
-  }, [temporadaActiva, selectedCompeticion]);
+  }, [temporadaActiva, selectedCompetitionId, categoria]);
 
   async function handleSaveLeagueRules() {
     if (!temporadaActiva) return;
+    if (!selectedCompetitionId) {
+      showToast("Selecciona una competición", "error");
+      return;
+    }
     setSavingRules(true);
 
-    // Primero intentamos insertar, si falla por conflicto, actualizamos
-    const { error } = await supabase.from("reglas_liga").upsert(
-      {
-        temporada_id: temporadaActiva.id,
-        categoria,
-        competicion: selectedCompeticion,
-        reglas: leagueRules,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "temporada_id,categoria,competicion" },
-    );
+    const basePayload = {
+      temporada_id: temporadaActiva.id,
+      categoria,
+      competicion_id: selectedCompetitionId,
+      reglas: leagueRules,
+    };
+
+    const { data: existing, error: findError } = await supabase
+      .from("reglas_liga")
+      .select("id")
+      .eq("temporada_id", temporadaActiva.id)
+      .eq("categoria", categoria)
+      .eq("competicion_id", selectedCompetitionId)
+      .maybeSingle();
+
+    if (findError) {
+      showToast("Error al guardar reglas: " + findError.message, "error");
+      setSavingRules(false);
+      return;
+    }
+
+    const { error } = existing?.id
+      ? await supabase
+          .from("reglas_liga")
+          .update({ reglas: leagueRules })
+          .eq("id", existing.id)
+      : await supabase.from("reglas_liga").insert([basePayload]);
+
     if (!error) showToast("Reglas de liga guardadas");
     else showToast("Error al guardar reglas: " + error.message, "error");
     setSavingRules(false);
@@ -158,20 +218,14 @@ export default function AdminJornadas({
 
   useEffect(() => {
     fetchBaseData();
-  }, [categoria, selectedCompeticion]);
-
-  useEffect(() => {
-    const opts = getCompetitionsByCategory(categoria);
-    setCompetitions(opts);
-    setSelectedCompeticion(getDefaultUiCompetitionForCategory(categoria));
-  }, [categoria]);
+  }, [categoria, selectedCompetitionId]);
 
   async function fetchBaseData() {
     setIsFetching(true);
     const [{ data: tData, active }, eData] = await Promise.all([
       fetchSeasons(),
-      selectedCompeticion
-        ? fetchTeamsForCompetition(categoria, selectedCompeticion)
+      selectedCompetitionId
+        ? fetchTeamsForCompetition(categoria, selectedCompetitionId)
         : Promise.resolve([]),
     ]);
 
@@ -196,14 +250,19 @@ export default function AdminJornadas({
     if (temporadaActiva) {
       fetchJornadas();
     }
-  }, [temporadaActiva, categoria, selectedCompeticion]);
+  }, [temporadaActiva, categoria, selectedCompetitionId]);
 
   async function fetchJornadas() {
+    if (!temporadaActiva?.id || !selectedCompetitionId) {
+      setJornadas([]);
+      setIsFetching(false);
+      return;
+    }
     setIsFetching(true);
     const { data, error } = await fetchMatchdaysForCompetition(
       temporadaActiva.id,
       categoria,
-      selectedCompeticion,
+      selectedCompetitionId,
     );
 
     if (error) {
@@ -267,7 +326,7 @@ export default function AdminJornadas({
     } else {
       setDescansos([]);
     }
-  }, [selectedJornada, selectedCompeticion]);
+  }, [selectedJornada, selectedCompetitionId, categoria]);
 
   useEffect(() => {
     if (!partidos.length) return;
@@ -307,20 +366,16 @@ export default function AdminJornadas({
 
   async function fetchPartidos() {
     setIsFetching(true);
-    if (!selectedJornada) {
+    if (!selectedJornada || !selectedCompetitionId) {
       setPartidos([]);
       setIsFetching(false);
       return;
     }
 
-    const jornada = jornadas.find((j: any) => j.id === selectedJornada);
     const { data, error } = await fetchMatchesForMatchday(
       selectedJornada,
       categoria,
-      selectedCompeticion,
-      {
-        jornadaCompeticion: jornada?.competicion ?? null,
-      },
+      selectedCompetitionId,
     );
     if (error) showToast("Error cargando partidos: " + error.message, "error");
     setPartidos(data);
@@ -330,6 +385,8 @@ export default function AdminJornadas({
   async function handleCreateJornada(e?: React.FormEvent) {
     if (e) e.preventDefault();
     if (!temporadaActiva) return showToast("No hay temporada activa", "error");
+    if (!selectedCompetitionId)
+      return showToast("Selecciona una competición", "error");
     setBusyText("Creando jornada...");
     setLoading(true);
     const payload: any = {
@@ -337,7 +394,7 @@ export default function AdminJornadas({
       categoria,
       numero: parseInt(numJornada),
       fecha_inicio: fechaInicio || null,
-      competicion: selectedCompeticion,
+      competicion_id: selectedCompetitionId,
     };
     const { error } = await supabase.from("jornadas").insert([payload]);
     if (!error) {
@@ -397,6 +454,8 @@ export default function AdminJornadas({
   async function handleAddPartido(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedJornada || !localId || !visitanteId) return;
+    if (!selectedCompetitionId)
+      return showToast("Selecciona una competición", "error");
     if (localId === visitanteId)
       return showToast("Un equipo no puede jugar contra sí mismo", "error");
     const restingIds = new Set(descansos.map((d: any) => d.equipo_id));
@@ -419,7 +478,7 @@ export default function AdminJornadas({
     const payload: any = {
       jornada_id: selectedJornada,
       categoria,
-      competicion: selectedCompeticion,
+      competicion_id: selectedCompetitionId,
       equipo_local_id: localId,
       equipo_visitante_id: visitanteId,
       goles_local: null,
@@ -484,21 +543,21 @@ export default function AdminJornadas({
   }
 
   async function handleBulkCreateJornadas() {
-    if (!temporadaActiva || !selectedCompeticion) return;
+    if (!temporadaActiva || !selectedCompetitionId) return;
     setBusyText(`Verificando jornadas existentes...`);
     setLoading(true);
 
     try {
-      // 1. Obtener jornadas que ya existen (incluyendo aliases históricos)
-      const labels = getCompeticionLabelsForQuery(categoria, selectedCompeticion);
       const { data: existing } = await supabase
         .from("jornadas")
         .select("numero")
         .eq("temporada_id", temporadaActiva.id)
         .eq("categoria", categoria)
-        .in("competicion", labels);
+        .eq("competicion_id", selectedCompetitionId);
 
-      const existingNums = new Set(existing?.map(j => j.numero) || []);
+      const existingNums = new Set(
+        existing?.map((j: { numero: number }) => j.numero) || [],
+      );
       
       // 2. Filtrar las que faltan de 1..bulkCount
       const toInsert = [];
@@ -507,7 +566,7 @@ export default function AdminJornadas({
           toInsert.push({
             temporada_id: temporadaActiva.id,
             categoria,
-            competicion: selectedCompeticion,
+            competicion_id: selectedCompetitionId,
             numero: i,
           });
         }
@@ -640,18 +699,18 @@ export default function AdminJornadas({
               ⚔️ Competición
             </label>
             <select
-              value={selectedCompeticion}
+              value={selectedCompetitionId}
               onChange={(e) => {
                 setSelectedJornada(null);
                 setPartidos([]);
                 setDescansos([]);
-                setSelectedCompeticion(e.target.value);
+                setSelectedCompetitionId(e.target.value);
               }}
               disabled={loading || isFetching}
               style={{ height: "48px", background: "rgba(0,0,0,0.4)", borderRadius: "10px", fontWeight: 600 }}
             >
-              {competitions.map((c) => (
-                <option key={c} value={c}>{c}</option>
+              {competicionesEnCategoria.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
               ))}
             </select>
           </div>
@@ -691,7 +750,7 @@ export default function AdminJornadas({
           >
             <h3 style={{ color: "var(--primary)", marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 800 }}>Configurar Jornadas</h3>
             <p style={{ color: "#888", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
-              Se generarán jornadas vacías para <strong>{selectedCompeticion}</strong> en la temporada activa.
+              Se generarán jornadas vacías para <strong>{selectedCompeticionNombre}</strong> en la temporada activa.
             </p>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: "1rem", alignItems: "flex-end" }}>
@@ -744,7 +803,7 @@ export default function AdminJornadas({
                   🏆 Reglas de Desarrollo de Liga
                 </h3>
                 <p style={{ color: "#888", fontSize: "0.85rem", margin: 0 }}>
-                  Crea reglas personalizadas con nombre, puestos y color para <strong>{selectedCompeticion}</strong>.
+                  Crea reglas personalizadas con nombre, puestos y color para <strong>{selectedCompeticionNombre}</strong>.
                 </p>
               </div>
               <button

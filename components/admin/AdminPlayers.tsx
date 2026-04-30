@@ -19,6 +19,8 @@ interface Jugador {
   posicion?: string | null;
   foto_url?: string | null;
   capitan?: number | null;
+  fecha_nacimiento?: string | null;
+  historial_deportivo?: string[] | null;
 }
 
 export default function AdminPlayers({
@@ -31,6 +33,8 @@ export default function AdminPlayers({
   const [apodo, setApodo] = useState("");
   const [dorsal, setDorsal] = useState("");
   const [posicion, setPosicion] = useState("");
+  const [fechaNacimiento, setFechaNacimiento] = useState("");
+  const [historial, setHistorial] = useState("");
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -45,6 +49,8 @@ export default function AdminPlayers({
     setApodo("");
     setDorsal("");
     setPosicion("");
+    setFechaNacimiento("");
+    setHistorial("");
     setFotoFile(null);
     setEditingId(null);
   }
@@ -54,6 +60,8 @@ export default function AdminPlayers({
     setApodo(jugador.apodo || "");
     setDorsal(jugador.dorsal?.toString() || "");
     setPosicion(jugador.posicion || "");
+    setFechaNacimiento(jugador.fecha_nacimiento || "");
+    setHistorial((jugador.historial_deportivo || []).join("\n"));
     setFotoFile(null);
     setEditingId(jugador.id);
   }
@@ -113,6 +121,11 @@ export default function AdminPlayers({
       }
     }
 
+    const historialArr = historial
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+
     const payload = {
       nombre,
       apodo,
@@ -120,6 +133,8 @@ export default function AdminPlayers({
       posicion,
       foto_url,
       categoria,
+      fecha_nacimiento: fechaNacimiento || null,
+      historial_deportivo: historialArr.length > 0 ? historialArr : null,
     };
 
     const { error } = editingId
@@ -129,7 +144,10 @@ export default function AdminPlayers({
     if (!error) {
       resetForm();
       fetchJugadores();
-      showToast(editingId ? "Jugador actualizado correctamente" : "Jugador añadido correctamente");
+      showToast(editingId ? "Jugador actualizado correctamente" : "Jugador añadido correctamente", "success");
+    } else {
+      console.error("Error guardando jugador:", error);
+      showToast(`Error: ${error.message}`, "error");
     }
     setLoading(false);
     setBusyProgress(undefined);
@@ -252,6 +270,14 @@ export default function AdminPlayers({
               </select>
             </div>
             <div className="input-group">
+              <label>Fecha de Nacimiento</label>
+              <input
+                type="date"
+                value={fechaNacimiento}
+                onChange={(e) => setFechaNacimiento(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
               <label>Foto {editingId ? "(Opcional)" : ""}</label>
               <div className="file-input-group">
                 <label className="file-input-label">
@@ -279,7 +305,29 @@ export default function AdminPlayers({
                 </label>
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: "0.8rem" }}>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1rem" }}>
+            <div className="input-group">
+              <label>Historial Deportivo (uno por línea, ej: 2022/23: Deportivo B)</label>
+              <textarea
+                rows={4}
+                value={historial}
+                onChange={(e) => setHistorial(e.target.value)}
+                placeholder="2018/19 - 2020/21: Deportivo B&#10;2021/22: Sin equipo&#10;2022/23: Santiso"
+                style={{
+                  width: "100%",
+                  background: "rgba(0, 0, 0, 0.4)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  borderRadius: "6px",
+                  color: "#fff",
+                  padding: "0.5rem 0.6rem",
+                  fontFamily: "inherit",
+                }}
+              />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "0.8rem", justifyContent: "flex-end" }}>
               <button
                 type="submit"
                 className="btn-primary"
@@ -406,6 +454,14 @@ export default function AdminPlayers({
               </select>
             </div>
             <div className="input-group">
+              <label>Fecha de Nacimiento</label>
+              <input
+                type="date"
+                value={fechaNacimiento}
+                onChange={(e) => setFechaNacimiento(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
               <label>Foto {editingId ? "(Opcional)" : ""}</label>
               <div className="file-input-group">
                 <label className="file-input-label">
@@ -433,6 +489,28 @@ export default function AdminPlayers({
                 </label>
               </div>
             </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1rem" }}>
+            <div className="input-group">
+              <label>Historial Deportivo (uno por línea, ej: 2022/23: Deportivo B)</label>
+              <textarea
+                rows={4}
+                value={historial}
+                onChange={(e) => setHistorial(e.target.value)}
+                placeholder="2018/19 - 2020/21: Deportivo B&#10;2021/22: Sin equipo&#10;2022/23: Santiso"
+                style={{
+                  width: "100%",
+                  background: "rgba(0, 0, 0, 0.4)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  borderRadius: "6px",
+                  color: "#fff",
+                  padding: "0.5rem 0.6rem",
+                  fontFamily: "inherit",
+                }}
+              />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1rem" }}>
             <div style={{ display: "flex", alignItems: "flex-end" }}>
               <button
                 type="submit"

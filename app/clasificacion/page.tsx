@@ -2,47 +2,88 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
-  getCompetitionsByCategory,
-  getDefaultUiCompetitionForCategory,
+  competitionsForCategory,
+  pickDefaultCompetitionId,
+  type CompetenciaRow,
 } from "@/lib/competition";
 import {
+  fetchCompeticiones,
   fetchTeamsForCompetition,
-  getCompetitionQueryLabels,
   mergeMissingTeams,
 } from "@/lib/supabase-queries";
 
 export default function ClasificacionPage() {
+  interface LeagueRule {
+    id: string;
+    nombre: string;
+    puestos: number[];
+    color: string;
+  }
+
   const [equipos, setEquipos] = useState<any[]>([]);
   const [categoria, setCategoria] = useState("Senior");
-  const [competiciones, setCompeticiones] = useState<string[]>([]);
-  const [competicion, setCompeticion] = useState(() => getDefaultUiCompetitionForCategory("Senior"));
+  const [competicionesLista, setCompeticionesLista] = useState<CompetenciaRow[]>([]);
+  const [competicionId, setCompeticionId] = useState("");
   const [loading, setLoading] = useState(true);
   const [statsHint, setStatsHint] = useState<string | null>(null);
+  const [leagueRules, setLeagueRules] = useState<LeagueRule[]>([]);
   const clasificacionFetchGen = useRef(0);
 
   useEffect(() => {
-    setCompeticiones(getCompetitionsByCategory(categoria));
-  }, [categoria]);
+    let cancelled = false;
+    (async () => {
+      const list = await fetchCompeticiones();
+      if (!cancelled) setCompeticionesLista(list);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
-    if (!competicion) return;
+    if (competicionesLista.length === 0) return;
+    const def = pickDefaultCompetitionId(competicionesLista, categoria);
+    setCompeticionId((prev) => {
+      const opts = competitionsForCategory(competicionesLista, categoria);
+      if (prev && opts.some((o) => o.id === prev)) return prev;
+      return def;
+    });
+  }, [categoria, competicionesLista]);
+
+  useEffect(() => {
+    if (!competicionId) return;
     fetchClasificacion();
-  }, [categoria, competicion]);
+  }, [categoria, competicionId]);
 
   async function fetchClasificacion() {
     const gen = ++clasificacionFetchGen.current;
     setLoading(true);
 
-    const compFilters = getCompetitionQueryLabels(categoria, competicion);
+    const [{ data: partidosData }, baseTeams, { data: activeSeason }] = await Promise.all([
+      supabase
+        .from("partidos_liga")
+        .select("*")
+        .eq("categoria", categoria)
+        .eq("competicion_id", competicionId)
+        .eq("estado", "finalizado"),
+      fetchTeamsForCompetition(categoria, competicionId),
+      supabase.from("temporadas").select("id").eq("activa", true).maybeSingle(),
+    ]);
 
-    const { data: partidosData } = await supabase
-      .from("partidos_liga")
-      .select("*")
-      .eq("categoria", categoria)
-      .in("competicion", compFilters)
-      .eq("estado", "finalizado");
+    let fetchedRules: LeagueRule[] = [];
+    if (activeSeason?.id) {
+      const { data: rulesRow } = await supabase
+        .from("reglas_liga")
+        .select("reglas")
+        .eq("temporada_id", activeSeason.id)
+        .eq("categoria", categoria)
+        .eq("competicion_id", competicionId)
+        .maybeSingle();
 
-    const baseTeams = await fetchTeamsForCompetition(categoria, competicion);
+      if (rulesRow?.reglas && Array.isArray(rulesRow.reglas)) {
+        fetchedRules = rulesRow.reglas as LeagueRule[];
+      }
+    }
     const matchTeamIds = (partidosData || []).flatMap((p: any) => [
       p.equipo_local_id,
       p.equipo_visitante_id,
@@ -50,6 +91,7 @@ export default function ClasificacionPage() {
     const teamsData = await mergeMissingTeams(baseTeams, matchTeamIds);
 
     if (gen !== clasificacionFetchGen.current) return;
+    setLeagueRules(fetchedRules);
 
     if (teamsData.length > 0) {
       const withStats = teamsData.map((team: any) => {
@@ -127,7 +169,7 @@ export default function ClasificacionPage() {
       const anyPlayed = sorted.some((r: any) => r.pj > 0);
       if (!anyPlayed && sorted.length > 0) {
         setStatsHint(
-          "No hay partidos finalizados para esta competición (o siguen con otra etiqueta en competicion). Revisa Admin → Calendario y el script scripts/fix_competicion_legacy.sql."
+          "No hay partidos finalizados para esta competición en la temporada activa. Revisa marcadores en Admin o que existan jornadas/partidos con este competicion_id.",
         );
       } else {
         setStatsHint(null);
@@ -145,21 +187,12 @@ export default function ClasificacionPage() {
     { id: "Veteranos", label: "Veteranos" }
   ];
 
-  const getPositionInfo = (index: number, cat: string, total: number) => {
-    const pos = index + 1;
-    if (cat === "Senior") {
-      if (pos === 1) return { class: "rank-promo", label: "Fase Copa" };
-    }
-    if (cat === "Femenino") {
-      if (pos <= 2) return { class: "rank-promo", label: "Ascenso Directo" };
-      if (pos <= 6) return { class: "rank-playoff", label: "Playoffs" };
-    }
-    if (cat === "Veteranos") {
-      if (pos === 1) return { class: "rank-top", label: "Campeón" };
-      if (pos >= total - 3) return { class: "rank-down", label: "Descenso" };
+  function getRuleForPosition(pos: number): LeagueRule | null {
+    for (const rule of leagueRules) {
+      if (Array.isArray(rule.puestos) && rule.puestos.includes(pos)) return rule;
     }
     return null;
-  };
+  }
 
   return (
     <main className="main-content">
@@ -175,7 +208,8 @@ export default function ClasificacionPage() {
                 className={`tab-btn-public ${categoria === cat.id ? 'active' : ''}`}
                 onClick={() => {
                   setCategoria(cat.id);
-                  setCompeticion(getDefaultUiCompetitionForCategory(cat.id));
+                  const def = pickDefaultCompetitionId(competicionesLista, cat.id);
+                  setCompeticionId(def);
                 }}
               >
                 {cat.label}
@@ -183,8 +217,16 @@ export default function ClasificacionPage() {
             ))}
           </div>
           <div style={{ marginTop: "1rem" }}>
-            <select value={competicion} onChange={(e) => setCompeticion(e.target.value)} className="competition-select">
-              {competiciones.map(c => <option key={c} value={c}>{c}</option>)}
+            <select
+              value={competicionId}
+              onChange={(e) => setCompeticionId(e.target.value)}
+              className="competition-select"
+            >
+              {competitionsForCategory(competicionesLista, categoria).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -228,9 +270,19 @@ export default function ClasificacionPage() {
                   </thead>
                   <tbody>
                     {equipos.map((eq, index) => {
-                      const info = getPositionInfo(index, categoria, equipos.length);
+                      const dynamicRule = getRuleForPosition(index + 1);
+                      const rowStyle = dynamicRule
+                        ? {
+                            borderLeft: `4px solid ${dynamicRule.color}`,
+                            background: `${dynamicRule.color}14`,
+                          }
+                        : undefined;
                       return (
-                        <tr key={eq.equipo_id} className={`${index < 3 ? "top-rank" : ""} ${info ? info.class : ""}`}>
+                        <tr
+                          key={eq.equipo_id}
+                          className=""
+                          style={rowStyle}
+                        >
                           <td className="rank-num">
                             <div className="rank-content">
                               {index + 1}
@@ -264,24 +316,16 @@ export default function ClasificacionPage() {
                 </table>
               </div>
 
-              {/* Leyenda Dinámica */}
-              <div className="legend-container">
-                {categoria === "Senior" && (
-                  <div className="legend-item"><span className="dot dot-green"></span> Fase Copa</div>
-                )}
-                {categoria === "Femenino" && (
-                  <>
-                    <div className="legend-item"><span className="dot dot-green"></span> Ascenso Directo</div>
-                    <div className="legend-item"><span className="dot dot-yellow"></span> Playoffs</div>
-                  </>
-                )}
-                {categoria === "Veteranos" && (
-                  <>
-                    <div className="legend-item"><span className="dot dot-blue"></span> Campeón</div>
-                    <div className="legend-item"><span className="dot dot-red"></span> Descenso</div>
-                  </>
-                )}
-              </div>
+              {leagueRules.length > 0 && (
+                <div className="legend-container">
+                  {leagueRules.map((rule) => (
+                    <div key={rule.id} className="legend-item">
+                      <span className="dot" style={{ background: rule.color, boxShadow: `0 0 10px ${rule.color}77` }}></span>
+                      {rule.nombre}
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -340,15 +384,6 @@ export default function ClasificacionPage() {
         .rank-num { font-weight: 900; color: #444; font-size: 1.2rem; position: relative; padding-left: 1.5rem !important; }
         .rank-content { position: relative; z-index: 2; }
         
-        /* Indicadores de competición */
-        .rank-promo { border-left: 4px solid #10b981 !important; background: linear-gradient(90deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%); }
-        .rank-playoff { border-left: 4px solid #facc15 !important; background: linear-gradient(90deg, rgba(250, 204, 21, 0.05) 0%, transparent 100%); }
-        .rank-top { border-left: 4px solid #3b82f6 !important; background: linear-gradient(90deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%); }
-        .rank-down { border-left: 4px solid #ef4444 !important; background: linear-gradient(90deg, rgba(239, 68, 68, 0.05) 0%, transparent 100%); }
-
-        .top-rank .rank-num { color: var(--primary); }
-        .top-rank .team-name { color: white; }
-        
         .pts-col { background: rgba(250, 204, 21, 0.05); color: var(--primary); font-size: 1.2rem; width: 80px; }
         .medal { position: absolute; left: -15px; top: 0; font-size: 0.8rem; }
 
@@ -364,10 +399,6 @@ export default function ClasificacionPage() {
         }
         .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: #888; }
         .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-        .dot-green { background: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
-        .dot-yellow { background: #facc15; box-shadow: 0 0 10px rgba(250, 204, 21, 0.4); }
-        .dot-blue { background: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
-        .dot-red { background: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
 
         .text-green { color: #10b981; font-weight: bold; }
         .text-red { color: #ef4444; font-weight: bold; }
