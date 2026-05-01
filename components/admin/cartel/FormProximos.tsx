@@ -7,6 +7,7 @@ import React from "react";
 import type { FormState } from "./types";
 import { SectionLabel, Toggle, type SelectorMatch } from "./Common";
 import type { NextMatch } from "@/lib/cartel-draw";
+import { matchDateInput, matchTimeInput } from "./matchDateTime";
 
 function normalizeText(value: string) {
   return (value || "")
@@ -31,17 +32,6 @@ function isSantisoTeam(team?: { nombre?: string | null } | null) {
 function isPendingMatch(match: SelectorMatch) {
   const estado = normalizeText(match.estado || "programado");
   return !["finalizado", "cancelado", "aplazado"].includes(estado);
-}
-
-function toDateInput(value: string) {
-  return value.split("T")[0] || "";
-}
-
-function toTimeInput(value: string) {
-  const rawTime = value.split("T")[1];
-  if (!rawTime) return "18:00";
-  const match = rawTime.match(/^(\d{2}):(\d{2})/);
-  return match ? `${match[1]}:${match[2]}` : "18:00";
 }
 
 function getMatchTime(match: SelectorMatch) {
@@ -106,8 +96,8 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
       newMatches[index] = {
         rival: rival?.nombre || "",
         rivalEscudoUrl: rival?.escudo_url || "",
-        fecha: match.fecha ? toDateInput(match.fecha) : "",
-        hora: match.fecha ? toTimeInput(match.fecha) : "18:00",
+        fecha: matchDateInput(match.fecha),
+        hora: matchTimeInput(match.fecha),
         categoria: match.categoria || "Senior",
         lugar: match.campo?.nombre || match.lugar || "",
         santisoSide: isSantisoLocal ? "left" : "right"

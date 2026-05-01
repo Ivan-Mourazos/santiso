@@ -11,6 +11,7 @@ import type { SelectorMatch } from "./Common";
 import type { Player, CronEvent, NextMatch } from "@/lib/cartel-draw";
 import { fetchSeasons, fetchCompeticiones, type CompetenciaRow } from "@/lib/supabase-queries";
 import { pickDefaultCompetitionId } from "@/lib/competition";
+import { matchDateInput, matchTimeInput } from "./matchDateTime";
 
 interface CartelPlayer {
   id: string;
@@ -322,10 +323,8 @@ export function useCartelForm() {
       jornada: match.jornada?.numero?.toString() || "1",
       rivalNombre: rival?.nombre || "",
       rivalEscudoUrl: rival?.escudo_url || "",
-      fecha: match.fecha ? match.fecha.split("T")[0] : "",
-      hora: match.fecha?.includes("T")
-        ? match.fecha.split("T")[1].substring(0, 5)
-        : "18:00",
+      fecha: matchDateInput(match.fecha),
+      hora: matchTimeInput(match.fecha),
       lugar: campoNombre,
       estadio: campoNombre,
       santisoSide: isSantisoLocal ? "left" : "right",

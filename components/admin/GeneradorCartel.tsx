@@ -33,6 +33,7 @@ interface Props {
 
 export default function GeneradorCartel({ templateId, onTemplateChange, hideLayout }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawVersionRef = useRef(0);
 
   const {
     form, set,
@@ -80,12 +81,15 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
 
   // ── Canvas draw ─────────────────────────────────────────────────────────────
   const drawCanvas = useCallback(async () => {
+    const drawVersion = drawVersionRef.current + 1;
+    drawVersionRef.current = drawVersion;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     await document.fonts.ready;
+    if (drawVersion !== drawVersionRef.current) return;
 
     // Load base assets
     const [fondo, xunta, rfgf, santiso, ...sponsorImgs] = await Promise.all([
@@ -95,6 +99,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
       loadImg(assetUrls.santiso),
       ...assetUrls.sponsors.map(u => loadImg(u)),
     ]);
+    if (drawVersion !== drawVersionRef.current) return;
 
     const assets = {
       fondo, xunta, rfgf, santiso,
@@ -103,6 +108,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
 
     const rivalImg   = await loadImg(form.rivalEscudoUrl);
     const jugadorImg = tipo === "noso11" ? await loadImg(form.jugadorFotoUrl) : null;
+    if (drawVersion !== drawVersionRef.current) return;
 
     // Load multiple rival shields for Próximos
     const matchRivalImgs: (HTMLImageElement | null)[] = [];
@@ -110,6 +116,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
       const results = await Promise.all(form.matches.map(m => loadImg(m.rivalEscudoUrl)));
       matchRivalImgs.push(...results);
     }
+    if (drawVersion !== drawVersionRef.current) return;
 
     ctx.clearRect(0, 0, W * RENDER_SCALE, H * RENDER_SCALE);
     ctx.save();
