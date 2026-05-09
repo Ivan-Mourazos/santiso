@@ -140,69 +140,92 @@ export function drawCronoloxia(
   ctx.fillText("RIVAL", CX + MARGIN + ICON_SIZE + 8, SEP_TOP - 8);
 
   function drawChangeCard(ev: CronEvent, anchorX: number, y: number, side: "left" | "right") {
-    const cardW = Math.min(360, CW / 2 - 120);
-    const cardH = Math.min(58, Math.max(48, EVT_H + 4));
-    const cardX = side === "left" ? anchorX - cardW : anchorX;
-    const cardY = y - cardH / 2;
-    const padX = 14;
-
-    ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.75)";
-    ctx.shadowBlur = 14;
-    ctx.fillStyle = "rgba(0,0,0,0.42)";
-    rr(ctx, cardX, cardY, cardW, cardH, 14);
-    ctx.fill();
-    ctx.restore();
-
-    const grad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
-    grad.addColorStop(0, "rgba(239,68,68,0.18)");
-    grad.addColorStop(0.5, "rgba(255,255,255,0.035)");
-    grad.addColorStop(1, "rgba(34,197,94,0.18)");
-    ctx.fillStyle = grad;
-    rr(ctx, cardX, cardY, cardW, cardH, 14);
-    ctx.fill();
-
-    ctx.strokeStyle = "rgba(255,255,255,0.14)";
-    ctx.lineWidth = 1;
-    rr(ctx, cardX, cardY, cardW, cardH, 14);
-    ctx.stroke();
-
-    ctx.strokeStyle = "rgba(255,255,255,0.08)";
-    ctx.beginPath();
-    ctx.moveTo(cardX + padX, y);
-    ctx.lineTo(cardX + cardW - padX, y);
-    ctx.stroke();
-
-    const labelW = 56;
-    const labelH = 18;
-    const labelX = cardX + padX;
-    const outY = cardY + cardH * 0.29;
-    const inY = cardY + cardH * 0.72;
     const sale = (ev.jugador || "").toUpperCase();
     const entra = (ev.jugadorEntra || "").toUpperCase();
 
-    function drawSubLine(label: string, color: string, name: string, lineY: number) {
-      ctx.fillStyle = color;
-      rr(ctx, labelX, lineY - labelH / 2, labelW, labelH, 9);
-      ctx.fill();
+    const isLeft = side === "left";
 
+    // Typography
+    const nameFont = "850 16px 'Outfit', sans-serif";
+    const tagFont = "900 10px 'Outfit', sans-serif";
+    const slashFont = "700 16px 'Outfit', sans-serif";
+    
+    ctx.font = nameFont;
+    const saleW = ctx.measureText(sale).width;
+    const entraW = ctx.measureText(entra).width;
+
+    ctx.font = slashFont;
+    const slashStr = "  /  ";
+    const slashW = ctx.measureText(slashStr).width;
+
+    const tagW = 48; // Wider tag
+    const tagH = 20;
+    const tagGap = 10; // Breathing room
+    const padX = 18; // Outer padding
+
+    const contentW = tagW + tagGap + saleW + slashW + tagW + tagGap + entraW;
+    const cardW = contentW + padX * 2;
+    const cardH = 38; // Slightly taller for more breath
+    const cardX = isLeft ? anchorX - cardW : anchorX;
+    const cardY = y - cardH / 2;
+
+    // Draw pill background
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.6)";
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    rr(ctx, cardX, cardY, cardW, cardH, cardH / 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Outline
+    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    ctx.lineWidth = 1;
+    rr(ctx, cardX, cardY, cardW, cardH, cardH / 2);
+    ctx.stroke();
+
+    let curX = cardX + padX;
+
+    // Helper to draw tag
+    function drawTag(label: string, color: string, cx: number) {
+      ctx.fillStyle = color;
+      rr(ctx, cx, y - tagH / 2, tagW, tagH, tagH / 2);
+      ctx.fill();
       ctx.fillStyle = "#050505";
-      ctx.font = "900 10px 'Outfit', sans-serif";
+      ctx.font = tagFont;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(label, labelX + labelW / 2, lineY + 0.5);
-
-      const nameX = labelX + labelW + 12;
-      const maxNameW = cardW - padX * 2 - labelW - 14;
-      ctx.fillStyle = "#fff";
-      ctx.font = "850 15px 'Outfit', sans-serif";
-      ctx.textAlign = "left";
-      fitFont(ctx, name || "—", maxNameW, 15, 10, "850");
-      ctx.fillText(name || "—", nameX, lineY + 0.5);
+      ctx.fillText(label, cx + tagW / 2, y + 0.5);
     }
 
-    drawSubLine("SALE", "#ef4444", sale, outY);
-    drawSubLine("ENTRA", "#22c55e", entra, inY);
+    // SALE tag
+    drawTag("SALE", "#ef4444", curX);
+    curX += tagW + tagGap;
+
+    // SALE name
+    ctx.fillStyle = "#fff";
+    ctx.font = nameFont;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(sale, curX, y + 0.5);
+    curX += saleW;
+
+    // Slash
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.font = slashFont;
+    ctx.textAlign = "left";
+    ctx.fillText(slashStr, curX, y + 0.5);
+    curX += slashW;
+
+    // ENTRA tag
+    drawTag("ENTRA", "#22c55e", curX);
+    curX += tagW + tagGap;
+
+    // ENTRA name
+    ctx.fillStyle = "#fff";
+    ctx.font = nameFont;
+    ctx.textAlign = "left"; // FIXED: Was inheriting center from drawTag
+    ctx.fillText(entra, curX, y + 0.5);
   }
 
   function drawTimelineEvent(ev: CronEvent, y: number, side: "left" | "right") {
