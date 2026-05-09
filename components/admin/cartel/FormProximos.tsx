@@ -64,18 +64,25 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
 
     if (allUpcomingSantiso.length === 0) return;
 
+    // Ventana máxima de 6 días desde el primer partido para asegurar que solo
+    // autocompletamos partidos de la MISMA jornada (si un equipo descansa, no coge el de la semana que viene).
+    const earliestMatchTime = getMatchTime(allUpcomingSantiso[0]);
+    const maxWindowTime = earliestMatchTime + 6 * 24 * 60 * 60 * 1000;
+    
+    const currentMatchdayMatches = allUpcomingSantiso.filter(m => getMatchTime(m) <= maxWindowTime);
+
     // Buscar el más próximo de cada categoría del club.
     const cats = ["Senior", "Femenino", "Veteranos"];
     const selectedMatches: SelectorMatch[] = [];
 
     cats.forEach(cat => {
-      const match = allUpcomingSantiso.find(m => categoriaKey(m.categoria || "") === categoriaKey(cat));
+      const match = currentMatchdayMatches.find(m => categoriaKey(m.categoria || "") === categoriaKey(cat));
       if (match) selectedMatches.push(match);
     });
 
-    // Si no hay 3 categorías con partido, rellena con otros próximos del Santiso.
+    // Si no hay 3 categorías con partido, rellena con otros próximos del Santiso de la misma jornada.
     if (selectedMatches.length < 3) {
-      allUpcomingSantiso.forEach(m => {
+      currentMatchdayMatches.forEach(m => {
         if (selectedMatches.length < 3 && !selectedMatches.find(sm => sm.id === m.id)) {
           selectedMatches.push(m);
         }

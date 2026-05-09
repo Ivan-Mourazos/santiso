@@ -62,16 +62,18 @@ export interface ProximosParams {
 
 export function generateProximosText(params: ProximosParams): string {
   const { matches } = params;
-  if (!matches.length) return "";
+  const validMatches = matches.filter(m => m.rival && m.rival.trim() !== "");
+
+  if (!validMatches.length) return "";
 
   const lines: string[] = ["📅 AXENDA DA FIN DE SEMANA", ""];
 
-  for (const m of matches) {
+  for (const m of validMatches) {
     const catEmoji = CAT_EMOJI[m.categoria] ?? "⚽";
     const catLabel = CAT_LABEL[m.categoria] ?? m.categoria.toUpperCase();
     const dateStr  = fmtDateLong(m.fecha);
     const hora     = m.hora || "—:—";
-    const rival    = m.rival || "Rival a confirmar";
+    const rival    = m.rival;
     const estadio  = m.lugar || "—";
 
     // Build versus line depending on santisoSide
