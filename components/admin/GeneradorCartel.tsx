@@ -45,6 +45,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
     handleRivalFile,
     handleJugadorFile,
     updatePlayer,
+    swapPlayers,
     addEvent,
     updateEvent,
     removeEvent,
@@ -274,7 +275,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
             {tipo === "resumo"     && <FormResumo form={form} set={set} equipos={equipos} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} campos={campos} competiciones={competicionesCatalog} tipo={tipo} />}
             {tipo === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}
             {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} dbMatches={dbMatches} />}
-            {tipo === "noso11"     && <FormNoso11 form={form} set={set} jugadores={jugadores} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}
+            {tipo === "noso11"     && <FormNoso11 form={form} set={set} jugadores={jugadores} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} swapPlayers={swapPlayers} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}
 
             {/* Santiso side (shared) */}
             {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (

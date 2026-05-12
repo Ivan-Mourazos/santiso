@@ -10,6 +10,7 @@ import {
   type CompetenciaRow,
 } from "@/lib/competition";
 import { fetchCompeticiones } from "@/lib/supabase-queries";
+import { useCompeticiones } from "@/lib/useCompeticiones";
 
 interface AdminEquiposProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -35,10 +36,18 @@ export default function AdminEquipos({
 }: AdminEquiposProps) {
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [allCategoryTeams, setAllCategoryTeams] = useState<Equipo[]>([]);
-  const [competicionesCatalog, setCompeticionesCatalog] = useState<
-    CompetenciaRow[]
-  >([]);
-  const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
+  const {
+    competicionesCatalog,
+    selectedCompetitionId,
+    setSelectedCompetitionId,
+    competicionesEnCategoria,
+    addCompeticion,
+    removeCompeticion,
+  } = useCompeticiones(categoria);
+
+  const [nuevaCompeticionNombre, setNuevaCompeticionNombre] = useState("");
+  const [nuevoFormato, setNuevoFormato] = useState("liga");
+  const [showNewCompeticion, setShowNewCompeticion] = useState(false);
   const [selectedExistingId, setSelectedExistingId] = useState("");
 
   const [nombreEquipo, setNombreEquipo] = useState("");
@@ -51,32 +60,6 @@ export default function AdminEquipos({
   const [busyText, setBusyText] = useState("Cargando equipos...");
   const [busyProgress, setBusyProgress] = useState<number | undefined>(
     undefined,
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const list = await fetchCompeticiones();
-      if (!cancelled) setCompeticionesCatalog(list);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (competicionesCatalog.length === 0) return;
-    const def = pickDefaultCompetitionId(competicionesCatalog, categoria);
-    setSelectedCompetitionId((prev) => {
-      const opts = competitionsForCategory(competicionesCatalog, categoria);
-      if (prev && opts.some((o) => o.id === prev)) return prev;
-      return def;
-    });
-  }, [categoria, competicionesCatalog]);
-
-  const competicionesEnCategoria = useMemo(
-    () => competitionsForCategory(competicionesCatalog, categoria),
-    [competicionesCatalog, categoria],
   );
 
   const selectedCompeticionNombre = useMemo(
@@ -438,17 +421,83 @@ export default function AdminEquipos({
 
       <div className="input-group" style={{ marginBottom: "1rem" }}>
         <label>Liga / Competición</label>
-        <select
-          value={selectedCompetitionId}
-          onChange={(e) => setSelectedCompetitionId(e.target.value)}
-          disabled={loading || isFetching}
-        >
-          {competicionesEnCategoria.map((opt) => (
-            <option key={opt.id} value={opt.id}>
-              {opt.nombre}
-            </option>
-          ))}
-        </select>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <select
+            value={selectedCompetitionId}
+            onChange={(e) => setSelectedCompetitionId(e.target.value)}
+            disabled={loading || isFetching}
+            style={{ flex: 1 }}
+          >
+            {competicionesEnCategoria.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.nombre}
+              </option>
+            ))}
+          </select>
+          {showNewCompeticion && (
+            <>
+              <input
+                type="text"
+                placeholder="Nombre..."
+                value={nuevaCompeticionNombre}
+                onChange={(e) => setNuevaCompeticionNombre(e.target.value)}
+                autoFocus
+                style={{ width: "120px" }}
+              />
+              <select
+                value={nuevoFormato}
+                onChange={(e) => setNuevoFormato(e.target.value)}
+                style={{ width: "110px", padding: "0.4rem", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white" }}
+              >
+                <option value="liga">Liga</option>
+                <option value="eliminatoria">Copa / Árbol</option>
+              </select>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={async () => {
+              if (showNewCompeticion && nuevaCompeticionNombre.trim()) {
+                setLoading(true);
+                const { error } = await addCompeticion(nuevaCompeticionNombre, categoria, nuevoFormato);
+                setLoading(false);
+                if (error) showToast("Error: " + error.message, "error");
+                else {
+                  showToast("Competición añadida");
+                  setNuevaCompeticionNombre("");
+                  setNuevoFormato("liga");
+                  setShowNewCompeticion(false);
+                }
+              } else {
+                setShowNewCompeticion((v) => !v);
+              }
+            }}
+            className="btn-primary"
+            style={{ padding: "0.8rem", width: "45px", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            {showNewCompeticion ? "✓" : "+"}
+          </button>
+          {selectedCompetitionId && competicionesEnCategoria.length > 1 && (
+            <button
+              type="button"
+              onClick={() => {
+                const compName = competicionesEnCategoria.find(c => c.id === selectedCompetitionId)?.nombre;
+                showConfirm(`¿Eliminar la competición "${compName}" de esta categoría?`, async () => {
+                  setLoading(true);
+                  const { error } = await removeCompeticion(selectedCompetitionId);
+                  setLoading(false);
+                  if (error) showToast("Error: " + error.message, "error");
+                  else showToast("Competición eliminada");
+                });
+              }}
+              className="btn-delete"
+              title="Eliminar Competición"
+              style={{ padding: "0.8rem", width: "45px", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {relationEnabled && (

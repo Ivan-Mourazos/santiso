@@ -280,6 +280,17 @@ export function useCartelForm() {
     });
   }
 
+  function swapPlayers(list: "titulares" | "suplentes", indexA: number, indexB: number) {
+    setForm((p) => {
+      const arr = [...p[list]];
+      if (indexA < 0 || indexA >= arr.length || indexB < 0 || indexB >= arr.length) return p;
+      const temp = arr[indexA];
+      arr[indexA] = arr[indexB];
+      arr[indexB] = temp;
+      return { ...p, [list]: arr };
+    });
+  }
+
   function addEvent() {
     setForm((p) => ({ ...p, events: [...p.events, mkEvent()] }));
   }
@@ -413,16 +424,13 @@ export function useCartelForm() {
 
         if (titulares.length === 0 && suplentes.length === 0) return;
 
+        while (titulares.length < 11) titulares.push(mkPlayer());
+        while (suplentes.length < 5) suplentes.push(mkPlayer());
+
         setForm((p) => ({
           ...p,
-          titulares:
-            titulares.length > 0
-              ? titulares
-              : Array.from({ length: 11 }, mkPlayer),
-          suplentes:
-            suplentes.length > 0
-              ? suplentes
-              : Array.from({ length: 5 }, mkPlayer),
+          titulares,
+          suplentes,
         }));
       });
   }
@@ -438,6 +446,7 @@ export function useCartelForm() {
     handleRivalFile,
     handleJugadorFile,
     updatePlayer,
+    swapPlayers,
     addEvent,
     updateEvent,
     removeEvent,

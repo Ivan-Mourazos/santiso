@@ -632,7 +632,7 @@ export default function PlantillaPage() {
       .from("jornadas")
       .select("id")
       .eq("temporada_id", temporadaId);
-    const jornadaIds = jornadas?.map((j) => j.id) || [];
+    const jornadaIds = jornadas?.map((j: any) => j.id) || [];
     const playerIds = players.map((player) => player.id);
     if (jornadaIds.length === 0 || playerIds.length === 0) {
       setCardStats({});
@@ -657,7 +657,7 @@ export default function PlantillaPage() {
       .eq("estado", "finalizado")
       .or(
         santisoIds
-          .flatMap((id) => [`equipo_local_id.eq.${id}`, `equipo_visitante_id.eq.${id}`])
+          .flatMap((id: string) => [`equipo_local_id.eq.${id}`, `equipo_visitante_id.eq.${id}`])
           .join(","),
       );
     const teamMatches = (teamMatchesRaw || []) as TeamMatchRow[];
@@ -689,8 +689,8 @@ export default function PlantillaPage() {
 
       if (jData) {
         const unicas = Array.from(
-          new Set(jData.map((j) => j.competicion || "Liga")),
-        );
+          new Set(jData.map((j: any) => String(j.competicion || "Liga"))),
+        ) as string[];
         setFasesDisponibles(unicas);
       }
     }
@@ -718,7 +718,7 @@ export default function PlantillaPage() {
       }
 
       const { data: jornadas } = await query;
-      const jornadaIds = jornadas?.map((j) => j.id) || [];
+      const jornadaIds = jornadas?.map((j: any) => j.id) || [];
       if (jornadaIds.length === 0) {
         setPlayerStats(emptyPlayerStats());
         return;
@@ -740,7 +740,7 @@ export default function PlantillaPage() {
         let sup = 0;
         let pj = 0;
 
-        stats.forEach((s) => {
+        stats.forEach((s: any) => {
           const isTitular = s.titular;
           const played = s.jugo || s.titular;
           if (played) pj++;

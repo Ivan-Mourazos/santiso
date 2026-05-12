@@ -6,6 +6,7 @@ export type CompetenciaRow = {
   nombre: string;
   orden: number;
   activa?: boolean | null;
+  formato?: string | null;
 };
 
 export function normalizeCategoryKey(value: string) {

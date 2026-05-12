@@ -24,13 +24,14 @@ interface Props {
   jugFileName: string;
   handleJugadorFile: (file: File) => void;
   updatePlayer: (list: "titulares" | "suplentes", i: number, patch: Partial<Player>) => void;
+  swapPlayers?: (list: "titulares" | "suplentes", a: number, b: number) => void;
   dbMatches: SelectorMatch[];
   loadMatchFromDb: (m: SelectorMatch) => void;
   tipo: string;
 }
 
 export const FormNoso11: React.FC<Props> = ({
-  form, set, jugadores, jugFileName, handleJugadorFile, updatePlayer, dbMatches, loadMatchFromDb, tipo
+  form, set, jugadores, jugFileName, handleJugadorFile, updatePlayer, swapPlayers, dbMatches, loadMatchFromDb, tipo
 }) => {
   const getDisplayName = (j: CartelPlayerOption | undefined) => {
     if (!j) return "";
@@ -42,15 +43,12 @@ export const FormNoso11: React.FC<Props> = ({
 
   const jugadoresCategoria = jugadores.filter(j => j.categoria === form.categoria);
 
-  const handleSelectJugador = (list: "titulares" | "suplentes", i: number, id: string) => {
-    const jug = jugadores.find(j => j.id === id);
-    if (jug) {
-      updatePlayer(list, i, { 
-        nome: getDisplayName(jug), 
-        dorsal: jug.dorsal?.toString() || "" 
-      });
+  const handleChangeJugadorText = (list: "titulares" | "suplentes", i: number, val: string) => {
+    const matched = jugadoresCategoria.find(j => getDisplayName(j).toLowerCase() === val.toLowerCase());
+    if (matched) {
+      updatePlayer(list, i, { nome: val, dorsal: matched.dorsal?.toString() || "" });
     } else {
-      updatePlayer(list, i, { nome: "", dorsal: "" });
+      updatePlayer(list, i, { nome: val });
     }
   };
 
@@ -139,28 +137,54 @@ export const FormNoso11: React.FC<Props> = ({
         </div>
       </div>
 
+      <datalist id="jugadores-categoria-list">
+        {jugadoresCategoria.map(j => (
+          <option key={j.id} value={getDisplayName(j)}>
+            #{j.dorsal || "-"} {j.nombre}
+          </option>
+        ))}
+      </datalist>
+
       <SectionLabel>Titulares (11)</SectionLabel>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
         {form.titulares.map((p, i) => (
-          <div key={p.id} style={{ display: "grid", gridTemplateColumns: "55px 1fr auto", gap: "0.5rem", alignItems: "center" }}>
+          <div key={p.id} style={{ display: "grid", gridTemplateColumns: "55px 1fr auto auto", gap: "0.5rem", alignItems: "center" }}>
             <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="#" value={p.dorsal}
               onChange={e => updatePlayer("titulares", i, { dorsal: e.target.value })}
               style={{ textAlign: "center" }} />
-            <select 
-              value={jugadores.find(j => getDisplayName(j) === p.nome)?.id || ""}
-              onChange={e => handleSelectJugador("titulares", i, e.target.value)}
-              style={{ padding: "0.4rem", borderRadius: "0.4rem", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "#fff" }}
-            >
-              <option value="">Elegir jugador...</option>
-              {jugadoresCategoria.map(j => (
-                <option key={j.id} value={j.id}>{getDisplayName(j)} (#{j.dorsal})</option>
-              ))}
-            </select>
+            <input 
+              type="text"
+              list="jugadores-categoria-list"
+              placeholder="Nombre del jugador..."
+              value={p.nome}
+              onChange={e => handleChangeJugadorText("titulares", i, e.target.value)}
+              style={{ padding: "0.4rem", borderRadius: "0.4rem", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "#fff", width: "100%" }}
+            />
             <button title="Capitán" onClick={() => updatePlayer("titulares", i, { eCapitan: !p.eCapitan })}
               style={{ background: p.eCapitan ? "#4aa8d8" : "rgba(255,255,255,0.04)",
                        border: "1px solid var(--border)", padding: "0.4rem", borderRadius: "0.4rem", cursor: "pointer" }}>
               C
             </button>
+            <div style={{ display: "flex", gap: "2px" }}>
+              <button 
+                type="button" 
+                title="Subir" 
+                disabled={i === 0} 
+                onClick={() => swapPlayers?.("titulares", i, i - 1)}
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", padding: "0.2rem 0.4rem", borderRadius: "0.3rem", cursor: i === 0 ? "default" : "pointer", opacity: i === 0 ? 0.3 : 1 }}
+              >
+                ▲
+              </button>
+              <button 
+                type="button" 
+                title="Bajar" 
+                disabled={i === form.titulares.length - 1} 
+                onClick={() => swapPlayers?.("titulares", i, i + 1)}
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", padding: "0.2rem 0.4rem", borderRadius: "0.3rem", cursor: i === form.titulares.length - 1 ? "default" : "pointer", opacity: i === form.titulares.length - 1 ? 0.3 : 1 }}
+              >
+                ▼
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -168,20 +192,38 @@ export const FormNoso11: React.FC<Props> = ({
       <SectionLabel>Suplentes</SectionLabel>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
         {form.suplentes.map((p, i) => (
-          <div key={p.id} style={{ display: "grid", gridTemplateColumns: "55px 1fr", gap: "0.5rem", alignItems: "center" }}>
+          <div key={p.id} style={{ display: "grid", gridTemplateColumns: "55px 1fr auto", gap: "0.5rem", alignItems: "center" }}>
             <input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="#" value={p.dorsal}
               onChange={e => updatePlayer("suplentes", i, { dorsal: e.target.value })}
               style={{ textAlign: "center" }} />
-            <select 
-              value={jugadores.find(j => getDisplayName(j) === p.nome)?.id || ""}
-              onChange={e => handleSelectJugador("suplentes", i, e.target.value)}
-              style={{ padding: "0.4rem", borderRadius: "0.4rem", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "#fff" }}
-            >
-              <option value="">Elegir jugador...</option>
-              {jugadoresCategoria.map(j => (
-                <option key={j.id} value={j.id}>{getDisplayName(j)} (#{j.dorsal})</option>
-              ))}
-            </select>
+            <input 
+              type="text"
+              list="jugadores-categoria-list"
+              placeholder="Nombre del jugador..."
+              value={p.nome}
+              onChange={e => handleChangeJugadorText("suplentes", i, e.target.value)}
+              style={{ padding: "0.4rem", borderRadius: "0.4rem", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "#fff", width: "100%" }}
+            />
+            <div style={{ display: "flex", gap: "2px" }}>
+              <button 
+                type="button" 
+                title="Subir" 
+                disabled={i === 0} 
+                onClick={() => swapPlayers?.("suplentes", i, i - 1)}
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", padding: "0.2rem 0.4rem", borderRadius: "0.3rem", cursor: i === 0 ? "default" : "pointer", opacity: i === 0 ? 0.3 : 1 }}
+              >
+                ▲
+              </button>
+              <button 
+                type="button" 
+                title="Bajar" 
+                disabled={i === form.suplentes.length - 1} 
+                onClick={() => swapPlayers?.("suplentes", i, i + 1)}
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", padding: "0.2rem 0.4rem", borderRadius: "0.3rem", cursor: i === form.suplentes.length - 1 ? "default" : "pointer", opacity: i === form.suplentes.length - 1 ? 0.3 : 1 }}
+              >
+                ▼
+              </button>
+            </div>
           </div>
         ))}
       </div>

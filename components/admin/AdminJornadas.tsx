@@ -15,6 +15,7 @@ import {
   fetchTeamsForCompetition,
   mergeMissingTeams,
 } from "@/lib/supabase-queries";
+import { useCompeticiones } from "@/lib/useCompeticiones";
 
 interface AdminJornadasProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -48,14 +49,23 @@ export default function AdminJornadas({
   const [busyText, setBusyText] = useState("Cargando jornadas y partidos...");
   const [rowBusy, setRowBusy] = useState<Record<string, boolean>>({});
   const [selectedJornada, setSelectedJornada] = useState<string | null>(null);
-  const [competicionesCatalog, setCompeticionesCatalog] = useState<
-    CompetenciaRow[]
-  >([]);
-  const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
+  const {
+    competicionesCatalog,
+    selectedCompetitionId,
+    setSelectedCompetitionId,
+    competicionesEnCategoria,
+    addCompeticion,
+    removeCompeticion,
+  } = useCompeticiones(categoria);
+
+  const [nuevaCompeticionNombre, setNuevaCompeticionNombre] = useState("");
+  const [nuevoFormato, setNuevoFormato] = useState("liga");
+  const [showNewCompeticion, setShowNewCompeticion] = useState(false);
 
   // New Matchday form
   const [numJornada, setNumJornada] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
+  const [nombreFase, setNombreFase] = useState("");
   const [showNewJornada, setShowNewJornada] = useState(false);
 
   // New Season form
@@ -96,37 +106,11 @@ export default function AdminJornadas({
     "#8b5cf6", "#06b6d4", "#f97316", "#14b8a6", "#6366f1",
   ];
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const list = await fetchCompeticiones();
-      if (!cancelled) setCompeticionesCatalog(list);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (competicionesCatalog.length === 0) return;
-    const def = pickDefaultCompetitionId(competicionesCatalog, categoria);
-    setSelectedCompetitionId((prev) => {
-      const opts = competitionsForCategory(competicionesCatalog, categoria);
-      if (prev && opts.some((o) => o.id === prev)) return prev;
-      return def;
-    });
-  }, [categoria, competicionesCatalog]);
-
   const selectedCompeticionNombre = useMemo(
     () =>
       competicionesCatalog.find((c) => c.id === selectedCompetitionId)?.nombre ??
       "",
     [competicionesCatalog, selectedCompetitionId],
-  );
-
-  const competicionesEnCategoria = useMemo(
-    () => competitionsForCategory(competicionesCatalog, categoria),
-    [competicionesCatalog, categoria],
   );
 
   // Cargar reglas de liga existentes
@@ -395,11 +379,13 @@ export default function AdminJornadas({
       numero: parseInt(numJornada),
       fecha_inicio: fechaInicio || null,
       competicion_id: selectedCompetitionId,
+      nombre_fase: nombreFase.trim() || null,
     };
     const { error } = await supabase.from("jornadas").insert([payload]);
     if (!error) {
       showToast("Jornada creada");
       setNumJornada("");
+      setNombreFase("");
       fetchJornadas();
     } else {
       showToast("Error al crear jornada", "error");
@@ -698,21 +684,84 @@ export default function AdminJornadas({
             <label style={{ color: "#888", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", marginBottom: "0.6rem", display: "block" }}>
               ⚔️ Competición
             </label>
-            <select
-              value={selectedCompetitionId}
-              onChange={(e) => {
-                setSelectedJornada(null);
-                setPartidos([]);
-                setDescansos([]);
-                setSelectedCompetitionId(e.target.value);
-              }}
-              disabled={loading || isFetching}
-              style={{ height: "48px", background: "rgba(0,0,0,0.4)", borderRadius: "10px", fontWeight: 600 }}
-            >
-              {competicionesEnCategoria.map((c) => (
-                <option key={c.id} value={c.id}>{c.nombre}</option>
-              ))}
-            </select>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <select
+                value={selectedCompetitionId}
+                onChange={(e) => {
+                  setSelectedJornada(null);
+                  setPartidos([]);
+                  setDescansos([]);
+                  setSelectedCompetitionId(e.target.value);
+                }}
+                disabled={loading || isFetching}
+                style={{ flex: 1, height: "48px", background: "rgba(0,0,0,0.4)", borderRadius: "10px", fontWeight: 600 }}
+              >
+                {competicionesEnCategoria.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
+              {showNewCompeticion && (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Nombre..."
+                    value={nuevaCompeticionNombre}
+                    onChange={(e) => setNuevaCompeticionNombre(e.target.value)}
+                    autoFocus
+                    style={{ width: "100px", height: "48px", borderRadius: "10px", background: "rgba(250,204,21,0.05)", border: "1px solid rgba(250,204,21,0.2)" }}
+                  />
+                  <select
+                    value={nuevoFormato}
+                    onChange={(e) => setNuevoFormato(e.target.value)}
+                    style={{ width: "100px", height: "48px", borderRadius: "10px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white" }}
+                  >
+                    <option value="liga">Liga</option>
+                    <option value="eliminatoria">Copa</option>
+                  </select>
+                </>
+              )}
+              <button
+                onClick={async () => {
+                  if (showNewCompeticion && nuevaCompeticionNombre.trim()) {
+                    setLoading(true);
+                    const { error } = await addCompeticion(nuevaCompeticionNombre, categoria, nuevoFormato);
+                    setLoading(false);
+                    if (error) showToast("Error: " + error.message, "error");
+                    else {
+                      showToast("Competición añadida");
+                      setNuevaCompeticionNombre("");
+                      setNuevoFormato("liga");
+                      setShowNewCompeticion(false);
+                    }
+                  } else {
+                    setShowNewCompeticion((v) => !v);
+                  }
+                }}
+                className="btn-primary"
+                style={{ height: "48px", width: "48px", borderRadius: "10px", flexShrink: 0 }}
+              >
+                {showNewCompeticion ? "✓" : "+"}
+              </button>
+              {selectedCompetitionId && competicionesEnCategoria.length > 1 && (
+                <button
+                  onClick={() => {
+                    const compName = competicionesEnCategoria.find(c => c.id === selectedCompetitionId)?.nombre;
+                    showConfirm(`¿Eliminar la competición "${compName}" de esta categoría?`, async () => {
+                      setLoading(true);
+                      const { error } = await removeCompeticion(selectedCompetitionId);
+                      setLoading(false);
+                      if (error) showToast("Error: " + error.message, "error");
+                      else showToast("Competición eliminada");
+                    });
+                  }}
+                  className="btn-delete"
+                  title="Eliminar Competición"
+                  style={{ height: "48px", width: "48px", borderRadius: "10px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Botones de configuración */}
@@ -1019,22 +1068,31 @@ export default function AdminJornadas({
               style={{ flex: 1, height: "45px", background: "none", border: "none", fontSize: "1.1rem", fontWeight: 800, color: "var(--primary)" }}
             >
               <option value="">Selecciona una jornada...</option>
-              {jornadas.map((j) => (
-                <option key={j.id} value={j.id}>Jornada {j.numero}</option>
+              {jornadas.map((j: any) => (
+                <option key={j.id} value={j.id}>{j.nombre_fase || `Jornada ${j.numero}`}</option>
               ))}
             </select>
           </div>
           
           <div style={{ display: "flex", gap: "0.5rem" }}>
             {showNewJornada && (
-              <input
-                type="number"
-                placeholder="Nº"
-                value={numJornada}
-                onChange={(e) => setNumJornada(e.target.value)}
-                autoFocus
-                style={{ width: "60px", height: "40px", borderRadius: "8px", background: "rgba(0,0,0,0.3)", textAlign: "center" }}
-              />
+              <>
+                <input
+                  type="number"
+                  placeholder="Nº"
+                  value={numJornada}
+                  onChange={(e) => setNumJornada(e.target.value)}
+                  autoFocus
+                  style={{ width: "50px", height: "40px", borderRadius: "8px", background: "rgba(0,0,0,0.3)", textAlign: "center", color: "white" }}
+                />
+                <input
+                  type="text"
+                  placeholder="Fase (Ej: Semis)"
+                  value={nombreFase}
+                  onChange={(e) => setNombreFase(e.target.value)}
+                  style={{ width: "130px", height: "40px", borderRadius: "8px", background: "rgba(0,0,0,0.3)", padding: "0 0.5rem", color: "white" }}
+                />
+              </>
             )}
             <button
               onClick={() => {
@@ -1066,6 +1124,14 @@ export default function AdminJornadas({
       <div style={{ width: "100%" }}>
         {selectedJornada ? (
           <>
+            {(() => {
+              const currJ = jornadas.find((j: any) => j.id === selectedJornada);
+              return currJ ? (
+                <h3 style={{ color: "white", marginBottom: "1.5rem", fontSize: "1.5rem", fontWeight: 900 }}>
+                  {currJ.nombre_fase || `Jornada ${currJ.numero}`}
+                </h3>
+              ) : null;
+            })()}
             {/* Creador de Partidos */}
             <form
               onSubmit={handleAddPartido}

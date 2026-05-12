@@ -11,6 +11,7 @@ import {
   fetchTeamsForCompetition,
   mergeMissingTeams,
 } from "@/lib/supabase-queries";
+import BracketTree from "@/components/ui/BracketTree";
 
 export default function ClasificacionPage() {
   interface LeagueRule {
@@ -132,7 +133,7 @@ export default function ClasificacionPage() {
 
         // 2. Goal-Average Particular (Enfrentamientos Directos)
         if (partidosData) {
-          const directMatches = partidosData.filter(p => 
+          const directMatches = partidosData.filter((p: any) => 
             (p.equipo_local_id === a.equipo_id && p.equipo_visitante_id === b.equipo_id) ||
             (p.equipo_local_id === b.equipo_id && p.equipo_visitante_id === a.equipo_id)
           );
@@ -140,7 +141,7 @@ export default function ClasificacionPage() {
           if (directMatches.length > 0) {
             let ptsA = 0, ptsB = 0, gfA = 0, gfB = 0;
             
-            directMatches.forEach(p => {
+            directMatches.forEach((p: any) => {
               const aIsLocal = p.equipo_local_id === a.equipo_id;
               const gA = aIsLocal ? p.goles_local : p.goles_visitante;
               const gB = aIsLocal ? p.goles_visitante : p.goles_local;
@@ -194,12 +195,23 @@ export default function ClasificacionPage() {
     return null;
   }
 
+  const currCompObj = competicionesLista.find(c => c.id === competicionId);
+  const isEliminatoria = currCompObj?.formato === "eliminatoria";
+
   return (
     <main className="main-content">
       <section className="hero-simple glass-bg">
         <div className="container">
-          <h1 className="hero-title">Clasificación <span className="text-primary">Liga</span></h1>
-          <p className="hero-subtitle">Estado actual de la competición. Selecciona una categoría para ver los detalles.</p>
+          <h1 className="hero-title">
+            {isEliminatoria ? "Cuadrante" : "Clasificación"}{" "}
+            <span className="text-primary">{isEliminatoria ? "Copa" : "Liga"}</span>
+          </h1>
+          <p className="hero-subtitle">
+            {isEliminatoria
+              ? "Esquema y resultados de eliminatorias directas."
+              : "Estado actual de la competición regular."}{" "}
+            Selecciona una categoría para ver los detalles.
+          </p>
           
           <div className="category-tabs-public">
             {categorias.map(cat => (
@@ -239,6 +251,8 @@ export default function ClasificacionPage() {
               <div className="loader"></div>
               <p>Actualizando clasificación...</p>
             </div>
+          ) : isEliminatoria ? (
+            <BracketTree categoria={categoria} competicionId={competicionId} />
           ) : equipos.length === 0 ? (
             <div className="empty-state glass shadow-glare">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ opacity: 0.3, marginBottom: '1rem' }}><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>

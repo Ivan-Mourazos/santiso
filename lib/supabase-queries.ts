@@ -26,6 +26,7 @@ export interface Matchday {
   competicion_id?: string | null;
   competicion?: string | null;
   fecha_inicio?: string | null;
+  nombre_fase?: string | null;
   [key: string]: unknown;
 }
 
@@ -56,7 +57,7 @@ export interface LeagueMatch {
 export async function fetchCompeticiones(): Promise<CompetenciaRow[]> {
   const { data, error } = await supabase
     .from("competiciones")
-    .select("id,categoria,nombre,orden,activa")
+    .select("id,categoria,nombre,orden,activa,formato")
     .order("categoria", { ascending: true })
     .order("orden", { ascending: true });
 
@@ -114,7 +115,7 @@ export async function fetchTeamsForCompetition(
     .eq("competicion_id", competicionId);
 
   if (relErr || !relations) return [];
-  const teamIds = relations.map((r) => r.equipo_id);
+  const teamIds = relations.map((r: any) => r.equipo_id);
 
   if (teamIds.length === 0) return [];
 
@@ -202,7 +203,7 @@ export async function fetchCurrentSantisoMatches() {
     .order("fecha", { ascending: true });
 
   const teamFilters = teamIds
-    .flatMap((id) => [
+    .flatMap((id: string) => [
       `equipo_local_id.eq.${id}`,
       `equipo_visitante_id.eq.${id}`,
     ])
