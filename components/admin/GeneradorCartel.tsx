@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import Link from "next/link";
-import { generateProximosText, generateResultadoText } from "@/lib/cartel/instagram";
+import { generateProximosText, generateResultadoText, generateMultiusosText, generateClasificacionText } from "@/lib/cartel/instagram";
 import {
   W, H,
   loadImg,
   drawBackground, drawTopLogos, drawSponsorBar,
-  drawPartido, drawResumo, drawCronoloxia, drawProximos, drawNoso11,
+  drawPartido, drawResumo, drawCronoloxia, drawProximos, drawNoso11, drawMultiusos, drawClasificacion,
 } from "@/lib/cartel-draw";
 import AdminCartelAssets from "./AdminCartelAssets";
 
@@ -21,6 +21,8 @@ import { FormResumo } from "./cartel/FormResumo";
 import { FormCronoloxia } from "./cartel/FormCronoloxia";
 import { FormProximos } from "./cartel/FormProximos";
 import { FormNoso11 } from "./cartel/FormNoso11";
+import { FormMultiusos } from "./cartel/FormMultiusos";
+import { FormClasificacion } from "./cartel/FormClasificacion";
 
 // Output optimizado para Instagram: canvas base 1080x1350, renderizado a 2x (2160x2700) para evitar que IG comprima en exceso
 const RENDER_SCALE = 2;
@@ -44,6 +46,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
     handleRivalSelect,
     handleRivalFile,
     handleJugadorFile,
+    handleMultiusosFile,
     updatePlayer,
     swapPlayers,
     addEvent,
@@ -108,7 +111,9 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
     };
 
     const rivalImg   = await loadImg(form.rivalEscudoUrl);
-    const jugadorImg = tipo === "noso11" ? await loadImg(form.jugadorFotoUrl) : null;
+    const jugadorImg = (tipo === "noso11" || tipo === "multiusos") ? await loadImg(form.jugadorFotoUrl) : null;
+    const multiImg1  = tipo === "multiusos" ? await loadImg(form.multiusosImg1Url) : null;
+    const multiImg2  = tipo === "multiusos" ? await loadImg(form.multiusosImg2Url) : null;
     if (drawVersion !== drawVersionRef.current) return;
 
     // Load multiple rival shields for Próximos
@@ -125,8 +130,6 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
     
     // 1. Foundation
     drawBackground(ctx, assets.fondo);
-    drawTopLogos(ctx, assets.xunta, assets.rfgf, assetUrls.xuntaIsLeft);
-    drawSponsorBar(ctx, assets.sponsors);
 
     // 2. Templates
     const baseP = {
@@ -175,7 +178,35 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
           noso11Flip:     form.noso11Flip,
         }, jugadorImg, assets, assetUrls.xuntaIsLeft);
         break;
+      case "multiusos":
+        drawMultiusos(ctx, {
+          categoria: form.categoria,
+          multiusosTema: form.multiusosTema,
+          multiusosTitulo: form.multiusosTitulo,
+          multiusosTexto: form.multiusosTexto,
+          jugadorXOffset: form.jugadorXOffset,
+          jugadorYOffset: form.jugadorYOffset,
+          jugadorZoom: form.jugadorZoom,
+          showAssets: form.showAssets,
+        }, assets, multiImg1, multiImg2, jugadorImg, assetUrls.xuntaIsLeft);
+        break;
+      case "clasificacion":
+        await drawClasificacion(ctx, {
+          categoria: form.categoria,
+          clasificacionTipo: form.clasificacionTipo,
+          clasificacionNombre: form.clasificacionNombre,
+          clasificacionData: form.clasificacionData,
+          showAssets: form.showAssets,
+        }, assets, assetUrls.xuntaIsLeft, loadImg);
+        break;
     }
+
+    // 3. Global Assets (Logos and Sponsors) - Drawn last to avoid being obscured by template overlays
+    if (form.showAssets) {
+      drawTopLogos(ctx, assets.xunta, assets.rfgf, assetUrls.xuntaIsLeft);
+      drawSponsorBar(ctx, assets.sponsors);
+    }
+
     ctx.restore();
   }, [tipo, form, assetUrls]);
 
@@ -183,8 +214,10 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
 
   // ── Instagram Text ──────────────────────────────────────────────────────────
   const instagramText = useMemo(() => {
-    if (tipo === "proximos") return generateProximosText(form);
+    if (tipo === "proximos")  return generateProximosText(form);
     if (tipo === "resumo")    return generateResultadoText(form);
+    if (tipo === "multiusos") return generateMultiusosText(form);
+    if (tipo === "clasificacion") return generateClasificacionText(form);
     return null;
   }, [tipo, form]);
   const instagramMeta = useMemo(() => {
@@ -201,6 +234,18 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
           form.events.length > 0
             ? "Usa marcador, competición, data, rival, goles e tarxetas cargadas."
             : "Usa marcador e datos básicos. Engade eventos para listar goleadores e tarxetas.",
+      };
+    }
+    if (tipo === "multiusos") {
+      return {
+        title: "Comunicado o Aviso",
+        detail: "Genera el texto de aviso y hashtags según categoría e información proporcionada.",
+      };
+    }
+    if (tipo === "clasificacion") {
+      return {
+        title: "Clasificación",
+        detail: "Genera el texto para mostrar que se publica la clasificación actualizada.",
       };
     }
     return null;
@@ -230,21 +275,40 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
       <div className={hideLayout ? "" : "container"}>
         {!hideLayout && (
           <>
-            <header style={{ marginBottom: "3.5rem", borderLeft: "4px solid var(--primary)", paddingLeft: "2rem" }}>
-              <Link href="/admin" style={{ 
-                display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                color: "#666", fontWeight: 800, fontSize: "0.75rem", textDecoration: "none",
-                textTransform: "uppercase", letterSpacing: "1px", marginBottom: "1rem",
-                transition: "all 0.2s"
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
-              onMouseLeave={e => (e.currentTarget.style.color = "#666")}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                Volver al Panel
-              </Link>
-              <h1 style={{ fontSize: "3.8rem", fontWeight: 900, marginTop: "0", letterSpacing: "-2.5px", lineHeight: 1 }}>
-                Generador de <span className="text-primary">Carteles</span>
-              </h1>
+            <header style={{ marginBottom: "3.5rem", borderLeft: "4px solid var(--primary)", paddingLeft: "2rem", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+              <div>
+                <Link href="/admin" style={{ 
+                  display: "inline-flex", alignItems: "center", gap: "0.5rem",
+                  color: "#666", fontWeight: 800, fontSize: "0.75rem", textDecoration: "none",
+                  textTransform: "uppercase", letterSpacing: "1px", marginBottom: "1rem",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#666")}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                  Volver al Panel
+                </Link>
+                <h1 style={{ fontSize: "3.8rem", fontWeight: 900, marginTop: "0", letterSpacing: "-2.5px", lineHeight: 1 }}>
+                  Generador de <span className="text-primary">Carteles</span>
+                </h1>
+              </div>
+              <button 
+                onClick={() => setShowAssets(true)}
+                style={{
+                  padding: "0.75rem 1.5rem", borderRadius: "0.8rem", 
+                  background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", 
+                  color: "#fff", fontWeight: 800, fontSize: "0.8rem", textTransform: "uppercase",
+                  letterSpacing: "1px", cursor: "pointer", display: "flex",
+                  alignItems: "center", gap: "0.6rem", transition: "all 0.2s"
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--primary)"; e.currentTarget.style.color = "#000"; e.currentTarget.style.borderColor = "var(--primary)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Configurar Activos
+              </button>
             </header>
 
             <div style={{ display: "flex", gap: "0.8rem", marginBottom: "3rem", flexWrap: "wrap" }}>
@@ -276,9 +340,11 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
             {tipo === "cronoloxia" && <FormCronoloxia form={form} set={set} equipos={equipos} jugadores={jugadores} handleRivalSelect={handleRivalSelect} handleRivalFile={handleRivalFile} addEvent={addEvent} updateEvent={updateEvent} removeEvent={removeEvent} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}
             {tipo === "proximos"   && <FormProximos form={form} set={set} updateMatch={updateMatch} equipos={equipos} dbMatches={dbMatches} />}
             {tipo === "noso11"     && <FormNoso11 form={form} set={set} jugadores={jugadores} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} updatePlayer={updatePlayer} swapPlayers={swapPlayers} dbMatches={dbMatches} loadMatchFromDb={loadMatchFromDb} tipo={tipo} />}
+            {tipo === "multiusos"  && <FormMultiusos form={form} set={set} handleMultiusosFile={handleMultiusosFile} jugadores={jugadores} jugFileName={jugFileName} handleJugadorFile={handleJugadorFile} />}
+            {tipo === "clasificacion" && <FormClasificacion form={form} set={set} />}
 
             {/* Santiso side (shared) */}
-            {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
+            {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia" || tipo === "clasificacion") && (
               <div className="input-group" style={{ marginBottom: "1rem", marginTop: "2.5rem" }}>
                 <label>Santiso en el cartel</label>
                 <div style={{ display: "flex", gap: "0.6rem" }}>
@@ -336,37 +402,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
               </div>
             )}
 
-            {/* ASSET MANAGEMENT BUTTON (NEW) */}
-            <div style={{ marginTop: "4rem" }}>
-               <button 
-                 onClick={() => setShowAssets(!showAssets)}
-                 style={{
-                   width: "100%", padding: "1rem", borderRadius: "0.8rem", 
-                   background: showAssets ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.02)",
-                   border: "1px solid", 
-                   borderColor: showAssets ? "var(--primary)" : "rgba(255,255,255,0.05)",
-                   color: showAssets ? "var(--primary)" : "#666",
-                   fontWeight: 800, fontSize: "0.75rem", textTransform: "uppercase",
-                   letterSpacing: "1px", cursor: "pointer", display: "flex",
-                   alignItems: "center", justifyContent: "center", gap: "0.6rem",
-                   transition: "all 0.3s"
-                 }}>
-                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: showAssets ? "rotate(180deg)" : "none", transition: "0.3s" }}>
-                   <polyline points="6 9 12 15 18 9"></polyline>
-                 </svg>
-                 {showAssets ? "Ocultar gestión de activos" : "Gestionar Activos (Logos, Fondos...)"}
-               </button>
-               
-               {showAssets && (
-                 <div className="scale-in" style={{ marginTop: "1.5rem", padding: "1.5rem", background: "rgba(255,255,255,0.02)", borderRadius: "1rem", border: "1px solid rgba(255,255,255,0.05)" }}>
-                   <AdminCartelAssets
-                     showToast={showToastUI}
-                     showConfirm={showConfirmUI}
-                     onAssetsChanged={() => setAssetRefreshKey((key) => key + 1)}
-                   />
-                 </div>
-               )}
-            </div>
+
           </div>
 
           <div className="gen-preview">
@@ -413,6 +449,30 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
         </div>
       )}
 
+      {showAssets && (
+        <div className="modal-overlay">
+          <div className="modal-content glass scale-in" style={{ width: "90%", maxWidth: "900px", padding: "2.5rem", borderRadius: "1.5rem", border: "1px solid rgba(255,255,255,0.1)", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+              <h2 style={{ margin: 0, fontSize: "1.8rem", fontWeight: 900, display: "flex", alignItems: "center", gap: "0.8rem" }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Configuración de Activos Base
+              </h2>
+              <button onClick={() => setShowAssets(false)} style={{ background: "rgba(255,255,255,0.05)", border: "none", color: "#fff", width: "40px", height: "40px", borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+            <p style={{ color: "#aaa", fontSize: "0.85rem", marginBottom: "2rem" }}>Estos son los recursos globales que se aplican automáticamente a todos los carteles. Aquí puedes modificar fondos, logotipos y patrocinadores.</p>
+            <AdminCartelAssets
+              showToast={showToastUI}
+              showConfirm={showConfirmUI}
+              onAssetsChanged={() => setAssetRefreshKey((key) => key + 1)}
+            />
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div className={`toast-container glass ${toast.type}`}>
           <div className="toast-content">
@@ -422,6 +482,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
       )}
 
       <style jsx>{`
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 9000; }
         .gen-layout {
           display: grid;
           grid-template-columns: 420px 1fr;

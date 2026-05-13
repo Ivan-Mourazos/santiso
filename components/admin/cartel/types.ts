@@ -11,9 +11,13 @@ export const TEMPLATES = [
   { id: "cronoloxia", label: "Cronoloxía",          emoji: "📋" },
   { id: "proximos",   label: "Próximos Encontros",  emoji: "📅" },
   { id: "noso11",     label: "O Noso 11",           emoji: "👕" },
+  { id: "multiusos",  label: "Multiusos / Anuncio", emoji: "📢" },
+  { id: "clasificacion", label: "Clasificación / Copa", emoji: "📈" },
 ] as const;
 
 export type TemplateId = typeof TEMPLATES[number]["id"];
+
+export type MultiusosTema = "celebracion" | "medico" | "fichaje" | "despedida" | "formal";
 
 export interface FormState {
   // Shared
@@ -49,6 +53,19 @@ export interface FormState {
   noso11Flip:     boolean;
   titulares:      Player[];
   suplentes:      Player[];
+  // Multiusos
+  multiusosTema:  MultiusosTema;
+  multiusosTitulo: string;
+  multiusosTexto: string;
+  multiusosImg1Url: string;
+  multiusosImg2Url: string;
+
+  // Clasificación
+  clasificacionTipo: "liga" | "copa";
+  clasificacionNombre: string;
+  clasificacionData: any;
+
+  showAssets: boolean;
 }
 
 export interface AssetUrls {

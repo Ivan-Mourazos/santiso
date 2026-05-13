@@ -28,9 +28,8 @@ export function drawProximos(
   drawCategoryTint(ctx, categoria || "Sénior");
 
   // Institutional Header
-  drawTopLogos(ctx, assets.xunta, assets.rfgf, xuntaIsLeft);
-  drawSponsorBar(ctx, assets.sponsors);
-
+  // Dibujado en GeneradorCartel base
+  
   // 0. Background Watermark
   drawWatermark(ctx, assets.santiso);
 

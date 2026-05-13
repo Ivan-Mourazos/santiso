@@ -132,6 +132,15 @@ const DEFAULT_FORM: FormState = {
   noso11Flip: false,
   titulares: Array.from({ length: 11 }, mkPlayer),
   suplentes: Array.from({ length: 5 }, mkPlayer),
+  multiusosTema: "celebracion",
+  multiusosTitulo: "¡CAMPIÓNS DA COPA!",
+  multiusosTexto: "Pasamos á seguinte fase do torneo. Parabéns a todo o equipo polo gran traballo!",
+  multiusosImg1Url: "",
+  multiusosImg2Url: "",
+  clasificacionTipo: "liga",
+  clasificacionNombre: "",
+  clasificacionData: null,
+  showAssets: true,
 };
 
 export function useCartelForm() {
@@ -146,6 +155,8 @@ export function useCartelForm() {
   const catalogRef = useRef<CompetenciaRow[]>([]);
   const [jugFileName, setJugFileName] = useState("");
   const fileUrlRef = useRef<string>("");
+  const multiImg1Ref = useRef<string>("");
+  const multiImg2Ref = useRef<string>("");
 
   useEffect(() => {
     catalogRef.current = competicionesCatalog;
@@ -203,6 +214,8 @@ export function useCartelForm() {
   useEffect(() => {
     return () => {
       if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
+      if (multiImg1Ref.current) URL.revokeObjectURL(multiImg1Ref.current);
+      if (multiImg2Ref.current) URL.revokeObjectURL(multiImg2Ref.current);
     };
   }, []);
 
@@ -237,6 +250,14 @@ export function useCartelForm() {
     if (fileUrlRef.current) {
       URL.revokeObjectURL(fileUrlRef.current);
       fileUrlRef.current = "";
+    }
+    if (multiImg1Ref.current) {
+      URL.revokeObjectURL(multiImg1Ref.current);
+      multiImg1Ref.current = "";
+    }
+    if (multiImg2Ref.current) {
+      URL.revokeObjectURL(multiImg2Ref.current);
+      multiImg2Ref.current = "";
     }
   }
 
@@ -435,6 +456,23 @@ export function useCartelForm() {
       });
   }
 
+  function handleMultiusosFile(num: 1 | 2, file: File | null) {
+    const ref = num === 1 ? multiImg1Ref : multiImg2Ref;
+    const key = num === 1 ? "multiusosImg1Url" : "multiusosImg2Url";
+
+    if (ref.current) {
+      URL.revokeObjectURL(ref.current);
+      ref.current = "";
+    }
+    if (!file) {
+      set(key, "");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    ref.current = url;
+    set(key, url);
+  }
+
   return {
     form,
     set,
@@ -445,6 +483,7 @@ export function useCartelForm() {
     handleRivalSelect,
     handleRivalFile,
     handleJugadorFile,
+    handleMultiusosFile,
     updatePlayer,
     swapPlayers,
     addEvent,

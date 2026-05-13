@@ -198,6 +198,61 @@ export function generateResultadoText(p: ResultadoParams): string {
   return lines.join("\n");
 }
 
+// ─── Comunicado / Multiusos ───────────────────────────────────────────────────
+
+export interface MultiusosParams {
+  categoria: string;
+  multiusosTema?: string;
+  multiusosTitulo?: string;
+  multiusosTexto?: string;
+}
+
+export function generateMultiusosText(p: MultiusosParams): string {
+  const catEmoji = CAT_EMOJI[p.categoria] ?? "⚽";
+  const catLabel = CAT_LABEL[p.categoria] ?? p.categoria.toUpperCase();
+  const lines: string[] = [];
+
+  lines.push(`${catEmoji} ${catLabel} | COMUNICADO`);
+  lines.push("");
+  if (p.multiusosTitulo) {
+    lines.push(`📢 ${p.multiusosTitulo.toUpperCase()}`);
+    lines.push("");
+  }
+  if (p.multiusosTexto) {
+    lines.push(p.multiusosTexto);
+    lines.push("");
+  }
+  
+  const catTag = CAT_HASHTAG[p.categoria] ?? "";
+  lines.push(`#UDSantiso ${catTag} #Comunicado #FutbolGalego #Santiso #FamiliaAurinegra`.replace(/\s+/g, " ").trim());
+
+  return lines.join("\n");
+}
+
+// ─── Clasificación ────────────────────────────────────────────────────────────
+
+export interface ClasificacionParams {
+  categoria: string;
+  clasificacionTipo?: "liga" | "copa";
+}
+
+export function generateClasificacionText(p: ClasificacionParams): string {
+  const catEmoji = CAT_EMOJI[p.categoria] ?? "⚽";
+  const catLabel = CAT_LABEL[p.categoria] ?? p.categoria.toUpperCase();
+  const title = p.clasificacionTipo === "liga" ? "CLASIFICACIÓN" : "CUADRANTE DE COPA";
+  
+  const lines: string[] = [];
+  lines.push(`${catEmoji} ${catLabel} | ${title}`);
+  lines.push("");
+  lines.push(`📊 Así queda o noso equipo trala última xornada! 💛🖤`);
+  lines.push("");
+  
+  const catTag = CAT_HASHTAG[p.categoria] ?? "";
+  lines.push(`#UDSantiso ${catTag} #Clasificacion #FutbolGalego #Santiso #FamiliaAurinegra`.replace(/\s+/g, " ").trim());
+
+  return lines.join("\n");
+}
+
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
 function fmtGoalList(events: CronEvent[]): string {

@@ -85,10 +85,6 @@ export function drawNoso11(
   ctx.fillStyle = "rgba(0,0,0,0.55)";
   ctx.fillRect(shadingStartX, 0, shadingW, H);
 
-  // Draw logos
-  drawTopLogos(ctx, assets.xunta, assets.rfgf, xuntaIsLeft);
-  drawSponsorBar(ctx, assets.sponsors);
-
   // 0. Background Watermark
   drawWatermark(ctx, assets.santiso);
 

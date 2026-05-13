@@ -12,3 +12,5 @@ export * from "./cartel/templates/resumo";
 export * from "./cartel/templates/cronoloxia";
 export * from "./cartel/templates/proximos";
 export * from "./cartel/templates/noso11";
+export * from "./cartel/templates/multiusos";
+export * from "./cartel/templates/clasificacion";
