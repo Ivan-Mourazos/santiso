@@ -304,6 +304,7 @@ export default function PartidosPage() {
                         <span className="match-date">
                           {p.fecha
                             ? new Date(p.fecha).toLocaleDateString("es-ES", {
+                                timeZone: "UTC",
                                 weekday: "short",
                                 day: "2-digit",
                                 month: "short",

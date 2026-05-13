@@ -33,8 +33,10 @@ const CAT_HASHTAG: Record<string, string> = {
 
 function fmtDateLong(dateStr: string): string {
   if (!dateStr) return "— — — — — — —";
-  const d = new Date(dateStr + "T12:00:00");
+  const cleanDate = dateStr.split("T")[0];
+  const d = new Date(cleanDate + "T12:00:00Z");
   return d.toLocaleDateString("gl-ES", {
+    timeZone: "UTC",
     weekday: "long", day: "2-digit", month: "2-digit", year: "numeric"
   })
     .replace(",", "")

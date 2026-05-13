@@ -19,6 +19,7 @@ interface Sponsor {
 function formatMatchDate(fecha?: string | null) {
   if (!fecha) return "Data pendente";
   return new Date(fecha).toLocaleDateString("es-ES", {
+    timeZone: "UTC",
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -28,6 +29,7 @@ function formatMatchDate(fecha?: string | null) {
 function formatMatchTime(fecha?: string | null) {
   if (!fecha) return "--:--";
   return new Date(fecha).toLocaleTimeString("es-ES", {
+    timeZone: "UTC",
     hour: "2-digit",
     minute: "2-digit",
   });

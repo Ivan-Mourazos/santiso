@@ -22,7 +22,7 @@ export default function NoticiasPage() {
           {noticias.length > 0 ? noticias.map((n) => (
             <article key={n.id} className="news-card">
               <div className="news-meta">
-                {new Date(n.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {new Date(n.fecha).toLocaleDateString('es-ES', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' })}
               </div>
               <h2>{n.titulo}</h2>
               <p>{n.contenido}</p>

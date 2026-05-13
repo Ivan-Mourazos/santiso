@@ -153,7 +153,7 @@ export default function BracketTree({ categoria, competicionId }: BracketTreePro
 
                       {p.fecha && (
                         <div className="match-date">
-                          {new Date(p.fecha).toLocaleDateString("es-ES", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          {new Date(p.fecha).toLocaleDateString("es-ES", { timeZone: "UTC", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </div>
                       )}
                     </div>
