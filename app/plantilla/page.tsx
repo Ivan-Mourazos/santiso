@@ -41,6 +41,10 @@ interface PlayerCardStats {
   porteriasCero: number;
   puntosConJugador: number;
   partidosTotalesCategoria: number;
+  amarillas: number;
+  rojas: number;
+  maxStreak: number;
+  currentStreak: number;
 }
 
 interface Temporada {
@@ -68,6 +72,10 @@ function emptyPlayerStats() {
     minutos: 0,
     golesEncajados: 0,
     porteriasCero: 0,
+    puntosConJugador: 0,
+    partidosTotalesCategoria: 0,
+    maxStreak: 0,
+    currentStreak: 0,
   };
 }
 type DetailPlayerStats = ReturnType<typeof emptyPlayerStats>;
@@ -125,43 +133,60 @@ function computeMatchPoints(
 function calculateCardRating(player: Jugador, stats?: PlayerCardStats | null) {
   const capitanBonus = player.capitan ? 2 : 0;
   const played = stats?.pj || 0;
-  const totalMatches = stats?.partidosTotalesCategoria || 0;
-  const commitment = totalMatches > 0 ? played / totalMatches : 0;
-  const pointsRate = played > 0 ? (stats?.puntosConJugador || 0) / (played * 3) : 0;
+  const cardsPenalty = ((stats?.amarillas || 0) * 0.2) + ((stats?.rojas || 0) * 1.0);
+
+  if (played === 0) return 45;
+
+  const pointsRate = (stats?.puntosConJugador || 0) / (played * 3);
+  const starterRate = (stats?.titular || 0) / played;
+  let performance = 0;
 
   if (isGoalkeeper(player)) {
-    const cleanRate = played > 0 ? (stats?.porteriasCero || 0) / played : 0;
-    const concededRate = played > 0 ? (stats?.golesEncajados || 0) / played : 0;
-    const concededControl = 1 - clamp(concededRate / 2.5, 0, 1);
-    const performance =
-      cleanRate * 0.45 + pointsRate * 0.35 + concededControl * 0.2;
-    return Math.max(
-      45,
-      Math.min(
-        99,
-        Math.round(
-          45 +
-            commitment * 35 +
-            performance * 18 +
-            capitanBonus,
-        ),
-      ),
-    );
+    const cleanRate = (stats?.porteriasCero || 0) / played;
+    const cleanImpact = clamp(cleanRate / 0.20, 0, 1);
+    const concededRate = (stats?.golesEncajados || 0) / played;
+    const concededControl = 1 - clamp((concededRate - 1.2) / 2.8, 0, 1);
+    performance = cleanImpact * 0.15 + concededControl * 0.25 + pointsRate * 0.50 + starterRate * 0.10;
+  } else if (["DFC", "LD", "LI"].includes(player.posicion)) {
+    const cleanRate = (stats?.porteriasCero || 0) / played;
+    const cleanImpact = clamp(cleanRate / 0.20, 0, 1);
+    const concededRate = (stats?.golesEncajados || 0) / played;
+    const concededControl = 1 - clamp((concededRate - 1.2) / 2.8, 0, 1);
+    performance =
+      cleanImpact * 0.15 +
+      concededControl * 0.25 +
+      pointsRate * 0.40 +
+      starterRate * 0.20;
+  } else if (["MC", "MCD", "MCO", "MI", "MD"].includes(player.posicion)) {
+    const goalRate = (stats?.goles || 0) / played;
+    const goalImpact = clamp(goalRate / 0.25, 0, 1);
+    const cleanRate = (stats?.porteriasCero || 0) / played;
+    const cleanImpact = clamp(cleanRate / 0.20, 0, 1);
+    performance =
+      pointsRate * 0.45 +
+      starterRate * 0.20 +
+      goalImpact * 0.20 +
+      cleanImpact * 0.15;
+  } else {
+    const goalRate = (stats?.goles || 0) / played;
+    const goalImpact = clamp(goalRate / 1.0, 0, 1);
+    performance = goalImpact * 0.50 + pointsRate * 0.30 + starterRate * 0.20;
   }
 
-  const goalRate = played > 0 ? (stats?.goles || 0) / played : 0;
-  const goalImpact = clamp(goalRate / 1.2, 0, 1);
-  const starterRate = played > 0 ? (stats?.titular || 0) / played : 0;
-  const performance = goalImpact * 0.45 + pointsRate * 0.35 + starterRate * 0.2;
-  return Math.min(
-    99,
-    Math.round(
-      45 +
-        commitment * 35 +
-        performance * 18 +
-        capitanBonus,
-    ),
-  );
+  const totalMatches = stats?.partidosTotalesCategoria || 1;
+  const participationRate = clamp(played / totalMatches, 0, 1);
+  const maxStreak = stats?.maxStreak || 0;
+  const convocados = stats?.convocado || 0;
+  const streakConsistency = convocados > 0 ? maxStreak / convocados : 0;
+  const starterFactor = convocados > 0 ? (stats?.titular || 0) / convocados : 0;
+
+  // 50% peso base/participación, 30% consistencia de racha convocado, 20% factor titular
+  const commitmentFactor = Math.pow(participationRate, 1.3) * (0.5 + 0.3 * streakConsistency + 0.2 * starterFactor);
+  const commitmentBonus = commitmentFactor * 25;
+  const performanceBonus = performance * 20;
+
+  const finalRating = Math.round(50 + commitmentBonus + performanceBonus + capitanBonus - cardsPenalty);
+  return Math.max(45, Math.min(99, finalRating));
 }
 
 function formatCareerTimeline(player: Jugador) {
@@ -211,6 +236,10 @@ function buildCardStatsDefault(totalMatches: number): PlayerCardStats {
     porteriasCero: 0,
     puntosConJugador: 0,
     partidosTotalesCategoria: totalMatches,
+    amarillas: 0,
+    rojas: 0,
+    maxStreak: 0,
+    currentStreak: 0,
   };
 }
 
@@ -226,6 +255,7 @@ type CardStatRow = {
     goles_visitante?: number | null;
     estado?: string | null;
     categoria?: string | null;
+    jornada_id?: string | null;
   } | null;
 };
 
@@ -235,6 +265,7 @@ type TeamMatchRow = {
   equipo_local_id?: string | null;
   goles_local?: number | null;
   goles_visitante?: number | null;
+  jornada_id?: string | null;
 };
 
 function getInitialCardStatsByPlayer(
@@ -296,9 +327,7 @@ function applyCardStatRow(
   if (row.partidos_liga) {
     current.puntosConJugador += computeMatchPoints(row.partidos_liga, santisoIds);
   }
-  if (isKeeper) {
-    updateGoalkeeperStats(current, row, santisoIds);
-  }
+  updateGoalkeeperStats(current, row, santisoIds);
 }
 
 function toCardStatsRecord(
@@ -413,11 +442,11 @@ function getPlayerDetailSubtitle(player: Jugador) {
 }
 
 function getLegendTextForGoalkeeper() {
-  return "Media = 45 + compromiso temporada + rendimiento en portería y puntos del equipo.";
+  return "Media = 50 (base) + 25 (compromiso no lineal por % de PJ, racha de convocatorias y titularidades) + 20 (rendimiento: 50% ptos equipo, 25% GC, 15% PC, 10% titular) + 2 (capitán) - tarjetas.";
 }
 
 function getLegendTextForOutfield() {
-  return "Media = 45 + compromiso temporada + impacto ofensivo + puntos por partido jugado.";
+  return "Media = 50 (base) + 25 (compromiso no lineal por % de PJ, racha de convocatorias y titularidades) + 20 (rendimiento: DF 40% ptos/25% GC/15% PC/20% tit; MC 45% ptos/20% tit/20% gol/15% PC; DL 50% gol/30% ptos/20% tit) + 2 (capitán) - tarjetas.";
 }
 
 function getLegendTextByPlayer(player: Jugador) {
@@ -589,6 +618,13 @@ export default function PlantillaPage() {
   const [faseActiva, setFaseActiva] = useState("Total");
   const [fasesDisponibles, setFasesDisponibles] = useState<string[]>([]);
   const [playerStats, setPlayerStats] = useState({ ...emptyPlayerStats() });
+  const [activeTab, setActiveTab] = useState<"rendimiento" | "perfil" | "trayectoria">("rendimiento");
+
+  useEffect(() => {
+    if (selectedPlayer) {
+      setActiveTab("rendimiento");
+    }
+  }, [selectedPlayer]);
 
   useEffect(() => {
     async function fetchData() {
@@ -630,7 +666,7 @@ export default function PlantillaPage() {
   ) {
     const { data: jornadas } = await supabase
       .from("jornadas")
-      .select("id")
+      .select("id, numero")
       .eq("temporada_id", temporadaId);
     const jornadaIds = jornadas?.map((j: any) => j.id) || [];
     const playerIds = players.map((player) => player.id);
@@ -638,6 +674,11 @@ export default function PlantillaPage() {
       setCardStats({});
       return;
     }
+
+    const jornadaNumberMap = new Map<string, number>();
+    jornadas?.forEach((j: any) => {
+      jornadaNumberMap.set(j.id, j.numero || 0);
+    });
 
     const { data: stats } = await supabase
       .from("jugador_partido_stats")
@@ -652,7 +693,7 @@ export default function PlantillaPage() {
 
     const { data: teamMatchesRaw } = await supabase
       .from("partidos_liga")
-      .select("id,categoria,equipo_local_id,goles_local,goles_visitante")
+      .select("id,categoria,equipo_local_id,goles_local,goles_visitante,jornada_id")
       .in("jornada_id", jornadaIds)
       .eq("estado", "finalizado")
       .or(
@@ -672,6 +713,88 @@ export default function PlantillaPage() {
       applyCardStatRow(current, row, isGoalkeeper(player), santisoIds);
       statsByPlayer.set(jugadorId, current);
     }
+
+    const playerConvocatedJornadas = new Map<string, Set<string>>();
+    for (const row of statRows) {
+      if (row.partidos_liga?.jornada_id) {
+        if (!playerConvocatedJornadas.has(row.jugador_id)) {
+          playerConvocatedJornadas.set(row.jugador_id, new Set());
+        }
+        playerConvocatedJornadas.get(row.jugador_id)!.add(row.partidos_liga.jornada_id);
+      }
+    }
+
+    const categoryFinishedJornadas = new Map<string, string[]>();
+    const matchesByCategory = new Map<string, TeamMatchRow[]>();
+    for (const match of teamMatches) {
+      const cat = match.categoria || "";
+      if (!cat) continue;
+      if (!matchesByCategory.has(cat)) {
+        matchesByCategory.set(cat, []);
+      }
+      matchesByCategory.get(cat)!.push(match);
+    }
+
+    for (const [cat, matches] of matchesByCategory.entries()) {
+      const sortedJornadaIds = matches
+        .map((m) => ({
+          jornadaId: m.jornada_id || "",
+          numero: m.jornada_id ? (jornadaNumberMap.get(m.jornada_id) || 0) : 0,
+        }))
+        .filter((item) => item.jornadaId !== "")
+        .sort((a, b) => a.numero - b.numero)
+        .map((item) => item.jornadaId);
+      
+      categoryFinishedJornadas.set(cat, sortedJornadaIds);
+    }
+
+    for (const player of players) {
+      const convocatedJornadas = playerConvocatedJornadas.get(player.id) || new Set<string>();
+      const finishedJornadas = categoryFinishedJornadas.get(player.categoria) || [];
+      
+      let maxStreak = 0;
+      let currentStreak = 0;
+      
+      for (const jId of finishedJornadas) {
+        if (convocatedJornadas.has(jId)) {
+          currentStreak += 1;
+          if (currentStreak > maxStreak) {
+            maxStreak = currentStreak;
+          }
+        } else {
+          currentStreak = 0;
+        }
+      }
+      
+      const currentStats = statsByPlayer.get(player.id);
+      if (currentStats) {
+        currentStats.maxStreak = maxStreak;
+        currentStats.currentStreak = currentStreak;
+      }
+    }
+
+    const { data: cardsData } = await supabase
+      .from("partido_eventos_santiso")
+      .select("jugador_id, tipo, partidos_liga!inner(jornada_id)")
+      .in("jugador_id", playerIds)
+      .in("partidos_liga.jornada_id", jornadaIds)
+      .in("tipo", ["tarjeta_amarilla", "tarjeta_roja"]);
+
+    if (cardsData) {
+      for (const card of cardsData) {
+        if (!card.jugador_id) continue;
+        const current = statsByPlayer.get(card.jugador_id);
+        if (current) {
+          if (card.tipo === "tarjeta_amarilla") {
+            current.amarillas += 1;
+          } else if (card.tipo === "tarjeta_roja") {
+            current.rojas += 1;
+          }
+          statsByPlayer.set(card.jugador_id, current);
+        }
+      }
+    }
+
     setCardStats(toCardStatsRecord(statsByPlayer));
   }
 
@@ -709,7 +832,7 @@ export default function PlantillaPage() {
     ) {
       let query = supabase
         .from("jornadas")
-        .select("id")
+        .select("id, numero")
         .eq("temporada_id", temporadaId)
         .eq("categoria", p.categoria);
 
@@ -724,6 +847,11 @@ export default function PlantillaPage() {
         return;
       }
 
+      const jornadaNumberMap = new Map<string, number>();
+      jornadas?.forEach((j: any) => {
+        jornadaNumberMap.set(j.id, j.numero || 0);
+      });
+
       const { data: stats } = await supabase
         .from("jugador_partido_stats")
         .select("*, partidos_liga!inner(*)")
@@ -735,10 +863,13 @@ export default function PlantillaPage() {
         let totalGoles = 0;
         let totalEncajados = 0;
         let porteriasCero = 0;
+        let totalPoints = 0;
         const conv = stats.length;
         let tit = 0;
         let sup = 0;
         let pj = 0;
+
+        const convocatedJornadaIds = new Set<string>();
 
         stats.forEach((s: any) => {
           const isTitular = s.titular;
@@ -748,16 +879,61 @@ export default function PlantillaPage() {
           else if (played) sup++;
           totalGoles += s.goles || 0;
 
-          if (p.posicion === "POR" && played) {
+          if (s.partidos_liga?.jornada_id) {
+            convocatedJornadaIds.add(s.partidos_liga.jornada_id);
+          }
+
+          if ((p.posicion === "POR" || ["DFC", "LD", "LI"].includes(p.posicion)) && played) {
             const pl = s.partidos_liga;
             const encajados = santisoTeamIds.includes(pl.equipo_local_id)
-              ? Number(pl.goles_visitante ?? 0)
-              : Number(pl.goles_local ?? 0);
+               ? Number(pl.goles_visitante ?? 0)
+               : Number(pl.goles_local ?? 0);
             totalEncajados += encajados;
             if (pl.estado === "finalizado" && encajados === 0) porteriasCero++;
           }
+          if (played && s.partidos_liga) {
+            totalPoints += computeMatchPoints(s.partidos_liga, santisoTeamIds);
+          }
           if (played) totalMin += isTitular ? 90 : 25;
         });
+
+        const { data: teamMatchesRaw } = await supabase
+          .from("partidos_liga")
+          .select("id,categoria,equipo_local_id,goles_local,goles_visitante,jornada_id")
+          .in("jornada_id", jornadaIds)
+          .eq("estado", "finalizado")
+          .or(
+            santisoTeamIds
+              .flatMap((id: string) => [`equipo_local_id.eq.${id}`, `equipo_visitante_id.eq.${id}`])
+              .join(","),
+          );
+        const teamMatches = (teamMatchesRaw || []) as TeamMatchRow[];
+        const partidosTotalesCategoria = teamMatches.filter(
+          (m) => m.categoria === p.categoria,
+        ).length;
+
+        const finishedJornadas = teamMatches
+          .filter((m) => m.categoria === p.categoria)
+          .map((m) => ({
+            jornadaId: m.jornada_id || "",
+            numero: m.jornada_id ? (jornadaNumberMap.get(m.jornada_id) || 0) : 0,
+          }))
+          .filter((item) => item.jornadaId !== "")
+          .sort((a, b) => a.numero - b.numero)
+          .map((item) => item.jornadaId);
+
+        let maxStreak = 0;
+        let currentStreak = 0;
+        for (const jId of finishedJornadas) {
+          if (convocatedJornadaIds.has(jId)) {
+            currentStreak += 1;
+            if (currentStreak > maxStreak) {
+              maxStreak = currentStreak;
+            }
+          } else {
+            currentStreak = 0;
+          }
+        }
 
         setPlayerStats({
           convocado: conv,
@@ -768,6 +944,10 @@ export default function PlantillaPage() {
           minutos: totalMin,
           golesEncajados: totalEncajados,
           porteriasCero,
+          puntosConJugador: totalPoints,
+          partidosTotalesCategoria,
+          maxStreak,
+          currentStreak,
         });
       }
     }
@@ -870,22 +1050,13 @@ export default function PlantillaPage() {
                   <strong>{stats?.pj || 0}</strong>
                   PJ
                 </span>
-                {goalkeeper ? (
-                  <span>
-                    <strong>{getMainMetricFromStats(j, stats)}</strong>
-                    GC
-                  </span>
-                ) : (
-                  <span>
-                    <strong>{getMainMetricFromStats(j, stats)}</strong>
-                    GOL
-                  </span>
-                )}
                 <span>
-                  <strong>
-                    {getSecondaryMetricFromStats(j, stats)}
-                  </strong>
-                  {goalkeeper ? "PC" : "TIT"}
+                  <strong>{getMainMetricFromStats(j, stats)}</strong>
+                  {getMainMetricLabelFromPlayer(j)}
+                </span>
+                <span>
+                  <strong>{getSecondaryMetricFromStats(j, stats)}</strong>
+                  {getSecondaryMetricLabelFromPlayer(j)}
                 </span>
               </div>
             )}
@@ -951,15 +1122,15 @@ export default function PlantillaPage() {
           <div className="rating-legend__grid">
             <div>
               <strong>Jugadores de campo</strong>
-              <span>Media basada en compromiso da tempada + impacto ofensivo + puntos por partido jugado.</span>
+              <span>Rendimiento diferenciado por rol (Defensas: porterías a cero y goles encajados. Medios: ptos, titularidades, goles y porterías a cero. Delanteros: goles y ptos).</span>
             </div>
             <div>
               <strong>Porteros</strong>
-              <span>Media basada en compromiso da tempada + porterías a cero + puntos del equipo, penalizando GC/PJ.</span>
+              <span>Media basada en porterías a cero (15%), promedio de goles encajados (25%), puntos del equipo (50%) y titularidades (10%).</span>
             </div>
             <div>
-              <strong>Proporción por fases</strong>
-              <span>Compromiso = partidos jugados / partidos totais da categoría. Así, Copa e Liga pesan según volumen real.</span>
+              <strong>Compromiso y Disciplina</strong>
+              <span>Base de 50. Bono de compromiso (hasta +25) que premia la participación, la racha consecutiva de convocatorias y la titularidad. Bono de rendimiento (hasta +20). Capitán (+2), amarillas (-0.2) y rojas (-1.0).</span>
             </div>
           </div>
         </div>
@@ -1058,98 +1229,286 @@ export default function PlantillaPage() {
                 )}
               </div>
 
-              {/* STATS PRINCIPALES */}
-              <div className="stats-hero">
-                <div className="stat-hero-item">
-                  <span className="stat-hero-value">{playerStats.pj}</span>
-                  <span className="stat-hero-label">Partidos jugados</span>
-                </div>
-                <div className="stat-hero-item">
-                  <span className="stat-hero-value">{playerStats.titular}</span>
-                  <span className="stat-hero-label">De titular</span>
-                </div>
-                <div className="stat-hero-item">
-                  <span className="stat-hero-value">{playerStats.suplente}</span>
-                  <span className="stat-hero-label">De suplente</span>
-                </div>
-                {isGoalkeeper(selectedPlayer) ? (
-                  <>
-                    <div className="stat-hero-item accent">
-                      <span className="stat-hero-value">{playerStats.porteriasCero}</span>
-                      <span className="stat-hero-label">P. a cero</span>
-                    </div>
-                    <div className="stat-hero-item">
-                      <span className="stat-hero-value">{playerStats.golesEncajados}</span>
-                      <span className="stat-hero-label">G. encajados</span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="stat-hero-item accent">
-                    <span className="stat-hero-value">{playerStats.goles}</span>
-                    <span className="stat-hero-label">Goles</span>
-                  </div>
-                )}
+              {/* TABS DE NAVEGACIÓN */}
+              <div className="detail-tabs-nav">
+                <button
+                  className={`detail-tab-btn ${activeTab === "rendimiento" ? "active" : ""}`}
+                  onClick={() => setActiveTab("rendimiento")}
+                >
+                  Rendimiento
+                </button>
+                <button
+                  className={`detail-tab-btn ${activeTab === "perfil" ? "active" : ""}`}
+                  onClick={() => setActiveTab("perfil")}
+                >
+                  Perfil
+                </button>
+                <button
+                  className={`detail-tab-btn ${activeTab === "trayectoria" ? "active" : ""}`}
+                  onClick={() => setActiveTab("trayectoria")}
+                >
+                  Trayectoria
+                </button>
               </div>
 
-              {/* BLOQUE RENDIMIENTO */}
-              <div className="stats-secondary-grid">
-                <div className="stats-block">
-                  <p className="block-title">Rendimiento ({faseActiva})</p>
-                  <div className="mini-box-grid">
-                    <div className="mini-box">
-                      <span>{getPointsWithPlayer(cardStats[selectedPlayer.id])}</span>
-                      <label>Puntos totales</label>
+              {/* CONTENIDO DE LA PESTAÑA: RENDIMIENTO */}
+              {activeTab === "rendimiento" && (
+                <div className="tab-content">
+                  {/* STATS PRINCIPALES */}
+                  <div className="stats-hero">
+                    <div className="stat-hero-item">
+                      <span className="stat-hero-value">{playerStats.pj}</span>
+                      <span className="stat-hero-label">Partidos jugados</span>
                     </div>
-                    <div className="mini-box">
-                      <span>{getPointsRateDetail(cardStats[selectedPlayer.id])}</span>
-                      <label>Pts / partido</label>
+                    <div className="stat-hero-item">
+                      <span className="stat-hero-value">{playerStats.titular}</span>
+                      <span className="stat-hero-label">De titular</span>
                     </div>
-                    <div className="mini-box">
-                      <span>{getCommitmentPercent(cardStats[selectedPlayer.id])}%</span>
-                      <label>Compromiso</label>
+                    <div className="stat-hero-item">
+                      <span className="stat-hero-value">{playerStats.suplente}</span>
+                      <span className="stat-hero-label">De suplente</span>
                     </div>
-                    <div className="mini-box">
-                      <span>{playerStats.minutos}'</span>
-                      <label>Minutos totales</label>
-                    </div>
-                    <div className="mini-box">
-                      <span>{(playerStats.minutos / (playerStats.pj || 1)).toFixed(0)}'</span>
-                      <label>Min / partido</label>
-                    </div>
-                    {isGoalkeeper(selectedPlayer) && (
-                      <div className="mini-box">
-                        <span>{getAverageGoalsAgainstPerMatch(selectedPlayer, playerStats)}</span>
-                        <label>GC / partido</label>
+                    {isGoalkeeper(selectedPlayer) ? (
+                      <>
+                        <div className="stat-hero-item accent">
+                          <span className="stat-hero-value">{playerStats.porteriasCero}</span>
+                          <span className="stat-hero-label">P. a cero</span>
+                        </div>
+                        <div className="stat-hero-item">
+                          <span className="stat-hero-value">{playerStats.golesEncajados}</span>
+                          <span className="stat-hero-label">G. encajados</span>
+                        </div>
+                      </>
+                    ) : ["DFC", "LD", "LI"].includes(selectedPlayer.posicion) ? (
+                      <>
+                        <div className="stat-hero-item accent">
+                          <span className="stat-hero-value">{playerStats.porteriasCero}</span>
+                          <span className="stat-hero-label">P. a cero</span>
+                        </div>
+                        <div className="stat-hero-item">
+                          <span className="stat-hero-value">{playerStats.golesEncajados}</span>
+                          <span className="stat-hero-label">G. encajados</span>
+                        </div>
+                        <div className="stat-hero-item accent">
+                          <span className="stat-hero-value">{playerStats.goles}</span>
+                          <span className="stat-hero-label">Goles</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="stat-hero-item accent">
+                        <span className="stat-hero-value">{playerStats.goles}</span>
+                        <span className="stat-hero-label">Goles</span>
                       </div>
                     )}
                   </div>
-                </div>
 
-                <div className="stats-block">
-                  <p className="block-title">Perfil</p>
-                  <div className="player-info-list">
-                    {getPlayerInfoTable(selectedPlayer).map((row) => (
-                      <div key={row.label} className="player-info-row">
-                        <span className="info-label">{row.label}</span>
-                        <span className="info-value">{row.value}</span>
+                  {/* BLOQUE RENDIMIENTO */}
+                  <div className="stats-secondary-grid">
+                    <div className="stats-block-premium">
+                      <p className="block-title">Rendimiento detallado</p>
+                      <div className="premium-box-grid">
+                        <div className="premium-stat-card">
+                          <div className="stat-card-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34M12 2a4 4 0 0 0-4 4v5a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4z"/>
+                            </svg>
+                          </div>
+                          <div className="stat-card-info">
+                            <span>{playerStats.puntosConJugador}</span>
+                            <label>Puntos totales</label>
+                          </div>
+                        </div>
+
+                        <div className="premium-stat-card">
+                          <div className="stat-card-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <line x1="18" y1="20" x2="18" y2="10"/>
+                              <line x1="12" y1="20" x2="12" y2="4"/>
+                              <line x1="6" y1="20" x2="6" y2="14"/>
+                            </svg>
+                          </div>
+                          <div className="stat-card-info">
+                            <span>{(playerStats.puntosConJugador / (playerStats.pj || 1)).toFixed(2)}</span>
+                            <label>Pts / partido</label>
+                          </div>
+                        </div>
+
+                        <div className="premium-stat-card">
+                          <div className="stat-card-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                              <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                          </div>
+                          <div className="stat-card-info">
+                            <span>{playerStats.partidosTotalesCategoria > 0 ? Math.round((playerStats.pj / playerStats.partidosTotalesCategoria) * 100) : 0}%</span>
+                            <label>Compromiso</label>
+                          </div>
+                        </div>
+
+                        <div className="premium-stat-card">
+                          <div className="stat-card-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                          </div>
+                          <div className="stat-card-info">
+                            <span>{playerStats.minutos}'</span>
+                            <label>Minutos totales</label>
+                          </div>
+                        </div>
+
+                        <div className="premium-stat-card">
+                          <div className="stat-card-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M12 8v4l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                            </svg>
+                          </div>
+                          <div className="stat-card-info">
+                            <span>{(playerStats.minutos / (playerStats.pj || 1)).toFixed(0)}'</span>
+                            <label>Min / partido</label>
+                          </div>
+                        </div>
+
+                        <div className="premium-stat-card">
+                          <div className="stat-card-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+                            </svg>
+                          </div>
+                          <div className="stat-card-info">
+                            <span>{playerStats.maxStreak}</span>
+                            <label>Racha máx.</label>
+                          </div>
+                        </div>
+
+                        <div className="premium-stat-card">
+                          <div className="stat-card-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 0 1-2.827 0l-4.244-4.243a8 8 0 1 1 11.314 0z"/>
+                              <path d="M15 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                            </svg>
+                          </div>
+                          <div className="stat-card-info">
+                            <span>{playerStats.currentStreak}</span>
+                            <label>Racha actual</label>
+                          </div>
+                        </div>
+
+                        {(isGoalkeeper(selectedPlayer) || ["DFC", "LD", "LI"].includes(selectedPlayer.posicion)) && (
+                          <div className="premium-stat-card">
+                            <div className="stat-card-icon">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                              </svg>
+                            </div>
+                            <div className="stat-card-info">
+                              <span>{(playerStats.golesEncajados / (playerStats.pj || 1)).toFixed(2)}</span>
+                              <label>GC / partido</label>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* BIO */}
-              {(selectedPlayer.bio_deportiva || (getPlayerCareerRows(selectedPlayer).length > 0 && getPlayerCareerRows(selectedPlayer)[0] !== "Sin etapas registradas todavía.")) && (
-                <div className="player-bio-block">
-                  <p className="block-title">Historia deportiva</p>
-                  {selectedPlayer.bio_deportiva && <p className="bio-text">{selectedPlayer.bio_deportiva}</p>}
-                  {getPlayerCareerRows(selectedPlayer).length > 0 && (
-                    <ul className="career-list">
-                      {getPlayerCareerRows(selectedPlayer).map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
+              {/* CONTENIDO DE LA PESTAÑA: PERFIL */}
+              {activeTab === "perfil" && (
+                <div className="tab-content">
+                  <div className="stats-secondary-grid">
+                    <div className="stats-block-premium full-width">
+                      <p className="block-title">Ficha técnica</p>
+                      <div className="perfil-grid">
+                        <div className="perfil-item">
+                          <span className="perfil-label">Posición</span>
+                          <span className="perfil-value">{selectedPlayer.posicion}</span>
+                        </div>
+                        <div className="perfil-item">
+                          <span className="perfil-label">Edad</span>
+                          <span className="perfil-value">{getAgeLabel(selectedPlayer)}</span>
+                        </div>
+                        <div className="perfil-item">
+                          <span className="perfil-label">Nacimiento</span>
+                          <span className="perfil-value">
+                            {[
+                              selectedPlayer.fecha_nacimiento ? new Date(selectedPlayer.fecha_nacimiento).toLocaleDateString("es-ES") : null,
+                              selectedPlayer.lugar_nacimiento || null
+                            ].filter(Boolean).join(" · ") || "No registrado"}
+                          </span>
+                        </div>
+                        <div className="perfil-item">
+                          <span className="perfil-label">Altura</span>
+                          <span className="perfil-value">{selectedPlayer.altura_cm ? `${selectedPlayer.altura_cm} cm` : "No registrado"}</span>
+                        </div>
+                        <div className="perfil-item">
+                          <span className="perfil-label">Peso</span>
+                          <span className="perfil-value">{selectedPlayer.peso_kg ? `${selectedPlayer.peso_kg} kg` : "No registrado"}</span>
+                        </div>
+                        <div className="perfil-item">
+                          <span className="perfil-label">Pierna dominante</span>
+                          <span className="perfil-value">{selectedPlayer.pierna_dominante || "No registrado"}</span>
+                        </div>
+                        <div className="perfil-item">
+                          <span className="perfil-label">Procedencia</span>
+                          <span className="perfil-value">{selectedPlayer.club_anterior || "Ninguno"}</span>
+                        </div>
+                        <div className="perfil-item">
+                          <span className="perfil-label">Alta en club</span>
+                          <span className="perfil-value">{selectedPlayer.temporada_alta || "No registrado"}</span>
+                        </div>
+                        <div className="perfil-item">
+                          <span className="perfil-label">Veteranía</span>
+                          <span className="perfil-value">{calculateVeteraniaFromHistorial(selectedPlayer)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* CONTENIDO DE LA PESTAÑA: TRAYECTORIA */}
+              {activeTab === "trayectoria" && (
+                <div className="tab-content">
+                  {selectedPlayer.bio_deportiva && (
+                    <div className="bio-card-premium">
+                      <div className="bio-quote-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M9.9 21c-1.9 0-3.4-1.5-3.4-3.4 0-1.8 1.4-3.2 3.2-3.2.3 0 .5.1.7.1-.6-1.5-2.1-2.5-3.8-2.5V10c3.3 0 6 2.7 6 6s-2.7 5-6 5zm11 0c-1.9 0-3.4-1.5-3.4-3.4 0-1.8 1.4-3.2 3.2-3.2.3 0 .5.1.7.1-.6-1.5-2.1-2.5-3.8-2.5V10c3.3 0 6 2.7 6 6s-2.7 5-6 5z" />
+                        </svg>
+                      </div>
+                      <p className="bio-text-premium">{selectedPlayer.bio_deportiva}</p>
+                    </div>
                   )}
+
+                  <div className="timeline-block-premium">
+                    <p className="block-title">Historial deportivo</p>
+                    {getPlayerCareerRows(selectedPlayer).length > 0 && getPlayerCareerRows(selectedPlayer)[0] !== "Sin etapas registradas todavía." ? (
+                      <div className="timeline-container">
+                        {getPlayerCareerRows(selectedPlayer).map((item, idx) => {
+                          const parts = item.split(":");
+                          const period = parts.length > 1 ? parts[0].trim() : "";
+                          const detail = parts.length > 1 ? parts.slice(1).join(":").trim() : item;
+                          const isSantiso = detail.toLowerCase().includes("santiso");
+
+                          return (
+                            <div key={idx} className={`timeline-node ${isSantiso ? "active" : ""}`}>
+                              <div className="timeline-badge">
+                                {period || idx + 1}
+                              </div>
+                              <div className="timeline-content">
+                                <h4>{detail}</h4>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="timeline-empty">Sin etapas registradas todavía en la historia deportiva.</div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1293,7 +1652,7 @@ export default function PlantillaPage() {
           font-weight: 600;
         }
 
-        /* Secondary stats */
+        /* Secondary stats & layout */
         .stats-secondary-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -1413,6 +1772,309 @@ export default function PlantillaPage() {
           background: var(--primary);
           color: #000;
           border-color: var(--primary);
+        }
+
+        /* PREMIUM REDESIGN STYLES */
+        .player-detail-card {
+          animation: modalScaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalScaleUp {
+          from {
+            opacity: 0;
+            transform: scale(0.96) translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+
+        .badge-premium {
+          padding: 0.4rem 1.2rem;
+          border-radius: 2rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          font-size: 0.75rem;
+          letter-spacing: 1.5px;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          background: rgba(255, 255, 255, 0.05);
+          color: #a1a1aa;
+        }
+
+        .detail-tabs-nav {
+          display: flex;
+          gap: 0.5rem;
+          margin-bottom: 2rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          padding-bottom: 2px;
+        }
+        .detail-tab-btn {
+          background: transparent;
+          border: none;
+          color: #71717a;
+          font-weight: 700;
+          font-size: 0.95rem;
+          padding: 0.75rem 1.25rem;
+          cursor: pointer;
+          position: relative;
+          transition: color 0.2s;
+          outline: none;
+        }
+        .detail-tab-btn:hover {
+          color: #e4e4e7;
+        }
+        .detail-tab-btn.active {
+          color: var(--primary);
+        }
+        .detail-tab-btn.active::after {
+          content: "";
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: var(--primary);
+          box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+          border-radius: 2px;
+        }
+
+        .tab-content {
+          animation: tabFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes tabFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .stats-block-premium {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 16px;
+          padding: 1.5rem;
+          grid-column: 1 / -1;
+          position: relative;
+          overflow: hidden;
+          backdrop-filter: blur(10px);
+        }
+
+        .premium-box-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1rem;
+        }
+        @media (min-width: 640px) {
+          .premium-box-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+        @media (min-width: 1024px) {
+          .premium-box-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+        }
+
+        .premium-stat-card {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 1rem 1.25rem;
+          background: rgba(0, 0, 0, 0.25);
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          transition: all 0.2s ease-in-out;
+        }
+        .premium-stat-card:hover {
+          transform: translateY(-2px);
+          border-color: rgba(250, 204, 21, 0.3);
+          background: rgba(250, 204, 21, 0.02);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        .stat-card-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 38px;
+          height: 38px;
+          border-radius: 10px;
+          background: rgba(250, 204, 21, 0.08);
+          color: var(--primary);
+          flex-shrink: 0;
+          transition: all 0.2s;
+        }
+        .premium-stat-card:hover .stat-card-icon {
+          background: var(--primary);
+          color: #000;
+          box-shadow: 0 0 10px rgba(250, 204, 21, 0.4);
+        }
+        .stat-card-info {
+          display: flex;
+          flex-direction: column;
+        }
+        .stat-card-info span {
+          font-size: 1.4rem;
+          font-weight: 900;
+          color: #fff;
+          line-height: 1.1;
+        }
+        .stat-card-info label {
+          font-size: 0.65rem;
+          text-transform: uppercase;
+          color: #71717a;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          margin-top: 0.15rem;
+        }
+
+        .perfil-grid {
+          display: grid;
+          grid-template-columns: repeat(1, 1fr);
+          gap: 1.25rem;
+        }
+        @media (min-width: 640px) {
+          .perfil-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (min-width: 1024px) {
+          .perfil-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+        .perfil-item {
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+          padding: 0.8rem 1rem;
+          background: rgba(0, 0, 0, 0.15);
+          border-radius: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.03);
+          transition: all 0.2s;
+        }
+        .perfil-item:hover {
+          border-color: rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
+        }
+        .perfil-label {
+          font-size: 0.65rem;
+          text-transform: uppercase;
+          color: #71717a;
+          font-weight: 700;
+          letter-spacing: 0.8px;
+        }
+        .perfil-value {
+          font-size: 1rem;
+          font-weight: 700;
+          color: #e4e4e7;
+        }
+
+        .bio-card-premium {
+          display: flex;
+          gap: 1.25rem;
+          padding: 1.25rem 1.5rem;
+          background: linear-gradient(90deg, rgba(250, 204, 21, 0.05) 0%, transparent 100%);
+          border-left: 3px solid var(--primary);
+          border-radius: 0 12px 12px 0;
+          margin-bottom: 2rem;
+          box-shadow: inset 0 0 15px rgba(250, 204, 21, 0.02);
+        }
+        .bio-quote-icon {
+          color: var(--primary);
+          opacity: 0.5;
+          flex-shrink: 0;
+          display: flex;
+          align-items: flex-start;
+          margin-top: 0.2rem;
+        }
+        .bio-text-premium {
+          font-size: 0.95rem;
+          color: #d4d4d8;
+          line-height: 1.6;
+          font-style: italic;
+          margin: 0;
+        }
+
+        .timeline-block-premium {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 16px;
+          padding: 1.5rem;
+          backdrop-filter: blur(10px);
+        }
+        .timeline-container {
+          position: relative;
+          padding-left: 2rem;
+          margin: 1.5rem 0 0 0.75rem;
+          border-left: 2px solid rgba(255, 255, 255, 0.08);
+          display: flex;
+          flex-direction: column;
+          gap: 1.75rem;
+        }
+        .timeline-node {
+          position: relative;
+        }
+        .timeline-badge {
+          position: absolute;
+          left: calc(-2rem - 7px);
+          top: 3px;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #27272a;
+          border: 2px solid #52525b;
+          font-size: 0;
+          z-index: 2;
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .timeline-node.active .timeline-badge {
+          background: var(--primary);
+          border-color: var(--primary);
+          box-shadow: 0 0 10px var(--primary);
+          transform: scale(1.3);
+        }
+        .timeline-content {
+          padding-left: 0.5rem;
+        }
+        .timeline-content h4 {
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: #a1a1aa;
+          margin: 0;
+          transition: color 0.3s;
+        }
+        .timeline-node.active .timeline-content h4 {
+          color: #fff;
+          font-weight: 800;
+        }
+        .timeline-empty {
+          font-size: 0.9rem;
+          color: #71717a;
+          text-align: center;
+          padding: 3rem 1rem;
+          font-style: italic;
+        }
+
+        .detail-right {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+        }
+        .detail-right::-webkit-scrollbar {
+          width: 6px;
+        }
+        .detail-right::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .detail-right::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 3px;
+        }
+        .detail-right::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.2);
         }
 
         @media (max-width: 768px) {
