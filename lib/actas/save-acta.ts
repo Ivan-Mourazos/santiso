@@ -130,7 +130,7 @@ function buildStats(acta: ParsedActa) {
 }
 
 function buildEventRows(partidoId: string, acta: ParsedActa) {
-  return acta.eventos.map((event) => {
+  const rows = acta.eventos.map((event) => {
     const jugadorId =
       event.tipo === "cambio"
         ? event.jugadorEntra?.jugadorId
@@ -152,6 +152,14 @@ function buildEventRows(partidoId: string, acta: ParsedActa) {
       es_rival: event.isRival,
       nombre_mostrado: event.isRival ? event.nombreRival?.trim() || null : null,
     };
+  });
+
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    const key = `${row.tipo}_${row.minuto}_${row.jugador_id}_${row.jugador_relacionado_id}_${row.es_rival}_${row.nombre_mostrado}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
 }
 
