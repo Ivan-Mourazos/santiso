@@ -8,6 +8,7 @@ import {
   type CompetenciaRow,
 } from "@/lib/competition";
 import { fetchCompeticiones, fetchTeamsForCompetition } from "@/lib/supabase-queries";
+import { formatLiteralMatchDate, matchTimeInput } from "@/lib/match-date-time";
 
 interface AdminMatchesProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -219,7 +220,7 @@ export default function AdminMatches({ showToast, showConfirm, categoria }: Admi
             }}>
               <div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 700, marginBottom: '4px' }}>
-                  {new Date(p.fecha).toLocaleString('es-ES', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  {formatLiteralMatchDate(p.fecha, { day: '2-digit', month: '2-digit', year: 'numeric' })} {matchTimeInput(p.fecha, "")}
                 </div>
                 <div style={{ fontWeight: 800, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '10px', color: 'white' }}>
                   {p.rival_escudo_url && <img src={p.rival_escudo_url} alt="" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />}

@@ -16,6 +16,10 @@ import {
   mergeMissingTeams,
 } from "@/lib/supabase-queries";
 import { useCompeticiones } from "@/lib/useCompeticiones";
+import {
+  matchDateTimeLocalInput,
+  matchLocalDateTimeToIso,
+} from "./cartel/matchDateTime";
 
 interface AdminJornadasProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -469,7 +473,7 @@ export default function AdminJornadas({
       equipo_visitante_id: visitanteId,
       goles_local: null,
       goles_visitante: null,
-      fecha: fechaPartido || null,
+      fecha: matchLocalDateTimeToIso(fechaPartido),
       campo_id: campoId || null,
       estado: "programado",
     };
@@ -1598,7 +1602,7 @@ export default function AdminJornadas({
                         </label>
                         <input
                           type="datetime-local"
-                          value={p.fecha ? p.fecha.substring(0, 16) : ""}
+                          value={matchDateTimeLocalInput(p.fecha)}
                           onChange={(e) => {
                             const val = e.target.value;
                             setPartidos((prev) =>
@@ -1676,9 +1680,7 @@ export default function AdminJornadas({
                                 typeof p.goles_visitante === "number"
                                   ? p.goles_visitante
                                   : null,
-                              fecha: p.fecha
-                                ? new Date(p.fecha).toISOString()
-                                : null,
+                              fecha: matchLocalDateTimeToIso(p.fecha),
                               campo_id: p.campo_id,
                             })
                             .eq("id", p.id);

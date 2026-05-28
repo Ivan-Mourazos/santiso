@@ -8,6 +8,7 @@ import {
   type LeagueMatch,
 } from "@/lib/supabase-queries";
 import { LoadingState, EmptyState } from "@/components/ui/AdminUI";
+import { formatLiteralMatchDate, matchTimeInput } from "@/lib/match-date-time";
 
 interface Sponsor {
   id: string;
@@ -18,8 +19,7 @@ interface Sponsor {
 
 function formatMatchDate(fecha?: string | null) {
   if (!fecha) return "Data pendente";
-  return new Date(fecha).toLocaleDateString("es-ES", {
-    timeZone: "UTC",
+  return formatLiteralMatchDate(fecha, {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -27,12 +27,7 @@ function formatMatchDate(fecha?: string | null) {
 }
 
 function formatMatchTime(fecha?: string | null) {
-  if (!fecha) return "--:--";
-  return new Date(fecha).toLocaleTimeString("es-ES", {
-    timeZone: "UTC",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return matchTimeInput(fecha, "--:--");
 }
 
 export default function Home() {

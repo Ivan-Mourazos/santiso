@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { formatLiteralMatchDate, matchTimeInput } from "@/lib/match-date-time";
 
 interface BracketTreeProps {
   categoria: string;
@@ -153,7 +154,7 @@ export default function BracketTree({ categoria, competicionId }: BracketTreePro
 
                       {p.fecha && (
                         <div className="match-date">
-                          {new Date(p.fecha).toLocaleDateString("es-ES", { timeZone: "UTC", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          {formatLiteralMatchDate(p.fecha, { month: "short", day: "numeric" })} {matchTimeInput(p.fecha, "")}
                         </div>
                       )}
                     </div>

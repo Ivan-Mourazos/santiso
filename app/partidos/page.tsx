@@ -13,6 +13,7 @@ import {
   fetchMatchesForMatchday,
   fetchSeasons,
 } from "@/lib/supabase-queries";
+import { formatLiteralMatchDate, matchTimeInput } from "@/lib/match-date-time";
 
 export default function PartidosPage() {
   const [categoria, setCategoria] = useState("Senior");
@@ -303,8 +304,7 @@ export default function PartidosPage() {
                       <div className="match-header">
                         <span className="match-date">
                           {p.fecha
-                            ? new Date(p.fecha).toLocaleDateString("es-ES", {
-                                timeZone: "UTC",
+                            ? formatLiteralMatchDate(p.fecha, {
                                 weekday: "short",
                                 day: "2-digit",
                                 month: "short",
@@ -312,9 +312,7 @@ export default function PartidosPage() {
                             : "Fecha por definir"}
                         </span>
                         <span className="match-time">
-                          {p.fecha
-                            ? p.fecha.split("T")[1]?.substring(0, 5)
-                            : "--:--"}
+                          {matchTimeInput(p.fecha, "--:--")}
                           h
                         </span>
                       </div>

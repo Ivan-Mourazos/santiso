@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import { formatLiteralMatchDate } from "@/lib/match-date-time";
 
 export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <p style={{
@@ -114,7 +115,7 @@ export const MatchSelector: React.FC<{
         <option value="">-- Seleccionar partido reciente o próximo --</option>
         {filtered.map(m => (
           <option key={m.id} value={m.id}>
-            J{m.jornada?.numero || '?'} - {m.equipo_local?.nombre} vs {m.equipo_visitante?.nombre} ({m.fecha ? new Date(m.fecha).toLocaleDateString('es-ES', { timeZone: 'UTC' }) : 'Sin fecha'})
+            J{m.jornada?.numero || '?'} - {m.equipo_local?.nombre} vs {m.equipo_visitante?.nombre} ({m.fecha ? formatLiteralMatchDate(m.fecha) : 'Sin fecha'})
           </option>
         ))}
       </select>

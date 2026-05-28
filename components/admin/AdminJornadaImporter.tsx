@@ -15,6 +15,7 @@ import {
   fetchTeamsForCompetition,
   type Team,
 } from "@/lib/supabase-queries";
+import { matchLocalDateTimeToIso } from "./cartel/matchDateTime";
 import type { JornadaGeminiResponse, JornadaMatchExtracted } from "@/app/api/admin/jornada-gemini/route";
 
 interface Props {
@@ -452,7 +453,7 @@ function buildRows(data: JornadaGeminiResponse, currentEquipos: EquipoDB[]) {
         goles_local: row.golesLocal !== "" ? parseInt(row.golesLocal, 10) : null,
         goles_visitante:
           row.golesVisitante !== "" ? parseInt(row.golesVisitante, 10) : null,
-        fecha: normalizeFecha(row.fecha) || null,
+        fecha: matchLocalDateTimeToIso(normalizeFecha(row.fecha)),
         campo_id: resolvedCampoId,
         estado: (row.golesLocal !== "" && row.golesVisitante !== "") ? "finalizado" : "programado",
       };
