@@ -103,6 +103,7 @@ function isSantisoPlayer(rawName: string, jugadores: ActaPlayerDb[]): boolean {
 function toParsedActa(
   data: GeminiActaResponse,
   jugadores: ActaPlayerDb[],
+  santisoLocal: boolean,
 ): ParsedActa {
   const playersById = new Map(jugadores.map((player) => [player.id, player]));
   const warnings: string[] = Array.isArray(data.warnings) ? data.warnings.map(String) : [];
@@ -191,6 +192,19 @@ function toParsedActa(
           }
           // Ordenar por minuto
           result.sort((a, b) => parseInt(a.minuto, 10) - parseInt(b.minuto, 10));
+
+          // Validar que los goles de Santiso coinciden con el marcador
+          const santisoGoals = result.filter((e) => e.tipo === "gol" && !e.isRival).length;
+          const expectedSantisoGoals = parseInt(
+            santisoLocal ? data.marcadorLocal : data.marcadorVisitante,
+            10,
+          );
+          if (!isNaN(expectedSantisoGoals) && santisoGoals !== expectedSantisoGoals) {
+            warnings.push(
+              `⚠ Goles Santiso detectados (${santisoGoals}) no coinciden con marcador (${expectedSantisoGoals})`,
+            );
+          }
+
           return result;
         })()
 
@@ -217,7 +231,7 @@ function buildPrompt({
 
   return `
 Eres un extractor de datos de actas de Futgal para U.D. Santiso.
-Lee la imagen completa y devuelve SOLO JSON válido, sin markdown.
+Lee TODO el documento completo (todas las páginas si hay varias) y devuelve SOLO JSON válido, sin markdown.
 
 Partido seleccionado:
 ${JSON.stringify({
@@ -256,14 +270,42 @@ Reglas CRÍTICAS DE EQUIPO:
 - PROHIBIDO: No incluyas jugadores del equipo rival (${santisoLocal ? match.equipo_visitante?.nombre : match.equipo_local?.nombre}) en titulares o suplentes.
 - VALIDACIÓN: Si un dorsal detectado en el acta NO tiene un nombre que coincida razonablemente con la lista de "Jugadores Santiso disponibles", NO lo incluyas en la plantilla de Santiso (podría ser del rival).
 
-Regras de formato y otros:
-- tipo debe ser: "gol", "tarjeta_amarilla", "tarjeta_roja" o "cambio".
-- minuto debe ser texto numérico, conserva 999 si aparece.
-- isRival=true para eventos de "${santisoLocal ? match.equipo_visitante?.nombre : match.equipo_local?.nombre}".
-- En cambios del Santiso usa jugadorSaleId y jugadorEntraId.
-- Ordenación: La plantilla debe ir en el MISMO ORDEN visual que el acta. Eventos por MINUTO.
-- Si no estás seguro de un jugador Santiso, deja jugadorId vacío y añade warning.
-- No uses nombres del acta para jugadores del Santiso si puedes enlazar con la lista de IDs.
+REGLAS DE EVENTOS — LEE CON ATENCIÓN:
+
+SUSTITUCIONES (tipo "cambio"):
+- En el acta, cada sustitución ocupa DOS líneas:
+    Línea 1: [dorsal_entra] [NOMBRE_ENTRA]         ←
+    Línea 2: [dorsal_sale]  [NOMBRE_SALE] (minuto') →
+- La flecha ← indica el jugador que ENTRA → jugadorEntraId
+- La flecha → indica el jugador que SALE  → jugadorSaleId
+- El MINUTO está siempre junto al jugador que SALE (línea 2, con →)
+- Si hay varios cambios consecutivos (ej. dos al minuto 90'), empareja cada línea-1 con su línea-2 inmediata en el orden visual. NO mezcles pares entre cambios distintos.
+- Para cambios del rival: isRival=true, no incluyas jugadorEntraId ni jugadorSaleId.
+
+GOLES (tipo "gol"):
+- Los goles aparecen en la SECCIÓN CENTRAL del acta, no bajo ningún equipo.
+- Cada línea de gol muestra el marcador acumulado y el goleador: "X-Y NOMBRE (minuto')"
+- Deduce quién marcó comparando el marcador anterior con el nuevo:
+    Si aumenta el número LOCAL (izquierda): gol del equipo LOCAL
+    Si aumenta el número VISITANTE (derecha): gol del equipo VISITANTE
+- Santiso juega como ${santisoLocal ? "LOCAL" : "VISITANTE"}.
+    Gol del LOCAL → isRival=${santisoLocal ? "false" : "true"}
+    Gol del VISITANTE → isRival=${santisoLocal ? "true" : "false"}
+- Si el goleador es del Santiso: usa jugadorId (busca en la lista de jugadores).
+- Si el goleador es del rival: usa nombreRival con su nombre completo tal como aparece.
+
+TARJETAS (tipo "tarjeta_amarilla" / "tarjeta_roja"):
+- Identifica el equipo por la columna visual en que aparecen o el encabezado de sección.
+- Tarjeta del rival: isRival=true, nombreRival con el nombre del sancionado.
+- Tarjeta a técnico del rival: isRival=true, nombreRival con su nombre.
+- Tarjeta al Santiso: isRival=false, jugadorId del sancionado.
+
+OTROS:
+- tipo debe ser exactamente: "gol", "tarjeta_amarilla", "tarjeta_roja" o "cambio"
+- minuto: texto numérico, conserva 999 si aparece en el acta
+- Eventos ordenados por minuto ascendente
+- Si hay duda sobre un evento, ponlo con confidence: "baja" y añade un warning
+- Si no estás seguro de un jugador Santiso, deja jugadorId vacío y añade warning
 
 Formato exacto:
 {
@@ -467,10 +509,12 @@ export async function POST(request: Request) {
     );
   }
 
+  const santisoLocal = match.equipo_local?.nombre?.toLowerCase().includes("santiso") ?? false;
+
   try {
     const parsed = JSON.parse(stripJsonFence(text)) as GeminiActaResponse;
     return Response.json({
-      acta: toParsedActa(parsed, jugadores),
+      acta: toParsedActa(parsed, jugadores, santisoLocal),
       raw: parsed,
       model: result.model,
     });

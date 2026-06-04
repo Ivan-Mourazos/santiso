@@ -29,6 +29,15 @@ interface AdminActaImporterProps {
 
 const CATEGORIES: ActaCategoria[] = ["Senior", "Femenino", "Veteranos"];
 
+interface DetectedActaMeta {
+  jornada: number;
+  localTeam: string;
+  visitorTeam: string;
+  categoria: string;
+  competicion: string;
+  fecha: string;
+}
+
 function displayPlayer(player: ActaPlayerDb) {
   if (player.apodo?.trim()) return player.apodo.trim();
   const parts = player.nombre.trim().split(/\s+/);
@@ -244,6 +253,8 @@ export default function AdminActaImporter({
   const [busy, setBusy] = useState(false);
   const [busyText, setBusyText] = useState("Cargando datos...");
   const [progress, setProgress] = useState<number | undefined>(undefined);
+  const [detectedMeta, setDetectedMeta] = useState<DetectedActaMeta | null>(null);
+  const [isDetecting, setIsDetecting] = useState(false);
 
   const selectedMatch = matches.find((match) => match.id === selectedMatchId);
   const santisoLocal = isSantisoLocal(selectedMatch);
@@ -278,6 +289,14 @@ export default function AdminActaImporter({
     if (!selectedCompetitionId) return;
     fetchBaseData();
   }, [categoria, selectedCompetitionId]);
+
+  useEffect(() => {
+    if (!detectedMeta || !matches.length) return;
+    const found = matches.find(
+      (m) => String(m.jornada?.numero) === String(detectedMeta.jornada),
+    );
+    if (found) setSelectedMatchId(found.id);
+  }, [matches, detectedMeta]);
 
   async function fetchBaseData() {
     setBusy(true);
@@ -326,6 +345,27 @@ export default function AdminActaImporter({
     }
 
     setBusy(false);
+  }
+
+  async function detectMatch(f: File) {
+    setIsDetecting(true);
+    setDetectedMeta(null);
+    try {
+      const formData = new FormData();
+      formData.append("image", f);
+      const res = await fetch("/api/admin/acta-detect", { method: "POST", body: formData });
+      if (!res.ok) return;
+      const data = (await res.json()) as DetectedActaMeta;
+      if (!data.jornada) return;
+      setDetectedMeta(data);
+      if (data.categoria && CATEGORIES.includes(data.categoria as ActaCategoria)) {
+        setCategoria(data.categoria as ActaCategoria);
+      }
+    } catch {
+      // silent — user selects manually
+    } finally {
+      setIsDetecting(false);
+    }
   }
 
   async function analyzeImage() {
@@ -567,7 +607,7 @@ export default function AdminActaImporter({
             onDrop={(e) => {
               e.preventDefault();
               const f = e.dataTransfer.files?.[0];
-              if (f) setFile(f);
+              if (f) { setFile(f); detectMatch(f); }
             }}
             style={{
               display: "flex",
@@ -601,10 +641,31 @@ export default function AdminActaImporter({
               id="acta-file-input"
               type="file"
               accept="image/*,application/pdf"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              onChange={(e) => {
+                const f = e.target.files?.[0] || null;
+                setFile(f);
+                if (f) detectMatch(f);
+                else setDetectedMeta(null);
+              }}
               style={{ display: "none" }}
             />
           </label>
+          {isDetecting && (
+            <p style={{ fontSize: "0.78rem", color: "#888", margin: "0.4rem 0 0" }}>
+              Detectando partido...
+            </p>
+          )}
+          {!isDetecting && detectedMeta && (
+            <p style={{
+              fontSize: "0.78rem",
+              margin: "0.4rem 0 0",
+              color: selectedMatchId ? "#4ade80" : "#f59e0b",
+            }}>
+              {selectedMatchId
+                ? `✓ J${detectedMeta.jornada} · ${detectedMeta.localTeam} vs ${detectedMeta.visitorTeam}`
+                : `⚠ J${detectedMeta.jornada} detectada — selecciona partido manualmente`}
+            </p>
+          )}
         </div>
       </div>
 

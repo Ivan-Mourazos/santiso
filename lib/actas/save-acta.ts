@@ -156,7 +156,9 @@ function buildEventRows(partidoId: string, acta: ParsedActa) {
 
   const seen = new Set<string>();
   return rows.filter((row) => {
-    const key = `${row.tipo}_${row.minuto}_${row.jugador_id}_${row.jugador_relacionado_id}_${row.es_rival}_${row.nombre_mostrado}`;
+    // Usa los mismos campos que ux_eventos_santiso_dedupe para evitar conflictos
+    const rivalKey = row.es_rival ? (row.nombre_mostrado ?? "") : "";
+    const key = `${row.tipo}|${row.minuto ?? ""}|${row.jugador_id ?? ""}|${row.jugador_relacionado_id ?? ""}|${row.es_rival}|${rivalKey}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -187,6 +189,12 @@ export async function saveReviewedActa({
     partido_id: partidoId,
   }));
   const events = buildEventRows(partidoId, acta);
+
+  // Borrar datos previos para permitir reimportación con datos mejorados
+  await Promise.all([
+    supabase.from("jugador_partido_stats").delete().eq("partido_id", partidoId),
+    supabase.from("partido_eventos_santiso").delete().eq("partido_id", partidoId),
+  ]);
 
   const { error: rpcError } = await supabase.rpc("save_reviewed_acta", {
     p_partido_id: partidoId,
