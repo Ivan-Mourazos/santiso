@@ -4,9 +4,9 @@
  */
 
 import { W, H, BAR_W, CX, GOLD, GREEN_TXT, CL, CR } from "../constants";
-import { fmtDate, drawShield, fitFont, rr } from "../primitives";
+import { fmtDate, drawShield, fitFont, rr, drawPhotoEnvironment } from "../primitives";
 import type { Player, CartelAssets } from "../types";
-import { drawTopLogos, drawSponsorBar, drawCategoryTint, drawWatermark } from "../shared";
+import { drawTopLogos, drawSponsorBar, drawCategoryTint, drawWatermark, drawStadiumGrass } from "../shared";
 
 export interface Noso11Form {
   categoria:  string;
@@ -30,6 +30,10 @@ export function drawNoso11(
 ) {
   const { categoria, fecha, estadio, titulares, suplentes } = f;
 
+  // Overlay completo — suprime fondo, vignette y foil diagonal de drawBackground
+  ctx.fillStyle = "rgba(0,0,0,0.95)";
+  ctx.fillRect(0, 0, W, H);
+
   // ── Layout Proportions ──────────────────────────────────────────────────
   // Photo stops 16px before center (invisible breathing gap)
   const GAP      = 16;
@@ -40,11 +44,10 @@ export function drawNoso11(
   const PHOTO_X = f.noso11Flip ? LIST_X_BASE : BAR_W;
   const LIST_X  = f.noso11Flip ? BAR_W : LIST_X_BASE;
 
-  if (imgJugador) {
-    // Column shading - Must cover from the outer edge to the center
-    ctx.fillStyle = "rgba(0,0,0,0.55)";
-    ctx.fillRect(PHOTO_X === BAR_W ? 0 : CX, 0, PHOTO_W + BAR_W, H);
+  // Watermark — antes de la foto y del overlay de columna para que quede uniforme en ambas mitades
+  drawWatermark(ctx, assets.santiso);
 
+  if (imgJugador) {
     const zoom = f.jugadorZoom || 1.0;
     const iAR = imgJugador.naturalWidth / imgJugador.naturalHeight;
     const PHOTO_START_Y = 180;
@@ -74,19 +77,43 @@ export function drawNoso11(
     ctx.beginPath();
     ctx.rect(PHOTO_X, 0, CLIP_W, H); 
     ctx.clip();
-    ctx.drawImage(imgJugador, sx, sy, sw, sh, PHOTO_X, PHOTO_START_Y, PHOTO_W, H - PHOTO_START_Y); 
+    ctx.drawImage(imgJugador, sx, sy, sw, sh, PHOTO_X, PHOTO_START_Y, PHOTO_W, H - PHOTO_START_Y);
+    ctx.restore();
+
+    // Blend the photo into the dark poster (seam fade, vignette, tint, accent)
+    drawPhotoEnvironment(ctx, PHOTO_X, PHOTO_START_Y, PHOTO_W, H - PHOTO_START_Y, {
+      innerSide: f.noso11Flip ? "left" : "right",
+    });
+
+    // Líneas doradas horizontales — arriba (coincide con el golden separator) y abajo (antes de sponsors)
+    const LINE_TOP_Y    = 183;
+    const LINE_BOTTOM_Y = 1148;
+    const lineX1 = PHOTO_X + 14;
+    const lineX2 = PHOTO_X + PHOTO_W - 14;
+
+    const lineGrad = (y: number) => {
+      const g = ctx.createLinearGradient(lineX1, y, lineX2, y);
+      g.addColorStop(0,   "rgba(201,164,32,0)");
+      g.addColorStop(0.1, "rgba(201,164,32,0.55)");
+      g.addColorStop(0.9, "rgba(201,164,32,0.55)");
+      g.addColorStop(1,   "rgba(201,164,32,0)");
+      return g;
+    };
+
+    ctx.save();
+    ctx.lineWidth = 1.5;
+    [LINE_TOP_Y, LINE_BOTTOM_Y].forEach(y => {
+      ctx.beginPath();
+      ctx.strokeStyle = lineGrad(y);
+      ctx.moveTo(lineX1, y);
+      ctx.lineTo(lineX2, y);
+      ctx.stroke();
+    });
+
     ctx.restore();
   }
 
-  // Unified shading for the player list column + the invisible gap
-  // The gap (CX-GAP to CX+GAP) gets same shading so it blends, photo still clips before it
-  const shadingStartX = f.noso11Flip ? 0 : (CX - GAP);
-  const shadingW      = f.noso11Flip ? (CX + GAP) : (W - (CX - GAP));
-  ctx.fillStyle = "rgba(0,0,0,0.55)";
-  ctx.fillRect(shadingStartX, 0, shadingW, H);
 
-  // 0. Background Watermark
-  drawWatermark(ctx, assets.santiso);
 
   // Unified Header: Stadium · Date (Above the golden line, centered)
   ctx.save();

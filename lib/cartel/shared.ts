@@ -87,14 +87,28 @@ export function drawBackground(
   ctx.restore();
 }
 
+/** Césped de estadio — franjas horizontales casi imperceptibles */
+export function drawStadiumGrass(ctx: CanvasRenderingContext2D) {
+  ctx.save();
+  const stripeH = 60;
+  const stripes = Math.ceil(H / stripeH);
+  for (let i = 0; i < stripes; i++) {
+    ctx.fillStyle = i % 2 === 0
+      ? "rgba(10, 40, 10, 0.18)"
+      : "rgba(15, 55, 12, 0.18)";
+    ctx.fillRect(0, i * stripeH, W, stripeH);
+  }
+  ctx.restore();
+}
+
 /** Giant subtle club shield texture */
 export function drawWatermark(ctx: CanvasRenderingContext2D, imgSantiso: HTMLImageElement | null) {
   if (!imgSantiso) return;
   ctx.save();
-  ctx.globalAlpha = 0.025; // More subtle for better contrast
-  const wSize = 920;
-  // Positioned slightly off-center vertically to sit behind the main content area
-  ctx.drawImage(imgSantiso, CX - wSize / 2, 760 - wSize / 2, wSize, wSize);
+  // Premium: tamaño grande, opacidad sutil pero visible, centrado en el cartel
+  ctx.globalAlpha = 0.02;
+  const wSize = 1150;
+  ctx.drawImage(imgSantiso, CX - wSize / 2, H / 2 - wSize / 2, wSize, wSize);
   ctx.restore();
 }
 

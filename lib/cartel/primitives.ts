@@ -22,6 +22,36 @@ export function loadImg(src: string): Promise<HTMLImageElement | null> {
   });
 }
 
+// ─── Photo environment (blend a clipped photo into the dark poster) ───────────
+
+/**
+ * Softens how an inserted photo meets the dark poster: brand tint for cohesion,
+ * internal vignette, a fade on the inner seam (toward the text/list panel),
+ * top + bottom fades, and a thin gold accent line at the seam.
+ * Call AFTER drawing the photo. Coordinates are the photo's destination rect.
+ */
+export function drawPhotoEnvironment(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number, h: number,
+  opts: { innerSide: "left" | "right"; tint?: string } = { innerSide: "right" }
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  // Fade inferior — transición suave hacia los sponsors
+  const bF = Math.min(180, h * 0.2);
+  const gb = ctx.createLinearGradient(0, y + h - bF, 0, y + h);
+  gb.addColorStop(0, "rgba(0,0,0,0)");
+  gb.addColorStop(1, "rgba(0,0,0,1)");
+  ctx.fillStyle = gb;
+  ctx.fillRect(x, y, w, h);
+
+  ctx.restore();
+
+}
+
 // ─── Canvas path helpers ──────────────────────────────────────────────────────
 
 /** Draw rounded-rect path (no fill/stroke — caller does that). */
