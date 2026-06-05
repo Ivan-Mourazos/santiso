@@ -183,6 +183,7 @@ function toParsedActa(
               minuto: minutoRaw,
               isRival,
               esPropia: Boolean(event.esPropia) || undefined,
+              esPropiaSantiso: Boolean(event.esPropiaSantiso) || undefined,
               jugador: makeEventPlayer(event.jugadorId),
               jugadorSale: makeEventPlayer(event.jugadorSaleId),
               jugadorEntra: makeEventPlayer(event.jugadorEntraId),
@@ -294,7 +295,7 @@ GOLES (tipo "gol"):
     Gol del VISITANTE → isRival=${santisoLocal ? "true" : "false"}
 - Si el goleador es del Santiso: usa jugadorId (busca en la lista de jugadores).
 - Si el goleador es del rival: usa nombreRival con su nombre completo tal como aparece.
-- GOL EN PROPIA DEL SANTISO ("p.p." en columna de Santiso, o goleador de Santiso que aumenta marcador del rival): isRival=true, nombreRival="En propia". No uses jugadorId.
+- GOL EN PROPIA DEL SANTISO ("p.p." en columna de Santiso, o goleador de Santiso que aumenta marcador del rival): isRival=true, esPropiaSantiso=true, jugadorId=id del jugador Santiso que marcó en propia (búscalo en la lista de jugadores por dorsal o nombre).
 - GOL EN PROPIA DEL RIVAL ("p.p." en columna rival, o jugador rival que aumenta marcador de Santiso): isRival=false, esPropia=true, nombreRival=nombre del jugador rival si aparece (si no, omítelo). No uses jugadorId.
 
 TARJETAS (tipo "tarjeta_amarilla" / "tarjeta_roja"):

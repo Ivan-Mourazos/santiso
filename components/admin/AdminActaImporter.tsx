@@ -529,6 +529,7 @@ export default function AdminActaImporter({
     (player) => !player.jugadorId,
   );
   const unresolvedEvents = acta.eventos.filter((event) => {
+    if (event.esPropiaSantiso) return !event.jugador?.jugadorId; // requiere jugador Santiso
     if (event.isRival) return !event.nombreRival?.trim();
     if (event.esPropia) return false; // propia del rival — sin jugador Santiso requerido
     if (event.tipo === "cambio") {
@@ -1131,25 +1132,34 @@ function EventEditor({
             
             <div className="event-actions">
               <select
-                value={event.isRival ? "rival" : event.esPropia ? "propia_rival" : "santiso"}
+                value={event.isRival ? (event.esPropiaSantiso ? "propia_santiso" : "rival") : event.esPropia ? "propia_rival" : "santiso"}
                 onChange={(e) => {
                   const v = e.target.value;
-                  if (v === "rival") onUpdate(index, { isRival: true, esPropia: false });
-                  else if (v === "propia_rival") onUpdate(index, { isRival: false, esPropia: true, jugador: undefined });
-                  else onUpdate(index, { isRival: false, esPropia: false });
+                  if (v === "rival") onUpdate(index, { isRival: true, esPropia: false, esPropiaSantiso: false });
+                  else if (v === "propia_rival") onUpdate(index, { isRival: false, esPropia: true, esPropiaSantiso: false, jugador: undefined });
+                  else if (v === "propia_santiso") onUpdate(index, { isRival: true, esPropia: false, esPropiaSantiso: true });
+                  else onUpdate(index, { isRival: false, esPropia: false, esPropiaSantiso: false });
                 }}
                 className="equipo-select"
               >
                 <option value="santiso">Santiso</option>
                 <option value="rival">Rival</option>
                 {event.tipo === "gol" && <option value="propia_rival">En propia (rival)</option>}
+                {event.tipo === "gol" && <option value="propia_santiso">En propia (Santiso)</option>}
               </select>
               <button className="row-delete" onClick={() => onRemove(index)}>Quitar</button>
             </div>
           </div>
 
           <div className="event-card-body">
-            {event.isRival ? (
+            {event.esPropiaSantiso ? (
+              <PlayerSelect
+                jugadores={jugadores}
+                value={event.jugador?.jugadorId || ""}
+                label="Jugador Santiso que marcó en propia..."
+                onChange={(playerId) => onSetPlayer(index, "jugador", playerId)}
+              />
+            ) : event.isRival ? (
               <input
                 value={event.nombreRival || ""}
                 onChange={(e) => onUpdate(index, { nombreRival: e.target.value })}

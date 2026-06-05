@@ -20,6 +20,7 @@ export interface ActaEvent {
   minuto: string;
   isRival: boolean;
   esPropia?: boolean; // gol en propia del rival (cuenta para Santiso, sin jugador propio)
+  esPropiaSantiso?: boolean; // gol en propia del Santiso (cuenta para rival, jugador Santiso guardado)
   jugador?: ActaPlayerRef;
   jugadorSale?: ActaPlayerRef;
   jugadorEntra?: ActaPlayerRef;

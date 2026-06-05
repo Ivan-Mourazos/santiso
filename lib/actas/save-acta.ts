@@ -148,11 +148,11 @@ function buildEventRows(partidoId: string, acta: ParsedActa) {
       partido_id: partidoId,
       tipo: event.tipo,
       minuto: Number(event.minuto) || null,
-      jugador_id: event.isRival ? null : jugadorId,
+      jugador_id: event.isRival && !event.esPropiaSantiso ? null : jugadorId,
       jugador_relacionado_id: event.isRival ? null : jugadorRelacionadoId,
       es_rival: event.isRival,
       nombre_mostrado: event.isRival
-        ? event.nombreRival?.trim() || null
+        ? event.esPropiaSantiso ? "En propia" : event.nombreRival?.trim() || null
         : event.esPropia
           ? event.nombreRival?.trim() || "En propia"
           : null,

@@ -126,8 +126,9 @@ function getIssues(acta: ParsedActa): string[] {
     issues.push(`${unresolvedPlayers.length} jugador(es) sin enlazar`);
 
   const unresolvedEvents = acta.eventos.filter((e) => {
+    if (e.esPropiaSantiso) return !e.jugador?.jugadorId;
     if (e.isRival) return !e.nombreRival?.trim();
-    if (e.esPropia) return false; // propia del rival — sin jugador Santiso requerido
+    if (e.esPropia) return false;
     if (e.tipo === "cambio") return !e.jugadorSale?.jugadorId || !e.jugadorEntra?.jugadorId;
     return !e.jugador?.jugadorId;
   });
