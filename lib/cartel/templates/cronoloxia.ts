@@ -256,7 +256,7 @@ export function drawCronoloxia(
       ctx.font = "700 17px 'Outfit', sans-serif";
       ctx.textAlign = textAlign;
       ctx.textBaseline = "middle";
-      ctx.fillText(`${ev.minuto}'`, minuteX, y);
+      ctx.fillText(ev.minuto === "999" ? "Final" : `${ev.minuto}'`, minuteX, y);
       drawChangeCard(ev, textX, y, side);
       return;
     }

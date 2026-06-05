@@ -163,7 +163,11 @@ function toParsedActa(
           for (const event of data.eventos) {
             const isRival = Boolean(event.isRival);
             const tipo = event.tipo;
-            const minutoRaw = safeString(event.minuto).replace(/[^0-9]/g, "");
+            const minutoStr = safeString(event.minuto).trim().toLowerCase();
+            // "final", "(final)", "f", "post" → sentinel 999
+            const minutoRaw = /^(final|\(final\)|f|post.*)$/.test(minutoStr)
+              ? "999"
+              : minutoStr.replace(/[^0-9]/g, "");
             const minutoNum = parseInt(minutoRaw, 10);
             const validMinuto = !isNaN(minutoNum) && minutoNum >= 1 && minutoNum <= 999;
 
@@ -306,7 +310,7 @@ TARJETAS (tipo "tarjeta_amarilla" / "tarjeta_roja"):
 
 OTROS:
 - tipo debe ser exactamente: "gol", "tarjeta_amarilla", "tarjeta_roja" o "cambio"
-- minuto: texto numérico, conserva 999 si aparece en el acta
+- minuto: número entero. Si el acta indica minuto 999, "final", "(final)", "F" o cualquier variante post-partido → usa 999
 - Eventos ordenados por minuto ascendente
 - Si hay duda sobre un evento, ponlo con confidence: "baja" y añade un warning
 - Si no estás seguro de un jugador Santiso, deja jugadorId vacío y añade warning
