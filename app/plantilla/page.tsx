@@ -694,16 +694,27 @@ export default function PlantillaPage() {
       jornadaNumberMap.set(j.id, j.numero || 0);
     });
 
-    const { data: stats } = await supabase
-      .from("jugador_partido_stats")
-      .select(
-        "jugador_id, titular, jugo, goles, partidos_liga!inner(jornada_id,equipo_local_id,equipo_visitante_id,goles_local,goles_visitante,estado)",
-      )
-      .in("jugador_id", playerIds)
-      .in("partidos_liga.jornada_id", jornadaIds);
+    // Fetch all player-match rows with pagination to avoid the default 1000-row server limit.
+    // Card stats use one big query (all players); without pagination, row limits
+    // silently truncate results so some players show wrong stats.
+    const PAGE = 1000;
+    const allStatRows: CardStatRow[] = [];
+    for (let offset = 0; ; offset += PAGE) {
+      const { data: page } = await supabase
+        .from("jugador_partido_stats")
+        .select(
+          "jugador_id, titular, jugo, goles, partidos_liga!inner(jornada_id,equipo_local_id,equipo_visitante_id,goles_local,goles_visitante,estado)",
+        )
+        .in("jugador_id", playerIds)
+        .in("partidos_liga.jornada_id", jornadaIds)
+        .range(offset, offset + PAGE - 1);
+      if (!page || page.length === 0) break;
+      allStatRows.push(...(page as CardStatRow[]));
+      if (page.length < PAGE) break;
+    }
 
     const playersById = new Map(players.map((player) => [player.id, player]));
-    const statRows = (stats || []) as CardStatRow[];
+    const statRows = allStatRows;
 
     // Derive Santiso team IDs from match frequency data.
     // Each Santiso player appears once per player-match pair in statRows.
