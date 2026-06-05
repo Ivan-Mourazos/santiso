@@ -6,6 +6,8 @@ import { saveReviewedActa } from "@/lib/actas/save-acta";
 import { fetchSeasons } from "@/lib/supabase-queries";
 import type {
   ActaCampoDb,
+  ActaEvent,
+  ActaEventType,
   ActaMatchDb,
   ActaPlayerDb,
   ActaPlayerRef,
@@ -34,17 +36,14 @@ interface BatchItem {
   competicion?: string;
   issues?: string[];
   error?: string;
+  resolvedActa?: ParsedActa;
+  match?: ActaMatchDb;
 }
 
-// ── Helpers (mirrors AdminActaImporter) ──────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function normalizeForMatch(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
+  return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
 function tokenScore(left: string, right: string) {
@@ -62,20 +61,30 @@ function displayPlayer(player: ActaPlayerDb) {
   return parts.length > 1 ? `${parts[0]} ${parts[1]}` : player.nombre;
 }
 
-function resolvePlayerRef(
-  player: ActaPlayerRef,
-  byDorsal: Map<string, ActaPlayerDb>,
-  jugadores: ActaPlayerDb[],
-): ActaPlayerRef {
+function makePlayerRefFromDb(player: ActaPlayerDb): ActaPlayerRef {
+  return {
+    id: crypto.randomUUID(),
+    dorsal: player.dorsal?.toString() || "",
+    rawName: player.nombre,
+    jugadorId: player.id,
+    displayName: displayPlayer(player),
+  };
+}
+
+function makeEvent(): ActaEvent {
+  return {
+    id: crypto.randomUUID(),
+    tipo: "gol",
+    minuto: "",
+    isRival: false,
+    confidence: "media",
+  };
+}
+
+function resolvePlayerRef(player: ActaPlayerRef, byDorsal: Map<string, ActaPlayerDb>, jugadores: ActaPlayerDb[]): ActaPlayerRef {
   const fromDorsal = byDorsal.get(player.dorsal);
   const fromName = jugadores
-    .map((p) => ({
-      p,
-      score: Math.max(
-        tokenScore(player.rawName, p.nombre),
-        tokenScore(player.rawName, p.apodo || ""),
-      ),
-    }))
+    .map((p) => ({ p, score: Math.max(tokenScore(player.rawName, p.nombre), tokenScore(player.rawName, p.apodo || "")) }))
     .sort((a, b) => b.score - a.score)[0];
   const db = fromDorsal || (fromName?.score >= 0.5 ? fromName.p : null);
   if (!db) return player;
@@ -83,34 +92,20 @@ function resolvePlayerRef(
 }
 
 function resolveParsedActa(acta: ParsedActa, jugadores: ActaPlayerDb[]): ParsedActa {
-  const byDorsal = new Map(
-    jugadores.filter((p) => p.dorsal !== null).map((p) => [String(p.dorsal), p]),
-  );
-  const resolve = (p?: ActaPlayerRef) =>
-    p ? resolvePlayerRef(p, byDorsal, jugadores) : undefined;
+  const byDorsal = new Map(jugadores.filter((p) => p.dorsal !== null).map((p) => [String(p.dorsal), p]));
+  const resolve = (p?: ActaPlayerRef) => p ? resolvePlayerRef(p, byDorsal, jugadores) : undefined;
   return {
     ...acta,
     titulares: acta.titulares.map((p) => resolvePlayerRef(p, byDorsal, jugadores)),
     suplentes: acta.suplentes.map((p) => resolvePlayerRef(p, byDorsal, jugadores)),
-    eventos: acta.eventos.map((e) => ({
-      ...e,
-      jugador: resolve(e.jugador),
-      jugadorSale: resolve(e.jugadorSale),
-      jugadorEntra: resolve(e.jugadorEntra),
-    })),
+    eventos: acta.eventos.map((e) => ({ ...e, jugador: resolve(e.jugador), jugadorSale: resolve(e.jugadorSale), jugadorEntra: resolve(e.jugadorEntra) })),
   };
 }
 
 function resolveCampo(acta: ParsedActa, campos: ActaCampoDb[]): ParsedActa {
   if (acta.campoId || !acta.campoNombre.trim()) return acta;
   const best = campos
-    .map((c) => ({
-      c,
-      score: Math.max(
-        tokenScore(acta.campoNombre, c.nombre),
-        tokenScore(`${acta.campoNombre} ${acta.campoPoblacion}`, `${c.nombre} ${c.poblacion || ""}`),
-      ),
-    }))
+    .map((c) => ({ c, score: Math.max(tokenScore(acta.campoNombre, c.nombre), tokenScore(`${acta.campoNombre} ${acta.campoPoblacion}`, `${c.nombre} ${c.poblacion || ""}`)) }))
     .sort((a, b) => b.score - a.score)[0];
   if (!best || best.score < 0.55) return acta;
   return { ...acta, campoId: best.c.id, campoNombre: best.c.nombre, campoPoblacion: best.c.poblacion || acta.campoPoblacion };
@@ -122,11 +117,8 @@ function matchLabel(match: ActaMatchDb) {
 
 function getIssues(acta: ParsedActa): string[] {
   const issues: string[] = [];
-
   const unresolvedPlayers = [...acta.titulares, ...acta.suplentes].filter((p) => !p.jugadorId);
-  if (unresolvedPlayers.length > 0)
-    issues.push(`${unresolvedPlayers.length} jugador(es) sin enlazar`);
-
+  if (unresolvedPlayers.length > 0) issues.push(`${unresolvedPlayers.length} jugador(es) sin enlazar`);
   const unresolvedEvents = acta.eventos.filter((e) => {
     if (e.esPropiaSantiso) return !e.jugador?.jugadorId;
     if (e.isRival) return !e.nombreRival?.trim();
@@ -134,12 +126,9 @@ function getIssues(acta: ParsedActa): string[] {
     if (e.tipo === "cambio") return !e.jugadorSale?.jugadorId || !e.jugadorEntra?.jugadorId;
     return !e.jugador?.jugadorId;
   });
-  if (unresolvedEvents.length > 0)
-    issues.push(`${unresolvedEvents.length} evento(s) sin resolver`);
-
+  if (unresolvedEvents.length > 0) issues.push(`${unresolvedEvents.length} evento(s) sin resolver`);
   const scoreWarning = acta.warnings?.find((w) => w.includes("no coinciden"));
   if (scoreWarning) issues.push(scoreWarning);
-
   return issues;
 }
 
@@ -155,12 +144,7 @@ async function callDetect(file: File): Promise<DetectedMeta | null> {
   return data as DetectedMeta;
 }
 
-async function callAnalyze(
-  file: File,
-  match: ActaMatchDb,
-  jugadores: ActaPlayerDb[],
-  campos: ActaCampoDb[],
-): Promise<ParsedActa | null> {
+async function callAnalyze(file: File, match: ActaMatchDb, jugadores: ActaPlayerDb[], campos: ActaCampoDb[]): Promise<ParsedActa | null> {
   const fd = new FormData();
   fd.append("image", file);
   fd.append("match", JSON.stringify(match));
@@ -176,16 +160,11 @@ async function callAnalyze(
 
 function StatusIcon({ status }: { status: BatchStatus }) {
   const spin: React.CSSProperties = {
-    display: "inline-block",
-    width: 14,
-    height: 14,
-    border: "2px solid #555",
-    borderTopColor: "#facc15",
-    borderRadius: "50%",
-    animation: "spin 0.7s linear infinite",
+    display: "inline-block", width: 14, height: 14,
+    border: "2px solid #555", borderTopColor: "#facc15",
+    borderRadius: "50%", animation: "spin 0.7s linear infinite",
   };
-  if (status === "detecting" || status === "analyzing" || status === "saving")
-    return <span style={spin} />;
+  if (status === "detecting" || status === "analyzing" || status === "saving") return <span style={spin} />;
   if (status === "done") return <span style={{ color: "#4ade80" }}>✓</span>;
   if (status === "review") return <span style={{ color: "#f59e0b" }}>⚠</span>;
   if (status === "error") return <span style={{ color: "#ef4444" }}>✗</span>;
@@ -202,7 +181,300 @@ function statusLabel(status: BatchStatus) {
   return "Pendiente";
 }
 
-// ── Component ────────────────────────────────────────────────────────────────
+// ── Sub-components para el editor de revisión ─────────────────────────────────
+
+function PlayerSelect({ jugadores, value, label, onChange }: {
+  jugadores: ActaPlayerDb[];
+  value: string;
+  label: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{ width: "100%", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: "0.8rem", padding: "0.4rem" }}
+    >
+      <option value="">{label}</option>
+      {jugadores.map((p) => (
+        <option key={p.id} value={p.id}>{p.dorsal ?? "?"} - {displayPlayer(p)}</option>
+      ))}
+    </select>
+  );
+}
+
+function LineupEditor({ players, jugadores, onChange, onRemove }: {
+  players: ActaPlayerRef[];
+  jugadores: ActaPlayerDb[];
+  onChange: (index: number, playerId: string) => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.75rem" }}>
+      {players.map((player, index) => (
+        <div key={player.id} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.5rem", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8 }}>
+          <span style={{ width: 28, textAlign: "center", fontWeight: 700, color: player.jugadorId ? "#4ade80" : "#f59e0b", fontSize: "0.8rem" }}>{player.dorsal || "?"}</span>
+          <span style={{ flex: 1, fontSize: "0.78rem", color: "#888" }}>{player.rawName || "Sin texto"}</span>
+          <select
+            value={player.jugadorId || ""}
+            onChange={(e) => onChange(index, e.target.value)}
+            style={{ flex: 2, background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: "0.8rem", padding: "0.35rem" }}
+          >
+            <option value="">Sin enlazar...</option>
+            {jugadores.map((p) => (
+              <option key={p.id} value={p.id}>{p.dorsal ?? "?"} - {displayPlayer(p)}</option>
+            ))}
+          </select>
+          <button onClick={() => onRemove(index)} style={{ background: "transparent", color: "#555", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "0.3rem 0.5rem", fontSize: "0.75rem", cursor: "pointer" }}>✕</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EventEditor({ eventos, jugadores, onUpdate, onSetPlayer, onRemove }: {
+  eventos: ActaEvent[];
+  jugadores: ActaPlayerDb[];
+  onUpdate: (index: number, patch: Partial<ActaEvent>) => void;
+  onSetPlayer: (index: number, key: "jugador" | "jugadorSale" | "jugadorEntra", playerId: string) => void;
+  onRemove: (index: number) => void;
+}) {
+  const typeOptions: ActaEventType[] = ["gol", "tarjeta_amarilla", "tarjeta_roja", "cambio"];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+      {eventos.map((event, index) => (
+        <div key={event.id} style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "0.75rem" }}>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.6rem", flexWrap: "wrap" }}>
+            <input
+              value={event.minuto}
+              onChange={(e) => onUpdate(index, { minuto: e.target.value })}
+              placeholder="Min"
+              style={{ width: 46, textAlign: "center", fontWeight: 700, background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: "0.8rem", padding: "0.35rem" }}
+            />
+            <select value={event.tipo} onChange={(e) => onUpdate(index, { tipo: e.target.value as ActaEventType })} style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: "0.8rem", padding: "0.35rem" }}>
+              {typeOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <select
+              value={event.isRival ? (event.esPropiaSantiso ? "propia_santiso" : "rival") : event.esPropia ? "propia_rival" : "santiso"}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "rival") onUpdate(index, { isRival: true, esPropia: false, esPropiaSantiso: false });
+                else if (v === "propia_rival") onUpdate(index, { isRival: false, esPropia: true, esPropiaSantiso: false, jugador: undefined });
+                else if (v === "propia_santiso") onUpdate(index, { isRival: true, esPropia: false, esPropiaSantiso: true });
+                else onUpdate(index, { isRival: false, esPropia: false, esPropiaSantiso: false });
+              }}
+              style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: "0.8rem", padding: "0.35rem" }}
+            >
+              <option value="santiso">Santiso</option>
+              <option value="rival">Rival</option>
+              {event.tipo === "gol" && <option value="propia_rival">Propia (rival)</option>}
+              {event.tipo === "gol" && <option value="propia_santiso">Propia (Santiso)</option>}
+            </select>
+            <button onClick={() => onRemove(index)} style={{ marginLeft: "auto", background: "transparent", color: "#555", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "0.3rem 0.5rem", fontSize: "0.75rem", cursor: "pointer" }}>✕</button>
+          </div>
+          <div>
+            {event.esPropiaSantiso ? (
+              <PlayerSelect jugadores={jugadores} value={event.jugador?.jugadorId || ""} label="Jugador Santiso en propia..." onChange={(id) => onSetPlayer(index, "jugador", id)} />
+            ) : event.isRival ? (
+              <input value={event.nombreRival || ""} onChange={(e) => onUpdate(index, { nombreRival: e.target.value })} placeholder="Nombre jugador rival" style={{ width: "100%", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: "0.8rem", padding: "0.35rem" }} />
+            ) : event.esPropia ? (
+              <input value={event.nombreRival || ""} onChange={(e) => onUpdate(index, { nombreRival: e.target.value })} placeholder="Nombre jugador rival (opcional)" style={{ width: "100%", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: "0.8rem", padding: "0.35rem" }} />
+            ) : event.tipo === "cambio" ? (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                <PlayerSelect jugadores={jugadores} value={event.jugadorSale?.jugadorId || ""} label="Sale..." onChange={(id) => onSetPlayer(index, "jugadorSale", id)} />
+                <PlayerSelect jugadores={jugadores} value={event.jugadorEntra?.jugadorId || ""} label="Entra..." onChange={(id) => onSetPlayer(index, "jugadorEntra", id)} />
+              </div>
+            ) : (
+              <PlayerSelect jugadores={jugadores} value={event.jugador?.jugadorId || ""} label="Jugador Santiso..." onChange={(id) => onSetPlayer(index, "jugador", id)} />
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Modal de revisión ─────────────────────────────────────────────────────────
+
+function BatchReviewModal({ item, jugadores, campos, onSaved, onCancel }: {
+  item: BatchItem;
+  jugadores: ActaPlayerDb[];
+  campos: ActaCampoDb[];
+  onSaved: (id: string) => void;
+  onCancel: () => void;
+}) {
+  const [acta, setActa] = useState<ParsedActa>(item.resolvedActa!);
+  const [saving, setSaving] = useState(false);
+
+  const unresolvedLineup = [...acta.titulares, ...acta.suplentes].filter((p) => !p.jugadorId);
+  const unresolvedEvents = acta.eventos.filter((e) => {
+    if (e.esPropiaSantiso) return !e.jugador?.jugadorId;
+    if (e.isRival) return !e.nombreRival?.trim();
+    if (e.esPropia) return false;
+    if (e.tipo === "cambio") return !e.jugadorSale?.jugadorId || !e.jugadorEntra?.jugadorId;
+    return !e.jugador?.jugadorId;
+  });
+  const canSave = unresolvedLineup.length === 0 && unresolvedEvents.length === 0;
+
+  function setPlayerInSection(section: "titulares" | "suplentes", index: number, playerId: string) {
+    const db = jugadores.find((p) => p.id === playerId);
+    if (!db) return;
+    setActa((cur) => {
+      const next = [...cur[section]];
+      next[index] = makePlayerRefFromDb(db);
+      return { ...cur, [section]: next };
+    });
+  }
+
+  function removeFromSection(section: "titulares" | "suplentes", index: number) {
+    setActa((cur) => ({ ...cur, [section]: cur[section].filter((_, i) => i !== index) }));
+  }
+
+  function addToSection(section: "titulares" | "suplentes") {
+    setActa((cur) => ({ ...cur, [section]: [...cur[section], { id: crypto.randomUUID(), dorsal: "", rawName: "" }] }));
+  }
+
+  function updateEvent(index: number, patch: Partial<ActaEvent>) {
+    setActa((cur) => {
+      const eventos = [...cur.eventos];
+      eventos[index] = { ...eventos[index], ...patch };
+      return { ...cur, eventos };
+    });
+  }
+
+  function setEventPlayer(index: number, key: "jugador" | "jugadorSale" | "jugadorEntra", playerId: string) {
+    const db = jugadores.find((p) => p.id === playerId);
+    updateEvent(index, { [key]: db ? makePlayerRefFromDb(db) : undefined });
+  }
+
+  function removeEvent(index: number) {
+    setActa((cur) => ({ ...cur, eventos: cur.eventos.filter((_, i) => i !== index) }));
+  }
+
+  function addEvent() {
+    setActa((cur) => ({ ...cur, eventos: [...cur.eventos, makeEvent()] }));
+  }
+
+  function selectCampo(campoId: string) {
+    if (!campoId) { setActa((cur) => ({ ...cur, campoId: undefined })); return; }
+    const campo = campos.find((c) => c.id === campoId);
+    if (!campo) return;
+    setActa((cur) => ({ ...cur, campoId: campo.id, campoNombre: campo.nombre, campoPoblacion: campo.poblacion || "" }));
+  }
+
+  async function handleSave() {
+    if (!item.match || !canSave) return;
+    setSaving(true);
+    try {
+      await saveReviewedActa({ supabase, partidoId: item.match.id, acta });
+      onSaved(item.id);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al guardar");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", backdropFilter: "blur(6px)", zIndex: 9500, display: "flex", flexDirection: "column", overflowY: "auto" }}>
+      {/* Header */}
+      <div style={{ position: "sticky", top: 0, background: "#0a0a0a", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "1rem 1.5rem", display: "flex", alignItems: "center", gap: "1rem", zIndex: 10 }}>
+        <button onClick={onCancel} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Volver al lote
+        </button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 800, fontSize: "1rem", color: "#fff" }}>{item.partido}</div>
+          {item.competicion && <div style={{ fontSize: "0.72rem", color: "#555", marginTop: "0.1rem" }}>{item.competicion}</div>}
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={!canSave || saving}
+          className="btn-primary"
+          style={{ opacity: canSave ? 1 : 0.4, minWidth: 120 }}
+        >
+          {saving ? "Guardando..." : "Confirmar e insertar"}
+        </button>
+      </div>
+
+      {/* Issues */}
+      {(unresolvedLineup.length > 0 || unresolvedEvents.length > 0) && (
+        <div style={{ margin: "1rem 1.5rem 0", padding: "0.75rem 1rem", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 8, fontSize: "0.8rem", color: "#f59e0b", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+          {unresolvedLineup.length > 0 && <span>⚠ {unresolvedLineup.length} jugador(es) sin enlazar</span>}
+          {unresolvedEvents.length > 0 && <span>⚠ {unresolvedEvents.length} evento(s) sin resolver</span>}
+        </div>
+      )}
+
+      {/* Body */}
+      <div style={{ padding: "1.5rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+
+        {/* Datos partido */}
+        <div style={{ gridColumn: "1 / -1" }}>
+          <div className="card glass" style={{ padding: "1rem" }}>
+            <h4 style={{ marginBottom: "0.75rem", fontSize: "0.8rem", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Datos del partido</h4>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "0.75rem" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: "0.78rem", color: "#888" }}>
+                Goles local
+                <input value={acta.marcadorLocal} onChange={(e) => setActa((c) => ({ ...c, marcadorLocal: e.target.value }))} style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: "0.85rem", padding: "0.4rem", fontWeight: 700 }} />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: "0.78rem", color: "#888" }}>
+                Goles visitante
+                <input value={acta.marcadorVisitante} onChange={(e) => setActa((c) => ({ ...c, marcadorVisitante: e.target.value }))} style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: "0.85rem", padding: "0.4rem", fontWeight: 700 }} />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: "0.78rem", color: "#888" }}>
+                Campo
+                <select value={acta.campoId || ""} onChange={(e) => selectCampo(e.target.value)} style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: "0.8rem", padding: "0.4rem" }}>
+                  <option value="">Nuevo / detectado</option>
+                  {campos.map((c) => <option key={c.id} value={c.id}>{c.nombre}{c.poblacion ? ` (${c.poblacion})` : ""}</option>)}
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Titulares */}
+        <div className="card glass" style={{ padding: "1rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+            <h4 style={{ fontSize: "0.8rem", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Titulares</h4>
+            <button onClick={() => addToSection("titulares")} className="btn-secondary" style={{ fontSize: "0.72rem", padding: "0.3rem 0.6rem" }}>+ Añadir</button>
+          </div>
+          <LineupEditor players={acta.titulares} jugadores={jugadores} onChange={(i, id) => setPlayerInSection("titulares", i, id)} onRemove={(i) => removeFromSection("titulares", i)} />
+        </div>
+
+        {/* Suplentes */}
+        <div className="card glass" style={{ padding: "1rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+            <h4 style={{ fontSize: "0.8rem", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Suplentes</h4>
+            <button onClick={() => addToSection("suplentes")} className="btn-secondary" style={{ fontSize: "0.72rem", padding: "0.3rem 0.6rem" }}>+ Añadir</button>
+          </div>
+          <LineupEditor players={acta.suplentes} jugadores={jugadores} onChange={(i, id) => setPlayerInSection("suplentes", i, id)} onRemove={(i) => removeFromSection("suplentes", i)} />
+        </div>
+
+        {/* Eventos */}
+        <div className="card glass" style={{ padding: "1rem", gridColumn: "1 / -1" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+            <h4 style={{ fontSize: "0.8rem", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Eventos</h4>
+            <button onClick={addEvent} className="btn-secondary" style={{ fontSize: "0.72rem", padding: "0.3rem 0.6rem" }}>+ Añadir</button>
+          </div>
+          <EventEditor eventos={acta.eventos} jugadores={jugadores} onUpdate={updateEvent} onSetPlayer={setEventPlayer} onRemove={removeEvent} />
+        </div>
+
+        {/* Warnings */}
+        {acta.warnings && acta.warnings.length > 0 && (
+          <div style={{ gridColumn: "1 / -1", fontSize: "0.78rem", color: "#f59e0b" }}>
+            {acta.warnings.map((w, i) => <div key={i} style={{ marginBottom: "0.25rem" }}>⚠ {w}</div>)}
+          </div>
+        )}
+      </div>
+
+      <style jsx>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </div>
+  );
+}
+
+// ── Component principal ───────────────────────────────────────────────────────
 
 export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
   const [allMatches, setAllMatches] = useState<ActaMatchDb[]>([]);
@@ -213,6 +485,7 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
   const [items, setItems] = useState<BatchItem[]>([]);
   const [running, setRunning] = useState(false);
   const abortRef = useRef(false);
+  const [reviewingItem, setReviewingItem] = useState<BatchItem | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -222,14 +495,9 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
       const [matchesRes, jugadoresRes, camposRes] = await Promise.all([
         supabase
           .from("partidos_liga")
-          .select(
-            "id, categoria, competicion, competicion_id, estado, fecha, goles_local, goles_visitante, campo_id, equipo_local_id, equipo_visitante_id, equipo_local:equipo_local_id(nombre), equipo_visitante:equipo_visitante_id(nombre), jornada:jornada_id(numero, competicion, competicion_id, temporada_id), campo:campo_id(nombre, poblacion)",
-          )
+          .select("id, categoria, competicion, competicion_id, estado, fecha, goles_local, goles_visitante, campo_id, equipo_local_id, equipo_visitante_id, equipo_local:equipo_local_id(nombre), equipo_visitante:equipo_visitante_id(nombre), jornada:jornada_id(numero, competicion, competicion_id, temporada_id), campo:campo_id(nombre, poblacion)")
           .order("fecha", { ascending: false }),
-        supabase
-          .from("jugadores")
-          .select("id, dorsal, nombre, apodo, categoria")
-          .order("dorsal", { ascending: true }),
+        supabase.from("jugadores").select("id, dorsal, nombre, apodo, categoria").order("dorsal", { ascending: true }),
         supabase.from("campos_futbol").select("id, nombre, poblacion"),
       ]);
 
@@ -271,7 +539,12 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
   }
 
   async function processAll() {
-    const pending = items.filter((it) => it.status === "pending" || it.status === "review" || it.status === "error");
+    // Items con resolvedActa ya están esperando revisión manual — no reintentar
+    const pending = items.filter((it) =>
+      it.status === "pending" ||
+      it.status === "error" ||
+      (it.status === "review" && !it.resolvedActa),
+    );
     if (!pending.length) return;
     setRunning(true);
     abortRef.current = false;
@@ -294,9 +567,7 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
 
       // 2. Find match
       const match = allMatches.find(
-        (m) =>
-          m.categoria === meta.categoria &&
-          String(m.jornada?.numero) === String(meta.jornada),
+        (m) => m.categoria === meta.categoria && String(m.jornada?.numero) === String(meta.jornada),
       );
       if (!match) {
         updateItem(item.id, {
@@ -323,10 +594,17 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
       // 4. Resolve
       const resolved = resolveCampo(resolveParsedActa(parsed, jugadores), campos);
 
-      // 5. Check issues
+      // 5. Check issues — si los hay, guardar acta resuelta para revisión manual
       const issues = getIssues(resolved);
       if (issues.length > 0) {
-        updateItem(item.id, { status: "review", partido: matchLabel(match), issues });
+        updateItem(item.id, {
+          status: "review",
+          partido: matchLabel(match),
+          competicion: meta.competicion,
+          issues,
+          resolvedActa: resolved,
+          match,
+        });
         reviewCount++;
         continue;
       }
@@ -357,155 +635,151 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
     );
   }
 
-  const pendingCount = items.filter(
-    (it) => it.status === "pending" || it.status === "review" || it.status === "error",
+  const pendingCount = items.filter((it) =>
+    it.status === "pending" ||
+    it.status === "error" ||
+    (it.status === "review" && !it.resolvedActa),
   ).length;
 
   return (
-    <div className="card glass">
-      <div className="acta-header">
-        <div>
-          <h3>Importar actas en lote</h3>
-          <p>
-            Sube varios PDFs de una vez. Se detecta y analiza cada uno automáticamente.
-            Los que no puedan guardarse solos se marcan para revisión individual.
-          </p>
+    <>
+      <div className="card glass">
+        <div className="acta-header">
+          <div>
+            <h3>Importar actas en lote</h3>
+            <p>
+              Sube varios PDFs de una vez. Se detecta y analiza cada uno automáticamente.
+              Las actas con problemas se marcan para revisión — puedes corregirlas sin salir.
+            </p>
+          </div>
         </div>
+
+        {loadingData ? null : (
+          <>
+            {/* Drop zone */}
+            <label
+              htmlFor="batch-file-input"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { e.preventDefault(); onFilesSelected(e.dataTransfer.files); }}
+              style={{
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                gap: "0.5rem", padding: "2rem", border: "2px dashed rgba(255,255,255,0.12)",
+                borderRadius: "12px", background: "rgba(255,255,255,0.02)", cursor: "pointer", marginBottom: "1.5rem",
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5 }}>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              <span style={{ fontSize: "0.85rem", color: "#666", fontWeight: 600 }}>
+                Arrastra los PDFs aquí o haz clic — múltiples a la vez
+              </span>
+              <input id="batch-file-input" type="file" accept="application/pdf,image/*" multiple onChange={(e) => onFilesSelected(e.target.files)} style={{ display: "none" }} />
+            </label>
+
+            {/* Table */}
+            {items.length > 0 && (
+              <div style={{ marginBottom: "1.5rem", overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                      <th style={{ textAlign: "left", padding: "0.5rem 0.75rem", color: "#555", fontWeight: 700 }}>Archivo</th>
+                      <th style={{ textAlign: "left", padding: "0.5rem 0.75rem", color: "#555", fontWeight: 700 }}>Partido</th>
+                      <th style={{ textAlign: "center", padding: "0.5rem 0.75rem", color: "#555", fontWeight: 700 }}>Estado</th>
+                      <th style={{ textAlign: "left", padding: "0.5rem 0.75rem", color: "#555", fontWeight: 700 }}>Info</th>
+                      <th style={{ padding: "0.5rem 0.75rem" }} />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <tr key={item.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                        <td style={{ padding: "0.5rem 0.75rem", color: "#aaa", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {item.file.name}
+                        </td>
+                        <td style={{ padding: "0.5rem 0.75rem" }}>
+                          <span style={{ color: "#ccc", display: "block" }}>{item.partido ?? "—"}</span>
+                          {item.competicion && <span style={{ color: "#666", fontSize: "0.72rem", display: "block", marginTop: "0.1rem" }}>{item.competicion}</span>}
+                        </td>
+                        <td style={{ padding: "0.5rem 0.75rem", textAlign: "center" }}>
+                          <StatusIcon status={item.status} />
+                          <span style={{ marginLeft: "0.4rem", color: "#888" }}>{statusLabel(item.status)}</span>
+                        </td>
+                        <td style={{ padding: "0.5rem 0.75rem", color: "#f59e0b", fontSize: "0.75rem" }}>
+                          {item.issues?.join(" · ") || item.error || ""}
+                        </td>
+                        <td style={{ padding: "0.5rem 0.75rem", display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                          {item.status === "review" && item.resolvedActa && (
+                            <button
+                              onClick={() => setReviewingItem(item)}
+                              style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}
+                            >
+                              Revisar
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setItems((prev) => prev.filter((it) => it.id !== item.id))}
+                            disabled={running}
+                            style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: "0.8rem" }}
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+              <button
+                className="btn-primary"
+                onClick={processAll}
+                disabled={running || pendingCount === 0 || loadingData}
+              >
+                {running ? "Procesando..." : `Procesar ${pendingCount} acta(s)`}
+              </button>
+              {running && (
+                <button
+                  onClick={() => { abortRef.current = true; }}
+                  style={{ background: "none", border: "1px solid #555", color: "#888", padding: "0.6rem 1rem", borderRadius: "8px", cursor: "pointer", fontSize: "0.8rem" }}
+                >
+                  Detener
+                </button>
+              )}
+              {items.length > 0 && !running && (
+                <button
+                  onClick={() => setItems([])}
+                  style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: "0.8rem", textDecoration: "underline" }}
+                >
+                  Limpiar lista
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
+        <style jsx>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+        `}</style>
       </div>
 
-      {loadingData ? null : (
-        <>
-          {/* Drop zone */}
-          <label
-            htmlFor="batch-file-input"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              onFilesSelected(e.dataTransfer.files);
-            }}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              padding: "2rem",
-              border: "2px dashed rgba(255,255,255,0.12)",
-              borderRadius: "12px",
-              background: "rgba(255,255,255,0.02)",
-              cursor: "pointer",
-              marginBottom: "1.5rem",
-            }}
-          >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5 }}>
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
-            <span style={{ fontSize: "0.85rem", color: "#666", fontWeight: 600 }}>
-              Arrastra los PDFs aquí o haz clic — múltiples a la vez
-            </span>
-            <input
-              id="batch-file-input"
-              type="file"
-              accept="application/pdf,image/*"
-              multiple
-              onChange={(e) => onFilesSelected(e.target.files)}
-              style={{ display: "none" }}
-            />
-          </label>
-
-          {/* Table */}
-          {items.length > 0 && (
-            <div style={{ marginBottom: "1.5rem", overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                    <th style={{ textAlign: "left", padding: "0.5rem 0.75rem", color: "#555", fontWeight: 700 }}>Archivo</th>
-                    <th style={{ textAlign: "left", padding: "0.5rem 0.75rem", color: "#555", fontWeight: 700 }}>Partido</th>
-                    <th style={{ textAlign: "center", padding: "0.5rem 0.75rem", color: "#555", fontWeight: 700 }}>Estado</th>
-                    <th style={{ textAlign: "left", padding: "0.5rem 0.75rem", color: "#555", fontWeight: 700 }}>Info</th>
-                    <th style={{ padding: "0.5rem 0.75rem" }} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => (
-                    <tr
-                      key={item.id}
-                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
-                    >
-                      <td style={{ padding: "0.5rem 0.75rem", color: "#aaa", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {item.file.name}
-                      </td>
-                      <td style={{ padding: "0.5rem 0.75rem" }}>
-                        <span style={{ color: "#ccc", display: "block" }}>{item.partido ?? "—"}</span>
-                        {item.competicion && (
-                          <span style={{ color: "#666", fontSize: "0.72rem", display: "block", marginTop: "0.1rem" }}>
-                            {item.competicion}
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ padding: "0.5rem 0.75rem", textAlign: "center" }}>
-                        <StatusIcon status={item.status} />
-                        <span style={{ marginLeft: "0.4rem", color: "#888" }}>{statusLabel(item.status)}</span>
-                      </td>
-                      <td style={{ padding: "0.5rem 0.75rem", color: "#f59e0b", fontSize: "0.75rem" }}>
-                        {item.issues?.join(" · ") || item.error || ""}
-                      </td>
-                      <td style={{ padding: "0.5rem 0.75rem" }}>
-                        <button
-                          onClick={() => setItems((prev) => prev.filter((it) => it.id !== item.id))}
-                          disabled={running}
-                          style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: "0.8rem" }}
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-            <button
-              className="btn-primary"
-              onClick={processAll}
-              disabled={running || pendingCount === 0 || loadingData}
-            >
-              {running ? "Procesando..." : `Procesar ${pendingCount} acta(s)`}
-            </button>
-            {running && (
-              <button
-                onClick={() => { abortRef.current = true; }}
-                style={{ background: "none", border: "1px solid #555", color: "#888", padding: "0.6rem 1rem", borderRadius: "8px", cursor: "pointer", fontSize: "0.8rem" }}
-              >
-                Detener
-              </button>
-            )}
-            {items.length > 0 && !running && (
-              <button
-                onClick={() => setItems([])}
-                style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: "0.8rem", textDecoration: "underline" }}
-              >
-                Limpiar lista
-              </button>
-            )}
-          </div>
-
-          {items.some((it) => it.status === "review") && (
-            <p style={{ marginTop: "1rem", fontSize: "0.78rem", color: "#f59e0b" }}>
-              ⚠ Los marcados como "Revisar" deben importarse uno a uno desde la pestaña "Importar acta".
-            </p>
-          )}
-        </>
+      {/* Modal de revisión */}
+      {reviewingItem && (
+        <BatchReviewModal
+          item={reviewingItem}
+          jugadores={jugadoresByCategoria[reviewingItem.match?.categoria || ""] || []}
+          campos={campos}
+          onSaved={(id) => {
+            updateItem(id, { status: "done", resolvedActa: undefined, issues: undefined });
+            showToast("Acta guardada correctamente");
+            setReviewingItem(null);
+          }}
+          onCancel={() => setReviewingItem(null)}
+        />
       )}
-
-      <style jsx>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
-    </div>
+    </>
   );
 }
