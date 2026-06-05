@@ -293,6 +293,7 @@ GOLES (tipo "gol"):
     Gol del VISITANTE → isRival=${santisoLocal ? "true" : "false"}
 - Si el goleador es del Santiso: usa jugadorId (busca en la lista de jugadores).
 - Si el goleador es del rival: usa nombreRival con su nombre completo tal como aparece.
+- GOL EN PROPIA PUERTA ("p.p.", "propia", "en propia", "own goal"): independientemente del equipo, marca siempre como isRival=true y nombreRival="En propia". No uses jugadorId.
 
 TARJETAS (tipo "tarjeta_amarilla" / "tarjeta_roja"):
 - Identifica el equipo por la columna visual en que aparecen o el encabezado de sección.
