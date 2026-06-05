@@ -385,13 +385,19 @@ export function useCartelForm() {
 
         const rows = data as DbCronEventRow[];
         const events: CronEvent[] = rows.map((row) => {
-          const tipo = mapDbEventType(row.tipo);
+          let tipo = mapDbEventType(row.tipo);
           const jugador = getPlayerDisplayName(row.jugador);
           const jugadorRelacionado = getPlayerDisplayName(
             row.jugador_relacionado,
           );
           const nombreLibre = row.nombre_mostrado?.trim() || "";
           const esRival = Boolean(row.es_rival);
+
+          // Propia del Santiso: es_rival=true + jugador Santiso + nombre_mostrado="En propia"
+          const esPropiaSantiso = esRival && Boolean(row.jugador) && nombreLibre === "En propia";
+          // Propia del rival: es_rival=false + sin jugador_id + nombre_mostrado presente
+          const esPropia = !esRival && !row.jugador && Boolean(nombreLibre);
+          if (tipo === "gol" && (esPropiaSantiso || esPropia)) tipo = "propia";
 
           return {
             id: row.id || uuidv4(),
@@ -401,7 +407,9 @@ export function useCartelForm() {
             jugador:
               tipo === "cambio"
                 ? jugadorRelacionado
-                : nombreLibre || jugador,
+                : esPropiaSantiso
+                  ? jugador          // nombre del jugador Santiso que marcó en propia
+                  : nombreLibre || jugador,
             jugadorEntra: tipo === "cambio" ? jugador : undefined,
           };
         });
