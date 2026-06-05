@@ -340,8 +340,8 @@ function getModelCandidates() {
   const preferred = process.env.GEMINI_MODEL?.trim();
   return [
     preferred,
+    "gemini-3.5-flash",
     "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
   ].filter((model, index, models): model is string =>
     Boolean(model && models.indexOf(model) === index),
   );
