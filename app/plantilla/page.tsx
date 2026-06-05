@@ -295,12 +295,15 @@ function getPlayerCategoryTotals(
   teamMatches: TeamMatchRow[],
   players: Jugador[],
 ) {
-  const categories = new Set(players.map((player) => player.categoria));
+  // Map lowercase → original category string from jugadores (single source of truth for casing)
+  const catNorm = new Map<string, string>();
+  for (const p of players) catNorm.set(p.categoria.toLowerCase(), p.categoria);
   const totals = new Map<string, number>();
   for (const match of teamMatches) {
-    const category = match.categoria || "";
-    if (!category || !categories.has(category)) continue;
-    totals.set(category, (totals.get(category) || 0) + 1);
+    const matchCat = (match.categoria || "").toLowerCase();
+    const playerCat = catNorm.get(matchCat);
+    if (!playerCat) continue;
+    totals.set(playerCat, (totals.get(playerCat) || 0) + 1);
   }
   return totals;
 }
@@ -325,7 +328,7 @@ function updateGoalkeeperStats(
 function applyCardStatRow(
   current: PlayerCardStats,
   row: CardStatRow,
-  isKeeper: boolean,
+  trackGoalStats: boolean, // true for keepers AND defenders
   santisoIds: string[],
 ) {
   const played = Boolean(row.jugo || row.titular);
@@ -338,7 +341,7 @@ function applyCardStatRow(
   if (row.partidos_liga) {
     current.puntosConJugador += computeMatchPoints(row.partidos_liga, santisoIds);
   }
-  updateGoalkeeperStats(current, row, santisoIds);
+  if (trackGoalStats) updateGoalkeeperStats(current, row, santisoIds);
 }
 
 function toCardStatsRecord(
@@ -702,13 +705,36 @@ export default function PlantillaPage() {
     const playersById = new Map(players.map((player) => [player.id, player]));
     const statRows = (stats || []) as CardStatRow[];
 
+    // Derive Santiso team IDs from match frequency data.
+    // Each Santiso player appears once per player-match pair in statRows.
+    // Their own team ID accumulates far more hits than any rival
+    // (N_players × N_matches vs 1 × N_matches for rivals).
+    const teamMatchFreq = new Map<string, number>();
+    for (const row of statRows) {
+      const m = row.partidos_liga;
+      if (!m) continue;
+      if (m.equipo_local_id) teamMatchFreq.set(m.equipo_local_id, (teamMatchFreq.get(m.equipo_local_id) || 0) + 1);
+      if (m.equipo_visitante_id) teamMatchFreq.set(m.equipo_visitante_id, (teamMatchFreq.get(m.equipo_visitante_id) || 0) + 1);
+    }
+    const numCats = Math.max(new Set(players.map(p => p.categoria)).size, 1);
+    const derivedIds = [...teamMatchFreq.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, numCats)
+      .map(([id]) => id);
+    const effectiveSantisoIds = [...new Set([...santisoIds, ...derivedIds])];
+
+    if (effectiveSantisoIds.length === 0) {
+      setCardStats({});
+      return;
+    }
+
     const { data: teamMatchesRaw } = await supabase
       .from("partidos_liga")
       .select("id,categoria,equipo_local_id,goles_local,goles_visitante,jornada_id")
       .in("jornada_id", jornadaIds)
       .eq("estado", "finalizado")
       .or(
-        santisoIds
+        effectiveSantisoIds
           .flatMap((id: string) => [`equipo_local_id.eq.${id}`, `equipo_visitante_id.eq.${id}`])
           .join(","),
       );
@@ -721,7 +747,8 @@ export default function PlantillaPage() {
       const current = statsByPlayer.get(jugadorId);
       const player = playersById.get(jugadorId);
       if (!player || !current) continue;
-      applyCardStatRow(current, row, isGoalkeeper(player), santisoIds);
+      const trackGoalStats = isGoalkeeper(player) || ["DFC", "LD", "LI"].includes(player.posicion);
+      applyCardStatRow(current, row, trackGoalStats, effectiveSantisoIds);
       statsByPlayer.set(jugadorId, current);
     }
 
@@ -735,14 +762,18 @@ export default function PlantillaPage() {
       }
     }
 
+    // Build category name normalizer (lowercase → player.categoria casing)
+    const catNormMap = new Map<string, string>();
+    for (const p of players) catNormMap.set(p.categoria.toLowerCase(), p.categoria);
+
     const categoryFinishedJornadas = new Map<string, string[]>();
     const matchesByCategory = new Map<string, TeamMatchRow[]>();
     for (const match of teamMatches) {
-      const cat = match.categoria || "";
-      if (!cat) continue;
-      if (!matchesByCategory.has(cat)) {
-        matchesByCategory.set(cat, []);
-      }
+      const rawCat = match.categoria || "";
+      if (!rawCat) continue;
+      // Normalize to player-side casing so lookups always match
+      const cat = catNormMap.get(rawCat.toLowerCase()) || rawCat;
+      if (!matchesByCategory.has(cat)) matchesByCategory.set(cat, []);
       matchesByCategory.get(cat)!.push(match);
     }
 
@@ -755,7 +786,7 @@ export default function PlantillaPage() {
         .filter((item) => item.jornadaId !== "")
         .sort((a, b) => a.numero - b.numero)
         .map((item) => item.jornadaId);
-      
+
       categoryFinishedJornadas.set(cat, sortedJornadaIds);
     }
 
@@ -870,6 +901,20 @@ export default function PlantillaPage() {
         .in("partidos_liga.jornada_id", jornadaIds);
 
       if (stats) {
+        // Derive this player's Santiso team ID from their match frequency.
+        // Their team appears once per row; rivals appear once per match total.
+        const detailTeamFreq = new Map<string, number>();
+        stats.forEach((s: any) => {
+          const pl = s.partidos_liga;
+          if (!pl) return;
+          if (pl.equipo_local_id) detailTeamFreq.set(pl.equipo_local_id, (detailTeamFreq.get(pl.equipo_local_id) || 0) + 1);
+          if (pl.equipo_visitante_id) detailTeamFreq.set(pl.equipo_visitante_id, (detailTeamFreq.get(pl.equipo_visitante_id) || 0) + 1);
+        });
+        const topTeamEntry = [...detailTeamFreq.entries()].sort((a, b) => b[1] - a[1])[0];
+        const effectiveSantisoIds = [
+          ...new Set([...santisoTeamIds, ...(topTeamEntry ? [topTeamEntry[0]] : [])]),
+        ];
+
         let totalMin = 0;
         let totalGoles = 0;
         let totalEncajados = 0;
@@ -896,35 +941,38 @@ export default function PlantillaPage() {
 
           if ((p.posicion === "POR" || ["DFC", "LD", "LI"].includes(p.posicion)) && played) {
             const pl = s.partidos_liga;
-            const encajados = santisoTeamIds.includes(pl.equipo_local_id)
+            const encajados = effectiveSantisoIds.includes(pl.equipo_local_id)
                ? Number(pl.goles_visitante ?? 0)
                : Number(pl.goles_local ?? 0);
             totalEncajados += encajados;
             if (pl.estado === "finalizado" && encajados === 0) porteriasCero++;
           }
           if (played && s.partidos_liga) {
-            totalPoints += computeMatchPoints(s.partidos_liga, santisoTeamIds);
+            totalPoints += computeMatchPoints(s.partidos_liga, effectiveSantisoIds);
           }
           if (played) totalMin += isTitular ? 90 : 25;
         });
 
-        const { data: teamMatchesRaw } = await supabase
-          .from("partidos_liga")
-          .select("id,categoria,equipo_local_id,goles_local,goles_visitante,jornada_id")
-          .in("jornada_id", jornadaIds)
-          .eq("estado", "finalizado")
-          .or(
-            santisoTeamIds
-              .flatMap((id: string) => [`equipo_local_id.eq.${id}`, `equipo_visitante_id.eq.${id}`])
-              .join(","),
-          );
+        const orFilter = effectiveSantisoIds
+          .flatMap((id: string) => [`equipo_local_id.eq.${id}`, `equipo_visitante_id.eq.${id}`])
+          .join(",");
+
+        const { data: teamMatchesRaw } = orFilter
+          ? await supabase
+              .from("partidos_liga")
+              .select("id,categoria,equipo_local_id,goles_local,goles_visitante,jornada_id")
+              .in("jornada_id", jornadaIds)
+              .eq("estado", "finalizado")
+              .or(orFilter)
+          : { data: null };
         const teamMatches = (teamMatchesRaw || []) as TeamMatchRow[];
+        const pCatLower = p.categoria.toLowerCase();
         const partidosTotalesCategoria = teamMatches.filter(
-          (m) => m.categoria === p.categoria,
+          (m) => (m.categoria || "").toLowerCase() === pCatLower,
         ).length;
 
         const finishedJornadas = teamMatches
-          .filter((m) => m.categoria === p.categoria)
+          .filter((m) => (m.categoria || "").toLowerCase() === pCatLower)
           .map((m) => ({
             jornadaId: m.jornada_id || "",
             numero: m.jornada_id ? (jornadaNumberMap.get(m.jornada_id) || 0) : 0,
@@ -1010,6 +1058,13 @@ export default function PlantillaPage() {
     const stats = !isStaff ? cardStats[j.id] : null;
     const rating = !isStaff ? getPlayerScore(j, stats) : null;
     const goalkeeper = !isStaff && isGoalkeeper(j);
+    const nameFontSize =
+      name.length > 22 ? "0.78rem" :
+      name.length > 18 ? "0.9rem"  :
+      name.length > 14 ? "1.05rem" :
+      name.length > 10 ? "1.25rem" :
+      "1.4rem";
+    const hasDiscipline = !isStaff && ((stats?.amarillas || 0) > 0 || (stats?.rojas || 0) > 0);
 
     return (
       <div
@@ -1045,13 +1100,31 @@ export default function PlantillaPage() {
               </div>
             )}
           </div>
+          {/* Discipline badges — absolute overlay over bottom of image, above info */}
+          {hasDiscipline && (
+            <div className="fifa-discipline-strip">
+              {(stats?.amarillas || 0) > 0 && (
+                <span className="disc-amarilla">
+                  <span className="disc-card" />
+                  {stats!.amarillas}
+                </span>
+              )}
+              {(stats?.rojas || 0) > 0 && (
+                <span className="disc-roja">
+                  <span className="disc-card" />
+                  {stats!.rojas}
+                </span>
+              )}
+            </div>
+          )}
           <div className="fifa-info">
             <h4
               className="fifa-name"
               style={{
-                fontSize: name.length > 15 ? "1.1rem" : "1.4rem",
-                lineHeight: 1.1,
+                fontSize: nameFontSize,
+                lineHeight: name.length > 18 ? 1.15 : 1.1,
                 marginBottom: "0.1rem",
+                wordBreak: "break-word",
               }}
             >
               {name}
@@ -1059,7 +1132,7 @@ export default function PlantillaPage() {
             {!isStaff && j.apodo && (
               <p
                 className="fifa-nickname"
-                style={{ fontSize: "1rem", marginTop: "-0.2rem" }}
+                style={{ fontSize: "0.9rem", marginTop: "-0.2rem" }}
               >
                 {j.apodo}
               </p>
@@ -1078,22 +1151,6 @@ export default function PlantillaPage() {
                   <strong>{getSecondaryMetricFromStats(j, stats)}</strong>
                   {getSecondaryMetricLabelFromPlayer(j)}
                 </span>
-              </div>
-            )}
-            {!isStaff && ((stats?.amarillas || 0) > 0 || (stats?.rojas || 0) > 0) && (
-              <div className="fifa-discipline-strip">
-                {(stats?.amarillas || 0) > 0 && (
-                  <span className="disc-amarilla">
-                    <span className="disc-card" />
-                    {stats!.amarillas}
-                  </span>
-                )}
-                {(stats?.rojas || 0) > 0 && (
-                  <span className="disc-roja">
-                    <span className="disc-card" />
-                    {stats!.rojas}
-                  </span>
-                )}
               </div>
             )}
             {isStaff && (
