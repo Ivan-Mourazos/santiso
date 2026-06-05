@@ -330,7 +330,7 @@ function getModelCandidates() {
   const preferred = process.env.GEMINI_MODEL?.trim();
   return [
     preferred,
-    "gemini-2.5-flash-lite",
+    "gemini-3.5-flash",
     "gemini-2.5-flash",
   ].filter((model, index, models): model is string =>
     Boolean(model && models.indexOf(model) === index),
@@ -356,10 +356,11 @@ async function getAvailableGenerateContentModels(apiKey: string) {
     .filter((model) => !model.includes("2.0"))
     .sort((a, b) => {
       const rank = (model: string) => {
-        if (model.includes("flash-lite") && !model.includes("preview")) return 0;
-        if (model.includes("flash-lite")) return 1;
-        if (model.includes("flash") && !model.includes("preview")) return 2;
-        return 3;
+        // Prefiere versiones más nuevas y no-lite (mayor calidad para análisis completo)
+        const version = model.includes("3.5") ? 0 : model.includes("3.") ? 1 : model.includes("2.5") ? 2 : 3;
+        const lite = model.includes("flash-lite") ? 10 : 0;
+        const preview = model.includes("preview") ? 5 : 0;
+        return version + lite + preview;
       };
       return rank(a) - rank(b);
     });
