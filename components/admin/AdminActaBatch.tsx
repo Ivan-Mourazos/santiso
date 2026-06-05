@@ -373,9 +373,7 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
         </div>
       </div>
 
-      {loadingData ? (
-        <p style={{ color: "#666", textAlign: "center", padding: "2rem" }}>Cargando datos...</p>
-      ) : (
+      {loadingData ? null : (
         <>
           {/* Drop zone */}
           <label

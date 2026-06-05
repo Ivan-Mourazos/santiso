@@ -2,55 +2,51 @@
 
 interface BusyBannerProps {
   show: boolean;
-  text: string;
+  text?: string;
   progress?: number;
 }
 
-export default function BusyBanner({ show, text, progress }: BusyBannerProps) {
+export default function BusyBanner({ show, progress }: BusyBannerProps) {
   if (!show) return null;
 
   return (
-    <>
-      <div
+    <div
+      style={{
+        position: "fixed",
+        bottom: "1.5rem",
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 9000,
+        display: "flex",
+        alignItems: "center",
+        gap: "0.5rem",
+        padding: "0.45rem 0.9rem",
+        borderRadius: "999px",
+        background: "rgba(10,10,10,0.85)",
+        border: "1px solid rgba(250, 204, 21, 0.2)",
+        backdropFilter: "blur(8px)",
+        pointerEvents: "none",
+      }}
+    >
+      <span
         style={{
-          marginBottom: "1rem",
-          padding: "0.7rem 0.9rem",
-          borderRadius: "10px",
-          border: "1px solid rgba(250, 204, 21, 0.25)",
-          background: "rgba(250, 204, 21, 0.08)",
-          color: "#facc15",
-          fontSize: "0.8rem",
-          fontWeight: 700,
-          display: "flex",
-          alignItems: "center",
-          gap: "0.6rem",
+          width: "13px",
+          height: "13px",
+          borderRadius: "50%",
+          border: "2px solid rgba(250, 204, 21, 0.25)",
+          borderTopColor: "#facc15",
+          animation: "busy-spin 0.8s linear infinite",
+          flexShrink: 0,
         }}
-      >
-        <span
-          style={{
-            width: "14px",
-            height: "14px",
-            borderRadius: "50%",
-            border: "2px solid rgba(250, 204, 21, 0.35)",
-            borderTopColor: "#facc15",
-            animation: "busy-spin 0.8s linear infinite",
-            flexShrink: 0,
-          }}
-        />
-        <span>{text}</span>
-        {typeof progress === "number" && (
-          <span style={{ marginLeft: "auto", fontVariantNumeric: "tabular-nums" }}>
-            {Math.max(0, Math.min(100, Math.round(progress)))}%
-          </span>
-        )}
-      </div>
+      />
+      {typeof progress === "number" && (
+        <span style={{ color: "#facc15", fontSize: "0.75rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+          {Math.max(0, Math.min(100, Math.round(progress)))}%
+        </span>
+      )}
       <style jsx>{`
-        @keyframes busy-spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
+        @keyframes busy-spin { to { transform: rotate(360deg); } }
       `}</style>
-    </>
+    </div>
   );
 }

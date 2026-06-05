@@ -72,9 +72,7 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
 
       <SectionLabel>Previsualización de Datos</SectionLabel>
       <div style={{ background: "rgba(255,255,255,0.03)", padding: "1rem", borderRadius: "10px", border: "1px solid var(--border)", fontSize: "0.8rem", color: "#ccc" }}>
-        {loading ? (
-          <p>Cargando datos desde la BD...</p>
-        ) : (
+        {loading ? null : (
           form.clasificacionData && form.clasificacionData.length > 0 ? (
             <p>Se cargaron <strong>{form.clasificacionData.length}</strong> equipos para esta tabla.</p>
           ) : (
