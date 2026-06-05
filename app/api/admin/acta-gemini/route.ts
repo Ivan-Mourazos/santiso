@@ -161,7 +161,8 @@ function toParsedActa(
       ? (() => {
           const result = [];
           for (const event of data.eventos) {
-            const isRival = Boolean(event.isRival);
+            // Normalizar explícitamente — Boolean("false") = true en JS
+            const isRival = event.isRival === true || event.isRival === "true" || event.isRival === 1;
             const tipo = event.tipo;
             const minutoStr = safeString(event.minuto).trim().toLowerCase();
             // "final", "(final)", "f", "post" → sentinel 999
@@ -186,8 +187,8 @@ function toParsedActa(
               tipo,
               minuto: minutoRaw,
               isRival,
-              esPropia: Boolean(event.esPropia) || undefined,
-              esPropiaSantiso: Boolean(event.esPropiaSantiso) || undefined,
+              esPropia: (event.esPropia === true || event.esPropia === "true") || undefined,
+              esPropiaSantiso: (event.esPropiaSantiso === true || event.esPropiaSantiso === "true") || undefined,
               jugador: makeEventPlayer(event.jugadorId),
               jugadorSale: makeEventPlayer(event.jugadorSaleId),
               jugadorEntra: makeEventPlayer(event.jugadorEntraId),
@@ -339,8 +340,8 @@ function getModelCandidates() {
   const preferred = process.env.GEMINI_MODEL?.trim();
   return [
     preferred,
-    "gemini-3.5-flash",
     "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
   ].filter((model, index, models): model is string =>
     Boolean(model && models.indexOf(model) === index),
   );
