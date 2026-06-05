@@ -895,6 +895,80 @@ input[type="number"] {
   text-align: center;
 }
 
+.fifa-ovr-label {
+  font-size: 0.46rem;
+  font-weight: 900;
+  color: rgba(250, 204, 21, 0.6);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: -1px;
+}
+
+.fifa-initials-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 40%, rgba(250, 204, 21, 0.12), rgba(0, 0, 0, 0.3));
+}
+
+.fifa-initials-placeholder span {
+  font-size: 3.8rem;
+  font-weight: 900;
+  color: rgba(250, 204, 21, 0.25);
+  letter-spacing: -0.04em;
+  font-family: "Outfit", sans-serif;
+  text-shadow: 0 6px 24px rgba(250, 204, 21, 0.15);
+  user-select: none;
+}
+
+.fifa-discipline-strip {
+  display: flex;
+  gap: 0.45rem;
+  justify-content: center;
+  margin-top: 0.35rem;
+}
+
+.disc-amarilla,
+.disc-roja {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.58rem;
+  font-weight: 900;
+  padding: 0.14rem 0.42rem;
+  border-radius: 999px;
+}
+
+.disc-amarilla {
+  background: rgba(234, 179, 8, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(234, 179, 8, 0.28);
+}
+
+.disc-roja {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.28);
+}
+
+.disc-card {
+  display: inline-block;
+  width: 7px;
+  height: 10px;
+  border-radius: 1.5px;
+  flex-shrink: 0;
+}
+
+.disc-amarilla .disc-card {
+  background: #fbbf24;
+}
+
+.disc-roja .disc-card {
+  background: #f87171;
+}
+
 /* Staff Cards */
 .no-scale .fifa-card:hover {
   transform: none;

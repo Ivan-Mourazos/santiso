@@ -62,6 +62,15 @@ function isGoalkeeper(player: Jugador) {
   return player.posicion === "POR";
 }
 
+function getInitials(nombre: string) {
+  return nombre
+    .split(" ")
+    .slice(0, 2)
+    .map((n) => n[0] || "")
+    .join("")
+    .toUpperCase();
+}
+
 function emptyPlayerStats() {
   return {
     convocado: 0,
@@ -76,6 +85,8 @@ function emptyPlayerStats() {
     partidosTotalesCategoria: 0,
     maxStreak: 0,
     currentStreak: 0,
+    amarillas: 0,
+    rojas: 0,
   };
 }
 type DetailPlayerStats = ReturnType<typeof emptyPlayerStats>;
@@ -935,6 +946,22 @@ export default function PlantillaPage() {
           }
         }
 
+        const { data: cardsDetail } = await supabase
+          .from("partido_eventos_santiso")
+          .select("tipo, partidos_liga!inner(jornada_id)")
+          .eq("jugador_id", p.id)
+          .in("partidos_liga.jornada_id", jornadaIds)
+          .in("tipo", ["tarjeta_amarilla", "tarjeta_roja"]);
+
+        let amarillas = 0;
+        let rojas = 0;
+        if (cardsDetail) {
+          for (const card of cardsDetail) {
+            if (card.tipo === "tarjeta_amarilla") amarillas++;
+            else if (card.tipo === "tarjeta_roja") rojas++;
+          }
+        }
+
         setPlayerStats({
           convocado: conv,
           titular: tit,
@@ -948,6 +975,8 @@ export default function PlantillaPage() {
           partidosTotalesCategoria,
           maxStreak,
           currentStreak,
+          amarillas,
+          rojas,
         });
       }
     }
@@ -992,6 +1021,7 @@ export default function PlantillaPage() {
           <div className="fifa-shine" />
           {!isStaff && (
             <div className="fifa-meta">
+              <span className="fifa-ovr-label">OVR</span>
               <span className="fifa-dorsal">{rating}</span>
               <span className="fifa-pos">{j.posicion}</span>
               {(j.capitan ?? 0) > 0 && (
@@ -1010,18 +1040,8 @@ export default function PlantillaPage() {
                 height={214}
               />
             ) : (
-              <div className="fifa-placeholder">
-                <svg
-                  width="60"
-                  height="60"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                >
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
+              <div className="fifa-initials-placeholder">
+                <span>{getInitials(j.nombre)}</span>
               </div>
             )}
           </div>
@@ -1058,6 +1078,22 @@ export default function PlantillaPage() {
                   <strong>{getSecondaryMetricFromStats(j, stats)}</strong>
                   {getSecondaryMetricLabelFromPlayer(j)}
                 </span>
+              </div>
+            )}
+            {!isStaff && ((stats?.amarillas || 0) > 0 || (stats?.rojas || 0) > 0) && (
+              <div className="fifa-discipline-strip">
+                {(stats?.amarillas || 0) > 0 && (
+                  <span className="disc-amarilla">
+                    <span className="disc-card" />
+                    {stats!.amarillas}
+                  </span>
+                )}
+                {(stats?.rojas || 0) > 0 && (
+                  <span className="disc-roja">
+                    <span className="disc-card" />
+                    {stats!.rojas}
+                  </span>
+                )}
               </div>
             )}
             {isStaff && (
@@ -1409,6 +1445,26 @@ export default function PlantillaPage() {
                             </div>
                           </div>
                         )}
+
+                        <div className="premium-stat-card discipline-amarilla">
+                          <div className="stat-card-icon discipline-icon-amarilla">
+                            <span className="discipline-square" />
+                          </div>
+                          <div className="stat-card-info">
+                            <span>{playerStats.amarillas}</span>
+                            <label>Tarjetas amarillas</label>
+                          </div>
+                        </div>
+
+                        <div className="premium-stat-card discipline-roja">
+                          <div className="stat-card-icon discipline-icon-roja">
+                            <span className="discipline-square" />
+                          </div>
+                          <div className="stat-card-info">
+                            <span>{playerStats.rojas}</span>
+                            <label>Tarjetas rojas</label>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2075,6 +2131,44 @@ export default function PlantillaPage() {
         }
         .detail-right::-webkit-scrollbar-thumb:hover {
           background: rgba(255, 255, 255, 0.2);
+        }
+
+        .discipline-amarilla {
+          border-color: rgba(234, 179, 8, 0.15) !important;
+        }
+        .discipline-amarilla:hover {
+          border-color: rgba(234, 179, 8, 0.4) !important;
+          background: rgba(234, 179, 8, 0.04) !important;
+        }
+        .discipline-amarilla:hover .stat-card-icon {
+          background: rgba(234, 179, 8, 0.9) !important;
+          box-shadow: 0 0 10px rgba(234, 179, 8, 0.4) !important;
+        }
+        .discipline-roja {
+          border-color: rgba(239, 68, 68, 0.15) !important;
+        }
+        .discipline-roja:hover {
+          border-color: rgba(239, 68, 68, 0.4) !important;
+          background: rgba(239, 68, 68, 0.04) !important;
+        }
+        .discipline-roja:hover .stat-card-icon {
+          background: rgba(239, 68, 68, 0.9) !important;
+          box-shadow: 0 0 10px rgba(239, 68, 68, 0.4) !important;
+        }
+        .discipline-icon-amarilla {
+          background: rgba(234, 179, 8, 0.12) !important;
+          color: #fbbf24 !important;
+        }
+        .discipline-icon-roja {
+          background: rgba(239, 68, 68, 0.12) !important;
+          color: #f87171 !important;
+        }
+        .discipline-square {
+          display: inline-block;
+          width: 10px;
+          height: 14px;
+          border-radius: 2px;
+          background: currentColor;
         }
 
         @media (max-width: 768px) {
