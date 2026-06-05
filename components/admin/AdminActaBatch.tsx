@@ -272,6 +272,10 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
     setRunning(true);
     abortRef.current = false;
 
+    let savedCount = 0;
+    let reviewCount = 0;
+    let errorCount = 0;
+
     for (const item of pending) {
       if (abortRef.current) break;
 
@@ -280,6 +284,7 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
       const meta = await callDetect(item.file);
       if (!meta) {
         updateItem(item.id, { status: "error", error: "No se pudo detectar el partido" });
+        errorCount++;
         continue;
       }
 
@@ -295,6 +300,7 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
           partido: `J${meta.jornada} ${meta.categoria}`,
           issues: [`Partido no encontrado en BD (J${meta.jornada} ${meta.categoria})`],
         });
+        reviewCount++;
         continue;
       }
 
@@ -305,6 +311,7 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
       const parsed = await callAnalyze(item.file, match, jugadores, campos);
       if (!parsed) {
         updateItem(item.id, { status: "error", partido: matchLabel(match), error: "Gemini no devolvió datos" });
+        errorCount++;
         continue;
       }
 
@@ -315,6 +322,7 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
       const issues = getIssues(resolved);
       if (issues.length > 0) {
         updateItem(item.id, { status: "review", partido: matchLabel(match), issues });
+        reviewCount++;
         continue;
       }
 
@@ -323,21 +331,24 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
       try {
         await saveReviewedActa({ supabase, partidoId: match.id, acta: resolved });
         updateItem(item.id, { status: "done", partido: matchLabel(match) });
+        savedCount++;
       } catch (err) {
         updateItem(item.id, {
           status: "error",
           partido: matchLabel(match),
           error: err instanceof Error ? err.message : "Error al guardar",
         });
+        errorCount++;
       }
     }
 
     setRunning(false);
-    const done = items.filter((it) => it.status === "done").length;
-    const review = items.filter((it) => it.status === "review").length;
+    const parts = [`${savedCount} guardada(s)`];
+    if (reviewCount > 0) parts.push(`${reviewCount} para revisar`);
+    if (errorCount > 0) parts.push(`${errorCount} con error`);
     showToast(
-      `Lote: ${done} guardado(s)${review > 0 ? `, ${review} requieren revisión manual` : ""}`,
-      review > 0 ? "error" : "success",
+      `Lote completado: ${parts.join(", ")}`,
+      reviewCount > 0 || errorCount > 0 ? "error" : "success",
     );
   }
 
