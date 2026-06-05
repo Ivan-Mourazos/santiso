@@ -396,18 +396,35 @@ function BatchReviewModal({ item, allMatches, jugadoresByCategoria, campos, onSa
           Volver al lote
         </button>
 
-        {/* Selector de partido */}
+        {/* Selector de partido — agrupado por competición, ordenado por jornada */}
         <div style={{ flex: 1, minWidth: 260 }}>
           <select
             value={selectedMatch?.id || ""}
             onChange={(e) => changeMatch(e.target.value)}
             style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: "0.85rem", padding: "0.5rem 0.75rem", fontWeight: 600 }}
           >
-            {allMatches.map((m) => (
-              <option key={m.id} value={m.id}>
-                J{m.jornada?.numero} · {m.equipo_local?.nombre} vs {m.equipo_visitante?.nombre} ({m.categoria})
-              </option>
-            ))}
+            {(() => {
+              const grouped = new Map<string, ActaMatchDb[]>();
+              for (const m of allMatches) {
+                const key = `${m.categoria} — ${m.jornada?.competicion || m.competicion || "Liga"}`;
+                if (!grouped.has(key)) grouped.set(key, []);
+                grouped.get(key)!.push(m);
+              }
+              return [...grouped.entries()]
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([label, matches]) => (
+                  <optgroup key={label} label={label}>
+                    {matches
+                      .slice()
+                      .sort((a, b) => (a.jornada?.numero ?? 0) - (b.jornada?.numero ?? 0))
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>
+                          J{m.jornada?.numero} · {m.equipo_local?.nombre} vs {m.equipo_visitante?.nombre}
+                        </option>
+                      ))}
+                  </optgroup>
+                ));
+            })()}
           </select>
         </div>
 
