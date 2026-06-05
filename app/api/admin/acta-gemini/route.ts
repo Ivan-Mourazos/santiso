@@ -310,7 +310,7 @@ TARJETAS (tipo "tarjeta_amarilla" / "tarjeta_roja"):
 
 OTROS:
 - tipo debe ser exactamente: "gol", "tarjeta_amarilla", "tarjeta_roja" o "cambio"
-- minuto: número entero. Si el acta indica minuto 999, "final", "(final)", "F" o cualquier variante post-partido → usa 999
+- minuto: número entero. Minutos 90-120 son válidos (tiempo añadido o prórroga), NO los conviertas a 999. Solo usa 999 cuando el acta indique explícitamente "final", "(final)" o "F" como texto en el campo de minuto (evento post-partido, no del tiempo de juego)
 - Eventos ordenados por minuto ascendente
 - Si hay duda sobre un evento, ponlo con confidence: "baja" y añade un warning
 - Si no estás seguro de un jugador Santiso, deja jugadorId vacío y añade warning
