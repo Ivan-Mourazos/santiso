@@ -14,8 +14,10 @@ interface GeminiActaPlayer {
 
 interface GeminiActaEvent {
   tipo: ActaEventType;
-  minuto: string;
-  isRival: boolean;
+  minuto: string | number;
+  isRival: boolean | string | number;
+  esPropia?: boolean | string;
+  esPropiaSantiso?: boolean | string;
   jugadorId?: string;
   jugadorSaleId?: string;
   jugadorEntraId?: string;

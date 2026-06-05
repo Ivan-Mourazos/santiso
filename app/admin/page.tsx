@@ -3,13 +3,9 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import AdminShield from "@/components/admin/AdminShield";
 import { TEMPLATES } from "@/components/admin/cartel/types";
-import { LoadingState } from "@/components/ui/AdminUI";
 
 const panelLoading = () => (
-  <LoadingState
-    title="Cargando panel"
-    detail="Preparando datos e ferramentas desta sección."
-  />
+  <div style={{ minHeight: "60vh" }} />
 );
 
 const AdminEquipos = dynamic(() => import("@/components/admin/AdminEquipos"), {
@@ -142,7 +138,7 @@ export default function AdminPage() {
         </div>
 
         {/* CONTENIDO DINÁMICO */}
-        <section className="admin-view-content scale-in">
+        <section key={activeView} className="admin-view-content scale-in">
            {activeView === 'jornadas' && <AdminJornadas showToast={showToast} showConfirm={showConfirm} categoria={categoria} />}
            {activeView === 'plantilla' && (
              categoria === "Directiva" ? (
@@ -278,8 +274,8 @@ export default function AdminPage() {
         .btn-cancel { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; padding: 0.8rem; border-radius: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
         .btn-confirm { background: var(--primary); border: none; color: black; padding: 0.8rem; border-radius: 0.8rem; font-weight: 800; cursor: pointer; transition: all 0.2s; }
         
-        .scale-in { animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .scale-in { animation: scaleIn 0.22s ease-out forwards; }
+        @keyframes scaleIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
         @media (max-width: 768px) {
           .admin-top-bar { flex-direction: column; align-items: stretch; }

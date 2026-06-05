@@ -632,6 +632,7 @@ export default function PlantillaPage() {
   const [faseActiva, setFaseActiva] = useState("Total");
   const [fasesDisponibles, setFasesDisponibles] = useState<string[]>([]);
   const [playerStats, setPlayerStats] = useState({ ...emptyPlayerStats() });
+  const [modalStatsLoading, setModalStatsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"rendimiento" | "perfil" | "trayectoria">("rendimiento");
 
   useEffect(() => {
@@ -878,6 +879,8 @@ export default function PlantillaPage() {
     const temporada = temporadaActiva;
     if (!player || !temporada) return;
 
+    setModalStatsLoading(true);
+
     async function loadDetailedStats(
       p: Jugador,
       temporadaId: string,
@@ -897,6 +900,7 @@ export default function PlantillaPage() {
       const jornadaIds = jornadas?.map((j: any) => j.id) || [];
       if (jornadaIds.length === 0) {
         setPlayerStats(emptyPlayerStats());
+        setModalStatsLoading(false);
         return;
       }
 
@@ -1037,6 +1041,7 @@ export default function PlantillaPage() {
           amarillas,
           rojas,
         });
+        setModalStatsLoading(false);
       }
     }
     void loadDetailedStats(player, temporada.id, faseActiva);
@@ -1240,7 +1245,13 @@ export default function PlantillaPage() {
         </div>
 
         {loading ? (
-          <div className="loading-state">Preparando los cromos...</div>
+          <div className="squad-content">
+            <div className="squad-skeleton-grid">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="card-skeleton" />
+              ))}
+            </div>
+          </div>
         ) : (
           <div className="squad-content">
             {categoriaActiva === "Directiva" ? (
@@ -1357,7 +1368,12 @@ export default function PlantillaPage() {
 
               {/* CONTENIDO DE LA PESTAÑA: RENDIMIENTO */}
               {activeTab === "rendimiento" && (
-                <div className="tab-content">
+                <div className="tab-content" style={{ position: "relative" }}>
+                  {modalStatsLoading && (
+                    <div className="modal-stats-loader">
+                      <span className="modal-stats-spinner" />
+                    </div>
+                  )}
                   {/* STATS PRINCIPALES */}
                   <div className="stats-hero">
                     <div className="stat-hero-item">
@@ -1700,14 +1716,6 @@ export default function PlantillaPage() {
         .pos-title {
           margin-bottom: 0.5rem;
         }
-        .loading-state {
-          text-align: center;
-          padding: 5rem;
-          font-size: 1.2rem;
-          color: var(--primary);
-          font-style: italic;
-        }
-
         .block-title {
           color: #71717a;
           font-weight: 700;

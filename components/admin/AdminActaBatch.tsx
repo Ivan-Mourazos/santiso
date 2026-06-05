@@ -21,6 +21,7 @@ interface DetectedMeta {
   localTeam: string;
   visitorTeam: string;
   categoria: string;
+  competicion?: string;
 }
 
 type BatchStatus = "pending" | "detecting" | "analyzing" | "saving" | "done" | "review" | "error";
@@ -30,6 +31,7 @@ interface BatchItem {
   file: File;
   status: BatchStatus;
   partido?: string;
+  competicion?: string;
   issues?: string[];
   error?: string;
 }
@@ -300,6 +302,7 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
         updateItem(item.id, {
           status: "review",
           partido: `J${meta.jornada} ${meta.categoria}`,
+          competicion: meta.competicion,
           issues: [`Partido no encontrado en BD (J${meta.jornada} ${meta.categoria})`],
         });
         reviewCount++;
@@ -309,7 +312,7 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
       const jugadores = jugadoresByCategoria[match.categoria] || [];
 
       // 3. Analyze
-      updateItem(item.id, { status: "analyzing", partido: matchLabel(match) });
+      updateItem(item.id, { status: "analyzing", partido: matchLabel(match), competicion: meta.competicion });
       const parsed = await callAnalyze(item.file, match, jugadores, campos);
       if (!parsed) {
         updateItem(item.id, { status: "error", partido: matchLabel(match), error: "Gemini no devolvió datos" });
@@ -436,8 +439,13 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
                       <td style={{ padding: "0.5rem 0.75rem", color: "#aaa", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {item.file.name}
                       </td>
-                      <td style={{ padding: "0.5rem 0.75rem", color: "#ccc" }}>
-                        {item.partido ?? "—"}
+                      <td style={{ padding: "0.5rem 0.75rem" }}>
+                        <span style={{ color: "#ccc", display: "block" }}>{item.partido ?? "—"}</span>
+                        {item.competicion && (
+                          <span style={{ color: "#666", fontSize: "0.72rem", display: "block", marginTop: "0.1rem" }}>
+                            {item.competicion}
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: "0.5rem 0.75rem", textAlign: "center" }}>
                         <StatusIcon status={item.status} />

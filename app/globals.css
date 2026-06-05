@@ -165,6 +165,56 @@ body {
   }
 }
 
+/* ── Skeleton cards ────────────────────────────────────── */
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.squad-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 2rem;
+  width: 100%;
+  padding: 0.5rem 0;
+  justify-items: center;
+}
+
+.card-skeleton {
+  width: 230px;
+  height: 330px;
+  clip-path: polygon(0 10%, 10% 0, 90% 0, 100% 10%, 100% 91%, 88% 100%, 12% 100%, 0 91%);
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.03) 0%,
+    rgba(255,255,255,0.06) 50%,
+    rgba(255,255,255,0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+/* ── Modal stats loading overlay ────────────────────────── */
+.modal-stats-loader {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 0.75rem;
+}
+
+.modal-stats-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid rgba(250, 204, 21, 0.2);
+  border-top-color: var(--primary);
+  border-radius: 999px;
+  animation: spin 0.7s linear infinite;
+}
+
 @media (max-width: 768px) {
   .page-shell__header {
     align-items: stretch;
