@@ -292,17 +292,17 @@ SUSTITUCIONES (tipo "cambio"):
 GOLES (tipo "gol"):
 - Los goles aparecen en la SECCIÓN CENTRAL del acta, no bajo ningún equipo.
 - Cada línea de gol muestra el marcador acumulado y el goleador: "X-Y NOMBRE (minuto')"
-- Deduce quién marcó comparando el marcador anterior con el nuevo:
-    Si aumenta el número LOCAL (izquierda): gol del equipo LOCAL
-    Si aumenta el número VISITANTE (derecha): gol del equipo VISITANTE
+- **EL MARCADOR ES LA ÚNICA FUENTE DE VERDAD para determinar isRival.** Determina quién marcó EXCLUSIVAMENTE por la variación del marcador:
+    Si aumenta el número LOCAL (izquierda): gol del equipo LOCAL → isRival=${santisoLocal ? "false" : "true"}
+    Si aumenta el número VISITANTE (derecha): gol del equipo VISITANTE → isRival=${santisoLocal ? "true" : "false"}
 - Santiso juega como ${santisoLocal ? "LOCAL" : "VISITANTE"}.
-    Gol del LOCAL → isRival=${santisoLocal ? "false" : "true"}
-    Gol del VISITANTE → isRival=${santisoLocal ? "true" : "false"}
-- Si el goleador es del Santiso: usa jugadorId (busca en la lista de jugadores).
-- Si el goleador es del rival: usa nombreRival con su nombre completo tal como aparece.
-- GOL EN PROPIA: SOLO cuando el acta indica explícitamente "p.p.", "en propia" o "propia" junto al nombre del goleador. En cualquier otro caso usa las reglas normales de arriba.
-    · Propia del SANTISO (el jugador Santiso aparece con "p.p."): isRival=true, esPropiaSantiso=true, jugadorId=id del jugador Santiso.
-    · Propia del RIVAL (el jugador rival aparece con "p.p."): isRival=false, esPropia=true, nombreRival=nombre del jugador rival. No uses jugadorId.
+- REGLA CRÍTICA: aunque el nombre del goleador no aparezca en la lista de jugadores de Santiso, si el marcador indica que marcó Santiso, el evento es isRival=false. El nombre puede ser de un jugador rival que marcó en propia sin indicación "p.p." — en ese caso deja jugadorId vacío y pon el nombre en nombreRival.
+- Si el goleador está en la lista de Santiso: usa jugadorId.
+- Si el goleador no está en la lista de Santiso y el marcador dice que marcó Santiso: isRival=false, jugadorId vacío, nombreRival con el nombre (puede ser propia sin marcar).
+- Si el goleador es claramente del rival y el marcador dice que marcó el rival: isRival=true, nombreRival con el nombre.
+- GOL EN PROPIA EXPLÍCITA: SOLO cuando el acta indica "p.p.", "en propia" o "propia" junto al nombre.
+    · Propia del SANTISO (jugador Santiso con "p.p."): isRival=true, esPropiaSantiso=true, jugadorId=id del jugador Santiso.
+    · Propia del RIVAL (jugador rival con "p.p."): isRival=false, esPropia=true, nombreRival=nombre del jugador rival.
 
 TARJETAS (tipo "tarjeta_amarilla" / "tarjeta_roja"):
 - Identifica el equipo por la columna visual en que aparecen o el encabezado de sección.
