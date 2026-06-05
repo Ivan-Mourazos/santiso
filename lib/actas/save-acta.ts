@@ -31,6 +31,7 @@ function explainSupabaseError(table: string, operation: string, error: unknown) 
 
 function assertSantisoPlayer(event: ActaEvent, jugadorId?: string) {
   if (event.isRival) return;
+  if (event.esPropia) return; // gol en propia del rival — no hay jugador Santiso
   if (!jugadorId) {
     throw new Error(
       `Falta enlazar jugador Santiso en evento ${event.tipo} minuto ${event.minuto}.`,
@@ -150,7 +151,11 @@ function buildEventRows(partidoId: string, acta: ParsedActa) {
       jugador_id: event.isRival ? null : jugadorId,
       jugador_relacionado_id: event.isRival ? null : jugadorRelacionadoId,
       es_rival: event.isRival,
-      nombre_mostrado: event.isRival ? event.nombreRival?.trim() || null : null,
+      nombre_mostrado: event.isRival
+        ? event.nombreRival?.trim() || null
+        : event.esPropia
+          ? event.nombreRival?.trim() || "En propia"
+          : null,
     };
   });
 

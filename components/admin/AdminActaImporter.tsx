@@ -530,6 +530,7 @@ export default function AdminActaImporter({
   );
   const unresolvedEvents = acta.eventos.filter((event) => {
     if (event.isRival) return !event.nombreRival?.trim();
+    if (event.esPropia) return false; // propia del rival — sin jugador Santiso requerido
     if (event.tipo === "cambio") {
       return !event.jugadorSale?.jugadorId || !event.jugadorEntra?.jugadorId;
     }
@@ -1129,13 +1130,19 @@ function EventEditor({
             </div>
             
             <div className="event-actions">
-              <select 
-                value={event.isRival ? "rival" : "santiso"} 
-                onChange={(e) => onUpdate(index, { isRival: e.target.value === "rival" })}
+              <select
+                value={event.isRival ? "rival" : event.esPropia ? "propia_rival" : "santiso"}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "rival") onUpdate(index, { isRival: true, esPropia: false });
+                  else if (v === "propia_rival") onUpdate(index, { isRival: false, esPropia: true, jugador: undefined });
+                  else onUpdate(index, { isRival: false, esPropia: false });
+                }}
                 className="equipo-select"
               >
                 <option value="santiso">Santiso</option>
                 <option value="rival">Rival</option>
+                {event.tipo === "gol" && <option value="propia_rival">En propia (rival)</option>}
               </select>
               <button className="row-delete" onClick={() => onRemove(index)}>Quitar</button>
             </div>
@@ -1147,6 +1154,13 @@ function EventEditor({
                 value={event.nombreRival || ""}
                 onChange={(e) => onUpdate(index, { nombreRival: e.target.value })}
                 placeholder="Nombre jugador rival"
+                className="rival-input"
+              />
+            ) : event.esPropia ? (
+              <input
+                value={event.nombreRival || ""}
+                onChange={(e) => onUpdate(index, { nombreRival: e.target.value })}
+                placeholder="Nombre del jugador rival (opcional)"
                 className="rival-input"
               />
             ) : event.tipo === "cambio" ? (
