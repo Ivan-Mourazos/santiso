@@ -164,7 +164,7 @@ function toParsedActa(
             // Normalizar explícitamente — Boolean("false") = true en JS
             const isRival = event.isRival === true || event.isRival === "true" || event.isRival === 1;
             const tipo = event.tipo;
-            const minutoStr = safeString(event.minuto).trim().toLowerCase();
+            const minutoStr = (event.minuto != null ? String(event.minuto) : "").trim().toLowerCase();
             // "final", "(final)", "f", "post" → sentinel 999
             const minutoRaw = /^(final|\(final\)|f|post.*)$/.test(minutoStr)
               ? "999"
