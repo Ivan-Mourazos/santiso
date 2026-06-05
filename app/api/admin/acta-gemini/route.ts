@@ -299,8 +299,9 @@ GOLES (tipo "gol"):
     Gol del VISITANTE → isRival=${santisoLocal ? "true" : "false"}
 - Si el goleador es del Santiso: usa jugadorId (busca en la lista de jugadores).
 - Si el goleador es del rival: usa nombreRival con su nombre completo tal como aparece.
-- GOL EN PROPIA DEL SANTISO ("p.p." en columna de Santiso, o goleador de Santiso que aumenta marcador del rival): isRival=true, esPropiaSantiso=true, jugadorId=id del jugador Santiso que marcó en propia (búscalo en la lista de jugadores por dorsal o nombre).
-- GOL EN PROPIA DEL RIVAL ("p.p." en columna rival, o jugador rival que aumenta marcador de Santiso): isRival=false, esPropia=true, nombreRival=nombre del jugador rival si aparece (si no, omítelo). No uses jugadorId.
+- GOL EN PROPIA: SOLO cuando el acta indica explícitamente "p.p.", "en propia" o "propia" junto al nombre del goleador. En cualquier otro caso usa las reglas normales de arriba.
+    · Propia del SANTISO (el jugador Santiso aparece con "p.p."): isRival=true, esPropiaSantiso=true, jugadorId=id del jugador Santiso.
+    · Propia del RIVAL (el jugador rival aparece con "p.p."): isRival=false, esPropia=true, nombreRival=nombre del jugador rival. No uses jugadorId.
 
 TARJETAS (tipo "tarjeta_amarilla" / "tarjeta_roja"):
 - Identifica el equipo por la columna visual en que aparecen o el encabezado de sección.
