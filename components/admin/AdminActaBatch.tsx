@@ -296,15 +296,27 @@ function EventEditor({ eventos, jugadores, onUpdate, onSetPlayer, onRemove }: {
 
 // ── Modal de revisión ─────────────────────────────────────────────────────────
 
-function BatchReviewModal({ item, jugadores, campos, onSaved, onCancel }: {
+function BatchReviewModal({ item, allMatches, jugadoresByCategoria, campos, onSaved, onCancel }: {
   item: BatchItem;
-  jugadores: ActaPlayerDb[];
+  allMatches: ActaMatchDb[];
+  jugadoresByCategoria: Record<string, ActaPlayerDb[]>;
   campos: ActaCampoDb[];
   onSaved: (id: string) => void;
   onCancel: () => void;
 }) {
   const [acta, setActa] = useState<ParsedActa>(item.resolvedActa!);
+  const [selectedMatch, setSelectedMatch] = useState<ActaMatchDb>(item.match!);
   const [saving, setSaving] = useState(false);
+
+  const jugadores = jugadoresByCategoria[selectedMatch?.categoria || ""] || [];
+  const santisoLocal = selectedMatch?.equipo_local?.nombre?.toLowerCase().includes("santiso") ?? true;
+  const santisoName = santisoLocal ? selectedMatch?.equipo_local?.nombre : selectedMatch?.equipo_visitante?.nombre;
+  const rivalName = santisoLocal ? selectedMatch?.equipo_visitante?.nombre : selectedMatch?.equipo_local?.nombre;
+
+  function changeMatch(matchId: string) {
+    const m = allMatches.find((x) => x.id === matchId);
+    if (m) setSelectedMatch(m);
+  }
 
   const unresolvedLineup = [...acta.titulares, ...acta.suplentes].filter((p) => !p.jugadorId);
   const unresolvedEvents = acta.eventos.filter((e) => {
@@ -314,7 +326,7 @@ function BatchReviewModal({ item, jugadores, campos, onSaved, onCancel }: {
     if (e.tipo === "cambio") return !e.jugadorSale?.jugadorId || !e.jugadorEntra?.jugadorId;
     return !e.jugador?.jugadorId;
   });
-  const canSave = unresolvedLineup.length === 0 && unresolvedEvents.length === 0;
+  const canSave = !!selectedMatch && unresolvedLineup.length === 0 && unresolvedEvents.length === 0;
 
   function setPlayerInSection(section: "titulares" | "suplentes", index: number, playerId: string) {
     const db = jugadores.find((p) => p.id === playerId);
@@ -363,10 +375,10 @@ function BatchReviewModal({ item, jugadores, campos, onSaved, onCancel }: {
   }
 
   async function handleSave() {
-    if (!item.match || !canSave) return;
+    if (!selectedMatch || !canSave) return;
     setSaving(true);
     try {
-      await saveReviewedActa({ supabase, partidoId: item.match.id, acta });
+      await saveReviewedActa({ supabase, partidoId: selectedMatch.id, acta });
       onSaved(item.id);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Error al guardar");
@@ -378,20 +390,43 @@ function BatchReviewModal({ item, jugadores, campos, onSaved, onCancel }: {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", backdropFilter: "blur(6px)", zIndex: 9500, display: "flex", flexDirection: "column", overflowY: "auto" }}>
       {/* Header */}
-      <div style={{ position: "sticky", top: 0, background: "#0a0a0a", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "1rem 1.5rem", display: "flex", alignItems: "center", gap: "1rem", zIndex: 10 }}>
-        <button onClick={onCancel} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem" }}>
+      <div style={{ position: "sticky", top: 0, background: "#0a0a0a", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "1rem 1.5rem", display: "flex", alignItems: "center", gap: "1rem", zIndex: 10, flexWrap: "wrap" }}>
+        <button onClick={onCancel} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem", flexShrink: 0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           Volver al lote
         </button>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: "1rem", color: "#fff" }}>{item.partido}</div>
-          {item.competicion && <div style={{ fontSize: "0.72rem", color: "#555", marginTop: "0.1rem" }}>{item.competicion}</div>}
+
+        {/* Selector de partido */}
+        <div style={{ flex: 1, minWidth: 260 }}>
+          <select
+            value={selectedMatch?.id || ""}
+            onChange={(e) => changeMatch(e.target.value)}
+            style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: "0.85rem", padding: "0.5rem 0.75rem", fontWeight: 600 }}
+          >
+            {allMatches.map((m) => (
+              <option key={m.id} value={m.id}>
+                J{m.jornada?.numero} · {m.equipo_local?.nombre} vs {m.equipo_visitante?.nombre} ({m.categoria})
+              </option>
+            ))}
+          </select>
         </div>
+
+        {/* Indicador Santiso LOCAL/VISITANTE vs Rival */}
+        {selectedMatch && (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.78rem", flexShrink: 0 }}>
+            <span style={{ color: "#4ade80", fontWeight: 700 }}>Santiso</span>
+            <span style={{ color: "#555" }}>como</span>
+            <span style={{ color: "#facc15", fontWeight: 700 }}>{santisoLocal ? "LOCAL" : "VISITANTE"}</span>
+            <span style={{ color: "#555" }}>vs</span>
+            <span style={{ color: "#f87171", fontWeight: 700 }}>{rivalName || "Rival"}</span>
+          </div>
+        )}
+
         <button
           onClick={handleSave}
           disabled={!canSave || saving}
           className="btn-primary"
-          style={{ opacity: canSave ? 1 : 0.4, minWidth: 120 }}
+          style={{ opacity: canSave ? 1 : 0.4, minWidth: 120, flexShrink: 0 }}
         >
           {saving ? "Guardando..." : "Confirmar e insertar"}
         </button>
@@ -414,11 +449,11 @@ function BatchReviewModal({ item, jugadores, campos, onSaved, onCancel }: {
             <h4 style={{ marginBottom: "0.75rem", fontSize: "0.8rem", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Datos del partido</h4>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "0.75rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: "0.78rem", color: "#888" }}>
-                Goles local
+                Goles {santisoLocal ? "local (Santiso)" : "local (Rival)"}
                 <input value={acta.marcadorLocal} onChange={(e) => setActa((c) => ({ ...c, marcadorLocal: e.target.value }))} style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: "0.85rem", padding: "0.4rem", fontWeight: 700 }} />
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: "0.78rem", color: "#888" }}>
-                Goles visitante
+                Goles {santisoLocal ? "visitante (Rival)" : "visitante (Santiso)"}
                 <input value={acta.marcadorVisitante} onChange={(e) => setActa((c) => ({ ...c, marcadorVisitante: e.target.value }))} style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: "0.85rem", padding: "0.4rem", fontWeight: 700 }} />
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: "0.78rem", color: "#888" }}>
@@ -429,13 +464,19 @@ function BatchReviewModal({ item, jugadores, campos, onSaved, onCancel }: {
                 </select>
               </label>
             </div>
+            {/* Nombre de campo si no vinculado */}
+            {!acta.campoId && acta.campoNombre && (
+              <div style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#666" }}>
+                Campo detectado: <span style={{ color: "#aaa" }}>{acta.campoNombre}{acta.campoPoblacion ? `, ${acta.campoPoblacion}` : ""}</span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Titulares */}
         <div className="card glass" style={{ padding: "1rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-            <h4 style={{ fontSize: "0.8rem", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Titulares</h4>
+            <h4 style={{ fontSize: "0.8rem", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Titulares <span style={{ color: "#4ade80" }}>(Santiso)</span></h4>
             <button onClick={() => addToSection("titulares")} className="btn-secondary" style={{ fontSize: "0.72rem", padding: "0.3rem 0.6rem" }}>+ Añadir</button>
           </div>
           <LineupEditor players={acta.titulares} jugadores={jugadores} onChange={(i, id) => setPlayerInSection("titulares", i, id)} onRemove={(i) => removeFromSection("titulares", i)} />
@@ -444,7 +485,7 @@ function BatchReviewModal({ item, jugadores, campos, onSaved, onCancel }: {
         {/* Suplentes */}
         <div className="card glass" style={{ padding: "1rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-            <h4 style={{ fontSize: "0.8rem", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Suplentes</h4>
+            <h4 style={{ fontSize: "0.8rem", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Suplentes <span style={{ color: "#4ade80" }}>(Santiso)</span></h4>
             <button onClick={() => addToSection("suplentes")} className="btn-secondary" style={{ fontSize: "0.72rem", padding: "0.3rem 0.6rem" }}>+ Añadir</button>
           </div>
           <LineupEditor players={acta.suplentes} jugadores={jugadores} onChange={(i, id) => setPlayerInSection("suplentes", i, id)} onRemove={(i) => removeFromSection("suplentes", i)} />
@@ -452,9 +493,14 @@ function BatchReviewModal({ item, jugadores, campos, onSaved, onCancel }: {
 
         {/* Eventos */}
         <div className="card glass" style={{ padding: "1rem", gridColumn: "1 / -1" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
             <h4 style={{ fontSize: "0.8rem", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Eventos</h4>
             <button onClick={addEvent} className="btn-secondary" style={{ fontSize: "0.72rem", padding: "0.3rem 0.6rem" }}>+ Añadir</button>
+          </div>
+          {/* Leyenda de equipo */}
+          <div style={{ fontSize: "0.72rem", color: "#555", marginBottom: "0.75rem", display: "flex", gap: "1rem" }}>
+            <span><span style={{ color: "#4ade80" }}>●</span> Santiso = {santisoName || "Santiso"}</span>
+            <span><span style={{ color: "#f87171" }}>●</span> Rival = {rivalName || "Rival"}</span>
           </div>
           <EventEditor eventos={acta.eventos} jugadores={jugadores} onUpdate={updateEvent} onSetPlayer={setEventPlayer} onRemove={removeEvent} />
         </div>
@@ -565,10 +611,26 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
         continue;
       }
 
-      // 2. Find match
-      const match = allMatches.find(
+      // 2. Find match — primero filtrar por categoria+jornada, luego elegir
+      //    el mejor por similitud de nombre de equipo rival detectado.
+      const candidates = allMatches.filter(
         (m) => m.categoria === meta.categoria && String(m.jornada?.numero) === String(meta.jornada),
       );
+      const match = (() => {
+        if (candidates.length === 0) return null;
+        if (candidates.length === 1) return candidates[0];
+        // Nombre rival detectado: el que NO es Santiso en meta
+        const detectedRival = [meta.localTeam, meta.visitorTeam]
+          .find((t) => !t.toLowerCase().includes("santiso")) || "";
+        return candidates
+          .map((m) => {
+            const local = m.equipo_local?.nombre || "";
+            const visitante = m.equipo_visitante?.nombre || "";
+            const rival = local.toLowerCase().includes("santiso") ? visitante : local;
+            return { m, score: tokenScore(detectedRival, rival) };
+          })
+          .sort((a, b) => b.score - a.score)[0].m;
+      })();
       if (!match) {
         updateItem(item.id, {
           status: "review",
@@ -770,7 +832,8 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
       {reviewingItem && (
         <BatchReviewModal
           item={reviewingItem}
-          jugadores={jugadoresByCategoria[reviewingItem.match?.categoria || ""] || []}
+          allMatches={allMatches}
+          jugadoresByCategoria={jugadoresByCategoria}
           campos={campos}
           onSaved={(id) => {
             updateItem(id, { status: "done", resolvedActa: undefined, issues: undefined });
