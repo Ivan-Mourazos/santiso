@@ -182,17 +182,25 @@ function toParsedActa(
               continue;
             }
 
+            const jugadorId = safeString(event.jugadorId) || undefined;
+            const nombreRival = safeString(event.nombreRival) || undefined;
+            // Propia del rival: gol para Santiso (isRival=false) sin jugador Santiso pero con nombre rival
+            const esPropia = (event.esPropia === true || event.esPropia === "true")
+              || (!isRival && tipo === "gol" && !jugadorId && Boolean(nombreRival))
+              || undefined;
+            const esPropiaSantiso = (event.esPropiaSantiso === true || event.esPropiaSantiso === "true") || undefined;
+
             result.push({
               id: crypto.randomUUID(),
               tipo,
               minuto: minutoRaw,
               isRival,
-              esPropia: (event.esPropia === true || event.esPropia === "true") || undefined,
-              esPropiaSantiso: (event.esPropiaSantiso === true || event.esPropiaSantiso === "true") || undefined,
-              jugador: makeEventPlayer(event.jugadorId),
+              esPropia,
+              esPropiaSantiso,
+              jugador: makeEventPlayer(jugadorId),
               jugadorSale: makeEventPlayer(event.jugadorSaleId),
               jugadorEntra: makeEventPlayer(event.jugadorEntraId),
-              nombreRival: safeString(event.nombreRival) || undefined,
+              nombreRival,
               scoreAfter: safeString(event.scoreAfter) || undefined,
               confidence: event.confidence || "media",
             });
