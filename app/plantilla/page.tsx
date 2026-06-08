@@ -1072,8 +1072,6 @@ export default function PlantillaPage() {
     const isStaff = isStaffMember(j);
     const name = isStaff ? j.nombre : j.nombre.split(" ").slice(0, 2).join(" ");
     const stats = !isStaff ? cardStats[j.id] : null;
-    const rating = !isStaff ? getPlayerScore(j, stats) : null;
-    const goalkeeper = !isStaff && isGoalkeeper(j);
     const nameFontSize =
       name.length > 22 ? "0.78rem" :
       name.length > 18 ? "0.9rem"  :
@@ -1090,17 +1088,9 @@ export default function PlantillaPage() {
       >
         <div className={`fifa-card premium-card ${categoriaActiva.toLowerCase()}`}>
           <div className="fifa-shine" />
-          {!isStaff && (
-            <div className="fifa-meta">
-              <span className="fifa-ovr-label">OVR</span>
-              <span className="fifa-dorsal">{rating}</span>
-              <span className="fifa-pos">{j.posicion}</span>
-              {(j.capitan ?? 0) > 0 && (
-                <span className="fifa-capitan-indicator" title={`Capitán ${j.capitan}`}>C</span>
-              )}
-            </div>
+          {!isStaff && (j.capitan ?? 0) > 0 && (
+            <span className="fifa-capitan-indicator" title={`Capitán ${j.capitan}`}>C</span>
           )}
-          {!isStaff && <div className="fifa-shirt-badge">#{j.dorsal}</div>}
           <div className="fifa-img-box">
             {j.foto_url ? (
               <Image
@@ -1116,24 +1106,23 @@ export default function PlantillaPage() {
               </div>
             )}
           </div>
-          {/* Discipline badges — absolute overlay over bottom of image, above info */}
-          {hasDiscipline && (
-            <div className="fifa-discipline-strip">
-              {(stats?.amarillas || 0) > 0 && (
-                <span className="disc-amarilla">
-                  <span className="disc-card" />
-                  {stats!.amarillas}
-                </span>
-              )}
-              {(stats?.rojas || 0) > 0 && (
-                <span className="disc-roja">
-                  <span className="disc-card" />
-                  {stats!.rojas}
-                </span>
-              )}
-            </div>
-          )}
           <div className="fifa-info">
+            {hasDiscipline && !isStaff && (
+              <div className="fifa-discipline-strip">
+                {(stats?.amarillas || 0) > 0 && (
+                  <span className="disc-amarilla">
+                    <span className="disc-card" />
+                    {stats!.amarillas}
+                  </span>
+                )}
+                {(stats?.rojas || 0) > 0 && (
+                  <span className="disc-roja">
+                    <span className="disc-card" />
+                    {stats!.rojas}
+                  </span>
+                )}
+              </div>
+            )}
             <h4
               className="fifa-name"
               style={{
@@ -1154,19 +1143,9 @@ export default function PlantillaPage() {
               </p>
             )}
             {!isStaff && (
-              <div className="fifa-stats-strip">
-                <span>
-                  <strong>{stats?.pj || 0}</strong>
-                  PJ
-                </span>
-                <span>
-                  <strong>{getMainMetricFromStats(j, stats)}</strong>
-                  {getMainMetricLabelFromPlayer(j)}
-                </span>
-                <span>
-                  <strong>{getSecondaryMetricFromStats(j, stats)}</strong>
-                  {getSecondaryMetricLabelFromPlayer(j)}
-                </span>
+              <div className="fifa-pos-pj-row">
+                <span className="fifa-pos-pill">{j.posicion}</span>
+                <span className="fifa-pj-count">{stats?.pj || 0} <small>PJ</small></span>
               </div>
             )}
             {isStaff && (
@@ -1225,21 +1204,21 @@ export default function PlantillaPage() {
 
         <div className="rating-legend glass">
           <div>
-            <p className="rating-legend__tag">Media do cromo</p>
-            <h2>Cómo se calcula la puntuación</h2>
+            <p className="rating-legend__tag">Plantilla</p>
+            <h2>Temporada {temporadaActiva?.nombre || "25/26"}</h2>
           </div>
           <div className="rating-legend__grid">
             <div>
-              <strong>Jugadores de campo</strong>
-              <span>Rendimiento diferenciado por rol (Defensas: porterías a cero y goles encajados. Medios: ptos, titularidades, goles y porterías a cero. Delanteros: goles y ptos).</span>
+              <strong>Posición</strong>
+              <span>Rol principal del jugador en el sistema táctico del equipo.</span>
             </div>
             <div>
-              <strong>Porteros</strong>
-              <span>Media basada en porterías a cero (15%), promedio de goles encajados (25%), puntos del equipo (50%) y titularidades (10%).</span>
+              <strong>Partidos jugados</strong>
+              <span>Total de encuentros en los que el jugador ha participado en la temporada activa.</span>
             </div>
             <div>
-              <strong>Compromiso y Disciplina</strong>
-              <span>Base de 50. Bono de compromiso (hasta +25) que premia la participación, la racha consecutiva de convocatorias y la titularidad. Bono de rendimiento (hasta +20). Capitán (+2), amarillas (-0.2) y rojas (-1.0).</span>
+              <strong>Datos en vivo</strong>
+              <span>Las estadísticas se actualizan automáticamente con cada acta procesada.</span>
             </div>
           </div>
         </div>
@@ -1552,6 +1531,7 @@ export default function PlantillaPage() {
                       </div>
                     </div>
                   </div>
+
                 </div>
               )}
 
