@@ -676,7 +676,7 @@ export default function AdminActaImporter({
           Analizar con Gemini
         </button>
       </div>
-      <div style={{ textAlign: "center", marginTop: "0.5rem" }}>
+      <div style={{ textAlign: "center", marginTop: "0.5rem", display: "flex", justifyContent: "center", gap: "1.5rem", flexWrap: "wrap" }}>
         <button
           onClick={analyzeWithLocalOcr}
           disabled={busy || !file || !selectedMatchId || file.type === "application/pdf"}
@@ -692,9 +692,28 @@ export default function AdminActaImporter({
         >
           Usar OCR local (fallback)
         </button>
+        <button
+          onClick={() => {
+            if (!selectedMatchId) return;
+            setActa({ ...emptyActa(), rawText: "__manual__" });
+          }}
+          disabled={busy || !selectedMatchId}
+          style={{
+            background: "none",
+            border: "none",
+            color: busy || !selectedMatchId ? "#333" : "#facc15",
+            fontSize: "0.78rem",
+            cursor: busy || !selectedMatchId ? "not-allowed" : "pointer",
+            textDecoration: "underline",
+            padding: "0.3rem 0.5rem",
+            fontWeight: 700,
+          }}
+        >
+          ✏️ Rellenar manualmente (sin acta)
+        </button>
       </div>
 
-      {acta.rawText && (
+      {(acta.rawText) && (
         <div className="review-wrapper">
           <div className="review-col">
             <section className="review-card">
@@ -783,6 +802,7 @@ export default function AdminActaImporter({
             />
           </section>
 
+          {acta.rawText !== "__manual__" && (
           <section className="review-card wide-review">
             <div className="card-title-row">
               <h4>Texto OCR</h4>
@@ -790,6 +810,7 @@ export default function AdminActaImporter({
             </div>
             <textarea value={ocrText} onChange={(e) => setOcrText(e.target.value)} rows={8} />
           </section>
+          )}
         </div>
       )}
 
