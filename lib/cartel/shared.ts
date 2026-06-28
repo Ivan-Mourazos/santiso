@@ -30,60 +30,51 @@ export function drawBackground(
     ctx.fillRect(0, 0, W, H);
   }
 
-  // 1. Radial vignette — darkens corners, spotlights centre (Enhanced for depth)
-  const vig = ctx.createRadialGradient(CX, H * 0.48, H * 0.15, CX, H * 0.48, H * 0.9);
+  // 1. Vertical legibility gradient — sutil arriba, fuerte abajo (texto + sponsors)
+  const vGrad = ctx.createLinearGradient(0, 0, 0, H);
+  vGrad.addColorStop(0, "rgba(0,0,0,0.55)");
+  vGrad.addColorStop(0.32, "rgba(0,0,0,0.22)");
+  vGrad.addColorStop(0.62, "rgba(0,0,0,0.42)");
+  vGrad.addColorStop(1, "rgba(0,0,0,0.92)");
+  ctx.fillStyle = vGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // 2. Radial vignette — foco al centro, suave (menos recargado que antes)
+  const vig = ctx.createRadialGradient(CX, H * 0.46, H * 0.2, CX, H * 0.5, H * 0.95);
   vig.addColorStop(0, "rgba(0,0,0,0)");
-  vig.addColorStop(0.7, "rgba(0,0,0,0.4)");
-  vig.addColorStop(1, "rgba(0,0,0,0.85)");
+  vig.addColorStop(1, "rgba(0,0,0,0.55)");
   ctx.fillStyle = vig;
   ctx.fillRect(0, 0, W, H);
 
-  // 2. Trading Card Foil / Metallic Diagonal Shine Overlay
-  ctx.save();
-  const foilGrad = ctx.createLinearGradient(0, 0, W, H);
-  foilGrad.addColorStop(0.0, "rgba(255, 255, 255, 0.0)");
-  foilGrad.addColorStop(0.4, "rgba(250, 204, 21, 0.05)"); // gold tint
-  foilGrad.addColorStop(0.45, "rgba(255, 255, 255, 0.18)"); // sharp bright shine
-  foilGrad.addColorStop(0.5, "rgba(250, 204, 21, 0.12)"); // gold reflection
-  foilGrad.addColorStop(0.55, "rgba(255, 255, 255, 0.08)"); // secondary shine
-  foilGrad.addColorStop(0.7, "rgba(0, 0, 0, 0.15)"); // shadow contrast
-  foilGrad.addColorStop(1.0, "rgba(0, 0, 0, 0.4)");
-  
-  ctx.globalCompositeOperation = "overlay";
-  ctx.fillStyle = foilGrad;
+  // 3. Ambient dorado superior-derecha — guiño de marca, contenido
+  const glow = ctx.createRadialGradient(W * 0.82, H * 0.12, 0, W * 0.82, H * 0.12, W * 0.72);
+  glow.addColorStop(0, "rgba(250,204,21,0.10)");
+  glow.addColorStop(1, "rgba(250,204,21,0)");
+  ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, H);
-  ctx.restore();
 
-  // 3. Premium Inner Frame (Double subtle border)
+  // 4. Marco fino moderno: hairline dorado + esquinas crispadas (sin doble borde)
   ctx.save();
-  const bm = 18; // border margin
-  
-  // Outer subtle gold
-  ctx.strokeStyle = "rgba(250, 204, 21, 0.35)";
+  const bm = 24;
+  ctx.strokeStyle = "rgba(250,204,21,0.22)";
   ctx.lineWidth = 1.5;
   ctx.strokeRect(bm, bm, W - bm * 2, H - bm * 2);
 
-  // Inner subtle white/silver
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(bm + 5, bm + 5, W - (bm + 5) * 2, H - (bm + 5) * 2);
-  
-  // Corner accents
-  const cx = 8; // corner line length
+  const cl = 34; // longitud de las esquinas
   ctx.beginPath();
-  ctx.strokeStyle = "rgba(250, 204, 21, 0.8)";
-  ctx.lineWidth = 2.5;
-  
+  ctx.strokeStyle = "rgba(250,204,21,0.85)";
+  ctx.lineWidth = 3;
+  ctx.lineCap = "round";
   // Top Left
-  ctx.moveTo(bm, bm + cx); ctx.lineTo(bm, bm); ctx.lineTo(bm + cx, bm);
+  ctx.moveTo(bm, bm + cl); ctx.lineTo(bm, bm); ctx.lineTo(bm + cl, bm);
   // Top Right
-  ctx.moveTo(W - bm - cx, bm); ctx.lineTo(W - bm, bm); ctx.lineTo(W - bm, bm + cx);
+  ctx.moveTo(W - bm - cl, bm); ctx.lineTo(W - bm, bm); ctx.lineTo(W - bm, bm + cl);
   // Bottom Right
-  ctx.moveTo(W - bm, H - bm - cx); ctx.lineTo(W - bm, H - bm); ctx.lineTo(W - bm - cx, H - bm);
+  ctx.moveTo(W - bm, H - bm - cl); ctx.lineTo(W - bm, H - bm); ctx.lineTo(W - bm - cl, H - bm);
   // Bottom Left
-  ctx.moveTo(bm + cx, H - bm); ctx.lineTo(bm, H - bm); ctx.lineTo(bm, H - bm - cx);
+  ctx.moveTo(bm + cl, H - bm); ctx.lineTo(bm, H - bm); ctx.lineTo(bm, H - bm - cl);
   ctx.stroke();
-  
+
   ctx.restore();
 }
 
