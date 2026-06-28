@@ -23,24 +23,10 @@ export function drawBackground(
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, W, H);
 
-  // Fondo opcional: si hay imagen subida, se usa pero MUY atenuada (textura sutil).
-  // Para negro puro, vaciar el asset "Fondo" en Carteles → Recursos.
-  if (fondo) {
-    const canvasAR = W / H;
-    const imgAR    = fondo.naturalWidth / fondo.naturalHeight;
-    let sx, sy, sw, sh;
-    if (imgAR > canvasAR) {
-      sh = fondo.naturalHeight; sw = sh * canvasAR;
-      sx = (fondo.naturalWidth - sw) / 2; sy = 0;
-    } else {
-      sw = fondo.naturalWidth; sh = sw / canvasAR;
-      sx = 0; sy = (fondo.naturalHeight - sh) / 2;
-    }
-    ctx.save();
-    ctx.globalAlpha = 0.22;
-    ctx.drawImage(fondo, sx, sy, sw, sh, 0, 0, W, H);
-    ctx.restore();
-  }
+  // Negro limpio: el asset "Fondo" subido se ignora a propósito (daba un pendon
+  // asimetrico y sucio). La identidad la pone el escudo watermark + el acento.
+  // `fondo` se mantiene en la firma por compatibilidad del orquestador.
+  void fondo;
 
   // 1. Vertical legibility gradient — sutil arriba, fuerte abajo (texto + sponsors)
   const vGrad = ctx.createLinearGradient(0, 0, 0, H);
