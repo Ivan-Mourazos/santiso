@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "UD Santiso FC | Sitio Oficial",
-  description: "Web oficial de la Unión Deportiva Santiso Futbol Club. Resultados, plantilla y pasión.",
+  title: "Panel UD Santiso",
+  description: "Herramienta interna de gestión: carteles, actas y base de datos.",
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({
@@ -21,11 +20,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="UD Santiso" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body>
-        <Navbar />
-        {children}
-        <Footer />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
