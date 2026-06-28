@@ -19,32 +19,45 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
   const [loading, setLoading] = useState(false);
   const [competicionId, setCompeticionId] = useState("");
 
-  // Auto-select first competition if available
+  // Auto-select a competition that belongs to the current category.
   useEffect(() => {
-    if (competicionesEnCategoria.length > 0 && !competicionId) {
-      setCompeticionId(competicionesEnCategoria[0].id);
+    const firstCompetitionId = competicionesEnCategoria[0]?.id || "";
+    const selectedExists = competicionesEnCategoria.some((c) => c.id === competicionId);
+
+    if (!selectedExists) {
+      setCompeticionId(firstCompetitionId);
     }
   }, [competicionesEnCategoria, competicionId]);
 
   // Fetch data when competition changes
   useEffect(() => {
-    if (!competicionId || !form.categoria) return;
+    if (!competicionId || !form.categoria) {
+      set("clasificacionData", []);
+      return;
+    }
 
     let isMounted = true;
     setLoading(true);
 
-    getClasificacionData(form.categoria, competicionId).then((data) => {
-      if (!isMounted) return;
-      const comp = competicionesEnCategoria.find(c => c.id === competicionId);
-      set("clasificacionTipo", comp?.formato === "eliminatoria" ? "copa" : "liga");
-      set("clasificacionNombre", comp?.nombre || "");
-      set("clasificacionData", data.equipos);
-      setLoading(false);
-    });
+    getClasificacionData(form.categoria, competicionId)
+      .then((data) => {
+        if (!isMounted) return;
+        const comp = competicionesEnCategoria.find(c => c.id === competicionId);
+        set("clasificacionTipo", comp?.formato === "eliminatoria" ? "copa" : "liga");
+        set("clasificacionNombre", comp?.nombre || "");
+        set("clasificacionData", data.equipos);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        set("clasificacionData", []);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
 
     return () => { isMounted = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.categoria, competicionId]);
+  }, [form.categoria, competicionId, competicionesEnCategoria]);
 
   return (
     <>
@@ -72,11 +85,16 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
 
       <SectionLabel>Previsualización de Datos</SectionLabel>
       <div style={{ background: "rgba(255,255,255,0.03)", padding: "1rem", borderRadius: "10px", border: "1px solid var(--border)", fontSize: "0.8rem", color: "#ccc" }}>
-        {loading ? null : (
+        {loading ? (
+          <p>Cargando clasificación...</p>
+        ) : (
           form.clasificacionData && form.clasificacionData.length > 0 ? (
-            <p>Se cargaron <strong>{form.clasificacionData.length}</strong> equipos para esta tabla.</p>
+            <p>
+              Se cargaron <strong>{form.clasificacionData.length}</strong>{" "}
+              {form.clasificacionTipo === "copa" ? "rondas para este cuadro." : "equipos para esta tabla."}
+            </p>
           ) : (
-            <p style={{ color: "#f87171" }}>No hay partidos finalizados para calcular la clasificación.</p>
+            <p style={{ color: "#f87171" }}>No hay datos para esta categoría y competición.</p>
           )
         )}
       </div>

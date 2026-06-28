@@ -1,6 +1,18 @@
 import { supabase } from "@/lib/supabase-browser";
 import { fetchTeamsForCompetition, mergeMissingTeams } from "@/lib/supabase-queries";
 
+function isCompletedMatch(match: any) {
+  const estado = String(match.estado || "").toLowerCase().trim();
+  const hasScore = match.goles_local !== null
+    && match.goles_local !== undefined
+    && match.goles_visitante !== null
+    && match.goles_visitante !== undefined;
+
+  if (estado === "finalizado") return true;
+  if (estado === "cancelado" || estado === "aplazado") return false;
+  return hasScore;
+}
+
 export async function getClasificacionData(categoria: string, competicionId: string) {
   const [{ data: compData }, { data: partidosData }, baseTeams, { data: activeSeason }, { data: jornadasData }] = await Promise.all([
     supabase.from("competiciones").select("formato").eq("id", competicionId).single(),
@@ -33,8 +45,8 @@ export async function getClasificacionData(categoria: string, competicionId: str
     return { formato, equipos: treeRounds, reglas: [] };
   }
 
-  // Si es LIGA, filtramos partidos finalizados
-  const partidosFinalizados = (partidosData || []).filter((p: any) => p.estado === "finalizado");
+  // Si es LIGA, computamos partidos con resultado aunque el estado venga sin actualizar.
+  const partidosFinalizados = (partidosData || []).filter(isCompletedMatch);
 
   let fetchedRules: any[] = [];
   if (activeSeason?.id) {
@@ -51,13 +63,13 @@ export async function getClasificacionData(categoria: string, competicionId: str
     }
   }
 
-  const matchTeamIds = (partidosFinalizados || []).flatMap((p: any) => [
+  const matchTeamIds = (partidosData || []).flatMap((p: any) => [
     p.equipo_local_id,
     p.equipo_visitante_id,
   ]);
   const teamsData = await mergeMissingTeams(baseTeams, matchTeamIds);
 
-  if (!teamsData || teamsData.length === 0) return { equipos: [], reglas: fetchedRules };
+  if (!teamsData || teamsData.length === 0) return { formato, equipos: [], reglas: fetchedRules };
 
   const withStats = teamsData.map((team: any) => {
     const teamMatches = (partidosFinalizados || []).filter((p: any) =>

@@ -81,6 +81,10 @@ function makeEvent(): ActaEvent {
   };
 }
 
+function jornadaNumber(match: ActaMatchDb) {
+  return Number(match.jornada?.numero ?? 0);
+}
+
 function resolvePlayerRef(player: ActaPlayerRef, byDorsal: Map<string, ActaPlayerDb>, jugadores: ActaPlayerDb[]): ActaPlayerRef {
   const fromDorsal = byDorsal.get(player.dorsal);
   const fromName = jugadores
@@ -416,7 +420,7 @@ function BatchReviewModal({ item, allMatches, jugadoresByCategoria, campos, onSa
                   <optgroup key={label} label={label}>
                     {matches
                       .slice()
-                      .sort((a, b) => (a.jornada?.numero ?? 0) - (b.jornada?.numero ?? 0))
+                      .sort((a, b) => jornadaNumber(a) - jornadaNumber(b))
                       .map((m) => (
                         <option key={m.id} value={m.id}>
                           J{m.jornada?.numero} · {m.equipo_local?.nombre} vs {m.equipo_visitante?.nombre}
