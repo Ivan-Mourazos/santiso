@@ -3,8 +3,8 @@
  * Template 2: Resumo da Xornada
  */
 
-import { CX, CW, GOLD } from "../constants";
-import { rr, fitFont, fmtDate, drawShield, shieldPlaceholder, drawTeamName, drawCategoryBadge } from "../primitives";
+import { CX, CW, GOLD, catAccent } from "../constants";
+import { rr, fitFont, fmtDate, drawShield, shieldPlaceholder, drawTeamName, drawCategoryBadge, hexToRgba } from "../primitives";
 import { drawCategoryTint, getSantisoName, drawWatermark } from "../shared";
 import type { PartidoForm } from "./partido";
 
@@ -22,6 +22,7 @@ export function drawResumo(
 ) {
   const { categoria, competicion, jornada, rivalNombre, fecha, hora, lugar, santisoSide, golesLocal, golesRival, showCarouselIndicator } = f;
   const santisoName = getSantisoName(categoria);
+  const accent = catAccent(categoria);
 
   // 1. Background Watermark (UD Santiso Shield)
   drawWatermark(ctx, imgSantiso);
@@ -36,15 +37,15 @@ export function drawResumo(
   ctx.textBaseline = "alphabetic";
   ctx.fillText(competicion.toUpperCase(), CX, 169);
 
-  drawCategoryBadge(ctx, categoria, 195);
+  drawCategoryBadge(ctx, categoria, 195, accent);
 
   // ─── Headers ───────────────────────────────────────────────────────────────
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.85)";
   ctx.shadowBlur  = 8;
 
-  // "RESUMO DA XORNADA"
-  ctx.fillStyle    = GOLD;
+  // "RESUMO DA XORNADA" — en color de categoría
+  ctx.fillStyle    = accent;
   ctx.textAlign    = "center";
   ctx.textBaseline = "alphabetic";
   fitFont(ctx, "RESUMO DA", CW * 0.84, 96, 50, "900");
@@ -99,12 +100,12 @@ export function drawResumo(
   // We draw them stacked slightly or inline if fits
   // Let's do a two-line approach within the box for maximum clarity
   ctx.fillText(dateStr, CX, MY + 25);
-  ctx.fillStyle = GOLD;
+  ctx.fillStyle = accent;
   ctx.font = "800 19px 'Outfit', sans-serif";
   ctx.fillText(venueText, CX, MY + 56);
   ctx.restore();
 
-  ctx.fillStyle = GOLD;
+  ctx.fillStyle = accent;
   ctx.font      = "900 32px 'Outfit', sans-serif";
   ctx.textAlign    = "center";
   ctx.fillText(`XORNADA ${jornada}`, CX, MY + BOX_H + 55);
@@ -121,16 +122,34 @@ export function drawResumo(
   if (leftImg)  drawShield(ctx, leftImg,  lCX, SY, SS, santisoSide === "left");
   else          shieldPlaceholder(ctx, lCX, SY, SS / 2);
 
-  // Score — ENLARGED centred between shields with strong shadow
-  const score = `${golesLocal || "0"} — ${golesRival || "0"}`;
+  // Score — PROTAGONISTA: placa con glow de categoría y números gigantes
+  const scoreW = 226, scoreH = 152;
+  ctx.save();
+  ctx.shadowColor = hexToRgba(accent, 0.4);
+  ctx.shadowBlur  = 34;
+  ctx.fillStyle   = "rgba(0,0,0,0.6)";
+  rr(ctx, CX - scoreW / 2, SY - scoreH / 2, scoreW, scoreH, 30);
+  ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = hexToRgba(accent, 0.5);
+  ctx.lineWidth   = 2;
+  rr(ctx, CX - scoreW / 2, SY - scoreH / 2, scoreW, scoreH, 30);
+  ctx.stroke();
+  ctx.restore();
+
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.9)";
   ctx.shadowBlur  = 12;
-  ctx.fillStyle    = "#ffffff";
   ctx.textAlign    = "center";
   ctx.textBaseline = "middle";
-  fitFont(ctx, score, 220, 92, 50, "900");
-  ctx.fillText(score, CX, SY);
+  ctx.font         = "900 98px 'Outfit', sans-serif";
+  ctx.fillStyle    = "#ffffff";
+  ctx.fillText(golesLocal || "0", CX - 62, SY);
+  ctx.fillText(golesRival || "0", CX + 62, SY);
+  ctx.fillStyle    = accent;
+  ctx.font         = "900 60px 'Outfit', sans-serif";
+  ctx.fillText("–", CX, SY - 6);
   ctx.restore();
 
   if (rightImg) drawShield(ctx, rightImg, rCX, SY, SS, santisoSide === "right");

@@ -28,3 +28,18 @@ export const CAT_TINT: Record<string, string> = {
   Femenino:  "rgba(80,20,80,0.08)",
   Veteranos: "rgba(20,40,100,0.08)",
 };
+
+// ─── Category accent system ───────────────────────────────────────────────────
+// Color de marca por equipo: Sénior dorado, Feminino magenta, Veteranos verde-azul.
+export const CAT_ACCENT: Record<string, string> = {
+  Senior:    GOLD,
+  "Sénior":  GOLD,
+  Femenino:  "#ec4899",
+  Feminino:  "#ec4899",
+  Veteranos: "#2dd4bf",
+};
+
+/** Devuelve el acento de la categoría (dorado por defecto). */
+export function catAccent(categoria: string): string {
+  return CAT_ACCENT[categoria] ?? GOLD;
+}

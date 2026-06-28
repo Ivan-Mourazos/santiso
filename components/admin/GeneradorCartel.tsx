@@ -129,7 +129,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
     ctx.scale(RENDER_SCALE, RENDER_SCALE);
     
     // 1. Foundation
-    drawBackground(ctx, assets.fondo);
+    drawBackground(ctx, assets.fondo, form.categoria);
 
     // 2. Templates
     const baseP = {

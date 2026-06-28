@@ -52,6 +52,16 @@ export function drawPhotoEnvironment(
 
 }
 
+// ─── Color helpers ────────────────────────────────────────────────────────────
+
+/** Convierte un hex (#rgb o #rrggbb) a rgba(...) con alpha. */
+export function hexToRgba(hex: string, a: number): string {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(full, 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+
 // ─── Canvas path helpers ──────────────────────────────────────────────────────
 
 /** Draw rounded-rect path (no fill/stroke — caller does that). */
@@ -257,7 +267,8 @@ export function drawEventIcon(
 export function drawCategoryBadge(
   ctx: CanvasRenderingContext2D,
   categoria: string,
-  y: number
+  y: number,
+  accent: string = GOLD
 ): number {
   const label = categoria === "Femenino"  ? "EQUIPO FEMININO"
               : categoria === "Veteranos" ? "EQUIPO VETERANO"
@@ -270,7 +281,7 @@ export function drawCategoryBadge(
   ctx.fillStyle   = "rgba(0,0,0,0.55)";
   rr(ctx, BX, y, BW, BH, 28);
   ctx.fill();
-  ctx.strokeStyle = "rgba(250,204,21,0.35)";
+  ctx.strokeStyle = hexToRgba(accent, 0.55);
   ctx.lineWidth   = 1.5;
   rr(ctx, BX, y, BW, BH, 28);
   ctx.stroke();

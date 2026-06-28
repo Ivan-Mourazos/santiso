@@ -3,16 +3,28 @@
  * Shared drawing layers used by all poster templates.
  */
 
-import { W, H, CX, CL, CR, CW, BAR_W, BAR_CLR, GOLD, CAT_TINT } from "./constants";
-import { rr } from "./primitives";
+import { W, H, CX, CL, CR, CW, BAR_W, BAR_CLR, GOLD, CAT_TINT, catAccent } from "./constants";
+import { rr, hexToRgba } from "./primitives";
 
 
 // ─── Background ───────────────────────────────────────────────────────────────
 
 export function drawBackground(
   ctx: CanvasRenderingContext2D,
-  fondo: HTMLImageElement | null
+  fondo: HTMLImageElement | null,
+  categoria = "Senior"
 ) {
+  const accent = catAccent(categoria);
+
+  // Base negra limpia (radial muy sutil para dar profundidad)
+  const base = ctx.createRadialGradient(CX, H * 0.4, 0, CX, H * 0.5, H * 0.95);
+  base.addColorStop(0, "#111111");
+  base.addColorStop(1, "#000000");
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, W, H);
+
+  // Fondo opcional: si hay imagen subida, se usa pero MUY atenuada (textura sutil).
+  // Para negro puro, vaciar el asset "Fondo" en Carteles → Recursos.
   if (fondo) {
     const canvasAR = W / H;
     const imgAR    = fondo.naturalWidth / fondo.naturalHeight;
@@ -24,10 +36,10 @@ export function drawBackground(
       sw = fondo.naturalWidth; sh = sw / canvasAR;
       sx = 0; sy = (fondo.naturalHeight - sh) / 2;
     }
+    ctx.save();
+    ctx.globalAlpha = 0.22;
     ctx.drawImage(fondo, sx, sy, sw, sh, 0, 0, W, H);
-  } else {
-    ctx.fillStyle = "#1c1c1c";
-    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
   }
 
   // 1. Vertical legibility gradient — sutil arriba, fuerte abajo (texto + sponsors)
@@ -46,23 +58,29 @@ export function drawBackground(
   ctx.fillStyle = vig;
   ctx.fillRect(0, 0, W, H);
 
-  // 3. Ambient dorado superior-derecha — guiño de marca, contenido
+  // 3. Ambient de categoría superior-derecha + inferior-izquierda — guiño de marca
   const glow = ctx.createRadialGradient(W * 0.82, H * 0.12, 0, W * 0.82, H * 0.12, W * 0.72);
-  glow.addColorStop(0, "rgba(250,204,21,0.10)");
-  glow.addColorStop(1, "rgba(250,204,21,0)");
+  glow.addColorStop(0, hexToRgba(accent, 0.12));
+  glow.addColorStop(1, hexToRgba(accent, 0));
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, H);
 
-  // 4. Marco fino moderno: hairline dorado + esquinas crispadas (sin doble borde)
+  const glow2 = ctx.createRadialGradient(W * 0.15, H * 0.9, 0, W * 0.15, H * 0.9, W * 0.6);
+  glow2.addColorStop(0, hexToRgba(accent, 0.07));
+  glow2.addColorStop(1, hexToRgba(accent, 0));
+  ctx.fillStyle = glow2;
+  ctx.fillRect(0, 0, W, H);
+
+  // 4. Marco fino moderno: hairline + esquinas crispadas en color de categoría
   ctx.save();
   const bm = 24;
-  ctx.strokeStyle = "rgba(250,204,21,0.22)";
+  ctx.strokeStyle = hexToRgba(accent, 0.22);
   ctx.lineWidth = 1.5;
   ctx.strokeRect(bm, bm, W - bm * 2, H - bm * 2);
 
   const cl = 34; // longitud de las esquinas
   ctx.beginPath();
-  ctx.strokeStyle = "rgba(250,204,21,0.85)";
+  ctx.strokeStyle = hexToRgba(accent, 0.85);
   ctx.lineWidth = 3;
   ctx.lineCap = "round";
   // Top Left
@@ -96,8 +114,8 @@ export function drawStadiumGrass(ctx: CanvasRenderingContext2D) {
 export function drawWatermark(ctx: CanvasRenderingContext2D, imgSantiso: HTMLImageElement | null) {
   if (!imgSantiso) return;
   ctx.save();
-  // Premium: tamaño grande, opacidad sutil pero visible, centrado en el cartel
-  ctx.globalAlpha = 0.02;
+  // Premium: tamaño grande, opacidad sutil pero visible sobre negro limpio
+  ctx.globalAlpha = 0.05;
   const wSize = 1150;
   ctx.drawImage(imgSantiso, CX - wSize / 2, H / 2 - wSize / 2, wSize, wSize);
   ctx.restore();
