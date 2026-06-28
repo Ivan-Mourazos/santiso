@@ -34,9 +34,9 @@ export const CAT_TINT: Record<string, string> = {
 export const CAT_ACCENT: Record<string, string> = {
   Senior:    GOLD,
   "Sénior":  GOLD,
-  Femenino:  "#ec4899",
-  Feminino:  "#ec4899",
-  Veteranos: "#2dd4bf",
+  Femenino:  "#c77399",   // rosa empolvado, sobrio
+  Feminino:  "#c77399",
+  Veteranos: "#5fa595",   // teal salvia, apagado
 };
 
 /** Devuelve el acento de la categoría (dorado por defecto). */
