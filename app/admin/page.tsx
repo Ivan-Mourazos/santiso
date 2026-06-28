@@ -38,6 +38,13 @@ const AdminJornadaImporter = dynamic(
   () => import("@/components/admin/AdminJornadaImporter"),
   { loading: panelLoading },
 );
+const AdminTemporadas = dynamic(
+  () => import("@/components/admin/AdminTemporadas"),
+  { loading: panelLoading },
+);
+const AdminLeague = dynamic(() => import("@/components/admin/AdminLeague"), {
+  loading: panelLoading,
+});
 
 export default function AdminPage() {
   const [activeView, setActiveView] = useState<string>("jornadas");
@@ -82,6 +89,14 @@ export default function AdminPage() {
                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                <span className="nav-label">Equipos</span>
             </button>
+            <button title="Temporadas" className={`nav-tab ${activeView === 'temporadas' ? 'active' : ''}`} onClick={() => setActiveView('temporadas')}>
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+               <span className="nav-label">Temporadas</span>
+            </button>
+            <button title="Ligas / Competiciones" className={`nav-tab ${activeView === 'ligas' ? 'active' : ''}`} onClick={() => setActiveView('ligas')}>
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+               <span className="nav-label">Ligas</span>
+            </button>
             <button title="Carteles" className={`nav-tab ${activeView === 'carteles' ? 'active' : ''}`} onClick={() => setActiveView('carteles')}>
                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
                <span className="nav-label">Carteles</span>
@@ -117,7 +132,7 @@ export default function AdminPage() {
                  </button>
                ))}
              </div>
-          ) : (activeView === 'jornadas' || activeView === 'plantilla' || activeView === 'equipos') ? (
+          ) : (activeView === 'jornadas' || activeView === 'plantilla' || activeView === 'equipos' || activeView === 'ligas') ? (
              <div className="category-tabs-premium">
                <button className={categoria === "Senior" ? "active" : ""} onClick={() => setCategoria("Senior")}>Senior</button>
                <button className={categoria === "Femenino" ? "active" : ""} onClick={() => setCategoria("Femenino")}>Femenino</button>
@@ -163,6 +178,8 @@ export default function AdminPage() {
              )
            )}
            {activeView === 'equipos' && <AdminEquipos showToast={showToast} showConfirm={showConfirm} categoria={categoria} />}
+           {activeView === 'temporadas' && <AdminTemporadas showToast={showToast} showConfirm={showConfirm} />}
+           {activeView === 'ligas' && <AdminLeague showToast={showToast} showConfirm={showConfirm} categoria={categoria} />}
            {activeView === 'carteles' && <GeneradorCartel templateId={tipoCartel} onTemplateChange={setTipoCartel} hideLayout />}
            {activeView === 'actas' && (
              <div>
