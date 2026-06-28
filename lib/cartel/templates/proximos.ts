@@ -71,7 +71,7 @@ export function drawProximos(
 
     // Date + Category
     ctx.fillStyle = "rgba(255,255,255,0.5)";
-    ctx.font = "900 18px 'Outfit'";
+    ctx.font = "900 18px 'Nunito'";
     ctx.textAlign = "center";
     const datePart = m.fecha ? fmtDate(m.fecha) : "";
     const timePart = (m.hora || "").trim();
@@ -97,12 +97,12 @@ export function drawProximos(
     ctx.shadowColor = "rgba(0,0,0,0.85)";
     ctx.shadowBlur  = 8;
     ctx.fillStyle = "rgba(255,255,255,0.45)";
-    ctx.font = "900 24px 'Outfit'";
+    ctx.font = "900 24px 'Nunito'";
     ctx.textAlign = "center";
     ctx.fillText("VS", CX, shieldY + 10);
 
     // Team Names (Small) with shadow
-    ctx.font = "800 16px 'Outfit'";
+    ctx.font = "800 16px 'Nunito'";
     ctx.fillStyle = "#fff";
     const sName = getSantisoName(m.categoria || "").toUpperCase();
     ctx.fillText(sName, ssX, shieldY + sSize/2 + 30);

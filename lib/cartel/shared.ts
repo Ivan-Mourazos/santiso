@@ -57,28 +57,17 @@ export function drawBackground(
   ctx.fillStyle = glow2;
   ctx.fillRect(0, 0, W, H);
 
-  // 4. Marco fino moderno: hairline + esquinas crispadas en color de categoría
+  // 4. Marco redondeado estilo Apple: tarjeta con borde suave (sin esquinas duras)
   ctx.save();
-  const bm = 24;
-  ctx.strokeStyle = hexToRgba(accent, 0.22);
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(bm, bm, W - bm * 2, H - bm * 2);
-
-  const cl = 34; // longitud de las esquinas
-  ctx.beginPath();
-  ctx.strokeStyle = hexToRgba(accent, 0.85);
-  ctx.lineWidth = 3;
-  ctx.lineCap = "round";
-  // Top Left
-  ctx.moveTo(bm, bm + cl); ctx.lineTo(bm, bm); ctx.lineTo(bm + cl, bm);
-  // Top Right
-  ctx.moveTo(W - bm - cl, bm); ctx.lineTo(W - bm, bm); ctx.lineTo(W - bm, bm + cl);
-  // Bottom Right
-  ctx.moveTo(W - bm, H - bm - cl); ctx.lineTo(W - bm, H - bm); ctx.lineTo(W - bm - cl, H - bm);
-  // Bottom Left
-  ctx.moveTo(bm + cl, H - bm); ctx.lineTo(bm, H - bm); ctx.lineTo(bm, H - bm - cl);
+  const bm = 26, R = 58;
+  rr(ctx, bm, bm, W - bm * 2, H - bm * 2, R);
+  ctx.strokeStyle = hexToRgba(accent, 0.18);
+  ctx.lineWidth = 2;
   ctx.stroke();
-
+  rr(ctx, bm + 3, bm + 3, W - (bm + 3) * 2, H - (bm + 3) * 2, R - 3);
+  ctx.strokeStyle = "rgba(255,255,255,0.06)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -160,7 +149,7 @@ export function drawTopLogos(
       rr(ctx, bx, logoY, bw, logoH, 8);
       ctx.fill();
       ctx.fillStyle    = "rgba(255,255,255,0.3)";
-      ctx.font         = "700 13px 'Outfit'";
+      ctx.font         = "700 13px 'Nunito'";
       ctx.textAlign    = side;
       ctx.textBaseline = "middle";
       const tx = side === "left" ? edgeX + 10 : edgeX - 10;

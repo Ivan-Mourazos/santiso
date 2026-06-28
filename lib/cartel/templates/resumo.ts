@@ -1,10 +1,10 @@
 /**
  * lib/cartel/templates/resumo.ts
- * Template 2: Resumo da Xornada — dirección BROADCAST BOLD
- * Marcador como héroe, banda de color full-bleed con el resultado y título kicker.
+ * Template 2: Resumo da Xornada — dirección APPLE / REDONDEADO
+ * Tarjeta-widget del marcador, cápsula de resultado, pills y mucho aire.
  */
 
-import { W, CX, CL, CR, CW, catAccent } from "../constants";
+import { CX, CL, CR, CW, catAccent } from "../constants";
 import { rr, fitFont, fmtDate, drawShield, shieldPlaceholder, drawTeamName, hexToRgba } from "../primitives";
 import { getSantisoName, drawWatermark } from "../shared";
 import type { PartidoForm } from "./partido";
@@ -33,38 +33,45 @@ export function drawResumo(
 
   drawWatermark(ctx, imgSantiso);
 
-  // ── Número de jornada GIGANTE fantasma (textura, recortado a la zona alta) ───
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, 150, W, 280);
-  ctx.clip();
-  ctx.textAlign = "right";
-  ctx.textBaseline = "alphabetic";
-  ctx.font = "900 420px 'Outfit', sans-serif";
-  ctx.fillStyle = hexToRgba(accent, 0.07);
-  ctx.fillText(jornada || "", CR + 50, 470);
-  ctx.restore();
+  // Helper: pill / cápsula
+  const pill = (text: string, cy: number, font: string, padX: number, h: number, fill: string, fg: string, stroke?: string) => {
+    ctx.font = font;
+    const w = ctx.measureText(text).width + padX * 2;
+    const x = CX - w / 2, y = cy - h / 2;
+    ctx.fillStyle = fill;
+    rr(ctx, x, y, w, h, h / 2); ctx.fill();
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; rr(ctx, x, y, w, h, h / 2); ctx.stroke(); }
+    ctx.fillStyle = fg;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(text, CX, cy + 1);
+  };
 
-  // ── Kicker: título + jornada ────────────────────────────────────────────────
+  // ── Kicker ──────────────────────────────────────────────────────────────────
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = accent;
-  ctx.font = "900 38px 'Outfit', sans-serif";
-  ctx.fillText("RESUMO DA XORNADA", CX, 232);
+  ctx.font = "900 36px 'Nunito', sans-serif";
+  ctx.fillText("RESUMO DA XORNADA", CX, 228);
 
   ctx.fillStyle = "#8b9097";
-  ctx.font = "700 22px 'Outfit', sans-serif";
-  fitFont(ctx, competicion.toUpperCase(), CW - 60, 22, 14, "700");
-  ctx.fillText(competicion.toUpperCase(), CX, 270);
+  ctx.font = "700 21px 'Nunito', sans-serif";
+  fitFont(ctx, competicion.toUpperCase(), CW - 60, 21, 13, "700");
+  ctx.fillText(competicion.toUpperCase(), CX, 262);
 
-  // Categoría · Xornada (mini meta)
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "800 20px 'Outfit', sans-serif";
+  // Meta pill: categoría · jornada
   const catLabel = categoria === "Femenino" ? "FEMININO" : categoria === "Veteranos" ? "VETERANOS" : "SÉNIOR";
-  ctx.fillText(`${catLabel}   ·   XORNADA ${jornada}`, CX, 308);
+  pill(`${catLabel}   ·   XORNADA ${jornada}`, 312, "800 19px 'Nunito', sans-serif", 26, 44,
+       hexToRgba(accent, 0.14), accent, hexToRgba(accent, 0.45));
 
-  // ── Marcador HÉROE ──────────────────────────────────────────────────────────
-  const SY = 500, SS = 200, OFF = 360;
+  // ── Tarjeta-widget del marcador ─────────────────────────────────────────────
+  const tileY = 372, tileH = 372;
+  ctx.fillStyle = "rgba(255,255,255,0.035)";
+  rr(ctx, CL, tileY, CW, tileH, 46); ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.07)";
+  ctx.lineWidth = 1.5;
+  rr(ctx, CL, tileY, CW, tileH, 46); ctx.stroke();
+
+  const SY = tileY + 150, SS = 188, OFF = 300;
   const lCX = CX - OFF, rCX = CX + OFF;
   const leftImg  = santisoSide === "left" ? imgSantiso : imgRival;
   const rightImg = santisoSide === "left" ? imgRival   : imgSantiso;
@@ -77,56 +84,49 @@ export function drawResumo(
   else          shieldPlaceholder(ctx, rCX, SY, SS / 2);
 
   ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.85)";
-  ctx.shadowBlur  = 18;
+  ctx.shadowColor = "rgba(0,0,0,0.6)";
+  ctx.shadowBlur  = 16;
   ctx.textAlign    = "center";
   ctx.textBaseline = "middle";
-  ctx.font         = "900 220px 'Outfit', sans-serif";
+  ctx.font         = "900 196px 'Nunito', sans-serif";
   ctx.fillStyle    = "#ffffff";
-  ctx.fillText(golesLocal || "0", CX - 118, SY);
-  ctx.fillText(golesRival || "0", CX + 118, SY);
+  ctx.fillText(golesLocal || "0", CX - 104, SY);
+  ctx.fillText(golesRival || "0", CX + 104, SY);
   ctx.fillStyle    = accent;
-  ctx.font         = "900 110px 'Outfit', sans-serif";
-  ctx.fillText("–", CX, SY - 14);
+  ctx.font         = "900 96px 'Nunito', sans-serif";
+  ctx.fillText("–", CX, SY - 10);
   ctx.restore();
 
-  // Nombres
-  const NY = SY + SS / 2 + 58;
+  // Nombres dentro del tile
+  const NY = SY + SS / 2 + 56;
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.85)";
-  ctx.shadowBlur  = 10;
-  drawTeamName(ctx, leftName,  lCX, NY, 330, santisoSide === "left");
-  drawTeamName(ctx, rightName, rCX, NY, 330, santisoSide === "right");
+  ctx.shadowBlur  = 8;
+  drawTeamName(ctx, leftName,  lCX, NY, 320, santisoSide === "left");
+  drawTeamName(ctx, rightName, rCX, NY, 320, santisoSide === "right");
   ctx.restore();
 
-  // ── Banda de resultado FULL-BLEED ───────────────────────────────────────────
-  const bandY = 770, bandH = 122;
-  ctx.fillStyle = accent;
-  ctx.fillRect(0, bandY, W, bandH);
-  ctx.fillStyle = "#000000";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = "900 80px 'Outfit', sans-serif";
-  ctx.fillText(resultado, CX, bandY + bandH / 2 + 2);
+  // ── Cápsula de resultado ────────────────────────────────────────────────────
+  pill(resultado, 818, "900 54px 'Nunito', sans-serif", 70, 104, accent, "#000000");
 
   // ── Fecha / sede ────────────────────────────────────────────────────────────
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  ctx.font = "800 26px 'Outfit', sans-serif";
-  ctx.fillText(fmtDate(fecha, true), CX, 970);
+  ctx.font = "800 26px 'Nunito', sans-serif";
+  ctx.fillText(fmtDate(fecha, true), CX, 948);
 
   const venue = lugar ? lugar.toUpperCase() : "CAMPO A DEFINIR";
   ctx.fillStyle = hexToRgba(accent, 0.95);
-  ctx.font = "800 22px 'Outfit', sans-serif";
+  ctx.font = "800 22px 'Nunito', sans-serif";
   const venueLine = hora ? `${venue}  ·  ${hora}H` : venue;
   fitFont(ctx, venueLine, CW - 40, 22, 14, "800");
-  ctx.fillText(venueLine, CX, 1006);
+  ctx.fillText(venueLine, CX, 984);
 
   // ── Carrusel ────────────────────────────────────────────────────────────────
   if (showCarouselIndicator) {
     ctx.fillStyle = "rgba(255,255,255,0.4)";
-    ctx.font = "700 20px 'Outfit', sans-serif";
-    ctx.fillText("DESPRAZA PARA O 11 E A CRONOLOXÍA", CX, 1066);
+    ctx.font = "700 20px 'Nunito', sans-serif";
+    ctx.fillText("DESPRAZA PARA O 11 E A CRONOLOXÍA", CX, 1044);
   }
 }

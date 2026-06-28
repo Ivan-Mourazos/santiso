@@ -130,7 +130,7 @@ export function drawMultiusos(
   const badgeY = showAssets ? 122 : 80;
   const badgeText = `${theme.icon}  ${theme.labelText}`;
   ctx.save();
-  ctx.font = "800 22px 'Outfit', sans-serif";
+  ctx.font = "800 22px 'Nunito', sans-serif";
   const bW = ctx.measureText(badgeText).width + 60;
   const bH = 46;
   const bX = CX - bW / 2;
@@ -212,7 +212,7 @@ export function drawMultiusos(
     const maxTextW = CW - PHOTO_W - 30;
     
     ctx.save();
-    ctx.font = `600 28px 'Outfit', sans-serif`;
+    ctx.font = `600 28px 'Nunito', sans-serif`;
     ctx.fillStyle = "#f4f4f5";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -237,7 +237,7 @@ export function drawMultiusos(
   // Set text configuration
   ctx.save();
   const fontSize = hasImages ? 30 : 36;
-  ctx.font = `600 ${fontSize}px 'Outfit', sans-serif`;
+  ctx.font = `600 ${fontSize}px 'Nunito', sans-serif`;
   ctx.fillStyle = "#f4f4f5";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";

@@ -86,10 +86,10 @@ export function fitFont(
   weight: string
 ): number {
   let sz = startSize;
-  ctx.font = `${weight} ${sz}px 'Outfit', sans-serif`;
+  ctx.font = `${weight} ${sz}px 'Nunito', sans-serif`;
   while (ctx.measureText(text).width > maxW && sz > minSize) {
     sz--;
-    ctx.font = `${weight} ${sz}px 'Outfit', sans-serif`;
+    ctx.font = `${weight} ${sz}px 'Nunito', sans-serif`;
   }
   return sz;
 }
@@ -158,7 +158,7 @@ export function drawVsBadge(ctx: CanvasRenderingContext2D, cx: number, cy: numbe
   ctx.restore();
 
   ctx.fillStyle    = "#000000";
-  ctx.font         = "900 48px 'Outfit', sans-serif";
+  ctx.font         = "900 48px 'Nunito', sans-serif";
   ctx.textAlign    = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("VS", cx, cy);
@@ -199,14 +199,14 @@ export function drawEventIcon(
   if (tipo === "gol" || tipo === "penalti" || tipo === "propia") {
     if (tipo === "penalti") {
       // Dibujar porteria de fondo para penalti (un poco más grande)
-      ctx.font = `${size * 1.1}px 'Outfit', sans-serif`;
+      ctx.font = `${size * 1.1}px 'Nunito', sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.globalAlpha = 0.8;
       ctx.fillText("🥅", cx, cy - 2);
       ctx.globalAlpha = 1.0;
       // Balon encima (mucho más pequeño para que se vea la porteria)
-      ctx.font = `${size * 0.45}px 'Outfit', sans-serif`;
+      ctx.font = `${size * 0.45}px 'Nunito', sans-serif`;
       ctx.fillText("⚽", cx, cy + 5);
     } else if (tipo === "propia") {
       // Balon rojo para propia
@@ -229,7 +229,7 @@ export function drawEventIcon(
       ctx.stroke();
     } else {
       // Gol normal
-      ctx.font = `${size * 0.9}px 'Outfit', sans-serif`;
+      ctx.font = `${size * 0.9}px 'Nunito', sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("⚽", cx, cy);
@@ -273,7 +273,7 @@ export function drawCategoryBadge(
   const label = categoria === "Femenino"  ? "EQUIPO FEMININO"
               : categoria === "Veteranos" ? "EQUIPO VETERANO"
               : "EQUIPO SÉNIORS";
-  ctx.font = "800 27px 'Outfit', sans-serif";
+  ctx.font = "800 27px 'Nunito', sans-serif";
   const BW = ctx.measureText(label).width + 70;
   const BH = 55;
   const BX = CX - BW / 2;

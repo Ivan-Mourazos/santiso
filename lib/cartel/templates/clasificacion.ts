@@ -56,11 +56,11 @@ export async function drawClasificacion(
     ctx.fillStyle = "#fff";
     if (showAssets) {
       // Estilo similar a 'competición' en otros carteles: encima de la línea dorada
-      ctx.font = "800 18px 'Outfit', sans-serif";
+      ctx.font = "800 18px 'Nunito', sans-serif";
       fitFont(ctx, f.clasificacionNombre.toUpperCase(), W - 140, 18, 14, "800");
       ctx.fillText(f.clasificacionNombre.toUpperCase(), W / 2, 165);
     } else {
-      ctx.font = "600 30px 'Outfit', sans-serif";
+      ctx.font = "600 30px 'Nunito', sans-serif";
       ctx.fillText(f.clasificacionNombre.toUpperCase(), CX, titleY - 60);
     }
   }
@@ -69,7 +69,7 @@ export async function drawClasificacion(
   // Si no hay datos
   if (!clasificacionData || clasificacionData.length === 0) {
     ctx.save();
-    ctx.font = "600 30px 'Outfit', sans-serif";
+    ctx.font = "600 30px 'Nunito', sans-serif";
     ctx.fillStyle = "#888";
     ctx.textAlign = "center";
     ctx.fillText("Sin datos de competición", CX, H / 2);
@@ -79,20 +79,27 @@ export async function drawClasificacion(
 
   // LIGA: DIBUJAR TABLA
   if (clasificacionTipo === "liga") {
-    const tableTop = showAssets ? 400 : 350;
-    const tableBottom = 1100;
-    const rowH = 64; // Altura de fila
-    const maxRows = Math.floor((tableBottom - tableTop) / rowH); // Entran unas 11-12 filas
+    const tableTop = showAssets ? 375 : 335;
+    const tableBottom = showAssets ? 1130 : 1210;
+    const teamCount = clasificacionData.length;
+    const availableH = tableBottom - tableTop;
+    const rowH = Math.max(34, Math.min(64, Math.floor(availableH / Math.max(teamCount, 1))));
+    const headerSize = Math.max(12, Math.min(18, Math.floor(rowH * 0.3)));
+    const posSize = Math.max(16, Math.min(24, Math.floor(rowH * 0.38)));
+    const nameSize = Math.max(15, Math.min(24, Math.floor(rowH * 0.38)));
+    const statSize = Math.max(14, Math.min(22, Math.floor(rowH * 0.34)));
+    const ptsSize = Math.max(17, Math.min(26, Math.floor(rowH * 0.42)));
+    const shieldSize = Math.max(24, Math.min(36, Math.floor(rowH * 0.58)));
     
     // Cargar escudos de forma síncrona aquí si es necesario, o asíncrona pero bloqueando (el GeneradorCartel ya lo envuelve en un efecto asíncrono)
     // Para simplificar, pintamos la tabla. Los escudos requieren await loadImg().
     // Lo haremos iterando:
-    const teamsToDraw = clasificacionData.slice(0, maxRows);
+    const teamsToDraw = clasificacionData;
 
     const cols = {
       pos: CL + 20,
-      escudo: CL + 90,
-      nombre: CL + 160,
+      escudo: CL + 78,
+      nombre: CL + 128,
       pj: CR - 360,
       pg: CR - 290,
       pe: CR - 220,
@@ -103,22 +110,23 @@ export async function drawClasificacion(
 
     // Header
     ctx.save();
-    ctx.font = "800 18px 'Outfit', sans-serif";
+    ctx.font = `800 ${headerSize}px 'Nunito', sans-serif`;
     ctx.fillStyle = "rgba(255,255,255,0.4)";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     
-    ctx.fillText("POS", cols.pos, tableTop - 20);
+    const headerY = tableTop - Math.max(16, Math.floor(rowH * 0.42));
+    ctx.fillText("POS", cols.pos, headerY);
     ctx.textAlign = "left";
-    ctx.fillText("EQUIPO", cols.nombre, tableTop - 20);
+    ctx.fillText("EQUIPO", cols.nombre, headerY);
     ctx.textAlign = "center";
-    ctx.fillText("PJ", cols.pj, tableTop - 20);
-    ctx.fillText("PG", cols.pg, tableTop - 20);
-    ctx.fillText("PE", cols.pe, tableTop - 20);
-    ctx.fillText("PP", cols.pp, tableTop - 20);
-    ctx.fillText("GF", cols.gf, tableTop - 20);
+    ctx.fillText("PJ", cols.pj, headerY);
+    ctx.fillText("PG", cols.pg, headerY);
+    ctx.fillText("PE", cols.pe, headerY);
+    ctx.fillText("PP", cols.pp, headerY);
+    ctx.fillText("GF", cols.gf, headerY);
     ctx.fillStyle = GOLD;
-    ctx.fillText("PTS", cols.pts, tableTop - 20);
+    ctx.fillText("PTS", cols.pts, headerY);
     ctx.restore();
 
     for (let i = 0; i < teamsToDraw.length; i++) {
@@ -129,7 +137,7 @@ export async function drawClasificacion(
       ctx.save();
       // Fondo fila alterno
       ctx.fillStyle = isSantiso ? "rgba(250, 204, 21, 0.15)" : (i % 2 === 0 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.0)");
-      rr(ctx, CL, rowY, CW, rowH, 8);
+      rr(ctx, CL, rowY, CW, rowH, Math.min(8, rowH / 4));
       ctx.fill();
 
       // Borde si es santiso
@@ -144,7 +152,7 @@ export async function drawClasificacion(
       const cy = rowY + rowH / 2;
 
       // POS
-      ctx.font = "800 24px 'Outfit', sans-serif";
+      ctx.font = `800 ${posSize}px 'Nunito', sans-serif`;
       ctx.fillStyle = isSantiso ? GOLD : "#fff";
       ctx.fillText((i + 1).toString(), cols.pos, cy);
 
@@ -152,20 +160,20 @@ export async function drawClasificacion(
       if (t.escudo_url) {
         const img = await loadImg(t.escudo_url);
         if (img) {
-          const sW = 36;
-          const sH = 36;
+          const sW = shieldSize;
+          const sH = shieldSize;
           ctx.drawImage(img, cols.escudo - sW / 2, cy - sH / 2, sW, sH);
         }
       }
 
       // NOMBRE
       ctx.textAlign = "left";
-      ctx.font = isSantiso ? "800 24px 'Outfit', sans-serif" : "600 24px 'Outfit', sans-serif";
+      fitFont(ctx, t.nombre, cols.pj - cols.nombre - 28, nameSize, 12, isSantiso ? "800" : "600");
       ctx.fillText(t.nombre, cols.nombre, cy);
 
       // STATS
       ctx.textAlign = "center";
-      ctx.font = "500 22px 'Outfit', sans-serif";
+      ctx.font = `500 ${statSize}px 'Nunito', sans-serif`;
       ctx.fillStyle = "#ccc";
       ctx.fillText(t.pj.toString(), cols.pj, cy);
       ctx.fillStyle = "rgba(74, 222, 128, 0.8)";
@@ -178,7 +186,7 @@ export async function drawClasificacion(
       ctx.fillText(t.gf.toString(), cols.gf, cy);
 
       // PTS
-      ctx.font = "900 26px 'Outfit', sans-serif";
+      ctx.font = `900 ${ptsSize}px 'Nunito', sans-serif`;
       ctx.fillStyle = isSantiso ? GOLD : "#fff";
       ctx.fillText(t.pts.toString(), cols.pts, cy);
 
@@ -217,7 +225,7 @@ export async function drawClasificacion(
       // Etiqueta de la ronda
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.font = "800 20px 'Outfit', sans-serif";
+      ctx.font = "800 20px 'Nunito', sans-serif";
       ctx.fillStyle = GOLD;
       ctx.fillText(round.nombre.toUpperCase(), xCenter, startY - 20);
 
@@ -295,7 +303,7 @@ export async function drawClasificacion(
         ctx.stroke();
 
         // Nombres equipos
-        ctx.font = "600 13px 'Outfit', sans-serif";
+        ctx.font = "600 13px 'Nunito', sans-serif";
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
 
@@ -313,7 +321,7 @@ export async function drawClasificacion(
         // Resultados
         if (p.estado === "finalizado") {
           ctx.textAlign = "right";
-          ctx.font = "800 14px 'Outfit', sans-serif";
+          ctx.font = "800 14px 'Nunito', sans-serif";
           
           const gl = p.goles_local ?? 0;
           const gv = p.goles_visitante ?? 0;

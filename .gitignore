@@ -46,3 +46,6 @@ next-env.d.ts
 .claudecode
 CLAUDE.md
 skills-lock.json
+
+# render harness output
+scripts/.out/

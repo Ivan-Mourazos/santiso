@@ -45,7 +45,7 @@ export function drawCronoloxia(
   const headerTxt = `${stadiumPart}  ·  ${datePart}`;
   
   ctx.fillStyle = "#ffffff";
-  ctx.font = "800 20px 'Outfit', sans-serif";
+  ctx.font = "800 20px 'Nunito', sans-serif";
   fitFont(ctx, headerTxt, CW - 40, 20, 14, "800");
   ctx.fillText(headerTxt, CX, 165);
   ctx.restore();
@@ -94,13 +94,13 @@ export function drawCronoloxia(
   }
   drawTeamNameC(leftTeam,  lCX, santisoSide === "left");
   if (leftSub) {
-    ctx.fillStyle = "#888"; ctx.font = "700 18px 'Outfit', sans-serif";
+    ctx.fillStyle = "#888"; ctx.font = "700 18px 'Nunito', sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(leftSub.toUpperCase(), lCX, NY + 26);
   }
   drawTeamNameC(rightTeam, rCX, santisoSide === "right");
   if (rightSub) {
-    ctx.fillStyle = "#888"; ctx.font = "700 18px 'Outfit', sans-serif";
+    ctx.fillStyle = "#888"; ctx.font = "700 18px 'Nunito', sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(rightSub.toUpperCase(), rCX, NY + 26);
   }
@@ -133,7 +133,7 @@ export function drawCronoloxia(
 
   // Column headers — always fixed: LOCAL left, RIVAL right
   ctx.fillStyle    = "#555";
-  ctx.font         = "700 13px 'Outfit', sans-serif";
+  ctx.font         = "700 13px 'Nunito', sans-serif";
   ctx.textAlign    = "right";
   ctx.fillText("LOCAL", CX - MARGIN - ICON_SIZE - 8, SEP_TOP - 8);
   ctx.textAlign = "left";
@@ -146,9 +146,9 @@ export function drawCronoloxia(
     const isLeft = side === "left";
 
     // Typography
-    const nameFont = "850 16px 'Outfit', sans-serif";
-    const tagFont = "900 10px 'Outfit', sans-serif";
-    const slashFont = "700 16px 'Outfit', sans-serif";
+    const nameFont = "850 16px 'Nunito', sans-serif";
+    const tagFont = "900 10px 'Nunito', sans-serif";
+    const slashFont = "700 16px 'Nunito', sans-serif";
     
     ctx.font = nameFont;
     const saleW = ctx.measureText(sale).width;
@@ -246,14 +246,14 @@ export function drawCronoloxia(
       ctx.lineWidth = 1.5;
       ctx.stroke();
       ctx.fillStyle = "#22c55e";
-      ctx.font = "900 18px 'Outfit', sans-serif";
+      ctx.font = "900 18px 'Nunito', sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("↕", iconX, y - 1);
       ctx.restore();
 
       ctx.fillStyle = "#aaa";
-      ctx.font = "700 17px 'Outfit', sans-serif";
+      ctx.font = "700 17px 'Nunito', sans-serif";
       ctx.textAlign = textAlign;
       ctx.textBaseline = "middle";
       ctx.fillText(ev.minuto === "999" ? "Final" : `${ev.minuto}'`, minuteX, y);
@@ -263,7 +263,7 @@ export function drawCronoloxia(
 
     drawEventIcon(ctx, ev.tipo, iconX, y, ICON_SIZE);
     ctx.fillStyle = "#aaa";
-    ctx.font = "700 17px 'Outfit', sans-serif";
+    ctx.font = "700 17px 'Nunito', sans-serif";
     ctx.textAlign = textAlign;
     ctx.textBaseline = "middle";
     ctx.fillText(`${ev.minuto}'`, minuteX, y);
@@ -271,7 +271,7 @@ export function drawCronoloxia(
     ctx.shadowColor = "rgba(0,0,0,0.85)";
     ctx.shadowBlur = 8;
     ctx.fillStyle = "#ffffff";
-    ctx.font = "800 20px 'Outfit', sans-serif";
+    ctx.font = "800 20px 'Nunito', sans-serif";
     ctx.textAlign = textAlign;
     const name = (ev.jugador || "").toUpperCase();
     fitFont(ctx, name, nameMaxW, 20, 12, "800");

@@ -39,7 +39,7 @@ export function drawPartido(
   ctx.shadowColor = "rgba(0,0,0,0.85)";
   ctx.shadowBlur  = 8;
   ctx.fillStyle    = "#aaaaaa";
-  ctx.font         = "700 25px 'Outfit', sans-serif";
+  ctx.font         = "700 25px 'Nunito', sans-serif";
   ctx.textAlign    = "center";
   ctx.textBaseline = "alphabetic";
   ctx.fillText(competicion.toUpperCase(), CX, 169);
@@ -132,7 +132,7 @@ export function drawPartido(
 
   // Time Text
   ctx.fillStyle = GOLD;
-  ctx.font = "900 38px 'Outfit', sans-serif";
+  ctx.font = "900 38px 'Nunito', sans-serif";
   ctx.fillText(hora ? `${hora}H` : "00:00H", CL + HW + GAP + HW / 2, BOX_Y + BOX_H / 2);
   ctx.restore();
 

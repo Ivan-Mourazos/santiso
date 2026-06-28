@@ -124,14 +124,14 @@ export function drawNoso11(
   const headerTxt = `${venuePart}  ·  ${dateStr}`;
   
   ctx.fillStyle = "#ffffff";
-  ctx.font = "800 18px 'Outfit', sans-serif";
+  ctx.font = "800 18px 'Nunito', sans-serif";
   fitFont(ctx, headerTxt, W - 140, 18, 14, "800");
   ctx.fillText(headerTxt, W / 2, 165);
   ctx.restore();
 
   // "O NOSO 11"
   ctx.fillStyle = GREEN_TXT;
-  ctx.font      = "900 80px 'Outfit'";
+  ctx.font      = "900 80px 'Nunito'";
   ctx.textAlign = "left";
   const titleX = LIST_X + 20; // Add small padding from the edge/split
   ctx.fillText("O NOSO", titleX, 262);
@@ -153,7 +153,7 @@ export function drawNoso11(
 
     // Dorsal
     ctx.fillStyle    = GOLD;
-    ctx.font         = "900 24px 'Outfit'";
+    ctx.font         = "900 24px 'Nunito'";
     ctx.textAlign    = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(p.dorsal.padStart(2, " "), LIST_X, midY);
@@ -167,7 +167,7 @@ export function drawNoso11(
       ctx.fillStyle = "#4aa8d8";
       ctx.fill();
       ctx.fillStyle    = "#fff";
-      ctx.font         = "900 12px 'Outfit'";
+      ctx.font         = "900 12px 'Nunito'";
       ctx.textAlign    = "center";
       ctx.fillText("C", nameX - 14, midY);
       ctx.restore();
@@ -178,7 +178,7 @@ export function drawNoso11(
     ctx.shadowColor = "rgba(0,0,0,0.85)";
     ctx.shadowBlur  = 6;
     ctx.fillStyle    = "#ffffff";
-    ctx.font         = "800 24px 'Outfit'";
+    ctx.font         = "800 24px 'Nunito'";
     ctx.textAlign    = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(p.nome.toUpperCase(), nameX, midY);
@@ -188,7 +188,7 @@ export function drawNoso11(
   // "NO BANCO" separator
   const BANCO_Y = Math.max(START_Y + titulares.length * ROW_H + 18, 900);
   ctx.fillStyle = GOLD;
-  ctx.font      = "800 20px 'Outfit'";
+  ctx.font      = "800 20px 'Nunito'";
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   ctx.fillText("NO BANCO", LIST_X, BANCO_Y);
@@ -213,13 +213,13 @@ export function drawNoso11(
     }
 
     ctx.fillStyle    = GOLD;
-    ctx.font         = "900 20px 'Outfit'";
+    ctx.font         = "900 20px 'Nunito'";
     ctx.textAlign    = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(p.dorsal.padStart(2, " "), LIST_X, midY);
 
     ctx.fillStyle    = "#cccccc";
-    ctx.font         = "700 20px 'Outfit'";
+    ctx.font         = "700 20px 'Nunito'";
     ctx.fillText(p.nome.toUpperCase(), LIST_X + 52, midY);
   });
 
