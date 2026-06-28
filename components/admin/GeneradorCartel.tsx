@@ -406,7 +406,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
           </div>
 
           <div className="gen-preview">
-            <div style={{ position: "sticky", top: "2rem", background: "rgba(255,255,255,0.01)", borderRadius: "1.5rem", border: "1px solid rgba(255,255,255,0.05)", boxShadow: "0 20px 40px rgba(0,0,0,0.4)", overflow: "hidden" }}>
+            <div style={{ position: "sticky", top: "88px", background: "rgba(255,255,255,0.01)", borderRadius: "1.5rem", border: "1px solid rgba(255,255,255,0.05)", boxShadow: "0 20px 40px rgba(0,0,0,0.4)", overflow: "hidden" }}>
               <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <p style={{ fontSize: "0.7rem", fontWeight: 900, textTransform: "uppercase",
                             letterSpacing: "1.5px", color: "var(--primary)", margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -416,9 +416,10 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
                 <span style={{ fontSize: "0.6rem", color: "#444", fontWeight: 800 }}>{W * RENDER_SCALE}x{H * RENDER_SCALE}px</span>
               </div>
               
-              <div style={{ padding: "1rem", background: "#000" }}>
+              <div style={{ padding: "1rem", background: "#000", display: "flex", justifyContent: "center" }}>
                 <canvas ref={canvasRef} width={W * RENDER_SCALE} height={H * RENDER_SCALE}
-                  style={{ width: "100%", height: "auto", display: "block",
+                  style={{ maxWidth: "100%", maxHeight: "calc(100vh - 250px)",
+                           width: "auto", height: "auto", display: "block", margin: "0 auto",
                            borderRadius: "0.8rem", boxShadow: "0 10px 40px rgba(0,0,0,0.8)" }} />
               </div>
 
