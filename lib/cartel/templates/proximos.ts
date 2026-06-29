@@ -1,15 +1,16 @@
 /**
  * lib/cartel/templates/proximos.ts
- * Template 4: Próximos Encontros
+ * Template 4: Próximos Encontros — dirección APPLE / REDONDEADO
+ * Cada partido es un tile glass redondeado con el color de su categoría.
  */
 
-import { CX, CL, CR, CW, GOLD } from "../constants";
-import { rr, fitFont, drawShield, shieldPlaceholder, drawCategoryBadge, fmtDate } from "../primitives";
+import { CX, CL, CW, GOLD, catAccent } from "../constants";
+import { rr, fitFont, drawShield, shieldPlaceholder, fmtDate, hexToRgba } from "../primitives";
 import type { NextMatch, CartelAssets } from "../types";
-import { drawTopLogos, drawSponsorBar, drawCategoryTint, getSantisoName, drawWatermark } from "../shared";
+import { drawSponsorBar, getSantisoName, drawWatermark } from "../shared";
 
 export interface ProximosForm {
-  categoriasText: string;  // e.g. "FEMININO – SÉNIOR – VETERANOS"
+  categoriasText: string;
   matches:        NextMatch[];
   categoria:      string;
 }
@@ -18,99 +19,96 @@ export function drawProximos(
   ctx: CanvasRenderingContext2D,
   f: ProximosForm,
   assets: CartelAssets,
-  xuntaIsLeft: boolean,
+  _xuntaIsLeft: boolean,
   matchRivalImgs: (HTMLImageElement | null)[]
 ) {
-  const { categoriasText, matches = [], categoria } = f;
+  const { matches = [] } = f;
   const imgSantiso = assets.santiso;
 
-  // Global tint
-  drawCategoryTint(ctx, categoria || "Sénior");
-
-  // Institutional Header
-  // Dibujado en GeneradorCartel base
-  
-  // 0. Background Watermark
   drawWatermark(ctx, assets.santiso);
 
-  // ─ PRÓXIMOS ENCONTROS title ──────────────────────────────────
-  ctx.fillStyle    = GOLD;
-  ctx.textAlign    = "center";
+  // ── Título ──────────────────────────────────────────────────────────────────
+  ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  fitFont(ctx, "PRÓXIMOS", CW * 0.7, 86, 50, "900");
-  ctx.fillText("PRÓXIMOS", CX, 290);
-  fitFont(ctx, "ENCONTROS", CW * 0.75, 86, 50, "900");
-  ctx.fillText("ENCONTROS", CX, 375);
+  ctx.fillStyle = "#8b9097";
+  ctx.font = "800 22px 'Nunito', sans-serif";
+  ctx.fillText("AXENDA DA FIN DE SEMANA", CX, 234);
 
-  // ─ Match Rows (Dynamic Centering) ───────────────────────────
-  const validIndices = matches.map((m, i) => m.rival ? i : -1).filter(i => i !== -1).slice(0, 3);
+  ctx.fillStyle = GOLD;
+  fitFont(ctx, "PRÓXIMOS ENCONTROS", CW, 70, 42, "900");
+  ctx.fillText("PRÓXIMOS ENCONTROS", CX, 302);
+
+  // ── Filas (tiles) con centrado dinámico ─────────────────────────────────────
+  const validIndices = matches.map((m, i) => (m.rival ? i : -1)).filter((i) => i !== -1).slice(0, 3);
   const n = validIndices.length;
-  
-  const headerEnd = 450;
-  const footerStart = 1150;
+
+  const headerEnd = 360;
+  const footerStart = 1140;
   const availableH = footerStart - headerEnd;
-  const rowH = 230;
+  const rowH = Math.min(250, availableH / Math.max(n, 1));
   const blockH = n * rowH;
-  
   const startY = headerEnd + (availableH - blockH) / 2;
 
   validIndices.forEach((idx, i) => {
     const m = matches[idx];
     const imgRival = matchRivalImgs[idx];
-    const y = startY + rowH * i;
-    const padding = 15;
-    const cardH = rowH - padding;
+    const accent = catAccent(m.categoria || "Senior");
+    const gap = 16;
+    const cardY = startY + rowH * i + gap / 2;
+    const cardH = rowH - gap;
+    const midY = cardY + cardH / 2;
 
-    // Card BG
-    ctx.fillStyle = "rgba(255,255,255,0.03)";
-    rr(ctx, CL, y - 40, CW, cardH, 20);
-    ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.05)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    // Tile
+    ctx.fillStyle = "rgba(255,255,255,0.04)";
+    rr(ctx, CL, cardY, CW, cardH, 30); ctx.fill();
+    ctx.strokeStyle = hexToRgba(accent, 0.28);
+    ctx.lineWidth = 1.5;
+    rr(ctx, CL, cardY, CW, cardH, 30); ctx.stroke();
+    // Barra de acento a la izquierda del tile
+    ctx.fillStyle = accent;
+    rr(ctx, CL, cardY + cardH * 0.22, 5, cardH * 0.56, 3); ctx.fill();
 
-    // Date + Category
-    ctx.fillStyle = "rgba(255,255,255,0.5)";
-    ctx.font = "900 18px 'Nunito'";
-    ctx.textAlign = "center";
+    // Etiqueta categoría · fecha · hora
+    const catLabel = m.categoria === "Femenino" ? "FEMININO" : m.categoria === "Veteranos" ? "VETERANOS" : "SÉNIOR";
     const datePart = m.fecha ? fmtDate(m.fecha) : "";
     const timePart = (m.hora || "").trim();
-    const dateTimePart = [datePart, timePart].filter(Boolean).join(" · ");
-    const label = `${m.categoria} – ${dateTimePart}`.toUpperCase();
-    ctx.fillText(label, CX, y - 5);
+    const meta = [catLabel, datePart, timePart ? `${timePart}H` : ""].filter(Boolean).join("   ·   ");
+    ctx.fillStyle = accent;
+    ctx.font = "900 18px 'Nunito', sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(meta, CX, cardY + 36);
 
-    // Shields config
-    const ssX = m.santisoSide === "left" ? CX - 160 : CX + 160;
-    const rivX = m.santisoSide === "left" ? CX + 160 : CX - 160;
-    const sSize = 110;
-    const shieldY = y + 75;
+    // Escudos
+    const ssX = m.santisoSide === "left" ? CX - 175 : CX + 175;
+    const rivX = m.santisoSide === "left" ? CX + 175 : CX - 175;
+    const sSize = 104;
+    const shieldY = midY + 16;
 
-    // Santiso Shield
     if (imgSantiso) drawShield(ctx, imgSantiso, ssX, shieldY, sSize, true);
-    
-    // Rival Shield
-    if (imgRival) drawShield(ctx, imgRival, rivX, shieldY, sSize, true);
+    else shieldPlaceholder(ctx, ssX, shieldY, sSize / 2);
+    if (imgRival) drawShield(ctx, imgRival, rivX, shieldY, sSize, false);
     else shieldPlaceholder(ctx, rivX, shieldY, sSize / 2);
 
-    // VS with more presence
-    ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.85)";
-    ctx.shadowBlur  = 8;
-    ctx.fillStyle = "rgba(255,255,255,0.45)";
-    ctx.font = "900 24px 'Nunito'";
+    // VS en cápsula de acento
+    const vsW = 70, vsH = 50;
+    ctx.fillStyle = accent;
+    rr(ctx, CX - vsW / 2, shieldY - vsH / 2, vsW, vsH, vsH / 2); ctx.fill();
+    ctx.fillStyle = "#000";
+    ctx.font = "900 24px 'Nunito', sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("VS", CX, shieldY + 10);
+    ctx.textBaseline = "middle";
+    ctx.fillText("VS", CX, shieldY + 1);
 
-    // Team Names (Small) with shadow
-    ctx.font = "800 16px 'Nunito'";
+    // Nombres
+    ctx.textBaseline = "alphabetic";
+    ctx.font = "800 16px 'Nunito', sans-serif";
     ctx.fillStyle = "#fff";
     const sName = getSantisoName(m.categoria || "").toUpperCase();
-    ctx.fillText(sName, ssX, shieldY + sSize/2 + 30);
     const rName = (m.rival || "").toUpperCase();
-    ctx.fillText(rName, rivX, shieldY + sSize/2 + 30);
-    ctx.restore();
+    ctx.fillText(sName, ssX, shieldY + sSize / 2 + 28);
+    ctx.fillText(rName, rivX, shieldY + sSize / 2 + 28);
   });
 
-  // ─ Sponsors ───────────────────────────────────────────────────
   drawSponsorBar(ctx, assets.sponsors);
 }

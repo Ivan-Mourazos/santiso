@@ -11,6 +11,8 @@ import { W, H } from "../lib/cartel/constants";
 import { drawBackground, drawTopLogos, drawSponsorBar } from "../lib/cartel/shared";
 import { drawResumo, type ResumoForm } from "../lib/cartel/templates/resumo";
 import { drawPartido, type PartidoForm } from "../lib/cartel/templates/partido";
+import { drawProximos, type ProximosForm } from "../lib/cartel/templates/proximos";
+import type { CartelAssets, NextMatch } from "../lib/cartel/types";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fontsDir = join(here, "fonts");
@@ -76,6 +78,25 @@ for (const { cat, comp, rival } of cats) {
   drawTopLogos(ctx, null, null, true);
   drawSponsorBar(ctx, []);
   const out = join(outDir, `partido-senior.png`);
+  writeFileSync(out, canvas.toBuffer("image/png"));
+  console.log("escrito:", out);
+}
+
+// ── Próximos Encontros ──────────────────────────────────────────────────────
+{
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext("2d") as unknown as CanvasRenderingContext2D;
+  const assets: CartelAssets = { xunta: null, rfgf: null, santiso: null, sponsors: [] };
+  const matches: NextMatch[] = [
+    { rival: "Sporting Santiago", rivalEscudoUrl: "", fecha: "2026-05-16", categoria: "Senior", hora: "17:00", santisoSide: "right" },
+    { rival: "U.D. Noia", rivalEscudoUrl: "", fecha: "2026-05-17", categoria: "Femenino", hora: "12:00", santisoSide: "left" },
+    { rival: "C.F. Camporrapado", rivalEscudoUrl: "", fecha: "2026-05-17", categoria: "Veteranos", hora: "18:00", santisoSide: "right" },
+  ];
+  const form: ProximosForm = { categoriasText: "FEMININO – SÉNIOR – VETERANOS", matches, categoria: "Senior" };
+  drawBackground(ctx, "Senior");
+  drawProximos(ctx, form, assets, true, [null, null, null]);
+  drawTopLogos(ctx, null, null, true);
+  const out = join(outDir, `proximos.png`);
   writeFileSync(out, canvas.toBuffer("image/png"));
   console.log("escrito:", out);
 }
