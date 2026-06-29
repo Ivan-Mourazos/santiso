@@ -842,17 +842,17 @@ export default function AdminJornadas({
         {showLeagueRules && (
           <div
             style={{
-              background: "linear-gradient(180deg, rgba(139,92,246,0.06) 0%, rgba(255,255,255,0.01) 100%)",
+              background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)",
               padding: "2rem",
               borderRadius: "18px",
-              border: "1px solid rgba(139,92,246,0.2)",
+              border: "1px solid rgba(255,255,255,0.10)",
               marginBottom: "1rem",
               animation: "slideDown 0.25s ease-out",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
               <div>
-                <h3 style={{ color: "#a78bfa", marginBottom: "0.3rem", fontSize: "1rem", fontWeight: 800 }}>
+                <h3 style={{ color: "#9aa0a6", marginBottom: "0.3rem", fontSize: "1rem", fontWeight: 800 }}>
                   🏆 Reglas de Desarrollo de Liga
                 </h3>
                 <p style={{ color: "#888", fontSize: "0.85rem", margin: 0 }}>
@@ -875,7 +875,7 @@ export default function AdminJornadas({
                 background: "rgba(0,0,0,0.25)",
                 padding: "1.5rem",
                 borderRadius: "14px",
-                border: "1px dashed rgba(139,92,246,0.3)",
+                border: "1px dashed rgba(255,255,255,0.14)",
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr 120px auto",
                 gap: "1rem",
@@ -884,7 +884,7 @@ export default function AdminJornadas({
               }}
             >
               <div className="input-group">
-                <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "#a78bfa", textTransform: "uppercase", marginBottom: "0.4rem", display: "block" }}>
+                <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "#9aa0a6", textTransform: "uppercase", marginBottom: "0.4rem", display: "block" }}>
                   Nombre de la regla
                 </label>
                 <input
@@ -897,7 +897,7 @@ export default function AdminJornadas({
               </div>
 
               <div className="input-group">
-                <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "#a78bfa", textTransform: "uppercase", marginBottom: "0.4rem", display: "block" }}>
+                <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "#9aa0a6", textTransform: "uppercase", marginBottom: "0.4rem", display: "block" }}>
                   Puestos (separados por coma)
                 </label>
                 <input
@@ -910,7 +910,7 @@ export default function AdminJornadas({
               </div>
 
               <div className="input-group">
-                <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "#a78bfa", textTransform: "uppercase", marginBottom: "0.4rem", display: "block" }}>
+                <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "#9aa0a6", textTransform: "uppercase", marginBottom: "0.4rem", display: "block" }}>
                   Color
                 </label>
                 <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap", marginBottom: "0.4rem" }}>
@@ -1249,11 +1249,11 @@ export default function AdminJornadas({
             <form
               onSubmit={handleAddDescanso}
               style={{
-                background: "rgba(139, 92, 246, 0.06)",
+                background: "rgba(255,255,255,0.04)",
                 padding: "1.5rem 2rem",
                 borderRadius: "16px",
                 marginBottom: "2rem",
-                border: "1px solid rgba(139, 92, 246, 0.2)",
+                border: "1px solid rgba(255,255,255,0.10)",
                 display: "flex",
                 flexWrap: "wrap",
                 alignItems: "flex-end",
@@ -1266,7 +1266,7 @@ export default function AdminJornadas({
                     marginBottom: "0.5rem",
                     display: "block",
                     fontWeight: 800,
-                    color: "#a78bfa",
+                    color: "#9aa0a6",
                   }}
                 >
                   🛌 Equipo que descansa esta jornada
@@ -1297,11 +1297,11 @@ export default function AdminJornadas({
                 disabled={loading || !descansoEquipoId}
                 style={{
                   height: "48px",
-                  background: "rgba(139, 92, 246, 0.35)",
+                  background: "rgba(250, 204, 21, 0.18)",
                   color: "#e9d5ff",
                   fontWeight: 800,
                   borderRadius: "10px",
-                  border: "1px solid rgba(139, 92, 246, 0.4)",
+                  border: "1px solid rgba(250, 204, 21, 0.45)",
                   padding: "0 1.5rem",
                   cursor: loading ? "not-allowed" : "pointer",
                 }}
