@@ -35,7 +35,12 @@ export async function proxy(request: NextRequest) {
   const isAdminPage = pathname.startsWith("/admin");
   const isAdminApi = pathname.startsWith("/api/admin");
 
-  if ((isAdminPage || isAdminApi) && !user) {
+  // Bypass de auth SOLO en desarrollo local (doble gate). Imposible en producción.
+  const devBypass =
+    process.env.NODE_ENV !== "production" &&
+    process.env.DEV_AUTH_BYPASS === "1";
+
+  if ((isAdminPage || isAdminApi) && !user && !devBypass) {
     // API routes → 401 JSON
     if (isAdminApi) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
