@@ -49,3 +49,6 @@ skills-lock.json
 
 # render harness output
 scripts/.out/
+
+# pnpm local store
+.pnpm-store/
