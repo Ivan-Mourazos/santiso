@@ -354,39 +354,50 @@ input,
 textarea {
   display: block;
   width: 100%;
-  padding: 0.8rem 1rem;
-  border-radius: 0.6rem;
-  border: 1px solid var(--border);
-  background: #000;
-  color: white;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hairline);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--text-1);
   font-family: inherit;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
+}
+
+input::placeholder,
+textarea::placeholder { color: var(--text-3); }
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(250, 204, 21, 0.55);
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: var(--ring);
 }
 
 select {
   width: 100%;
-  padding: 0.8rem 1rem;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  color: white;
+  padding: 0.85rem 1rem;
+  background-color: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.95rem;
   cursor: pointer;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23facc15' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 1.2rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
 }
 
 select:focus {
   outline: none;
-  border-color: var(--primary);
-  background-color: rgba(250, 204, 21, 0.1);
-  box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.1);
+  border-color: rgba(250, 204, 21, 0.55);
+  background-color: rgba(0, 0, 0, 0.4);
+  box-shadow: var(--ring);
 }
 
 /* Fix para el menú desplegable en todos los navegadores */
@@ -417,19 +428,20 @@ input[type="number"] {
   color: black;
   border: none;
   font-weight: 800;
-  border-radius: 0.6rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  padding: 0.8rem 1.5rem;
+  padding: 0.85rem 1.5rem;
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  transition: all 0.2s;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s var(--ease);
   height: 100%;
+  box-shadow: 0 6px 18px rgba(250, 204, 21, 0.22);
 }
 .btn-primary:hover {
-  opacity: 0.9;
+  filter: brightness(1.05);
   transform: translateY(-1px);
-  box-shadow: 0 5px 15px rgba(250, 204, 21, 0.2);
+  box-shadow: 0 10px 26px rgba(250, 204, 21, 0.3);
 }
 .btn-primary:active {
   transform: translateY(0);
@@ -440,17 +452,19 @@ input[type="number"] {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.04);
-  color: #f5f5f5;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--surface-2);
+  color: var(--text-1);
+  border: 1px solid var(--hairline);
   font-weight: 800;
-  border-radius: 0.6rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  padding: 0.8rem 1.5rem;
+  padding: 0.85rem 1.5rem;
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  transition: all 0.2s;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.2s var(--ease);
 }
 
 .btn-secondary:hover {
@@ -468,11 +482,14 @@ input[type="number"] {
 .table-responsive {
   overflow-x: auto;
   width: 100%;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
 }
 .admin-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 1rem;
+  margin-top: 0;
 }
 .admin-table th {
   text-align: left;
@@ -494,7 +511,7 @@ input[type="number"] {
   color: #ef4444;
   border: 1px solid rgba(239, 68, 68, 0.2);
   padding: 0.7rem 1.2rem;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 800;
   cursor: pointer;
@@ -524,7 +541,7 @@ input[type="number"] {
   color: var(--primary);
   border: 1px solid rgba(250, 204, 21, 0.24);
   padding: 0.7rem 1.2rem;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 800;
   cursor: pointer;
@@ -560,7 +577,7 @@ input[type="number"] {
   justify-content: center;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   color: #555;
   cursor: pointer;
   transition: all 0.3s;
@@ -636,11 +653,13 @@ input[type="number"] {
   width: 100%;
 }
 .ud-accordion-item {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 1.5rem;
+  background: var(--surface-1) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: border-color 0.3s var(--ease), background 0.3s var(--ease), box-shadow 0.3s var(--ease);
   width: 100%;
 }
 .ud-accordion-item.active {
@@ -1615,7 +1634,7 @@ input[type="number"] {
 .edit-panel {
   background: rgba(250, 204, 21, 0.04);
   border: 1px solid rgba(250, 204, 21, 0.18);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 1.25rem;
   margin-bottom: 1.5rem;
   animation: fadeIn 0.2s ease;
