@@ -1,4 +1,3 @@
-import imageCompression from "browser-image-compression";
 import { v4 as uuidv4 } from "uuid";
 
 type ImageProcessStage =
@@ -38,8 +37,9 @@ export async function processAndUploadImage(file: File, onProgress?: ProgressCal
     onProgress?.(35, "trimming");
     currentFile = await trimImageTransparency(currentFile);
 
-    // 3. Compresión
+    // 3. Compresión (lib pesada cargada bajo demanda, fuera del bundle inicial)
     onProgress?.(60, "compressing");
+    const imageCompression = (await import("browser-image-compression")).default;
     const options = {
       maxSizeMB: 0.8, // Menos de 1MB
       maxWidthOrHeight: 1200,
