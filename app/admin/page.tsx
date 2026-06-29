@@ -286,8 +286,10 @@ export default function AdminPage() {
           display: flex;
           min-height: 100vh;
           background:
-            radial-gradient(1200px 600px at 100% -10%, rgba(250, 204, 21, 0.06), transparent 60%),
-            #000;
+            radial-gradient(900px 520px at 100% -8%, rgba(250, 204, 21, 0.10), transparent 60%),
+            radial-gradient(760px 520px at -10% 110%, rgba(56, 189, 248, 0.07), transparent 55%),
+            radial-gradient(1100px 700px at 50% 50%, rgba(255, 255, 255, 0.025), transparent 70%),
+            #05060a;
         }
 
         /* ── SIDEBAR ── */
@@ -300,9 +302,10 @@ export default function AdminPage() {
           height: 100vh;
           display: flex;
           flex-direction: column;
-          background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
-          border-right: 1px solid rgba(255, 255, 255, 0.07);
-          backdrop-filter: blur(14px);
+          background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+          border-right: 1px solid var(--hairline);
+          -webkit-backdrop-filter: blur(22px) saturate(180%);
+          backdrop-filter: blur(22px) saturate(180%);
           z-index: 200;
         }
         .sidebar-brand {
@@ -364,9 +367,10 @@ export default function AdminPage() {
           position: sticky; top: 0; z-index: 100;
           display: flex; align-items: center; gap: 1.2rem;
           padding: 1.1rem 1.8rem;
-          background: rgba(0, 0, 0, 0.72);
-          backdrop-filter: blur(14px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          background: rgba(8, 9, 14, 0.55);
+          -webkit-backdrop-filter: blur(22px) saturate(180%);
+          backdrop-filter: blur(22px) saturate(180%);
+          border-bottom: 1px solid var(--hairline);
           flex-wrap: wrap;
         }
         .hamburger {

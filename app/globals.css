@@ -11,6 +11,36 @@
   --border: rgba(255, 255, 255, 0.1);
   --glass: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.08);
+
+  /* ── Design system (Apple / redondeado / glass) ───────────────── */
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+  --radius-xl: 34px;
+  --radius-pill: 999px;
+
+  --space-1: 0.5rem;
+  --space-2: 0.85rem;
+  --space-3: 1.25rem;
+  --space-4: 2rem;
+
+  /* Superficies glass */
+  --surface-1: rgba(255, 255, 255, 0.04);
+  --surface-2: rgba(255, 255, 255, 0.065);
+  --hairline: rgba(255, 255, 255, 0.10);
+  --hairline-strong: rgba(255, 255, 255, 0.16);
+  --blur: 20px;
+
+  --text-1: #f5f6f7;
+  --text-2: #9aa0a6;
+  --text-3: #6b7077;
+
+  --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 14px 40px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 30px 70px rgba(0, 0, 0, 0.55);
+  --ring: 0 0 0 4px rgba(250, 204, 21, 0.16);
+
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 * {
@@ -31,7 +61,9 @@ body {
   width: 100%;
   background: var(--background);
   color: var(--foreground);
-  font-family: "Outfit", sans-serif;
+  font-family: "Nunito", "Outfit", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
 
@@ -40,6 +72,44 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
+}
+
+/* ── Capa glass del sistema de diseño (Apple) ──────────────────────
+   Usar con moderación (≤3 capas por pantalla). GPU-friendly. */
+.glass-panel,
+.glass-card {
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  contain: layout paint;
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-panel,
+  .glass-card {
+    background: var(--surface-1);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(180%);
+    backdrop-filter: blur(var(--blur)) saturate(180%);
+  }
+}
+.glass-card {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+/* Brillo superior sutil tipo material */
+.glass-panel {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 38%);
+}
+
+/* Accesibilidad: si el usuario reduce transparencia, glass → sólido */
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-panel,
+  .glass-card {
+    background: #14151a;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 .container {
@@ -232,14 +302,14 @@ body {
   width: 100%;
 }
 .card {
-  background: var(--secondary);
+  background: var(--surface-1);
   padding: 3rem;
-  border-radius: 1.5rem;
-  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
   width: 100%;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md);
 }
 .admin-form {
   display: block;
