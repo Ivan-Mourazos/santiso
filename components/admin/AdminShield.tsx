@@ -81,45 +81,45 @@ export default function AdminShield({ showToast, showConfirm, compact }: AdminSh
 
   if (compact) {
     return (
-      <div className="shield-compact-trigger" style={{ position: 'relative' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', background: 'rgba(255,255,255,0.03)', padding: '0.4rem 0.6rem', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="shield-hex" style={{ width: '32px', height: '32px', overflow: 'hidden', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyItems: 'center' }}>
-             {(previewUrl || clubShield) && <img src={previewUrl || clubShield || ""} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
-          </div>
-          <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#888', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', margin: 0 }}>
-             {loading || isFetching ? "..." : (previewUrl ? "Confirmar" : "Escudo")}
-             {!previewUrl && <input type="file" className="hidden-input" accept="image/*" onChange={handleShieldSelect} style={{ display: 'none' }} />}
-          </label>
-          {previewUrl && !loading && (
-            <button onClick={confirmUploadShield} style={{ background: 'var(--primary)', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        {/* Avatar del escudo (clic = subir nuevo) */}
+        <label
+          title={previewUrl ? "Pulsa el check para guardar" : "Cambiar escudo del club"}
+          style={{
+            width: '40px', height: '40px', flexShrink: 0, cursor: 'pointer',
+            borderRadius: 'var(--radius-sm)', overflow: 'hidden',
+            background: 'var(--surface-2)', border: '1px solid var(--hairline)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          {(previewUrl || clubShield) ? (
+            <img src={previewUrl || clubShield || ""} alt="Escudo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '3px' }} />
+          ) : (
+            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-3)' }}>{loading || isFetching ? "…" : "ESC"}</span>
           )}
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            title="Cerrar sesión"
-            style={{
-              background: 'rgba(239,68,68,0.1)',
-              border: '1px solid rgba(239,68,68,0.25)',
-              borderRadius: '50%',
-              width: '28px',
-              height: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#f87171',
-              flexShrink: 0,
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
+          {!previewUrl && <input type="file" accept="image/*" onChange={handleShieldSelect} style={{ display: 'none' }} />}
+        </label>
+
+        {previewUrl && !loading && (
+          <button onClick={confirmUploadShield} title="Guardar escudo"
+            style={{ background: 'var(--primary)', border: 'none', borderRadius: 'var(--radius-sm)', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
           </button>
-        </div>
+        )}
+
+        <button onClick={handleLogout} title="Cerrar sesión"
+          style={{
+            background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)',
+            borderRadius: 'var(--radius-sm)', width: '36px', height: '36px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: '#f87171', flexShrink: 0,
+          }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
       </div>
     );
   }

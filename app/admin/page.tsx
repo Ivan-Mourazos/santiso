@@ -120,11 +120,11 @@ export default function AdminPage() {
       {/* ── SIDEBAR ─────────────────────────────────────────── */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-brand">
-          <AdminShield showToast={showToast} showConfirm={showConfirm} compact />
           <div className="brand-text">
             <span className="brand-eyebrow">UD Santiso</span>
             <h1 className="brand-title">Panel <span className="text-primary">Admin</span></h1>
           </div>
+          <AdminShield showToast={showToast} showConfirm={showConfirm} compact />
           <button className="sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Cerrar menú">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
