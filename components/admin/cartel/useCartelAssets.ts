@@ -17,7 +17,6 @@ interface CartelAssetRow {
 }
 
 const DEFAULT_URLS: AssetUrls = {
-  fondo: "/fondo-cartel.png",
   xunta: "",
   rfgf: "",
   xuntaIsLeft: true,
@@ -44,7 +43,6 @@ export function useCartelAssets(tipo: TemplateId, refreshKey = 0) {
 
       const list = rows as CartelAssetRow[];
 
-      const fondoRow = list.find((r) => r.tipo === "fondo" && r.subtipo === tipo);
       const xunta    = list.find((r) => r.tipo === "logo_institucional" && r.subtipo === "xunta")?.url || "";
       const rfgf     = list.find((r) => r.tipo === "logo_institucional" && r.subtipo === "rfgf")?.url  || "";
       const sponsors = list
@@ -57,7 +55,6 @@ export function useCartelAssets(tipo: TemplateId, refreshKey = 0) {
       const xuntaIsLeft = configRow ? configRow.nombre === "xunta_left" : true;
 
       setAssetUrls({
-        fondo:    fondoRow?.url || "/fondo-cartel.png",
         xunta,
         rfgf,
         xuntaIsLeft,

@@ -45,7 +45,7 @@ for (const { cat, comp, rival } of cats) {
     showCarouselIndicator: true,
   };
 
-  drawBackground(ctx, null, cat);
+  drawBackground(ctx, cat);
   drawResumo(ctx, form, null, null);
   drawTopLogos(ctx, null, null, true);
   drawSponsorBar(ctx, []);

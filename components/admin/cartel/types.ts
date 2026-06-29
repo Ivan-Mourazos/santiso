@@ -69,7 +69,6 @@ export interface FormState {
 }
 
 export interface AssetUrls {
-  fondo:    string;
   xunta:    string;
   rfgf:     string;
   xuntaIsLeft: boolean;

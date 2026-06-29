@@ -96,8 +96,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
     if (drawVersion !== drawVersionRef.current) return;
 
     // Load base assets
-    const [fondo, xunta, rfgf, santiso, ...sponsorImgs] = await Promise.all([
-      loadImg(assetUrls.fondo),
+    const [xunta, rfgf, santiso, ...sponsorImgs] = await Promise.all([
       loadImg(assetUrls.xunta),
       loadImg(assetUrls.rfgf),
       loadImg(assetUrls.santiso),
@@ -106,7 +105,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
     if (drawVersion !== drawVersionRef.current) return;
 
     const assets = {
-      fondo, xunta, rfgf, santiso,
+      xunta, rfgf, santiso,
       sponsors: sponsorImgs.filter(Boolean) as HTMLImageElement[],
     };
 
@@ -129,7 +128,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
     ctx.scale(RENDER_SCALE, RENDER_SCALE);
     
     // 1. Foundation
-    drawBackground(ctx, assets.fondo, form.categoria);
+    drawBackground(ctx, form.categoria);
 
     // 2. Templates
     const baseP = {
@@ -464,7 +463,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
-            <p style={{ color: "#aaa", fontSize: "0.85rem", marginBottom: "2rem" }}>Estos son los recursos globales que se aplican automáticamente a todos los carteles. Aquí puedes modificar fondos, logotipos y patrocinadores.</p>
+            <p style={{ color: "#aaa", fontSize: "0.85rem", marginBottom: "2rem" }}>Estos son los recursos globales que se aplican automáticamente a todos los carteles. Aquí puedes modificar logotipos y patrocinadores.</p>
             <AdminCartelAssets
               showToast={showToastUI}
               showConfirm={showConfirmUI}

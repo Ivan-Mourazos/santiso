@@ -6,7 +6,6 @@ import { supabase } from "@/lib/supabase-browser";
 import { processAndUploadImage } from "@/lib/image-utils";
 import { v4 as uuidv4 } from "uuid";
 import BusyBanner from "./BusyBanner";
-import { TEMPLATES } from "./cartel/types";
 
 interface Asset {
   id:      string;
@@ -137,12 +136,10 @@ export default function AdminCartelAssets({
   }
 
   // Collect categorised data
-  const fondos     = assets.filter(a => a.tipo === "fondo");
   const instLogos  = assets.filter(a => a.tipo === "logo_institucional");
   const sponsors   = assets.filter(a => a.tipo === "logo_patrocinador").sort((a, b) => a.orden - b.orden);
   const isUploading = Object.values(loading).some(Boolean);
 
-  function getFondo(subtipo: string) { return fondos.find(f => f.subtipo === subtipo); }
   function getInst(subtipo: string)  { return instLogos.find(l => l.subtipo === subtipo); }
 
   // Upload input helper
@@ -195,7 +192,7 @@ export default function AdminCartelAssets({
       <BusyBanner show={isFetching || isUploading} text={isFetching ? "Cargando activos de carteles..." : "Procesando y subiendo imagen..."} progress={isUploading ? uploadProgress : undefined} />
       <h3>Activos del Generador de Carteles</h3>
       <p style={{ color: "#a3a3a3", fontSize: "0.85rem", marginTop: "0.25rem" }}>
-        Sube aquí los logos y fondos. El generador los carga automáticamente.
+        Sube aquí los logos institucionales y los patrocinadores. El generador los carga automáticamente.
       </p>
 
       {/* ── Configuración global ─────────────────────────────────────────── */}
@@ -250,23 +247,6 @@ export default function AdminCartelAssets({
             url={getInst(subtipo)?.url}
             isLoading={!!loading[`logo_institucional_${subtipo}`]}
             onFile={f => uploadAsset(f, "logo_institucional", subtipo, label)}
-          />
-        ))}
-      </div>
-
-      {/* ── Fondos por plantilla ───────────────────────────────────────────── */}
-      {sectionTitle("Fondos de Plantillas")}
-      <p style={{ color: "#666", fontSize: "0.8rem", marginTop: "-0.5rem", marginBottom: "1rem" }}>
-        Cada plantilla puede tener su propio fondo. Si no se sube, usa el fondo por defecto <code>/fondo-cartel.png</code>.
-      </p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-        {TEMPLATES.map(({ id: subtipo, label }) => (
-          <UploadZone
-            key={subtipo}
-            label={label}
-            url={getFondo(subtipo)?.url}
-            isLoading={!!loading[`fondo_${subtipo}`]}
-            onFile={f => uploadAsset(f, "fondo", subtipo, label)}
           />
         ))}
       </div>

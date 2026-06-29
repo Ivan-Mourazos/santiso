@@ -4,7 +4,6 @@
  */
 
 export interface CartelAssets {
-  fondo:    HTMLImageElement | null;
   xunta:    HTMLImageElement | null;
   rfgf:     HTMLImageElement | null;
   santiso:  HTMLImageElement | null;

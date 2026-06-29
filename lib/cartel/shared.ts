@@ -11,22 +11,17 @@ import { rr, hexToRgba } from "./primitives";
 
 export function drawBackground(
   ctx: CanvasRenderingContext2D,
-  fondo: HTMLImageElement | null,
   categoria = "Senior"
 ) {
   const accent = catAccent(categoria);
 
-  // Base negra limpia (radial muy sutil para dar profundidad)
+  // Base negra limpia (radial muy sutil para dar profundidad). La identidad la
+  // ponen el escudo watermark + el acento de categoría (sin imagen de fondo).
   const base = ctx.createRadialGradient(CX, H * 0.4, 0, CX, H * 0.5, H * 0.95);
   base.addColorStop(0, "#111111");
   base.addColorStop(1, "#000000");
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, W, H);
-
-  // Negro limpio: el asset "Fondo" subido se ignora a propósito (daba un pendon
-  // asimetrico y sucio). La identidad la pone el escudo watermark + el acento.
-  // `fondo` se mantiene en la firma por compatibilidad del orquestador.
-  void fondo;
 
   // 1. Vertical legibility gradient — sutil arriba, fuerte abajo (texto + sponsors)
   const vGrad = ctx.createLinearGradient(0, 0, 0, H);
