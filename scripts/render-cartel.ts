@@ -10,6 +10,7 @@ import { dirname, join } from "node:path";
 import { W, H } from "../lib/cartel/constants";
 import { drawBackground, drawTopLogos, drawSponsorBar } from "../lib/cartel/shared";
 import { drawResumo, type ResumoForm } from "../lib/cartel/templates/resumo";
+import { drawPartido, type PartidoForm } from "../lib/cartel/templates/partido";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fontsDir = join(here, "fonts");
@@ -51,6 +52,30 @@ for (const { cat, comp, rival } of cats) {
   drawSponsorBar(ctx, []);
 
   const out = join(outDir, `resumo-${cat.toLowerCase()}.png`);
+  writeFileSync(out, canvas.toBuffer("image/png"));
+  console.log("escrito:", out);
+}
+
+// ── Partido (previa) — Senior ───────────────────────────────────────────────
+{
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext("2d") as unknown as CanvasRenderingContext2D;
+  const form: PartidoForm = {
+    categoria: "Senior",
+    competicion: "TERCEIRA GALICIA - SANTIAGO - FASE COPA - GRUPO 4",
+    jornada: "12",
+    rivalNombre: "Sporting Santiago",
+    rivalEscudoUrl: "",
+    fecha: "2026-05-17",
+    hora: "17:00",
+    lugar: "Campo Municipal de Santiso",
+    santisoSide: "right",
+  };
+  drawBackground(ctx, form.categoria);
+  drawPartido(ctx, form, null, null);
+  drawTopLogos(ctx, null, null, true);
+  drawSponsorBar(ctx, []);
+  const out = join(outDir, `partido-senior.png`);
   writeFileSync(out, canvas.toBuffer("image/png"));
   console.log("escrito:", out);
 }

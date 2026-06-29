@@ -1,11 +1,12 @@
 /**
  * lib/cartel/templates/partido.ts
- * Template 1: Cartel de Partido
+ * Template 1: Cartel de Partido (previa) — dirección APPLE / REDONDEADO
+ * Consistente con Resumo: kicker, pill de categoría, tile del enfrentamiento y cápsula.
  */
 
-import { CX, CL, CR, CW, GOLD, GREEN_D } from "../constants";
-import { rr, fitFont, fmtDate, drawShield, shieldPlaceholder, drawVsBadge, drawTeamName, drawCategoryBadge } from "../primitives";
-import { drawCategoryTint, getSantisoName, drawWatermark } from "../shared";
+import { CX, CL, CW, catAccent } from "../constants";
+import { rr, fitFont, fmtDate, drawShield, shieldPlaceholder, drawTeamName, hexToRgba } from "../primitives";
+import { getSantisoName, drawWatermark } from "../shared";
 
 export interface PartidoForm {
   categoria:    string;
@@ -27,47 +28,47 @@ export function drawPartido(
 ) {
   const { categoria, competicion, jornada, rivalNombre, fecha, hora, lugar, santisoSide } = f;
   const santisoName = getSantisoName(categoria);
+  const accent = catAccent(categoria);
 
-  // 0. Background Watermark
   drawWatermark(ctx, imgSantiso);
 
-  // Category colour tint on background
-  drawCategoryTint(ctx, categoria);
+  const pill = (text: string, cy: number, font: string, padX: number, h: number, fill: string, fg: string, stroke?: string) => {
+    ctx.font = font;
+    const w = ctx.measureText(text).width + padX * 2;
+    const x = CX - w / 2, y = cy - h / 2;
+    ctx.fillStyle = fill;
+    rr(ctx, x, y, w, h, h / 2); ctx.fill();
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; rr(ctx, x, y, w, h, h / 2); ctx.stroke(); }
+    ctx.fillStyle = fg;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(text, CX, cy + 1);
+  };
 
-  // 1. Headers — Competition and Match Day
-  ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.85)";
-  ctx.shadowBlur  = 8;
-  ctx.fillStyle    = "#aaaaaa";
-  ctx.font         = "700 25px 'Nunito', sans-serif";
-  ctx.textAlign    = "center";
+  // ── Kicker ──────────────────────────────────────────────────────────────────
+  ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  ctx.fillText(competicion.toUpperCase(), CX, 169);
+  ctx.fillStyle = accent;
+  ctx.font = "900 36px 'Nunito', sans-serif";
+  ctx.fillText("PRÓXIMO PARTIDO", CX, 228);
 
-  drawCategoryBadge(ctx, categoria, 195);
-  ctx.restore();
+  ctx.fillStyle = "#8b9097";
+  ctx.font = "700 21px 'Nunito', sans-serif";
+  fitFont(ctx, competicion.toUpperCase(), CW - 60, 21, 13, "700");
+  ctx.fillText(competicion.toUpperCase(), CX, 262);
 
-  // "XORNADA" label with shadow
-  ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.9)";
-  ctx.shadowBlur  = 10;
-  ctx.fillStyle    = GOLD;
-  ctx.textAlign    = "center";
-  ctx.textBaseline = "alphabetic";
-  fitFont(ctx, "XORNADA", CW * 0.86, 112, 60, "900");
-  ctx.fillText("XORNADA", CX, 390);
+  const catLabel = categoria === "Femenino" ? "FEMININO" : categoria === "Veteranos" ? "VETERANOS" : "SÉNIOR";
+  pill(`${catLabel}   ·   XORNADA ${jornada}`, 312, "800 19px 'Nunito', sans-serif", 26, 44,
+       hexToRgba(accent, 0.14), accent, hexToRgba(accent, 0.45));
 
-  // Jornada number — with white stroke for depth & shadow
-  fitFont(ctx, jornada, CW * 0.74, 182, 80, "900");
-  ctx.strokeStyle = "rgba(255,255,255,0.12)";
-  ctx.lineWidth   = 6;
-  ctx.lineJoin    = "round";
-  ctx.strokeText(jornada, CX, 578);
-  ctx.fillText(jornada, CX, 578);
-  ctx.restore();
+  // ── Tile del enfrentamiento ─────────────────────────────────────────────────
+  const tileY = 372, tileH = 372;
+  ctx.fillStyle = "rgba(255,255,255,0.035)";
+  rr(ctx, CL, tileY, CW, tileH, 46); ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.07)";
+  ctx.lineWidth = 1.5;
+  rr(ctx, CL, tileY, CW, tileH, 46); ctx.stroke();
 
-  // Shields
-  const SY = 730, SS = 215, OFF = 242;
+  const SY = tileY + 150, SS = 188, OFF = 300;
   const lCX = CX - OFF, rCX = CX + OFF;
   const leftImg  = santisoSide === "left" ? imgSantiso : imgRival;
   const rightImg = santisoSide === "left" ? imgRival   : imgSantiso;
@@ -76,78 +77,30 @@ export function drawPartido(
 
   if (leftImg)  drawShield(ctx, leftImg,  lCX, SY, SS, santisoSide === "left");
   else          shieldPlaceholder(ctx, lCX, SY, SS / 2);
-
-  drawVsBadge(ctx, CX, SY);
-
   if (rightImg) drawShield(ctx, rightImg, rCX, SY, SS, santisoSide === "right");
   else          shieldPlaceholder(ctx, rCX, SY, SS / 2);
 
-  // Team names with shadow
-  const NY = SY + SS / 2 + 52;
+  // VS en cápsula de acento
+  pill("VS", SY, "900 46px 'Nunito', sans-serif", 26, 78, accent, "#000000");
+
+  const NY = SY + SS / 2 + 56;
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.85)";
-  ctx.shadowBlur  = 12;
-  drawTeamName(ctx, leftName,  lCX, NY, 310, santisoSide === "left");
-  drawTeamName(ctx, rightName, rCX, NY, 310, santisoSide === "right");
+  ctx.shadowBlur  = 8;
+  drawTeamName(ctx, leftName,  lCX, NY, 320, santisoSide === "left");
+  drawTeamName(ctx, rightName, rCX, NY, 320, santisoSide === "right");
   ctx.restore();
 
-  // ── Info boxes (REDESIGNED: GLASS PREMIUM) ──────────────────────────────────
-  const BOX_Y = 920, BOX_H = 92, BOX_R = 24, GAP = 18;
-  const HW    = (CW - GAP) / 2;
+  // ── Cápsula fecha · hora ────────────────────────────────────────────────────
+  const dateLine = `${fmtDate(fecha, true)}${hora ? `   ·   ${hora}H` : ""}`;
+  pill(dateLine, 818, "900 30px 'Nunito', sans-serif", 50, 96, accent, "#000000");
 
-  function drawGlassBox(x: number, y: number, w: number, h: number, isAccent = false) {
-    ctx.save();
-    // Soft outer glow/shadow
-    ctx.shadowColor = "rgba(0,0,0,0.4)";
-    ctx.shadowBlur  = 20;
-    
-    // Gradient or semi-trans black
-    ctx.fillStyle = isAccent ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.78)";
-    rr(ctx, x, y, w, h, BOX_R);
-    ctx.fill();
-
-    // Top edge highlight (Glass effect)
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    ctx.lineWidth = 1.5;
-    rr(ctx, x, y, w, h, BOX_R);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  // Row 1: Date & Time
-  drawGlassBox(CL, BOX_Y, HW, BOX_H);
-  drawGlassBox(CL + HW + GAP, BOX_Y, HW, BOX_H, true); // Subtle accent for time
-
-  ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.8)";
-  ctx.shadowBlur  = 6;
-  ctx.textAlign    = "center";
+  // ── Sede ────────────────────────────────────────────────────────────────────
+  ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-
-  // Date Text
   ctx.fillStyle = "#ffffff";
-  fitFont(ctx, fmtDate(fecha), HW - 30, 30, 20, "800");
-  ctx.fillText(fmtDate(fecha), CL + HW / 2, BOX_Y + BOX_H / 2);
-
-  // Time Text
-  ctx.fillStyle = GOLD;
-  ctx.font = "900 38px 'Nunito', sans-serif";
-  ctx.fillText(hora ? `${hora}H` : "00:00H", CL + HW + GAP + HW / 2, BOX_Y + BOX_H / 2);
-  ctx.restore();
-
-  // Row 2: Venue
-  const VY = BOX_Y + BOX_H + 20;
-  drawGlassBox(CL, VY, CW, BOX_H);
-
-  ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.8)";
-  ctx.shadowBlur  = 6;
-  ctx.fillStyle    = "#ffffff";
-  ctx.textAlign    = "center";
-  ctx.textBaseline = "middle";
-  const venTxt = lugar ? `🏟  ${lugar.toUpperCase()}` : "🏟  CAMPO A DEFINIR";
-  fitFont(ctx, venTxt, CW - 60, 32, 18, "800");
-  ctx.fillText(venTxt, CX, VY + BOX_H / 2);
-  ctx.restore();
+  ctx.font = "800 24px 'Nunito', sans-serif";
+  const venue = lugar ? `📍 ${lugar.toUpperCase()}` : "📍 CAMPO A DEFINIR";
+  fitFont(ctx, venue, CW - 80, 24, 15, "800");
+  ctx.fillText(venue, CX, 948);
 }
