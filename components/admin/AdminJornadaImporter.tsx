@@ -54,7 +54,7 @@ interface ReviewRow {
   selected: boolean;
 }
 
-const CATEGORIES = ["Senior", "Femenino", "Veteranos"];
+const CATEGORIES = ["Senior", "Veteranos"];
 
 function normalizeTeamName(name: string) {
   return name
@@ -106,7 +106,7 @@ function normalizeFecha(raw: string): string {
 }
 
 export default function AdminJornadaImporter({ showToast, showConfirm }: Props) {
-  const [categoria, setCategoria] = useState("Femenino");
+  const [categoria, setCategoria] = useState("Senior");
   const [competicionesCatalog, setCompeticionesCatalog] = useState<
     CompetenciaRow[]
   >([]);

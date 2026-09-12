@@ -12,6 +12,12 @@ import type { Player, CronEvent, NextMatch } from "@/lib/cartel-draw";
 import { fetchSeasons, fetchCompeticiones, type CompetenciaRow } from "@/lib/supabase-queries";
 import { pickDefaultCompetitionId } from "@/lib/competition";
 import { matchDateInput, matchTimeInput } from "./matchDateTime";
+import {
+  COMPETICIONES_2026_2027,
+  TODOS_PARTIDOS_2026,
+  EQUIPOS_SENIOR_2026,
+  EQUIPOS_VETERANOS_2026,
+} from "@/lib/data/season-2026-2027";
 
 interface CartelPlayer {
   id: string;
@@ -122,7 +128,7 @@ const DEFAULT_FORM: FormState = {
   localSponsor: "",
   rivalSponsor: "",
   events: [],
-  categoriasText: "FEMENINO – SENIOR – VETERANOS",
+  categoriasText: "SENIOR – VETERANOS",
   matches: Array.from({ length: 3 }, mkMatch),
   jugadorFotoUrl: "",
   jugadorXOffset: 0.5,
@@ -155,6 +161,7 @@ export function useCartelForm() {
   const catalogRef = useRef<CompetenciaRow[]>([]);
   const [jugFileName, setJugFileName] = useState("");
   const fileUrlRef = useRef<string>("");
+  const matchFileUrlsRef = useRef<Record<number, string>>({});
   const multiImg1Ref = useRef<string>("");
   const multiImg2Ref = useRef<string>("");
 
@@ -164,31 +171,52 @@ export function useCartelForm() {
 
   useEffect(() => {
     async function loadData() {
-      const { active } = await fetchSeasons();
-      const comps = await fetchCompeticiones();
-      setCompeticionesCatalog(comps);
+      try {
+        const { active } = await fetchSeasons();
+        const comps = await fetchCompeticiones();
+        const activeComps = comps && comps.length > 0 ? comps : COMPETICIONES_2026_2027;
+        setCompeticionesCatalog(activeComps);
 
-      const { data: jData } = await supabase.from("jugadores").select("*");
-      if (jData) setJugadores(jData);
+        const { data: jData } = await supabase.from("jugadores").select("*");
+        if (jData && jData.length > 0) setJugadores(jData);
 
-      const { data: eData } = await supabase.from("equipos").select("*");
-      if (eData) setEquipos(eData);
+        const { data: eData } = await supabase.from("equipos").select("*");
+        if (eData && eData.length > 0) {
+          setEquipos(eData);
+        } else {
+          const fallbackTeams = [
+            ...EQUIPOS_SENIOR_2026.map((n) => ({ id: n, nombre: n, escudo_url: "", categoria: "Senior" })),
+            ...EQUIPOS_VETERANOS_2026.map((n) => ({ id: n, nombre: n, escudo_url: "", categoria: "Veteranos" })),
+          ];
+          setEquipos(fallbackTeams as any);
+        }
 
-      const { data: cData } = await supabase.from("campos_futbol").select("*");
-      if (cData) setCampos(cData);
+        const { data: cData } = await supabase.from("campos_futbol").select("*");
+        if (cData && cData.length > 0) setCampos(cData);
 
-      const { data: mData } = await supabase
-        .from("partidos_liga")
-        .select(
-          "*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*), jornada:jornada_id(*), campo:campo_id(*), competiciones:competicion_id(id, nombre)",
-        )
-        .order("fecha", { ascending: false });
-      if (mData) {
-        const matches = mData as SelectorMatch[];
-        const activeMatches = active?.id
-          ? matches.filter((match) => match.jornada?.temporada_id === active.id)
-          : matches;
-        setDbMatches(activeMatches);
+        const { data: mData } = await supabase
+          .from("partidos_liga")
+          .select(
+            "*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*), jornada:jornada_id(*), campo:campo_id(*), competiciones:competicion_id(id, nombre)",
+          )
+          .order("fecha", { ascending: false });
+        if (mData && mData.length > 0) {
+          const matches = mData as SelectorMatch[];
+          const activeMatches = active?.id
+            ? matches.filter((match) => match.jornada?.temporada_id === active.id)
+            : matches;
+          setDbMatches(activeMatches);
+        } else {
+          setDbMatches(TODOS_PARTIDOS_2026);
+        }
+      } catch {
+        setCompeticionesCatalog(COMPETICIONES_2026_2027);
+        setDbMatches(TODOS_PARTIDOS_2026);
+        const fallbackTeams = [
+          ...EQUIPOS_SENIOR_2026.map((n) => ({ id: n, nombre: n, escudo_url: "", categoria: "Senior" })),
+          ...EQUIPOS_VETERANOS_2026.map((n) => ({ id: n, nombre: n, escudo_url: "", categoria: "Veteranos" })),
+        ];
+        setEquipos(fallbackTeams as any);
       }
     }
     loadData();
@@ -214,6 +242,9 @@ export function useCartelForm() {
   useEffect(() => {
     return () => {
       if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
+      Object.values(matchFileUrlsRef.current).forEach((url) => {
+        if (url) URL.revokeObjectURL(url);
+      });
       if (multiImg1Ref.current) URL.revokeObjectURL(multiImg1Ref.current);
       if (multiImg2Ref.current) URL.revokeObjectURL(multiImg2Ref.current);
     };
@@ -332,6 +363,20 @@ export function useCartelForm() {
       ms[i] = { ...ms[i], ...patch };
       return { ...p, matches: ms };
     });
+  }
+
+  function handleMatchRivalFile(i: number, file: File | null) {
+    if (matchFileUrlsRef.current[i]) {
+      URL.revokeObjectURL(matchFileUrlsRef.current[i]);
+      delete matchFileUrlsRef.current[i];
+    }
+    if (!file) {
+      updateMatch(i, { rivalEscudoUrl: "" });
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    matchFileUrlsRef.current[i] = url;
+    updateMatch(i, { rivalEscudoUrl: url });
   }
 
   function loadMatchFromDb(match: SelectorMatch) {
@@ -498,6 +543,7 @@ export function useCartelForm() {
     updateEvent,
     removeEvent,
     updateMatch,
+    handleMatchRivalFile,
     dbMatches,
     campos,
     loadMatchFromDb,

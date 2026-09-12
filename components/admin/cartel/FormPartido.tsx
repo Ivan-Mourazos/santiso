@@ -23,16 +23,20 @@ interface Props {
 
 export const RivalSelector = ({
   rivalNombre,
+  rivalEscudoUrl,
   equipos,
   categoria,
   handleRivalSelect,
   handleRivalFile,
+  onNameChange,
 }: {
   rivalNombre: string;
+  rivalEscudoUrl?: string;
   equipos: { id: string; nombre: string; escudo_url: string; categoria?: string }[];
   categoria: string;
   handleRivalSelect: (nombre: string) => void;
   handleRivalFile: (file: File) => void;
+  onNameChange?: (name: string) => void;
 }) => {
   const filtered = equipos?.filter(eq => {
     const isSantiso = eq.nombre?.toLowerCase().includes("santiso");
@@ -43,22 +47,66 @@ export const RivalSelector = ({
   return (
     <>
       <div className="input-group" style={{ marginBottom: "0.6rem" }}>
-        <label>Rival (librería)</label>
-        <select value={rivalNombre} onChange={e => handleRivalSelect(e.target.value)}>
-          <option value="">— Seleccionar —</option>
-          {filtered.map(eq => <option key={eq.id} value={eq.nombre}>{eq.nombre}</option>)}
-        </select>
+        <label>Rival (escribe o selecciona)</label>
+        <input
+          type="text"
+          list="equipos-rival-list"
+          placeholder="Escribe el nombre del rival..."
+          value={rivalNombre}
+          onChange={e => {
+            const val = e.target.value;
+            if (onNameChange) {
+              onNameChange(val);
+            } else {
+              handleRivalSelect(val);
+            }
+            const matchEq = filtered.find(eq => eq.nombre.toLowerCase() === val.toLowerCase());
+            if (matchEq) handleRivalSelect(matchEq.nombre);
+          }}
+          style={{ marginBottom: "0.4rem" }}
+        />
+        <datalist id="equipos-rival-list">
+          {filtered.map(eq => <option key={eq.id} value={eq.nombre} />)}
+        </datalist>
+        {filtered.length > 0 && (
+          <select 
+            value={filtered.some(e => e.nombre === rivalNombre) ? rivalNombre : ""} 
+            onChange={e => handleRivalSelect(e.target.value)}
+            style={{ fontSize: "0.8rem", opacity: 0.8 }}
+          >
+            <option value="">— O seleccionar de la lista —</option>
+            {filtered.map(eq => <option key={eq.id} value={eq.nombre}>{eq.nombre}</option>)}
+          </select>
+        )}
       </div>
       <div className="input-group" style={{ marginBottom: "1rem" }}>
-        <label>O sube el escudo directamente</label>
-        <label className="file-input-label">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-          </svg>
-          Subir escudo
-          <input type="file" className="hidden-input" accept="image/*"
-            onChange={e => { if (e.target.files?.[0]) handleRivalFile(e.target.files[0]); }} />
-        </label>
+        <label>Escudo del rival</label>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+          <label className="file-input-label" style={{ flex: 1 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+            </svg>
+            Subir escudo
+            <input type="file" className="hidden-input" accept="image/*"
+              onChange={e => { if (e.target.files?.[0]) handleRivalFile(e.target.files[0]); }} />
+          </label>
+          {rivalEscudoUrl && (
+            <div style={{
+              width: 36,
+              height: 36,
+              borderRadius: "8px",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden"
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={rivalEscudoUrl} alt="Escudo rival" style={{ width: "80%", height: "80%", objectFit: "contain" }} />
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
@@ -140,18 +188,34 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
       
       <div className="input-group" style={{ marginBottom: "1rem" }}>
-        <label>Competición</label>
-        <select
-          value={form.competicion_id}
-          onChange={(e) => set("competicion_id", e.target.value)}
-        >
-          <option value="">— Seleccionar —</option>
-          {competitionsForCategory(competiciones, form.categoria).map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nombre}
-            </option>
-          ))}
-        </select>
+        <label>Competición (libre o catálogo)</label>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+          <input
+            type="text"
+            placeholder="Escribe la competición (ej: Liga da Costa, Amigable...)"
+            value={form.competicion}
+            onChange={(e) => set("competicion", e.target.value)}
+          />
+          {competitionsForCategory(competiciones, form.categoria).length > 0 && (
+            <select
+              value={form.competicion_id}
+              onChange={(e) => {
+                const selId = e.target.value;
+                set("competicion_id", selId);
+                const found = competiciones.find((c) => c.id === selId);
+                if (found) set("competicion", found.nombre);
+              }}
+              style={{ fontSize: "0.8rem", opacity: 0.8 }}
+            >
+              <option value="">— O elige del catálogo oficial —</option>
+              {competitionsForCategory(competiciones, form.categoria).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
@@ -199,10 +263,12 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
 
       <RivalSelector
         rivalNombre={form.rivalNombre}
+        rivalEscudoUrl={form.rivalEscudoUrl}
         equipos={equipos}
         categoria={form.categoria}
         handleRivalSelect={handleRivalSelect}
         handleRivalFile={handleRivalFile}
+        onNameChange={(name) => set("rivalNombre", name)}
       />
     </>
   );

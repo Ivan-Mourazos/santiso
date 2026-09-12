@@ -42,11 +42,12 @@ interface Props {
   form: FormState;
   set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
   updateMatch: (i: number, patch: Partial<NextMatch>) => void;
+  handleMatchRivalFile?: (i: number, file: File | null) => void;
   equipos: { id: string; nombre: string; escudo_url: string; categoria?: string }[];
   dbMatches: SelectorMatch[];
 }
 
-export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos, dbMatches }) => {
+export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, handleMatchRivalFile, equipos, dbMatches }) => {
   const handleAutoFill = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -72,7 +73,7 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
     const currentMatchdayMatches = allUpcomingSantiso.filter(m => getMatchTime(m) <= maxWindowTime);
 
     // Buscar el más próximo de cada categoría del club.
-    const cats = ["Senior", "Femenino", "Veteranos"];
+    const cats = ["Senior", "Veteranos"];
     const selectedMatches: SelectorMatch[] = [];
 
     cats.forEach(cat => {
@@ -157,23 +158,55 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
             
             <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "0.8rem", marginBottom: "0.8rem" }}>
               <div className="input-group">
-                <label>Rival</label>
-                <select 
+                <label>Rival (escribe o selecciona)</label>
+                <input
+                  type="text"
+                  list={`rival-list-${i}`}
+                  placeholder="Nombre del rival..."
                   value={m.rival}
                   onChange={e => {
-                    const eq = equipos.find(ev => ev.nombre === e.target.value);
-                    updateMatch(i, { rival: e.target.value, rivalEscudoUrl: eq?.escudo_url || "" });
+                    const val = e.target.value;
+                    const found = equipos.find(eq => eq.nombre.toLowerCase() === val.toLowerCase());
+                    updateMatch(i, {
+                      rival: val,
+                      ...(found ? { rivalEscudoUrl: found.escudo_url } : {}),
+                    });
                   }}
-                >
-                  <option value="">-- Seleccionar --</option>
+                  style={{ marginBottom: "0.4rem" }}
+                />
+                <datalist id={`rival-list-${i}`}>
                   {equipos
-                    .filter(e => {
-                      const dbCat = categoriaKey(e.categoria || "");
-                      const stateCat = categoriaKey(m.categoria || "");
-                      return dbCat === stateCat;
-                    })
-                    .map(e => <option key={e.id} value={e.nombre}>{e.nombre}</option>)}
-                </select>
+                    .filter(e => categoriaKey(e.categoria || "") === categoriaKey(m.categoria || ""))
+                    .map(e => <option key={e.id} value={e.nombre} />)}
+                </datalist>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <label className="file-input-label" style={{ flex: 1, padding: "0.4rem 0.6rem", fontSize: "0.72rem" }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                    </svg>
+                    Subir escudo
+                    <input
+                      type="file"
+                      className="hidden-input"
+                      accept="image/*"
+                      onChange={e => {
+                        if (e.target.files?.[0] && handleMatchRivalFile) {
+                          handleMatchRivalFile(i, e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </label>
+                  {m.rivalEscudoUrl && (
+                    <div style={{
+                      width: 28, height: 28, borderRadius: "6px",
+                      background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)",
+                      display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden"
+                    }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={m.rivalEscudoUrl} alt="Escudo" style={{ width: "80%", height: "80%", objectFit: "contain" }} />
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="input-group">
                 <label>Categoría</label>
@@ -183,7 +216,6 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, equipos,
                 rivalEscudoUrl: ""
               })}>
                   <option value="Senior">Sénior</option>
-                  <option value="Femenino">Feminino</option>
                   <option value="Veteranos">Veteranos</option>
                 </select>
               </div>

@@ -3,7 +3,7 @@
  * Template 3: Cronoloxía
  */
 
-import { CX, CW, GREEN_TXT } from "../constants";
+import { CX, CW, FONT_DISPLAY, catAccent } from "../constants";
 import { rr, fitFont, fmtDate, drawShield, shieldPlaceholder, drawEventIcon } from "../primitives";
 import { getSantisoName, drawCategoryTint, drawWatermark } from "../shared";
 import type { CronEvent } from "../types";
@@ -29,6 +29,7 @@ export function drawCronoloxia(
 ) {
   const { categoria, rivalNombre, santisoSide, fecha, estadio,
           golesLocal, golesRival, localSponsor, rivalSponsor, events } = f;
+  const accent = catAccent(categoria);
 
   // Category tint
   drawCategoryTint(ctx, categoria);
@@ -36,7 +37,7 @@ export function drawCronoloxia(
   // 0. Background Watermark
   drawWatermark(ctx, imgSantiso);
 
-  // Stadium + Date header (Above the golden line, which is at ~173)
+  // Stadium + Date header
   ctx.save();
   ctx.textAlign    = "center";
   ctx.textBaseline = "alphabetic";
@@ -44,18 +45,18 @@ export function drawCronoloxia(
   const datePart = fmtDate(fecha, true);
   const headerTxt = `${stadiumPart}  ·  ${datePart}`;
   
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "800 20px 'Nunito', sans-serif";
-  fitFont(ctx, headerTxt, CW - 40, 20, 14, "800");
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = `800 18px ${FONT_DISPLAY}`;
+  fitFont(ctx, headerTxt, CW - 40, 18, 14, "800", FONT_DISPLAY);
   ctx.fillText(headerTxt, CX, 165);
   ctx.restore();
 
-  // "CRONOLOXÍA" in green
-  ctx.fillStyle    = GREEN_TXT;
+  // "CRONOLOXÍA" with category accent
+  ctx.fillStyle    = accent;
   ctx.textAlign    = "center";
   ctx.textBaseline = "alphabetic";
-  fitFont(ctx, "CRONOLOXÍA", CW * 0.9, 118, 60, "900");
-  ctx.fillText("CRONOLOXÍA", CX, 305);
+  fitFont(ctx, "CRONOLOXÍA", CW * 0.9, 92, 50, "900", FONT_DISPLAY);
+  ctx.fillText("CRONOLOXÍA", CX, 290);
 
   // Compact shield row
   const SY = 420, SS = 155, OFF = 215;

@@ -3,7 +3,7 @@
  * Shared drawing layers used by all poster templates.
  */
 
-import { W, H, CX, CL, CR, CW, BAR_W, BAR_CLR, GOLD, CAT_TINT, catAccent } from "./constants";
+import { W, H, CX, CL, CR, CW, BAR_CLR, catAccent } from "./constants";
 import { rr, hexToRgba } from "./primitives";
 
 
@@ -15,53 +15,47 @@ export function drawBackground(
 ) {
   const accent = catAccent(categoria);
 
-  // Base negra limpia (radial muy sutil para dar profundidad). La identidad la
-  // ponen el escudo watermark + el acento de categoría (sin imagen de fondo).
-  const base = ctx.createRadialGradient(CX, H * 0.4, 0, CX, H * 0.5, H * 0.95);
-  base.addColorStop(0, "#111111");
-  base.addColorStop(1, "#000000");
+  // 1. Base obsidiana profunda con gradiente suave
+  const base = ctx.createLinearGradient(0, 0, 0, H);
+  base.addColorStop(0, "#0a0c10");
+  base.addColorStop(0.4, "#06070a");
+  base.addColorStop(1, "#030406");
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, W, H);
 
-  // 1. Vertical legibility gradient — sutil arriba, fuerte abajo (texto + sponsors)
-  const vGrad = ctx.createLinearGradient(0, 0, 0, H);
-  vGrad.addColorStop(0, "rgba(0,0,0,0.55)");
-  vGrad.addColorStop(0.32, "rgba(0,0,0,0.22)");
-  vGrad.addColorStop(0.62, "rgba(0,0,0,0.42)");
-  vGrad.addColorStop(1, "rgba(0,0,0,0.92)");
-  ctx.fillStyle = vGrad;
+  // 2. Foco central de estadio (Lighting bloom con el color de la categoría)
+  const spot = ctx.createRadialGradient(CX, 460, 40, CX, 500, 720);
+  spot.addColorStop(0, hexToRgba(accent, 0.16));
+  spot.addColorStop(0.45, hexToRgba(accent, 0.05));
+  spot.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = spot;
   ctx.fillRect(0, 0, W, H);
 
-  // 2. Radial vignette — foco al centro, suave (menos recargado que antes)
-  const vig = ctx.createRadialGradient(CX, H * 0.46, H * 0.2, CX, H * 0.5, H * 0.95);
+  // 3. Foco ambiental superior
+  const topGlow = ctx.createRadialGradient(CX, 0, 20, CX, 0, 520);
+  topGlow.addColorStop(0, hexToRgba(accent, 0.1));
+  topGlow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = topGlow;
+  ctx.fillRect(0, 0, W, H);
+
+  // 4. Viñeta perimetral suave
+  const vig = ctx.createRadialGradient(CX, H * 0.48, H * 0.25, CX, H * 0.5, H * 0.85);
   vig.addColorStop(0, "rgba(0,0,0,0)");
-  vig.addColorStop(1, "rgba(0,0,0,0.55)");
+  vig.addColorStop(1, "rgba(0,0,0,0.65)");
   ctx.fillStyle = vig;
   ctx.fillRect(0, 0, W, H);
 
-  // 3. Ambient de categoría superior-derecha + inferior-izquierda — guiño de marca
-  const glow = ctx.createRadialGradient(W * 0.82, H * 0.12, 0, W * 0.82, H * 0.12, W * 0.72);
-  glow.addColorStop(0, hexToRgba(accent, 0.12));
-  glow.addColorStop(1, hexToRgba(accent, 0));
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, W, H);
-
-  const glow2 = ctx.createRadialGradient(W * 0.15, H * 0.9, 0, W * 0.15, H * 0.9, W * 0.6);
-  glow2.addColorStop(0, hexToRgba(accent, 0.07));
-  glow2.addColorStop(1, hexToRgba(accent, 0));
-  ctx.fillStyle = glow2;
-  ctx.fillRect(0, 0, W, H);
-
-  // 4. Marco redondeado estilo Apple: tarjeta con borde suave (sin esquinas duras)
+  // 5. Marco perimetral ultra-fino y elegante estilo editorial (sin doble marco)
   ctx.save();
-  const bm = 26, R = 58;
+  const bm = 22, R = 44;
   rr(ctx, bm, bm, W - bm * 2, H - bm * 2, R);
-  ctx.strokeStyle = hexToRgba(accent, 0.18);
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  rr(ctx, bm + 3, bm + 3, W - (bm + 3) * 2, H - (bm + 3) * 2, R - 3);
-  ctx.strokeStyle = "rgba(255,255,255,0.06)";
-  ctx.lineWidth = 1;
+  const borderGrad = ctx.createLinearGradient(bm, bm, W - bm, H - bm);
+  borderGrad.addColorStop(0, hexToRgba(accent, 0.35));
+  borderGrad.addColorStop(0.3, "rgba(255,255,255,0.1)");
+  borderGrad.addColorStop(0.7, "rgba(255,255,255,0.03)");
+  borderGrad.addColorStop(1, hexToRgba(accent, 0.15));
+  ctx.strokeStyle = borderGrad;
+  ctx.lineWidth = 1.5;
   ctx.stroke();
   ctx.restore();
 }
@@ -84,9 +78,8 @@ export function drawStadiumGrass(ctx: CanvasRenderingContext2D) {
 export function drawWatermark(ctx: CanvasRenderingContext2D, imgSantiso: HTMLImageElement | null) {
   if (!imgSantiso) return;
   ctx.save();
-  // Premium: tamaño grande, opacidad sutil pero visible sobre negro limpio
-  ctx.globalAlpha = 0.05;
-  const wSize = 1150;
+  ctx.globalAlpha = 0.045;
+  const wSize = 1180;
   ctx.drawImage(imgSantiso, CX - wSize / 2, H / 2 - wSize / 2, wSize, wSize);
   ctx.restore();
 }
@@ -123,7 +116,7 @@ export function drawTopLogos(
   xunta: HTMLImageElement | null,
   rfgf:  HTMLImageElement | null,
   xuntaIsLeft: boolean,
-  logoY = 30, logoH = 125
+  logoY = 32, logoH = 110
 ) {
   const leftImg  = xuntaIsLeft ? xunta : rfgf;
   const rightImg = xuntaIsLeft ? rfgf  : xunta;
@@ -132,19 +125,19 @@ export function drawTopLogos(
     if (img) {
       const r    = img.naturalWidth / img.naturalHeight;
       const rawW = height * r;
-      const w    = Math.max(Math.min(rawW, 280), 80);
+      const w    = Math.max(Math.min(rawW, 260), 80);
       const h    = w / r;
       const dy   = logoY + (logoH - h) / 2;
       const dx   = side === "left" ? edgeX : edgeX - w;
       ctx.drawImage(img, dx, dy, w, h);
     } else {
-      ctx.fillStyle = "rgba(255,255,255,0.06)";
-      const bw = 140;
+      ctx.fillStyle = "rgba(255,255,255,0.05)";
+      const bw = 130;
       const bx = side === "left" ? edgeX : edgeX - bw;
       rr(ctx, bx, logoY, bw, logoH, 8);
       ctx.fill();
-      ctx.fillStyle    = "rgba(255,255,255,0.3)";
-      ctx.font         = "700 13px 'Nunito'";
+      ctx.fillStyle    = "rgba(255,255,255,0.25)";
+      ctx.font         = "700 13px 'Outfit', sans-serif";
       ctx.textAlign    = side;
       ctx.textBaseline = "middle";
       const tx = side === "left" ? edgeX + 10 : edgeX - 10;
@@ -152,21 +145,22 @@ export function drawTopLogos(
     }
   }
 
-  const hXunta = 135;
-  const hRFGF  = 90;
+  const hXunta = 120;
+  const hRFGF  = 82;
 
   place(leftImg,  CL, "left",  xuntaIsLeft ? "XUNTA"  : "RFGF",  xuntaIsLeft ? hXunta : hRFGF);
   place(rightImg, CR, "right", xuntaIsLeft ? "RFGF"   : "XUNTA", xuntaIsLeft ? hRFGF  : hXunta);
 
-  // Golden separator — 28px below logo bottom
-  const sepY = logoY + logoH + 28;
+  // Divisor sutil y elegante de luz
+  const sepY = logoY + logoH + 20;
   const sepGrad = ctx.createLinearGradient(CL, 0, CR, 0);
-  sepGrad.addColorStop(0,   "rgba(201,164,32,0)");
-  sepGrad.addColorStop(0.2, "rgba(201,164,32,0.55)");
-  sepGrad.addColorStop(0.8, "rgba(201,164,32,0.55)");
-  sepGrad.addColorStop(1,   "rgba(201,164,32,0)");
+  sepGrad.addColorStop(0,   "rgba(255,255,255,0)");
+  sepGrad.addColorStop(0.2, "rgba(255,255,255,0.12)");
+  sepGrad.addColorStop(0.5, "rgba(255,255,255,0.22)");
+  sepGrad.addColorStop(0.8, "rgba(255,255,255,0.12)");
+  sepGrad.addColorStop(1,   "rgba(255,255,255,0)");
   ctx.strokeStyle = sepGrad;
-  ctx.lineWidth   = 1.5;
+  ctx.lineWidth   = 1;
   ctx.beginPath();
   ctx.moveTo(CL, sepY);
   ctx.lineTo(CR, sepY);
@@ -176,38 +170,39 @@ export function drawTopLogos(
 // ─── Sponsor bar ──────────────────────────────────────────────────────────────
 
 export function drawSponsorBar(ctx: CanvasRenderingContext2D, sponsors: HTMLImageElement[]) {
-  const SP_Y  = 1160;
-  const SP_H  = 160;
+  const SP_Y  = 1175;
+  const SP_H  = 140;
   const SLOTS = 5;
   const slotW = CW / SLOTS;
 
-  // Golden separator
-  const sepY = SP_Y - 12;
-  const sepGrad = ctx.createLinearGradient(CL, 0, CR, 0);
-  sepGrad.addColorStop(0,   "rgba(201,164,32,0)");
-  sepGrad.addColorStop(0.2, "rgba(201,164,32,0.55)");
-  sepGrad.addColorStop(0.8, "rgba(201,164,32,0.55)");
-  sepGrad.addColorStop(1,   "rgba(201,164,32,0)");
-  ctx.strokeStyle = sepGrad;
-  ctx.lineWidth   = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(CL, sepY);
-  ctx.lineTo(CR, sepY);
+  // Dock contenedor de patrocinadores en cristal esmerilado moderno
+  ctx.save();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.025)";
+  rr(ctx, CL, SP_Y, CW, SP_H, 24);
+  ctx.fill();
+
+  const dockBorder = ctx.createLinearGradient(CL, SP_Y, CR, SP_Y + SP_H);
+  dockBorder.addColorStop(0, "rgba(255,255,255,0.12)");
+  dockBorder.addColorStop(0.5, "rgba(255,255,255,0.05)");
+  dockBorder.addColorStop(1, "rgba(255,255,255,0.02)");
+  ctx.strokeStyle = dockBorder;
+  ctx.lineWidth = 1;
+  rr(ctx, CL, SP_Y, CW, SP_H, 24);
   ctx.stroke();
+  ctx.restore();
 
   for (let i = 0; i < SLOTS; i++) {
     const img    = sponsors[i];
     const slotCX = CL + slotW * i + slotW / 2;
-    const slotX  = CL + slotW * i;
 
     if (img) {
       const ratio = img.naturalWidth / img.naturalHeight;
-      const maxW  = slotW - 20;
-      let ih = SP_H - 20, iw = ih * ratio;
+      const maxW  = slotW - 24;
+      let ih = SP_H - 30, iw = ih * ratio;
       if (iw > maxW) { iw = maxW; ih = iw / ratio; }
-      const minH = (SP_H - 20) * 0.7;
+      const minH = (SP_H - 30) * 0.7;
       if (ih < minH) { ih = minH; iw = ih * ratio; if (iw > maxW) { iw = maxW; ih = iw / ratio; } }
-      ctx.globalAlpha = 0.92;
+      ctx.globalAlpha = 0.95;
       ctx.drawImage(img, slotCX - iw / 2, SP_Y + (SP_H - ih) / 2, iw, ih);
       ctx.globalAlpha = 1;
     }

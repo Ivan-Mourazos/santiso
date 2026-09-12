@@ -9,6 +9,23 @@ export function getSupabaseBrowserClient() {
     client = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          fetch: async (url, options) => {
+            try {
+              return await fetch(url, options);
+            } catch (err) {
+              return new Response(
+                JSON.stringify({ message: "Network unavailable", error: "Offline" }),
+                {
+                  status: 503,
+                  headers: { "Content-Type": "application/json" },
+                },
+              );
+            }
+          },
+        },
+      },
     );
   }
   return client;

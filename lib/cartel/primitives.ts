@@ -3,7 +3,7 @@
  * Low-level canvas utilities and atomic drawing helpers.
  */
 
-import { W, H, CX, GOLD, GREEN_TXT } from "./constants";
+import { CX, GOLD, FONT_DISPLAY } from "./constants";
 import type { CronEvent } from "./types";
 
 // ─── Image loading ────────────────────────────────────────────────────────────
@@ -83,15 +83,47 @@ export function fitFont(
   ctx: CanvasRenderingContext2D,
   text: string, maxW: number,
   startSize: number, minSize: number,
-  weight: string
+  weight: string,
+  fontFamily: string = FONT_DISPLAY
 ): number {
   let sz = startSize;
-  ctx.font = `${weight} ${sz}px 'Nunito', sans-serif`;
+  ctx.font = `${weight} ${sz}px ${fontFamily}`;
   while (ctx.measureText(text).width > maxW && sz > minSize) {
     sz--;
-    ctx.font = `${weight} ${sz}px 'Nunito', sans-serif`;
+    ctx.font = `${weight} ${sz}px ${fontFamily}`;
   }
   return sz;
+}
+
+// ─── Modern Glass Card ────────────────────────────────────────────────────────
+
+/** Draw a modern floating glass card with subtle gradient border and inner glow */
+export function drawGlassCard(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number, h: number,
+  r = 32,
+  options?: { borderAccent?: string; fillAlpha?: number }
+) {
+  ctx.save();
+  ctx.fillStyle = `rgba(255,255,255,${options?.fillAlpha ?? 0.035})`;
+  rr(ctx, x, y, w, h, r);
+  ctx.fill();
+
+  const strokeGrad = ctx.createLinearGradient(x, y, x + w * 0.4, y + h);
+  if (options?.borderAccent) {
+    strokeGrad.addColorStop(0, hexToRgba(options.borderAccent, 0.45));
+    strokeGrad.addColorStop(0.4, "rgba(255,255,255,0.12)");
+    strokeGrad.addColorStop(1, "rgba(255,255,255,0.02)");
+  } else {
+    strokeGrad.addColorStop(0, "rgba(255,255,255,0.16)");
+    strokeGrad.addColorStop(0.5, "rgba(255,255,255,0.06)");
+    strokeGrad.addColorStop(1, "rgba(255,255,255,0.02)");
+  }
+  ctx.strokeStyle = strokeGrad;
+  ctx.lineWidth = 1.5;
+  rr(ctx, x, y, w, h, r);
+  ctx.stroke();
+  ctx.restore();
 }
 
 // ─── Date formatting ──────────────────────────────────────────────────────────
@@ -109,21 +141,25 @@ export function fmtDate(s: string, long = false): string {
 
 // ─── Shield drawing ───────────────────────────────────────────────────────────
 
-/** Draw team shield with drop shadow. glowGold=true for Santiso. */
+/** Draw team shield with drop shadow and optional dynamic aura glow. */
 export function drawShield(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   cx: number, cy: number, size: number,
-  glowGold = false
+  glowGold = false,
+  auraColor?: string
 ) {
   ctx.save();
-  if (glowGold) {
-    ctx.shadowColor = "rgba(250,204,21,0.45)";
-    ctx.shadowBlur  = 32;
+  if (auraColor) {
+    ctx.shadowColor = hexToRgba(auraColor, 0.48);
+    ctx.shadowBlur  = 36;
+  } else if (glowGold) {
+    ctx.shadowColor = "rgba(250,204,21,0.48)";
+    ctx.shadowBlur  = 34;
   } else {
-    ctx.shadowColor   = "rgba(0,0,0,0.75)";
-    ctx.shadowBlur    = 28;
-    ctx.shadowOffsetY = 10;
+    ctx.shadowColor   = "rgba(0,0,0,0.8)";
+    ctx.shadowBlur    = 24;
+    ctx.shadowOffsetY = 8;
   }
   ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size);
   ctx.restore();
@@ -146,36 +182,37 @@ export function shieldPlaceholder(
 
 // ─── VS Badge ─────────────────────────────────────────────────────────────────
 
-/** Draw an impactful golden VS badge (replaces plain text). */
-export function drawVsBadge(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
-  const vsW = 120, vsH = 72;
+/** Draw an impactful, modern athletic VS badge. */
+export function drawVsBadge(ctx: CanvasRenderingContext2D, cx: number, cy: number, accent = GOLD) {
+  const vsW = 96, vsH = 64;
   ctx.save();
-  ctx.shadowColor = "rgba(250,204,21,0.55)";
-  ctx.shadowBlur  = 24;
-  ctx.fillStyle   = GOLD;
-  rr(ctx, cx - vsW / 2, cy - vsH / 2, vsW, vsH, 36);
+  ctx.shadowColor = hexToRgba(accent, 0.45);
+  ctx.shadowBlur  = 20;
+  ctx.fillStyle   = accent;
+  rr(ctx, cx - vsW / 2, cy - vsH / 2, vsW, vsH, 20);
   ctx.fill();
   ctx.restore();
 
   ctx.fillStyle    = "#000000";
-  ctx.font         = "900 48px 'Nunito', sans-serif";
+  ctx.font         = `900 36px ${FONT_DISPLAY}`;
   ctx.textAlign    = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("VS", cx, cy);
+  ctx.fillText("VS", cx, cy + 1);
 }
 
-// ─── Team name with gold glow for Santiso ─────────────────────────────────────
+// ─── Team name with glow for Santiso ──────────────────────────────────────────
 
 export function drawTeamName(
   ctx: CanvasRenderingContext2D,
   name: string, x: number, y: number,
-  maxW: number, isSantiso: boolean
+  maxW: number, isSantiso: boolean,
+  accent = GOLD
 ) {
-  fitFont(ctx, name, maxW, 28, 14, "800");
+  fitFont(ctx, name, maxW, 26, 14, "800", FONT_DISPLAY);
   if (isSantiso) {
     ctx.save();
-    ctx.shadowColor = "rgba(250,204,21,0.65)";
-    ctx.shadowBlur  = 18;
+    ctx.shadowColor = hexToRgba(accent, 0.6);
+    ctx.shadowBlur  = 16;
   }
   ctx.fillStyle    = "#ffffff";
   ctx.textAlign    = "center";

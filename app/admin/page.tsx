@@ -181,7 +181,6 @@ export default function AdminPage() {
             ) : showCategoryFilter ? (
               <div className="seg-tabs">
                 <button className={categoria === "Senior" ? "active" : ""} onClick={() => setCategoria("Senior")}>Senior</button>
-                <button className={categoria === "Femenino" ? "active" : ""} onClick={() => setCategoria("Femenino")}>Femenino</button>
                 <button className={categoria === "Veteranos" ? "active" : ""} onClick={() => setCategoria("Veteranos")}>Veteranos</button>
                 {activeView === 'plantilla' && (
                   <>
@@ -209,7 +208,6 @@ export default function AdminPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 <div className="seg-tabs" style={{ alignSelf: 'center' }}>
                   <button className={categoria === "SeniorStaff" ? "active" : ""} onClick={() => setCategoria("SeniorStaff")}>Senior</button>
-                  <button className={categoria === "FemeninoStaff" ? "active" : ""} onClick={() => setCategoria("FemeninoStaff")}>Femenino</button>
                   <button className={categoria === "VeteranosStaff" ? "active" : ""} onClick={() => setCategoria("VeteranosStaff")}>Veteranos</button>
                 </div>
                 {categoria.includes("Staff") ? (

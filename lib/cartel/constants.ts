@@ -29,14 +29,18 @@ export const CAT_TINT: Record<string, string> = {
   Veteranos: "rgba(20,40,100,0.08)",
 };
 
+// ─── Font constants ───────────────────────────────────────────────────────────
+export const FONT_DISPLAY = "'Outfit', sans-serif";
+export const FONT_BODY    = "'Outfit', 'Nunito', sans-serif";
+
 // ─── Category accent system ───────────────────────────────────────────────────
-// Color de marca por equipo: Sénior dorado, Feminino magenta, Veteranos verde-azul.
+// Color de marca dinámico: Sénior oro radiante, Feminino magenta moderno, Veteranos teal esmeralda.
 export const CAT_ACCENT: Record<string, string> = {
-  Senior:    GOLD,
-  "Sénior":  GOLD,
-  Femenino:  "#c77399",   // rosa empolvado, sobrio
-  Feminino:  "#c77399",
-  Veteranos: "#5fa595",   // teal salvia, apagado
+  Senior:    "#FACC15",
+  "Sénior":  "#FACC15",
+  Femenino:  "#F43F5E",   // Magenta deportivo vibrante
+  Feminino:  "#F43F5E",
+  Veteranos: "#14B8A6",   // Teal esmeralda fresco
 };
 
 /** Devuelve el acento de la categoría (dorado por defecto). */

@@ -55,14 +55,18 @@ export interface LeagueMatch {
 }
 
 export async function fetchCompeticiones(): Promise<CompetenciaRow[]> {
-  const { data, error } = await supabase
-    .from("competiciones")
-    .select("id,categoria,nombre,orden,activa,formato")
-    .order("categoria", { ascending: true })
-    .order("orden", { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from("competiciones")
+      .select("id,categoria,nombre,orden,activa,formato")
+      .order("categoria", { ascending: true })
+      .order("orden", { ascending: true });
 
-  if (error || !data) return [];
-  return (data as CompetenciaRow[]).filter((r) => r.activa !== false);
+    if (error || !data) return [];
+    return (data as CompetenciaRow[]).filter((r) => r.activa !== false);
+  } catch {
+    return [];
+  }
 }
 
 export function sortTeamsByName<T extends { nombre?: string | null }>(
@@ -76,57 +80,69 @@ export function sortTeamsByName<T extends { nombre?: string | null }>(
 }
 
 export async function fetchSeasons() {
-  const { data, error } = await supabase
-    .from("temporadas")
-    .select("*")
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("temporadas")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  return {
-    data: (data || []) as Season[],
-    error,
-    active: ((data || []).find((t: Season) => t.activa) ||
-      data?.[0] ||
-      null) as Season | null,
-  };
+    return {
+      data: (data || []) as Season[],
+      error,
+      active: ((data || []).find((t: Season) => t.activa) ||
+        data?.[0] ||
+        null) as Season | null,
+    };
+  } catch {
+    return { data: [], error: null, active: null };
+  }
 }
 
 export async function fetchTeamsByIds(ids: string[]) {
   const uniqueIds = [...new Set(ids.filter(Boolean))];
   if (uniqueIds.length === 0) return [] as Team[];
 
-  const { data, error } = await supabase
-    .from("equipos")
-    .select("*")
-    .in("id", uniqueIds)
-    .order("nombre", { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from("equipos")
+      .select("*")
+      .in("id", uniqueIds)
+      .order("nombre", { ascending: true });
 
-  if (error || !data) return [] as Team[];
-  return data as Team[];
+    if (error || !data) return [] as Team[];
+    return data as Team[];
+  } catch {
+    return [] as Team[];
+  }
 }
 
 export async function fetchTeamsForCompetition(
   categoria: string,
   competicionId: string,
 ) {
-  const { data: relations, error: relErr } = await supabase
-    .from("equipo_competiciones")
-    .select("equipo_id")
-    .eq("categoria", categoria)
-    .eq("competicion_id", competicionId);
+  try {
+    const { data: relations, error: relErr } = await supabase
+      .from("equipo_competiciones")
+      .select("equipo_id")
+      .eq("categoria", categoria)
+      .eq("competicion_id", competicionId);
 
-  if (relErr || !relations) return [];
-  const teamIds = relations.map((r: any) => r.equipo_id);
+    if (relErr || !relations) return [];
+    const teamIds = relations.map((r: any) => r.equipo_id);
 
-  if (teamIds.length === 0) return [];
+    if (teamIds.length === 0) return [];
 
-  const { data: teams, error: teamsErr } = await supabase
-    .from("equipos")
-    .select("*")
-    .in("id", teamIds)
-    .order("nombre", { ascending: true });
+    const { data: teams, error: teamsErr } = await supabase
+      .from("equipos")
+      .select("*")
+      .in("id", teamIds)
+      .order("nombre", { ascending: true });
 
-  if (teamsErr || !teams) return [];
-  return teams as Team[];
+    if (teamsErr || !teams) return [];
+    return teams as Team[];
+  } catch {
+    return [];
+  }
 }
 
 export async function mergeMissingTeams(current: Team[], ids: string[]) {
@@ -145,15 +161,19 @@ export async function fetchMatchdaysForCompetition(
   categoria: string,
   competicionId: string,
 ) {
-  const { data, error } = await supabase
-    .from("jornadas")
-    .select("*")
-    .eq("temporada_id", temporadaId)
-    .eq("categoria", categoria)
-    .eq("competicion_id", competicionId)
-    .order("numero", { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from("jornadas")
+      .select("*")
+      .eq("temporada_id", temporadaId)
+      .eq("categoria", categoria)
+      .eq("competicion_id", competicionId)
+      .order("numero", { ascending: true });
 
-  return { data: (data || []) as Matchday[], error };
+    return { data: (data || []) as Matchday[], error };
+  } catch {
+    return { data: [], error: null };
+  }
 }
 
 export async function fetchMatchesForMatchday(
@@ -166,13 +186,17 @@ export async function fetchMatchesForMatchday(
     ? "*,equipo_local:equipo_local_id(*),equipo_visitante:equipo_visitante_id(*),campo:campo_id(*),competiciones:competicion_id(id,nombre)"
     : "*";
 
-  const { data, error } = await supabase
-    .from("partidos_liga")
-    .select(select)
-    .eq("jornada_id", jornadaId)
-    .eq("categoria", categoria)
-    .eq("competicion_id", competicionId)
-    .order("fecha", { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from("partidos_liga")
+      .select(select)
+      .eq("jornada_id", jornadaId)
+      .eq("categoria", categoria)
+      .eq("competicion_id", competicionId)
+      .order("fecha", { ascending: true });
 
-  return { data: (data || []) as unknown as LeagueMatch[], error };
+    return { data: (data || []) as unknown as LeagueMatch[], error };
+  } catch {
+    return { data: [] as unknown as LeagueMatch[], error: null };
+  }
 }

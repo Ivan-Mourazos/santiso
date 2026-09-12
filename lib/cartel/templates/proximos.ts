@@ -4,8 +4,8 @@
  * Cada partido es un tile glass redondeado con el color de su categoría.
  */
 
-import { CX, CL, CW, GOLD, catAccent } from "../constants";
-import { rr, fitFont, drawShield, shieldPlaceholder, fmtDate, hexToRgba } from "../primitives";
+import { CX, CL, CW, GOLD, FONT_DISPLAY, catAccent } from "../constants";
+import { rr, fitFont, drawShield, shieldPlaceholder, fmtDate, drawGlassCard } from "../primitives";
 import type { NextMatch, CartelAssets } from "../types";
 import { drawSponsorBar, getSantisoName, drawWatermark } from "../shared";
 
@@ -30,84 +30,84 @@ export function drawProximos(
   // ── Título ──────────────────────────────────────────────────────────────────
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = "#8b9097";
-  ctx.font = "800 22px 'Nunito', sans-serif";
-  ctx.fillText("AXENDA DA FIN DE SEMANA", CX, 234);
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = `800 20px ${FONT_DISPLAY}`;
+  ctx.fillText("AXENDA DA FIN DE SEMANA", CX, 230);
 
   ctx.fillStyle = GOLD;
-  fitFont(ctx, "PRÓXIMOS ENCONTROS", CW, 70, 42, "900");
-  ctx.fillText("PRÓXIMOS ENCONTROS", CX, 302);
+  fitFont(ctx, "PRÓXIMOS ENCONTROS", CW - 40, 64, 38, "900", FONT_DISPLAY);
+  ctx.fillText("PRÓXIMOS ENCONTROS", CX, 296);
 
   // ── Filas (tiles) con centrado dinámico ─────────────────────────────────────
-  const validIndices = matches.map((m, i) => (m.rival ? i : -1)).filter((i) => i !== -1).slice(0, 3);
-  const n = validIndices.length;
+  // Mostramos los slots configurados (hasta 3)
+  const activeMatches = matches.slice(0, 3);
+  const n = Math.max(activeMatches.length, 1);
 
-  const headerEnd = 360;
-  const footerStart = 1140;
+  const headerEnd = 340;
+  const footerStart = 1150;
   const availableH = footerStart - headerEnd;
-  const rowH = Math.min(250, availableH / Math.max(n, 1));
+  const rowH = Math.min(255, availableH / n);
   const blockH = n * rowH;
   const startY = headerEnd + (availableH - blockH) / 2;
 
-  validIndices.forEach((idx, i) => {
-    const m = matches[idx];
+  activeMatches.forEach((m, idx) => {
     const imgRival = matchRivalImgs[idx];
     const accent = catAccent(m.categoria || "Senior");
     const gap = 16;
-    const cardY = startY + rowH * i + gap / 2;
+    const cardY = startY + rowH * idx + gap / 2;
     const cardH = rowH - gap;
     const midY = cardY + cardH / 2;
 
-    // Tile
-    ctx.fillStyle = "rgba(255,255,255,0.04)";
-    rr(ctx, CL, cardY, CW, cardH, 30); ctx.fill();
-    ctx.strokeStyle = hexToRgba(accent, 0.28);
-    ctx.lineWidth = 1.5;
-    rr(ctx, CL, cardY, CW, cardH, 30); ctx.stroke();
-    // Barra de acento a la izquierda del tile
+    // Modern Glass Tile
+    drawGlassCard(ctx, CL, cardY, CW, cardH, 28, { borderAccent: accent, fillAlpha: 0.04 });
+
+    // Barra de acento lateral
     ctx.fillStyle = accent;
-    rr(ctx, CL, cardY + cardH * 0.22, 5, cardH * 0.56, 3); ctx.fill();
+    rr(ctx, CL, cardY + cardH * 0.2, 5, cardH * 0.6, 3); ctx.fill();
 
     // Etiqueta categoría · fecha · hora
     const catLabel = m.categoria === "Femenino" ? "FEMININO" : m.categoria === "Veteranos" ? "VETERANOS" : "SÉNIOR";
-    const datePart = m.fecha ? fmtDate(m.fecha) : "";
+    const datePart = m.fecha ? fmtDate(m.fecha) : "DATA POR DEFINIR";
     const timePart = (m.hora || "").trim();
     const meta = [catLabel, datePart, timePart ? `${timePart}H` : ""].filter(Boolean).join("   ·   ");
     ctx.fillStyle = accent;
-    ctx.font = "900 18px 'Nunito', sans-serif";
+    ctx.font = `800 17px ${FONT_DISPLAY}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
-    ctx.fillText(meta, CX, cardY + 36);
+    ctx.fillText(meta, CX, cardY + 34);
 
     // Escudos
-    const ssX = m.santisoSide === "left" ? CX - 175 : CX + 175;
-    const rivX = m.santisoSide === "left" ? CX + 175 : CX - 175;
-    const sSize = 104;
+    const ssX = m.santisoSide === "left" ? CX - 180 : CX + 180;
+    const rivX = m.santisoSide === "left" ? CX + 180 : CX - 180;
+    const sSize = 98;
     const shieldY = midY + 16;
 
-    if (imgSantiso) drawShield(ctx, imgSantiso, ssX, shieldY, sSize, true);
+    if (imgSantiso) drawShield(ctx, imgSantiso, ssX, shieldY, sSize, false, accent);
     else shieldPlaceholder(ctx, ssX, shieldY, sSize / 2);
+
     if (imgRival) drawShield(ctx, imgRival, rivX, shieldY, sSize, false);
     else shieldPlaceholder(ctx, rivX, shieldY, sSize / 2);
 
-    // VS en cápsula de acento
-    const vsW = 70, vsH = 50;
+    // VS en cápsula moderna
+    const vsW = 68, vsH = 46;
     ctx.fillStyle = accent;
-    rr(ctx, CX - vsW / 2, shieldY - vsH / 2, vsW, vsH, vsH / 2); ctx.fill();
+    rr(ctx, CX - vsW / 2, shieldY - vsH / 2, vsW, vsH, 16); ctx.fill();
     ctx.fillStyle = "#000";
-    ctx.font = "900 24px 'Nunito', sans-serif";
+    ctx.font = `900 22px ${FONT_DISPLAY}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("VS", CX, shieldY + 1);
 
     // Nombres
     ctx.textBaseline = "alphabetic";
-    ctx.font = "800 16px 'Nunito', sans-serif";
+    ctx.font = `800 16px ${FONT_DISPLAY}`;
     ctx.fillStyle = "#fff";
     const sName = getSantisoName(m.categoria || "").toUpperCase();
-    const rName = (m.rival || "").toUpperCase();
-    ctx.fillText(sName, ssX, shieldY + sSize / 2 + 28);
-    ctx.fillText(rName, rivX, shieldY + sSize / 2 + 28);
+    const rName = (m.rival || "RIVAL").toUpperCase();
+    fitFont(ctx, sName, 190, 16, 12, "800", FONT_DISPLAY);
+    ctx.fillText(sName, ssX, shieldY + sSize / 2 + 24);
+    fitFont(ctx, rName, 190, 16, 12, "800", FONT_DISPLAY);
+    ctx.fillText(rName, rivX, shieldY + sSize / 2 + 24);
   });
 
   drawSponsorBar(ctx, assets.sponsors);

@@ -8,19 +8,28 @@ import {
   type CompetenciaRow,
 } from "@/lib/competition";
 
+import { COMPETICIONES_2026_2027 } from "@/lib/data/season-2026-2027";
+
 export function useCompeticiones(categoria?: string) {
   const [competicionesCatalog, setCompeticionesCatalog] = useState<
     CompetenciaRow[]
-  >([]);
+  >(COMPETICIONES_2026_2027);
   const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
   const [loadingCompeticiones, setLoadingCompeticiones] = useState(false);
 
   const loadCompeticiones = useCallback(async () => {
     setLoadingCompeticiones(true);
-    const list = await fetchCompeticiones();
-    setCompeticionesCatalog(list);
-    setLoadingCompeticiones(false);
-    return list;
+    try {
+      const list = await fetchCompeticiones();
+      const activeList = list && list.length > 0 ? list : COMPETICIONES_2026_2027;
+      setCompeticionesCatalog(activeList);
+      return activeList;
+    } catch {
+      setCompeticionesCatalog(COMPETICIONES_2026_2027);
+      return COMPETICIONES_2026_2027;
+    } finally {
+      setLoadingCompeticiones(false);
+    }
   }, []);
 
   useEffect(() => {

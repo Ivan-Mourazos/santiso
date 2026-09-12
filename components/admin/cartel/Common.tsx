@@ -15,12 +15,16 @@ export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children
   </p>
 );
 
-export const CategorySelector: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
+export const CategorySelector: React.FC<{
+  value: string;
+  onChange: (v: string) => void;
+  includeFemenino?: boolean;
+}> = ({ value, onChange, includeFemenino = false }) => (
   <div className="input-group" style={{ marginBottom: "1.5rem" }}>
     <label>Categoría</label>
     <select value={value} onChange={e => onChange(e.target.value)}>
       <option value="Senior">Senior</option>
-      <option value="Femenino">Femenino</option>
+      {includeFemenino && <option value="Femenino">Femenino</option>}
       <option value="Veteranos">Veteranos</option>
     </select>
   </div>

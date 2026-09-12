@@ -121,16 +121,20 @@ export default function AdminJornadas({
   useEffect(() => {
     if (!temporadaActiva || !selectedCompetitionId) return;
     async function load() {
-      const { data } = await supabase
-        .from("reglas_liga")
-        .select("*")
-        .eq("temporada_id", temporadaActiva.id)
-        .eq("categoria", categoria)
-        .eq("competicion_id", selectedCompetitionId)
-        .maybeSingle();
-      if (data?.reglas) {
-        setLeagueRules(Array.isArray(data.reglas) ? data.reglas : []);
-      } else {
+      try {
+        const { data } = await supabase
+          .from("reglas_liga")
+          .select("*")
+          .eq("temporada_id", temporadaActiva.id)
+          .eq("categoria", categoria)
+          .eq("competicion_id", selectedCompetitionId)
+          .maybeSingle();
+        if (data?.reglas) {
+          setLeagueRules(Array.isArray(data.reglas) ? data.reglas : []);
+        } else {
+          setLeagueRules([]);
+        }
+      } catch {
         setLeagueRules([]);
       }
     }
@@ -210,28 +214,33 @@ export default function AdminJornadas({
 
   async function fetchBaseData() {
     setIsFetching(true);
-    const [{ data: tData, active }, eData] = await Promise.all([
-      fetchSeasons(),
-      selectedCompetitionId
-        ? fetchTeamsForCompetition(categoria, selectedCompetitionId)
-        : Promise.resolve([]),
-    ]);
+    try {
+      const [{ data: tData, active }, eData] = await Promise.all([
+        fetchSeasons(),
+        selectedCompetitionId
+          ? fetchTeamsForCompetition(categoria, selectedCompetitionId)
+          : Promise.resolve([]),
+      ]);
 
-    setTemporadas(tData);
-    if (active) setTemporadaActiva(active);
-    setEquipos(eData);
+      setTemporadas(tData || []);
+      if (active) setTemporadaActiva(active);
+      setEquipos(eData || []);
 
-    // Campos
-    const { data: cData, error: cError } = await supabase
-      .from("campos_futbol")
-      .select("*")
-      .order("nombre");
-    if (cError) {
-      console.error("Error cargando campos:", cError);
-    } else if (cData) {
-      setCampos(cData);
+      // Campos
+      const { data: cData, error: cError } = await supabase
+        .from("campos_futbol")
+        .select("*")
+        .order("nombre");
+      if (cError) {
+        console.error("Error cargando campos:", cError);
+      } else if (cData) {
+        setCampos(cData);
+      }
+    } catch {
+      // Ignorar fallos de rede
+    } finally {
+      setIsFetching(false);
     }
-    setIsFetching(false);
   }
 
   useEffect(() => {

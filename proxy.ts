@@ -26,19 +26,27 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // Refresca el token si está próximo a expirar
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
-
-  // Rutas protegidas
-  const isAdminPage = pathname.startsWith("/admin");
-  const isAdminApi = pathname.startsWith("/api/admin");
-
   // Bypass de auth SOLO en desarrollo local (doble gate). Imposible en producción.
   const devBypass =
     process.env.NODE_ENV !== "production" &&
     process.env.DEV_AUTH_BYPASS === "1";
+
+  if (devBypass) {
+    return response;
+  }
+
+  // Refresca el token si está próximo a expirar
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data?.user ?? null;
+  } catch (err) {
+    // Si la BD no está disponible o no hay red, continuar sin usuario
+  }
+
+  const { pathname } = request.nextUrl;
+  const isAdminPage = pathname.startsWith("/admin");
+  const isAdminApi = pathname.startsWith("/api/admin");
 
   if ((isAdminPage || isAdminApi) && !user && !devBypass) {
     // API routes → 401 JSON

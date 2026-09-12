@@ -14,36 +14,37 @@ function isCompletedMatch(match: any) {
 }
 
 export async function getClasificacionData(categoria: string, competicionId: string) {
-  const [{ data: compData }, { data: partidosData }, baseTeams, { data: activeSeason }, { data: jornadasData }] = await Promise.all([
-    supabase.from("competiciones").select("formato").eq("id", competicionId).single(),
-    supabase
-      .from("partidos_liga")
-      .select("*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*)")
-      .eq("categoria", categoria)
-      .eq("competicion_id", competicionId)
-      // Eliminamos el eq("estado", "finalizado") para la copa, para mostrar partidos pendientes
-      // Para la liga lo filtramos luego
-      .order("fecha", { ascending: true }),
-    fetchTeamsForCompetition(categoria, competicionId),
-    supabase.from("temporadas").select("id").eq("activa", true).maybeSingle(),
-    supabase.from("jornadas").select("*").eq("competicion_id", competicionId).order("numero", { ascending: true })
-  ]);
+  try {
+    const [{ data: compData }, { data: partidosData }, baseTeams, { data: activeSeason }, { data: jornadasData }] = await Promise.all([
+      supabase.from("competiciones").select("formato").eq("id", competicionId).single(),
+      supabase
+        .from("partidos_liga")
+        .select("*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*)")
+        .eq("categoria", categoria)
+        .eq("competicion_id", competicionId)
+        // Eliminamos el eq("estado", "finalizado") para la copa, para mostrar partidos pendientes
+        // Para la liga lo filtramos luego
+        .order("fecha", { ascending: true }),
+      fetchTeamsForCompetition(categoria, competicionId),
+      supabase.from("temporadas").select("id").eq("activa", true).maybeSingle(),
+      supabase.from("jornadas").select("*").eq("competicion_id", competicionId).order("numero", { ascending: true })
+    ]);
 
-  const formato = compData?.formato || "liga";
+    const formato = compData?.formato || "liga";
 
-  // Si es COPA (eliminatoria), devolvemos las rondas
-  if (formato === "eliminatoria") {
-    const treeRounds = (jornadasData || []).map((j: any) => {
-      const matches = (partidosData || []).filter((p: any) => p.jornada_id === j.id);
-      return {
-        id: j.id,
-        numero: j.numero,
-        nombre: j.nombre_fase || `Ronda ${j.numero}`,
-        partidos: matches,
-      };
-    });
-    return { formato, equipos: treeRounds, reglas: [] };
-  }
+    // Si es COPA (eliminatoria), devolvemos las rondas
+    if (formato === "eliminatoria") {
+      const treeRounds = (jornadasData || []).map((j: any) => {
+        const matches = (partidosData || []).filter((p: any) => p.jornada_id === j.id);
+        return {
+          id: j.id,
+          numero: j.numero,
+          nombre: j.nombre_fase || `Ronda ${j.numero}`,
+          partidos: matches,
+        };
+      });
+      return { formato, equipos: treeRounds, reglas: [] };
+    }
 
   // Si es LIGA, computamos partidos con resultado aunque el estado venga sin actualizar.
   const partidosFinalizados = (partidosData || []).filter(isCompletedMatch);
@@ -134,4 +135,7 @@ export async function getClasificacionData(categoria: string, competicionId: str
   });
 
   return { formato, equipos: sorted, reglas: fetchedRules };
+  } catch {
+    return { formato: "liga", equipos: [], reglas: [] };
+  }
 }

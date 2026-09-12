@@ -11,5 +11,21 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
  */
 export const supabase = typeof window !== "undefined" 
   ? getSupabaseBrowserClient() 
-  : createClient(supabaseUrl, supabaseAnonKey);
+  : createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        fetch: async (url, options) => {
+          try {
+            return await fetch(url, options);
+          } catch {
+            return new Response(
+              JSON.stringify({ message: "Network unavailable", error: "Offline" }),
+              {
+                status: 503,
+                headers: { "Content-Type": "application/json" },
+              },
+            );
+          }
+        },
+      },
+    });
 
