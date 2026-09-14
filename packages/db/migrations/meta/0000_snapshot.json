@@ -1,0 +1,1505 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "6e6a86b8-ba0d-40f9-9b43-5d2b549b42c6",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "tables": {
+    "campos": {
+      "name": "campos",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "clave": {
+          "name": "clave",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "poblacion": {
+          "name": "poblacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "campos_clave_unique": {
+          "name": "campos_clave_unique",
+          "columns": [
+            "clave"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "jornada_descansos": {
+      "name": "jornada_descansos",
+      "columns": {
+        "jornada_id": {
+          "name": "jornada_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "equipo_id": {
+          "name": "equipo_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "jornada_descansos_equipo_idx": {
+          "name": "jornada_descansos_equipo_idx",
+          "columns": [
+            "equipo_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "jornada_descansos_jornada_id_jornadas_id_fk": {
+          "name": "jornada_descansos_jornada_id_jornadas_id_fk",
+          "tableFrom": "jornada_descansos",
+          "tableTo": "jornadas",
+          "columnsFrom": [
+            "jornada_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "jornada_descansos_equipo_id_equipos_id_fk": {
+          "name": "jornada_descansos_equipo_id_equipos_id_fk",
+          "tableFrom": "jornada_descansos",
+          "tableTo": "equipos",
+          "columnsFrom": [
+            "equipo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "jornada_descansos_jornada_id_equipo_id_pk": {
+          "columns": [
+            "jornada_id",
+            "equipo_id"
+          ],
+          "name": "jornada_descansos_jornada_id_equipo_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "jornadas": {
+      "name": "jornadas",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "competicion_id": {
+          "name": "competicion_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "numero": {
+          "name": "numero",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre_fase": {
+          "name": "nombre_fase",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "fecha_inicio": {
+          "name": "fecha_inicio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "fecha_fin": {
+          "name": "fecha_fin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "jornadas_competicion_numero_uq": {
+          "name": "jornadas_competicion_numero_uq",
+          "columns": [
+            "competicion_id",
+            "numero"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "jornadas_competicion_id_competiciones_id_fk": {
+          "name": "jornadas_competicion_id_competiciones_id_fk",
+          "tableFrom": "jornadas",
+          "tableTo": "competiciones",
+          "columnsFrom": [
+            "competicion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "jornadas_numero_ck": {
+          "name": "jornadas_numero_ck",
+          "value": "\"numero\" > 0"
+        }
+      }
+    },
+    "partidos": {
+      "name": "partidos",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "jornada_id": {
+          "name": "jornada_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "equipo_local_id": {
+          "name": "equipo_local_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "equipo_visitante_id": {
+          "name": "equipo_visitante_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "goles_local": {
+          "name": "goles_local",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "goles_visitante": {
+          "name": "goles_visitante",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "estado": {
+          "name": "estado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'programado'"
+        },
+        "fecha": {
+          "name": "fecha",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "campo_id": {
+          "name": "campo_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "partidos_jornada_cruce_uq": {
+          "name": "partidos_jornada_cruce_uq",
+          "columns": [
+            "jornada_id",
+            "equipo_local_id",
+            "equipo_visitante_id"
+          ],
+          "isUnique": true
+        },
+        "partidos_fecha_idx": {
+          "name": "partidos_fecha_idx",
+          "columns": [
+            "fecha"
+          ],
+          "isUnique": false
+        },
+        "partidos_local_idx": {
+          "name": "partidos_local_idx",
+          "columns": [
+            "equipo_local_id"
+          ],
+          "isUnique": false
+        },
+        "partidos_visitante_idx": {
+          "name": "partidos_visitante_idx",
+          "columns": [
+            "equipo_visitante_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "partidos_jornada_id_jornadas_id_fk": {
+          "name": "partidos_jornada_id_jornadas_id_fk",
+          "tableFrom": "partidos",
+          "tableTo": "jornadas",
+          "columnsFrom": [
+            "jornada_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "partidos_equipo_local_id_equipos_id_fk": {
+          "name": "partidos_equipo_local_id_equipos_id_fk",
+          "tableFrom": "partidos",
+          "tableTo": "equipos",
+          "columnsFrom": [
+            "equipo_local_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "partidos_equipo_visitante_id_equipos_id_fk": {
+          "name": "partidos_equipo_visitante_id_equipos_id_fk",
+          "tableFrom": "partidos",
+          "tableTo": "equipos",
+          "columnsFrom": [
+            "equipo_visitante_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "partidos_campo_id_campos_id_fk": {
+          "name": "partidos_campo_id_campos_id_fk",
+          "tableFrom": "partidos",
+          "tableTo": "campos",
+          "columnsFrom": [
+            "campo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "partidos_estado_ck": {
+          "name": "partidos_estado_ck",
+          "value": "\"estado\" in ('programado', 'en_juego', 'finalizado', 'aplazado', 'cancelado')"
+        },
+        "partidos_equipos_distintos_ck": {
+          "name": "partidos_equipos_distintos_ck",
+          "value": "\"equipo_local_id\" <> \"equipo_visitante_id\""
+        },
+        "partidos_marcador_completo_ck": {
+          "name": "partidos_marcador_completo_ck",
+          "value": "(\"goles_local\" is null) = (\"goles_visitante\" is null)"
+        },
+        "partidos_goles_no_negativos_ck": {
+          "name": "partidos_goles_no_negativos_ck",
+          "value": "coalesce(\"goles_local\", 0) >= 0 and coalesce(\"goles_visitante\", 0) >= 0"
+        },
+        "partidos_finalizado_con_marcador_ck": {
+          "name": "partidos_finalizado_con_marcador_ck",
+          "value": "\"estado\" <> 'finalizado' or \"goles_local\" is not null"
+        }
+      }
+    },
+    "ajustes": {
+      "name": "ajustes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "valor": {
+          "name": "valor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "patrocinadores": {
+      "name": "patrocinadores",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "clave": {
+          "name": "clave",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "logo": {
+          "name": "logo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "web_url": {
+          "name": "web_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "en_carteles": {
+          "name": "en_carteles",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "patrocinadores_clave_unique": {
+          "name": "patrocinadores_clave_unique",
+          "columns": [
+            "clave"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "clasificacion_ajustes": {
+      "name": "clasificacion_ajustes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "competicion_id": {
+          "name": "competicion_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "equipo_id": {
+          "name": "equipo_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "puntos": {
+          "name": "puntos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "motivo": {
+          "name": "motivo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "clasificacion_ajustes_competicion_idx": {
+          "name": "clasificacion_ajustes_competicion_idx",
+          "columns": [
+            "competicion_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "clasificacion_ajustes_competicion_id_competiciones_id_fk": {
+          "name": "clasificacion_ajustes_competicion_id_competiciones_id_fk",
+          "tableFrom": "clasificacion_ajustes",
+          "tableTo": "competiciones",
+          "columnsFrom": [
+            "competicion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "clasificacion_ajustes_equipo_id_equipos_id_fk": {
+          "name": "clasificacion_ajustes_equipo_id_equipos_id_fk",
+          "tableFrom": "clasificacion_ajustes",
+          "tableTo": "equipos",
+          "columnsFrom": [
+            "equipo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "clasificacion_ajustes_puntos_ck": {
+          "name": "clasificacion_ajustes_puntos_ck",
+          "value": "\"puntos\" <> 0"
+        }
+      }
+    },
+    "competicion_alias": {
+      "name": "competicion_alias",
+      "columns": {
+        "competicion_id": {
+          "name": "competicion_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "alias": {
+          "name": "alias",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "clave": {
+          "name": "clave",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "competicion_alias_competicion_id_competiciones_id_fk": {
+          "name": "competicion_alias_competicion_id_competiciones_id_fk",
+          "tableFrom": "competicion_alias",
+          "tableTo": "competiciones",
+          "columnsFrom": [
+            "competicion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "competicion_alias_competicion_id_clave_pk": {
+          "columns": [
+            "competicion_id",
+            "clave"
+          ],
+          "name": "competicion_alias_competicion_id_clave_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "competicion_equipos": {
+      "name": "competicion_equipos",
+      "columns": {
+        "competicion_id": {
+          "name": "competicion_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "equipo_id": {
+          "name": "equipo_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "competicion_equipos_equipo_idx": {
+          "name": "competicion_equipos_equipo_idx",
+          "columns": [
+            "equipo_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "competicion_equipos_competicion_id_competiciones_id_fk": {
+          "name": "competicion_equipos_competicion_id_competiciones_id_fk",
+          "tableFrom": "competicion_equipos",
+          "tableTo": "competiciones",
+          "columnsFrom": [
+            "competicion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "competicion_equipos_equipo_id_equipos_id_fk": {
+          "name": "competicion_equipos_equipo_id_equipos_id_fk",
+          "tableFrom": "competicion_equipos",
+          "tableTo": "equipos",
+          "columnsFrom": [
+            "equipo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "competicion_equipos_competicion_id_equipo_id_pk": {
+          "columns": [
+            "competicion_id",
+            "equipo_id"
+          ],
+          "name": "competicion_equipos_competicion_id_equipo_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "competiciones": {
+      "name": "competiciones",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "temporada_id": {
+          "name": "temporada_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "formato": {
+          "name": "formato",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'liga'"
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "reglas_clasificacion": {
+          "name": "reglas_clasificacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "competiciones_temporada_categoria_nombre_uq": {
+          "name": "competiciones_temporada_categoria_nombre_uq",
+          "columns": [
+            "temporada_id",
+            "categoria",
+            "nombre"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "competiciones_temporada_id_temporadas_id_fk": {
+          "name": "competiciones_temporada_id_temporadas_id_fk",
+          "tableFrom": "competiciones",
+          "tableTo": "temporadas",
+          "columnsFrom": [
+            "temporada_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "competiciones_categoria_ck": {
+          "name": "competiciones_categoria_ck",
+          "value": "\"categoria\" in ('Senior', 'Femenino', 'Veteranos')"
+        },
+        "competiciones_formato_ck": {
+          "name": "competiciones_formato_ck",
+          "value": "\"formato\" in ('liga', 'eliminatoria')"
+        }
+      }
+    },
+    "temporadas": {
+      "name": "temporadas",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "activa": {
+          "name": "activa",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "temporadas_nombre_unique": {
+          "name": "temporadas_nombre_unique",
+          "columns": [
+            "nombre"
+          ],
+          "isUnique": true
+        },
+        "temporadas_una_activa_uq": {
+          "name": "temporadas_una_activa_uq",
+          "columns": [
+            "activa"
+          ],
+          "isUnique": true,
+          "where": "\"activa\" = 1"
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "partido_eventos": {
+      "name": "partido_eventos",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "partido_id": {
+          "name": "partido_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "lado": {
+          "name": "lado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "propia": {
+          "name": "propia",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "minuto": {
+          "name": "minuto",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "jugador_id": {
+          "name": "jugador_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "jugador_sale_id": {
+          "name": "jugador_sale_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "nombre_rival": {
+          "name": "nombre_rival",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "partido_eventos_partido_minuto_idx": {
+          "name": "partido_eventos_partido_minuto_idx",
+          "columns": [
+            "partido_id",
+            "minuto"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "partido_eventos_partido_id_partidos_id_fk": {
+          "name": "partido_eventos_partido_id_partidos_id_fk",
+          "tableFrom": "partido_eventos",
+          "tableTo": "partidos",
+          "columnsFrom": [
+            "partido_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "partido_eventos_jugador_id_jugadores_id_fk": {
+          "name": "partido_eventos_jugador_id_jugadores_id_fk",
+          "tableFrom": "partido_eventos",
+          "tableTo": "jugadores",
+          "columnsFrom": [
+            "jugador_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "partido_eventos_jugador_sale_id_jugadores_id_fk": {
+          "name": "partido_eventos_jugador_sale_id_jugadores_id_fk",
+          "tableFrom": "partido_eventos",
+          "tableTo": "jugadores",
+          "columnsFrom": [
+            "jugador_sale_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "partido_eventos_tipo_ck": {
+          "name": "partido_eventos_tipo_ck",
+          "value": "\"tipo\" in ('gol', 'tarjeta_amarilla', 'tarjeta_roja', 'cambio')"
+        },
+        "partido_eventos_lado_ck": {
+          "name": "partido_eventos_lado_ck",
+          "value": "\"lado\" in ('propio', 'rival')"
+        },
+        "partido_eventos_propia_solo_gol_ck": {
+          "name": "partido_eventos_propia_solo_gol_ck",
+          "value": "not \"propia\" or \"tipo\" = 'gol'"
+        },
+        "partido_eventos_cambio_ck": {
+          "name": "partido_eventos_cambio_ck",
+          "value": "\"tipo\" <> 'cambio' or (\"lado\" = 'propio' and \"jugador_id\" is not null and \"jugador_sale_id\" is not null)"
+        },
+        "partido_eventos_minuto_ck": {
+          "name": "partido_eventos_minuto_ck",
+          "value": "\"minuto\" is null or \"minuto\" between 0 and 130"
+        }
+      }
+    },
+    "partido_participaciones": {
+      "name": "partido_participaciones",
+      "columns": {
+        "partido_id": {
+          "name": "partido_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "jugador_id": {
+          "name": "jugador_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "titular": {
+          "name": "titular",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "jugo": {
+          "name": "jugo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        }
+      },
+      "indexes": {
+        "partido_participaciones_jugador_idx": {
+          "name": "partido_participaciones_jugador_idx",
+          "columns": [
+            "jugador_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "partido_participaciones_partido_id_partidos_id_fk": {
+          "name": "partido_participaciones_partido_id_partidos_id_fk",
+          "tableFrom": "partido_participaciones",
+          "tableTo": "partidos",
+          "columnsFrom": [
+            "partido_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "partido_participaciones_jugador_id_jugadores_id_fk": {
+          "name": "partido_participaciones_jugador_id_jugadores_id_fk",
+          "tableFrom": "partido_participaciones",
+          "tableTo": "jugadores",
+          "columnsFrom": [
+            "jugador_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "partido_participaciones_partido_id_jugador_id_pk": {
+          "columns": [
+            "partido_id",
+            "jugador_id"
+          ],
+          "name": "partido_participaciones_partido_id_jugador_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "partido_participaciones_titular_jugo_ck": {
+          "name": "partido_participaciones_titular_jugo_ck",
+          "value": "not \"titular\" or \"jugo\""
+        }
+      }
+    },
+    "equipos": {
+      "name": "equipos",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "clave": {
+          "name": "clave",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "es_propio": {
+          "name": "es_propio",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "escudo": {
+          "name": "escudo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "equipos_categoria_clave_uq": {
+          "name": "equipos_categoria_clave_uq",
+          "columns": [
+            "categoria",
+            "clave"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "equipos_categoria_ck": {
+          "name": "equipos_categoria_ck",
+          "value": "\"categoria\" in ('Senior', 'Femenino', 'Veteranos')"
+        }
+      }
+    },
+    "jugadores": {
+      "name": "jugadores",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "apodo": {
+          "name": "apodo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "dorsal": {
+          "name": "dorsal",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "posicion": {
+          "name": "posicion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "posiciones_conocidas": {
+          "name": "posiciones_conocidas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
+        },
+        "capitania": {
+          "name": "capitania",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "foto": {
+          "name": "foto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "fecha_nacimiento": {
+          "name": "fecha_nacimiento",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "historial": {
+          "name": "historial",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
+        },
+        "compromiso": {
+          "name": "compromiso",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "jugadores_categoria_dorsal_idx": {
+          "name": "jugadores_categoria_dorsal_idx",
+          "columns": [
+            "categoria",
+            "dorsal"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "jugadores_categoria_ck": {
+          "name": "jugadores_categoria_ck",
+          "value": "\"categoria\" in ('Senior', 'Femenino', 'Veteranos')"
+        },
+        "jugadores_posicion_ck": {
+          "name": "jugadores_posicion_ck",
+          "value": "\"posicion\" in ('POR', 'LD', 'DFC', 'LI', 'MCD', 'MC', 'MCO', 'MD', 'MI', 'ED', 'EI', 'DC')"
+        },
+        "jugadores_capitania_ck": {
+          "name": "jugadores_capitania_ck",
+          "value": "\"capitania\" is null or \"capitania\" > 0"
+        }
+      }
+    },
+    "staff": {
+      "name": "staff",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cargo": {
+          "name": "cargo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "foto": {
+          "name": "foto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "staff_tipo_ck": {
+          "name": "staff_tipo_ck",
+          "value": "\"tipo\" in ('tecnico', 'directiva')"
+        },
+        "staff_categoria_ck": {
+          "name": "staff_categoria_ck",
+          "value": "\"categoria\" in ('Senior', 'Femenino', 'Veteranos')"
+        },
+        "staff_categoria_segun_tipo_ck": {
+          "name": "staff_categoria_segun_tipo_ck",
+          "value": "(\"tipo\" = 'directiva' and \"categoria\" is null) or (\"tipo\" = 'tecnico' and \"categoria\" is not null)"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

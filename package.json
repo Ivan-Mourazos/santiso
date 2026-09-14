@@ -16,7 +16,9 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test"
+    "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
+    "db:generate": "pnpm --filter @santiso/db generate",
+    "db:studio": "pnpm --filter @santiso/db studio"
   },
   "devDependencies": {
     "@types/node": "catalog:",
