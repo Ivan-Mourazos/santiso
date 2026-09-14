@@ -33,7 +33,7 @@ describe("copiarBd", () => {
     const copia = await abrirDb(urlArchivo(destino));
     const integridad = (await copia.cliente.execute("PRAGMA integrity_check")).rows[0]?.[
       "integrity_check"
-    ] as string | undefined;
+    ];
     const temporadas = await copia.db.select().from(s.temporadas);
     copia.cerrar();
     expect(integridad).toBe("ok");
