@@ -41,5 +41,6 @@ export const MINUTO_MAXIMO = 130;
 
 /** Comprueba y estrecha el tipo de un texto a un catálogo cerrado. */
 export function esValorDe<T extends string>(valores: readonly T[], valor: string): valor is T {
+  // includes() exige el tipo de los elementos (T); ampliar a string es seguro porque solo se lee.
   return (valores as readonly string[]).includes(valor);
 }
