@@ -1,0 +1,8 @@
+apps/studio
+legacy
+data
+docs
+packages/db/migrations
+pnpm-lock.yaml
+AGENTS.md
+README.md

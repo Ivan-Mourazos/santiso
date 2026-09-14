@@ -6,3 +6,16 @@ packages:
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+
+catalog:
+  "@libsql/client": 0.18.0
+  "@types/node": ^22.0.0
+  drizzle-kit: 0.31.10
+  drizzle-orm: 0.45.2
+  eslint: ^9.0.0
+  prettier: 3.9.6
+  tsx: 4.23.13
+  typescript: 5.9.3
+  typescript-eslint: ^8.0.0
+  vitest: 4.1.11
+  zod: 4.6.4

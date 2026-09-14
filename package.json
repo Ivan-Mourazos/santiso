@@ -9,6 +9,21 @@
   "scripts": {
     "dev": "pnpm --filter @santiso/studio dev",
     "build": "pnpm --filter @santiso/studio build",
-    "lint:studio": "pnpm --filter @santiso/studio lint"
+    "lint:studio": "pnpm --filter @santiso/studio lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "eslint packages tools --no-error-on-unmatched-pattern",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
   }
 }
