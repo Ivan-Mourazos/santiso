@@ -7,6 +7,9 @@
 - **Entorno:** `apps/studio/.env.local` (ignorado por git; puede existir aunque la búsqueda de ficheros no lo muestre).
 - **Datos locales:** `data/` (ignorado): `santiso.db`, `media/`, `snapshots/`, `backups/`, `informes/`.
 - **Arquitectura y hoja de ruta:** `docs/superpowers/specs/2026-09-13-santiso-studio-local-first.md`.
+- **Base de datos:** Drizzle 0.45 (solo query builder core, nunca `db.query`) sobre libSQL. Cambios de esquema: editar `packages/db/src/schema`, `pnpm db:generate --name <cambio>`, pruebas en `packages/db/src/schema.test.ts`.
+- **libSQL en Windows:** no libera el fichero hasta que termina el proceso. Para mover o borrar ficheros de BD, hazlo desde otro proceso y con `pnpm dev` parado.
+- **Supabase:** solo lectura y solo desde `tools/migracion-supabase` hasta su retirada en la Fase 2.
 <!-- END:tooling-env -->
 
 <!-- BEGIN:nextjs-agent-rules -->
