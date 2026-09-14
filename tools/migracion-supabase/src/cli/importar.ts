@@ -1,13 +1,19 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, renameSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DIR_BACKUPS, DIR_INFORMES, DIR_MEDIA, marcaFichero, RUTA_BD } from "@santiso/db";
-import { ultimoSnapshot } from "../snapshot/archivos";
+import { resolverArgSnapshot, ultimoSnapshot } from "../snapshot/archivos";
+import {
+  BdEnUsoError,
+  IntercambioFallidoError,
+  intercambiarFicheros,
+  moverBdActualABackup,
+} from "./intercambio-bd";
 
 const marca = marcaFichero();
-const dirSnapshot = process.argv[2] ? path.resolve(process.argv[2]) : ultimoSnapshot();
+const dirSnapshot = resolverArgSnapshot(process.argv[2]) ?? ultimoSnapshot();
 const bdTemporal = `${RUTA_BD}.importando`;
 const mediaTemporal = `${DIR_MEDIA}.importando`;
 const rutaInforme = path.join(DIR_INFORMES, `migracion-${marca}.md`);
@@ -33,24 +39,36 @@ try {
 
 // libSQL solo libera los ficheros al terminar su proceso: el cambio se hace aquí, con el hijo ya cerrado.
 mkdirSync(DIR_BACKUPS, { recursive: true });
-if (existsSync(RUTA_BD)) {
-  try {
-    renameSync(RUTA_BD, path.join(DIR_BACKUPS, `santiso-${marca}.db`));
-  } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "EBUSY") {
-      console.error("La base de datos está en uso. Cierra `pnpm dev` y repite la importación.");
-      process.exit(1);
-    }
-    throw error;
+const bdBackup = path.join(DIR_BACKUPS, `santiso-${marca}.db`);
+const mediaBackup = path.join(DIR_BACKUPS, `media-${marca}`);
+
+let sufijosBdRespaldados: string[];
+try {
+  sufijosBdRespaldados = moverBdActualABackup(RUTA_BD, bdBackup);
+} catch (error) {
+  if (error instanceof BdEnUsoError) {
+    console.error(error.message);
+    process.exit(1);
   }
-  for (const sufijo of ["-wal", "-shm"]) {
-    if (existsSync(RUTA_BD + sufijo)) {
-      renameSync(RUTA_BD + sufijo, path.join(DIR_BACKUPS, `santiso-${marca}.db${sufijo}`));
-    }
-  }
+  throw error;
 }
-if (existsSync(DIR_MEDIA)) renameSync(DIR_MEDIA, path.join(DIR_BACKUPS, `media-${marca}`));
-renameSync(bdTemporal, RUTA_BD);
-if (existsSync(mediaTemporal)) renameSync(mediaTemporal, DIR_MEDIA);
+
+try {
+  intercambiarFicheros({
+    rutaBd: RUTA_BD,
+    dirMedia: DIR_MEDIA,
+    bdTemporal,
+    mediaTemporal,
+    bdBackup,
+    mediaBackup,
+    sufijosBdRespaldados,
+  });
+} catch (error) {
+  if (error instanceof IntercambioFallidoError) {
+    console.error(`\n${error.message}`);
+    process.exit(1);
+  }
+  throw error;
+}
 
 console.log(`\nBase de datos lista: ${RUTA_BD}\nInforme: ${rutaInforme}`);

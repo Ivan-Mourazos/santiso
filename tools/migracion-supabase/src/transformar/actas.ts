@@ -110,7 +110,7 @@ export function transformarActas(
           titular: false,
           jugo: true,
         });
-        informe.participacionesCreadas++;
+        informe.participacionesCreadas.push({ partidoId: evento.partidoId, jugadorId });
       } else if (!existente.jugo) {
         existente.jugo = true;
         informe.avisos.push(

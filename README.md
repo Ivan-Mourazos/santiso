@@ -46,7 +46,7 @@ pnpm dev          # http://localhost:3000/admin
 
 - `data/` contiene datos personales (nombres, fechas de nacimiento, fotos): **nunca** se sube a git.
 - Haz `pnpm db:backup` con frecuencia y sincroniza `data/backups/` con una carpeta en la nube.
-- **Restaurar una copia:** para `pnpm dev`, mueve `data/santiso.db` a otro sitio y copia el fichero de `data/backups/` como `data/santiso.db`.
+- **Restaurar una copia:** para `pnpm dev`, mueve `data/santiso.db`, `data/santiso.db-wal` y `data/santiso.db-shm` (los que existan) juntos a otro sitio y copia el fichero de `data/backups/` como `data/santiso.db`.
 - Importar o restaurar exige la app parada: en Windows, libSQL bloquea el fichero mientras el proceso vive.
 
 ## Documentación

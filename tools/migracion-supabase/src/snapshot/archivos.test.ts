@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { manifiestoPara, snapshotMinimo } from "../test/fabricas";
-import { escribirSnapshot, leerSnapshot, ultimoSnapshot } from "./archivos";
+import { escribirSnapshot, leerSnapshot, resolverArgSnapshot, ultimoSnapshot } from "./archivos";
 
 const dirTemporal = () => mkdtempSync(path.join(tmpdir(), "santiso-snapshot-"));
 
@@ -41,5 +41,29 @@ describe("ultimoSnapshot", () => {
 
   it("explica qué hacer si no hay snapshots", () => {
     expect(() => ultimoSnapshot(dirTemporal())).toThrow(/pnpm migracion:exportar/);
+  });
+});
+
+describe("resolverArgSnapshot", () => {
+  it("sin argumento devuelve undefined", () => {
+    expect(resolverArgSnapshot(undefined)).toBeUndefined();
+  });
+
+  it("resuelve una ruta relativa contra INIT_CWD, no contra process.cwd()", () => {
+    const antes = process.env.INIT_CWD;
+    process.env.INIT_CWD = path.join(tmpdir(), "init-cwd-simulado");
+    try {
+      expect(resolverArgSnapshot("un-snapshot")).toBe(
+        path.resolve(path.join(tmpdir(), "init-cwd-simulado"), "un-snapshot"),
+      );
+    } finally {
+      if (antes === undefined) delete process.env.INIT_CWD;
+      else process.env.INIT_CWD = antes;
+    }
+  });
+
+  it("una ruta absoluta se devuelve normalizada, sin depender de INIT_CWD", () => {
+    const absoluta = path.join(dirTemporal(), "snapshot-absoluto");
+    expect(resolverArgSnapshot(absoluta)).toBe(path.resolve(absoluta));
   });
 });

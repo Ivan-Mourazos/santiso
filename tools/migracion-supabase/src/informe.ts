@@ -64,7 +64,13 @@ export function renderizarInforme({
     "",
     "## Participaciones creadas desde eventos",
     "",
-    String(informe.participacionesCreadas),
+    String(informe.participacionesCreadas.length),
+    "",
+    ...(informe.participacionesCreadas.length > 0
+      ? informe.participacionesCreadas.map(
+          (p) => `- partido ${p.partidoId}: jugador ${p.jugadorId}`,
+        )
+      : []),
     "",
     "## Clasificación manual antigua",
     "",

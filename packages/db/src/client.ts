@@ -21,7 +21,10 @@ export async function abrirDb(
   url: string,
   { wal = true }: OpcionesConexion = {},
 ): Promise<ConexionDb> {
-  const cliente = createClient({ url });
+  // `timeout` es el busy_timeout de @libsql/client: se aplica a cada conexión que abre el
+  // cliente, incluidas las que crea internamente `transaction()` (el PRAGMA manual solo cubría
+  // la conexión inicial del pool).
+  const cliente = createClient({ url, timeout: 5000 });
   await cliente.execute("PRAGMA foreign_keys = ON");
   if (url.startsWith("file:")) {
     await cliente.execute(`PRAGMA journal_mode = ${wal ? "WAL" : "DELETE"}`);

@@ -69,7 +69,8 @@ export interface Informe {
     categoria: Categoria;
     competicion: string;
   }[];
-  participacionesCreadas: number;
+  /** Participaciones sin fila de origen: se dedujeron de un evento de acta (gol, cambio...). */
+  participacionesCreadas: { partidoId: string; jugadorId: string }[];
   clasificacionManualAntigua: ClasificacionManualAntigua[];
 }
 
@@ -77,7 +78,7 @@ export const crearInforme = (): Informe => ({
   avisos: [],
   equiposFusionados: [],
   equiposSeparados: [],
-  participacionesCreadas: 0,
+  participacionesCreadas: [],
   clasificacionManualAntigua: [],
 });
 

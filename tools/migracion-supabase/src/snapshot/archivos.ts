@@ -28,6 +28,17 @@ export function leerSnapshot(dir: string): { snapshot: Snapshot; manifiesto: Man
   return { snapshot, manifiesto };
 }
 
+/**
+ * Resuelve el argumento opcional de snapshot pasado por línea de comandos contra el directorio
+ * desde el que se invocó `pnpm` (`INIT_CWD`), no contra `process.cwd()`: con `pnpm --filter` el
+ * cwd del proceso es el del paquete, así que una ruta relativa tecleada por el usuario se
+ * resolvería mal si se usara `process.cwd()`.
+ */
+export function resolverArgSnapshot(arg: string | undefined): string | undefined {
+  if (!arg) return undefined;
+  return path.resolve(process.env.INIT_CWD ?? process.cwd(), arg);
+}
+
 /** Directorio del snapshot más reciente (los nombres son marcas de tiempo ordenables). */
 export function ultimoSnapshot(dirSnapshots = DIR_SNAPSHOTS): string {
   const nombres = existsSync(dirSnapshots)

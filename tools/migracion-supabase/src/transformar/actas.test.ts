@@ -121,7 +121,7 @@ describe("transformarActas", () => {
       { partidoId: P, jugadorId: J2, titular: false, jugo: true },
       { partidoId: P, jugadorId: "jugador-3", titular: false, jugo: true },
     ]);
-    expect(informe.participacionesCreadas).toBe(1);
+    expect(informe.participacionesCreadas).toEqual([{ partidoId: P, jugadorId: "jugador-3" }]);
     expect(informe.avisos).toEqual([
       `Jugador ${J2} marcado como que jugó el partido ${P} por tener eventos.`,
     ]);
