@@ -24,6 +24,9 @@ catalogs:
     vitest:
       specifier: 4.1.11
       version: 4.1.11
+    zod:
+      specifier: 4.6.4
+      version: 4.6.4
 
 importers:
 
@@ -107,6 +110,10 @@ importers:
         version: 5.9.3
 
   packages/domain:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.4
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -2586,6 +2593,9 @@ packages:
 
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
+
+  zod@4.6.4:
+    resolution: {integrity: sha512-AXSD6hvGdvRjajG/l1cC+d6IrhH+sjmPKtYeQdJIK8MFJl3LyClzS+o/YsVC+zQZPupAaeH5skwwm8YqYH7BqA==}
 
 snapshots:
 
@@ -5111,3 +5121,5 @@ snapshots:
       zod: 4.3.6
 
   zod@4.3.6: {}
+
+  zod@4.6.4: {}
