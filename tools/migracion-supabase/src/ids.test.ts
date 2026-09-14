@@ -11,5 +11,8 @@ describe("idDeterminista", () => {
 
   it("no confunde partes concatenadas", () => {
     expect(idDeterminista("ab", "c")).not.toBe(idDeterminista("a", "bc"));
+    expect(idDeterminista("equipo", "Sporting Melide", "Senior")).not.toBe(
+      idDeterminista("equipo", "Sporting", "Melide Senior"),
+    );
   });
 });
