@@ -19,6 +19,11 @@ describe("claveMediaDesdeUrl", () => {
     expect(() => claveMediaDesdeUrl("https://otro.com/x.webp")).toThrow(/fuera del bucket/);
     expect(() => claveMediaDesdeUrl(`${BASE}../secreto`)).toThrow(/inválida/);
   });
+
+  it("rechaza claves con barra invertida (traversal en Windows)", () => {
+    expect(() => claveMediaDesdeUrl(`${BASE}..%5C..%5Cmalo.webp`)).toThrow(/inválida/);
+    expect(() => claveMediaDesdeUrl(`${BASE}..\\..\\malo.webp`)).toThrow(/inválida/);
+  });
 });
 
 describe("clavesMedia", () => {

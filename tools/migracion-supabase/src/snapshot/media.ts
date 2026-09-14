@@ -13,6 +13,9 @@ export function claveMediaDesdeUrl(url: string | null | undefined): string | nul
   if (inicio < 0) throw new Error(`URL de media fuera del bucket "${BUCKET_MEDIA}": ${url}`);
   const [ruta = ""] = url.slice(inicio + MARCA_PUBLICA.length).split("?");
   const clave = decodeURIComponent(ruta);
+  // `\` no separa segmentos aquí, pero path.join la trata como separador en Windows:
+  // sin este rechazo, una clave como "..\\..\\evil" escaparía del directorio de media.
+  if (clave.includes("\\")) throw new Error(`Clave de media inválida: ${url}`);
   const segmentos = clave.split("/");
   if (segmentos.some((segmento) => segmento === "" || segmento === "." || segmento === "..")) {
     throw new Error(`Clave de media inválida: ${url}`);
