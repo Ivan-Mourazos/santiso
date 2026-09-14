@@ -11,7 +11,9 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "generate": "drizzle-kit generate",
-    "studio": "drizzle-kit studio"
+    "studio": "drizzle-kit studio",
+    "migrate": "tsx src/cli/migrar.ts",
+    "backup": "tsx src/cli/backup.ts"
   },
   "dependencies": {
     "@libsql/client": "catalog:",
@@ -21,6 +23,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "drizzle-kit": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   }
 }

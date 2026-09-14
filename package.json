@@ -17,6 +17,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
+    "db:migrate": "pnpm --filter @santiso/db migrate",
+    "db:backup": "pnpm --filter @santiso/db backup",
     "db:generate": "pnpm --filter @santiso/db generate",
     "db:studio": "pnpm --filter @santiso/db studio"
   },
