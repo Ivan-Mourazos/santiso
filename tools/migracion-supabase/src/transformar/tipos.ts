@@ -1,0 +1,87 @@
+import type * as s from "@santiso/db/schema";
+import type { Categoria } from "@santiso/domain";
+import type { InferInsertModel } from "drizzle-orm";
+
+/** Las filas migradas siempre llevan id explícito (conservado o determinista). */
+type ConId<T> = T & { id: string };
+
+export type TemporadaNueva = ConId<InferInsertModel<typeof s.temporadas>>;
+export type CompeticionNueva = ConId<InferInsertModel<typeof s.competiciones>>;
+export type CompeticionAliasNuevo = InferInsertModel<typeof s.competicionAlias>;
+export type EquipoNuevo = ConId<InferInsertModel<typeof s.equipos>>;
+export type CompeticionEquipoNuevo = InferInsertModel<typeof s.competicionEquipos>;
+export type JugadorNuevo = ConId<InferInsertModel<typeof s.jugadores>>;
+export type StaffNuevo = ConId<InferInsertModel<typeof s.staff>>;
+export type CampoNuevo = ConId<InferInsertModel<typeof s.campos>>;
+export type JornadaNueva = ConId<InferInsertModel<typeof s.jornadas>>;
+export type JornadaDescansoNuevo = InferInsertModel<typeof s.jornadaDescansos>;
+export type PartidoNuevo = ConId<InferInsertModel<typeof s.partidos>>;
+export type ParticipacionNueva = InferInsertModel<typeof s.partidoParticipaciones>;
+export type EventoNuevo = ConId<InferInsertModel<typeof s.partidoEventos>>;
+export type PatrocinadorNuevo = ConId<InferInsertModel<typeof s.patrocinadores>>;
+export type AjusteNuevo = InferInsertModel<typeof s.ajustes>;
+
+/** Datos listos para insertar, con una propiedad por tabla del esquema nuevo. */
+export interface ModeloNuevo {
+  temporadas: TemporadaNueva[];
+  competiciones: CompeticionNueva[];
+  competicionAlias: CompeticionAliasNuevo[];
+  equipos: EquipoNuevo[];
+  competicionEquipos: CompeticionEquipoNuevo[];
+  jugadores: JugadorNuevo[];
+  staff: StaffNuevo[];
+  campos: CampoNuevo[];
+  jornadas: JornadaNueva[];
+  jornadaDescansos: JornadaDescansoNuevo[];
+  partidos: PartidoNuevo[];
+  partidoParticipaciones: ParticipacionNueva[];
+  partidoEventos: EventoNuevo[];
+  patrocinadores: PatrocinadorNuevo[];
+  ajustes: AjusteNuevo[];
+}
+
+export interface ClasificacionManualAntigua {
+  equipoId: string;
+  nombre: string;
+  categoria: string;
+  pts: number;
+  pj: number;
+  pg: number;
+  pe: number;
+  pp: number;
+  gf: number;
+  gc: number;
+}
+
+/** Correcciones aplicadas automáticamente y datos de referencia. Se vuelca al informe de migración. */
+export interface Informe {
+  avisos: string[];
+  equiposFusionados: {
+    conservado: string;
+    eliminados: string[];
+    nombre: string;
+    categoria: Categoria;
+  }[];
+  equiposSeparados: {
+    origen: string;
+    nuevo: string;
+    nombre: string;
+    categoria: Categoria;
+    competicion: string;
+  }[];
+  participacionesCreadas: number;
+  clasificacionManualAntigua: ClasificacionManualAntigua[];
+}
+
+export const crearInforme = (): Informe => ({
+  avisos: [],
+  equiposFusionados: [],
+  equiposSeparados: [],
+  participacionesCreadas: 0,
+  clasificacionManualAntigua: [],
+});
+
+/** Dato de origen que exige una decisión humana: la migración se detiene. */
+export class ErrorMigracion extends Error {
+  override name = "ErrorMigracion";
+}
