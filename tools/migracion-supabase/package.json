@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "exportar": "tsx src/cli/exportar.ts"
   },
   "dependencies": {
     "@santiso/db": "workspace:*",
