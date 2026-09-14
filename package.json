@@ -21,7 +21,9 @@
     "db:backup": "pnpm --filter @santiso/db backup",
     "db:generate": "pnpm --filter @santiso/db generate",
     "db:studio": "pnpm --filter @santiso/db studio",
-    "migracion:exportar": "pnpm --filter @santiso/migracion-supabase exportar"
+    "migracion:exportar": "pnpm --filter @santiso/migracion-supabase exportar",
+    "migracion:importar": "pnpm --filter @santiso/migracion-supabase importar",
+    "migracion:verificar": "pnpm --filter @santiso/migracion-supabase verificar"
   },
   "devDependencies": {
     "@types/node": "catalog:",

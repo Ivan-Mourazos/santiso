@@ -161,6 +161,9 @@ importers:
 
   tools/migracion-supabase:
     dependencies:
+      '@libsql/client':
+        specifier: 'catalog:'
+        version: 0.18.0
       '@santiso/db':
         specifier: workspace:*
         version: link:../../packages/db

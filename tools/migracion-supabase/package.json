@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "exportar": "tsx src/cli/exportar.ts"
+    "exportar": "tsx src/cli/exportar.ts",
+    "importar": "tsx src/cli/importar.ts",
+    "verificar": "tsx src/cli/verificar.ts",
+    "snapshot:prueba": "tsx src/cli/snapshot-prueba.ts"
   },
   "dependencies": {
+    "@libsql/client": "catalog:",
     "@santiso/db": "workspace:*",
     "@santiso/domain": "workspace:*",
     "drizzle-orm": "catalog:",
