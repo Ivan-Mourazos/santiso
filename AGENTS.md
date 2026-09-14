@@ -1,8 +1,12 @@
 <!-- BEGIN:tooling-env -->
 # Tooling & environment
 
-- **Package manager:** `pnpm` only (`pnpm install`, `pnpm run dev`, `pnpm run build`, …). Do not use `npm`/`yarn` in this repo unless the user explicitly asks.
-- **Env vars:** Next.js reads **`.env.local`** (and other `.env*` files). That file is usually gitignored, so agent file search may not list it; it can still exist on disk and is what `next build` uses locally.
+- **Monorepo pnpm:** `apps/studio` (Next.js), `packages/*` (domain, db), `tools/*` (migración). Solo `pnpm`; nunca `npm`/`yarn`.
+- **Comandos raíz:** `pnpm dev`, `pnpm build`, `pnpm check` (typecheck + lint + formato + tests), `pnpm test`.
+- **Versiones:** compartidas con `catalog:` en `pnpm-workspace.yaml`.
+- **Entorno:** `apps/studio/.env.local` (ignorado por git; puede existir aunque la búsqueda de ficheros no lo muestre).
+- **Datos locales:** `data/` (ignorado): `santiso.db`, `media/`, `snapshots/`, `backups/`, `informes/`.
+- **Arquitectura y hoja de ruta:** `docs/superpowers/specs/2026-09-13-santiso-studio-local-first.md`.
 <!-- END:tooling-env -->
 
 <!-- BEGIN:nextjs-agent-rules -->
