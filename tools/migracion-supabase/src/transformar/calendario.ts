@@ -1,12 +1,13 @@
 import {
   aFechaHoraLiteral,
   aFechaLiteral,
+  aInstanteIso,
   claveNombre,
   ESTADOS_PARTIDO,
   esValorDe,
   normalizarCategoria,
 } from "@santiso/domain";
-import type { Snapshot } from "../snapshot/tipos";
+import type { FilaCampo, Snapshot } from "../snapshot/tipos";
 import { marcasDesde, textoOpcional } from "./comunes";
 import type { ResultadoEquipos } from "./equipos";
 import {
@@ -30,21 +31,48 @@ export function transformarCalendario(
     competiciones.map((competicion) => [competicion.id, competicion]),
   );
 
-  const campos = origen.campos_futbol.map((fila): CampoNuevo => {
-    const nombre = fila.nombre.trim();
-    return {
-      id: fila.id,
+  // R11 — Agrupar campos por nombre y fusionar los duplicados conservando el más antiguo.
+  const gruposCampos = new Map<string, FilaCampo[]>();
+  for (const fila of origen.campos_futbol) {
+    const clave = claveNombre(fila.nombre.trim());
+    const grupo = gruposCampos.get(clave) ?? [];
+    grupo.push(fila);
+    gruposCampos.set(clave, grupo);
+  }
+
+  const campos: CampoNuevo[] = [];
+  const campoConservadoDe = new Map<string, string>();
+  for (const filas of gruposCampos.values()) {
+    const ordenadas = [...filas].sort((a, b) => {
+      if (a.created_at === null || b.created_at === null) {
+        return Number(a.created_at === null) - Number(b.created_at === null);
+      }
+      return aInstanteIso(a.created_at).localeCompare(aInstanteIso(b.created_at));
+    });
+    const [conservada, ...eliminadas] = ordenadas;
+    if (!conservada) continue;
+    const nombre = conservada.nombre.trim();
+    const poblacion =
+      ordenadas.map((fila) => textoOpcional(fila.poblacion)).find((valor) => valor !== null) ??
+      null;
+    const campo: CampoNuevo = {
+      id: conservada.id,
       nombre,
       clave: claveNombre(nombre),
-      poblacion: textoOpcional(fila.poblacion),
-      ...marcasDesde(fila.created_at),
+      poblacion,
+      ...marcasDesde(conservada.created_at),
     };
-  });
-  const duplicados = campos.filter(
-    (campo, indice) => campos.findIndex((otro) => otro.clave === campo.clave) !== indice,
-  );
-  if (duplicados.length > 0) {
-    throw new ErrorMigracion(`Campos duplicados: ${duplicados.map((c) => c.nombre).join(", ")}.`);
+    campos.push(campo);
+    for (const fila of ordenadas) campoConservadoDe.set(fila.id, campo.id);
+    if (eliminadas.length > 0) {
+      const partidosReasignados = origen.partidos_liga.filter((fila) =>
+        eliminadas.some((eliminada) => eliminada.id === fila.campo_id),
+      ).length;
+      const nombresEliminados = eliminadas.map((fila) => `"${fila.nombre.trim()}"`).join(", ");
+      informe.avisos.push(
+        `Campos fusionados en "${nombre}": ${nombresEliminados} (${partidosReasignados} partidos reasignados).`,
+      );
+    }
   }
 
   const jornadas = origen.jornadas.map((fila): JornadaNueva => {
@@ -134,7 +162,10 @@ export function transformarCalendario(
       golesVisitante,
       estado,
       fecha: fila.fecha ? aFechaHoraLiteral(fila.fecha) : null,
-      campoId: fila.campo_id,
+      campoId:
+        fila.campo_id !== null
+          ? (campoConservadoDe.get(fila.campo_id) ?? fila.campo_id)
+          : fila.campo_id,
       ...marcasDesde(fila.created_at),
     };
   });

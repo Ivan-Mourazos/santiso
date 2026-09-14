@@ -151,7 +151,7 @@ describe("transformarCalendario", () => {
     ).toThrow(/distinta a la de su jornada/);
   });
 
-  it("detecta jornadas repetidas, categorías distintas y campos duplicados", () => {
+  it("detecta jornadas repetidas y categorías distintas", () => {
     expect(() =>
       preparar(({ origen, temporada, competicion }) =>
         origen.jornadas.push(
@@ -175,9 +175,28 @@ describe("transformarCalendario", () => {
         ),
       ),
     ).toThrow(/otra categoría/);
-    expect(() =>
-      preparar(({ origen }) => origen.campos_futbol.push(fabricar.campo({ nombre: "a gandara" }))),
-    ).toThrow(/Campos duplicados/);
+  });
+
+  it("fusiona campos duplicados, hereda población y reasigna partidos", () => {
+    const { resultado, informe, campo } = preparar(({ origen, partido }) => {
+      const campoDuplicado = fabricar.campo({
+        nombre: "A GANDARA",
+        poblacion: "Valladares",
+        created_at: "2026-09-12T01:40:27+00:00",
+      });
+      origen.campos_futbol.push(campoDuplicado);
+      origen.partidos_liga.push(partido({ campo_id: campoDuplicado.id, estado: "programado" }));
+    });
+    expect(resultado.campos).toHaveLength(1);
+    expect(resultado.campos[0]).toMatchObject({
+      id: campo.id,
+      nombre: "A Gándara",
+      poblacion: "Valladares",
+    });
+    expect(resultado.partidos[0]?.campoId).toBe(campo.id);
+    expect(informe.avisos).toContain(
+      'Campos fusionados en "A Gándara": "A GANDARA" (1 partidos reasignados).',
+    );
   });
 
   it("deduplica descansos y resuelve el equipo", () => {
