@@ -1,6 +1,6 @@
 # Fase 2B-5 — Conectar el lector de fichas PDF a la pantalla de actas: plan de implementación
 
-> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [ ]`) para el seguimiento.
+> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [x]`) para el seguimiento.
 
 **Objetivo:** que subir la ficha en PDF de un partido rellene el acta sin pasar por la nube ni por OCR.
 
@@ -96,13 +96,13 @@ Contexto: toda la lógica delicada de este plan está aquí, y no necesita ni ba
 - Consume: `Ficha`, `Lado`, `EquipoFicha`, `JugadorFicha` (`@santiso/actas`); `ActaEvent`, `ActaPlayerRef`, `ParsedActa` (`@/lib/actas/types`).
 - Produce: `actaDeFicha(ficha: Ficha, santisoEsLocal: boolean): ParsedActa`.
 
-- [ ] **Paso 1: Declarar la dependencia y comprobar que se resuelve**
-- [ ] **Paso 2: Escribir las pruebas que fallan** — las cinco filas de la tabla de goles, las cinco de tarjetas, el descarte de cambios del rival, el minuto de descuento y la convocatoria
-- [ ] **Paso 3: Comprobar que fallan** — `pnpm exec vitest run apps/studio/lib/actas/ficha-a-acta.test.ts`, FAIL por import sin resolver
-- [ ] **Paso 4: Implementar**
-- [ ] **Paso 5: Comprobar que pasan**
-- [ ] **Paso 6: Comprobar que el acta resultante atraviesa `transformar.ts`** — una prueba que encadena `actaDeFicha` con `eventosDeActa`, que es lo que rechaza las formas que el CHECK no admite
-- [ ] **Paso 7: Commit**
+- [x] **Paso 1: Declarar la dependencia y comprobar que se resuelve**
+- [x] **Paso 2: Escribir las pruebas que fallan** — las cinco filas de la tabla de goles, las cinco de tarjetas, el descarte de cambios del rival, el minuto de descuento y la convocatoria
+- [x] **Paso 3: Comprobar que fallan** — `pnpm exec vitest run apps/studio/lib/actas/ficha-a-acta.test.ts`, FAIL por import sin resolver
+- [x] **Paso 4: Implementar**
+- [x] **Paso 5: Comprobar que pasan**
+- [x] **Paso 6: Comprobar que el acta resultante atraviesa `transformar.ts`** — una prueba que encadena `actaDeFicha` con `eventosDeActa`, que es lo que rechaza las formas que el CHECK no admite
+- [x] **Paso 7: Commit**
 
 ---
 
@@ -118,9 +118,9 @@ Contexto: toda la lógica delicada de este plan está aquí, y no necesita ni ba
 
 La detección viaja junto al acta porque la ficha ya trae jornada, equipos, competición y fecha: para un PDF no hace falta llamar a `/api/admin/acta-detect`, que es otra llamada a la nube.
 
-- [ ] **Paso 1: Implementar la acción**
-- [ ] **Paso 2: Comprobar que compila y que unpdf se resuelve en el servidor** — `pnpm --filter studio build`; si unpdf falla al empaquetarse, añadir `serverExternalPackages: ["unpdf"]` a `next.config.ts`
-- [ ] **Paso 3: Commit**
+- [x] **Paso 1: Implementar la acción**
+- [x] **Paso 2: Comprobar que compila y que unpdf se resuelve en el servidor** — `pnpm --filter studio build`; si unpdf falla al empaquetarse, añadir `serverExternalPackages: ["unpdf"]` a `next.config.ts`
+- [x] **Paso 3: Commit**
 
 ---
 
@@ -129,10 +129,10 @@ La detección viaja junto al acta porque la ficha ya trae jornada, equipos, comp
 **Ficheros:**
 - Modificar: `apps/studio/components/admin/AdminActaImporter.tsx`
 
-- [ ] **Paso 1: Detección local para PDF** — `detectMatch` usa `leerFichaPdf` cuando el fichero es PDF, y `/api/admin/acta-detect` en los demás casos
-- [ ] **Paso 2: Análisis local para PDF** — nueva función `analizarFichaPdf`, botón «Leer ficha PDF (sin IA)», visible solo con un PDF seleccionado
-- [ ] **Paso 3: Comprobar a mano con una ficha real**
-- [ ] **Paso 4: Commit**
+- [x] **Paso 1: Detección local para PDF** — `detectMatch` usa `leerFichaPdf` cuando el fichero es PDF, y `/api/admin/acta-detect` en los demás casos
+- [x] **Paso 2: Análisis local para PDF** — nueva función `analizarFichaPdf`, botón «Leer ficha PDF (sin IA)», visible solo con un PDF seleccionado
+- [x] **Paso 3: Comprobar a mano con una ficha real**
+- [x] **Paso 4: Commit**
 
 ---
 
@@ -141,12 +141,30 @@ La detección viaja junto al acta porque la ficha ya trae jornada, equipos, comp
 **Ficheros:**
 - Modificar: `apps/studio/components/admin/AdminActaBatch.tsx`
 
-- [ ] **Paso 1:** `callAnalyze` intenta el lector local cuando el fichero es un PDF y cae a Gemini si el parser lo rechaza
-- [ ] **Paso 2:** `callDetect` igual
-- [ ] **Paso 3: `pnpm check` y `pnpm e2e`**
-- [ ] **Paso 4: Commit**
+- [x] **Paso 1:** `callAnalyze` intenta el lector local cuando el fichero es un PDF y cae a Gemini si el parser lo rechaza
+- [x] **Paso 2:** `callDetect` igual
+- [x] **Paso 3: `pnpm check` y `pnpm e2e`**
+- [x] **Paso 4: Commit**
 
 ---
+
+## Hallazgos de la ejecución
+
+- **La categoría hacía falta y no estaba en el plan.** El lote elige el partido filtrando por
+  categoría y jornada. Al devolver la categoría vacía, `candidates` salía vacío y **todas** las
+  fichas habrían acabado en «Partido no encontrado en BD». La ficha nombra la competición en
+  claro (`VETERANOS - PRIMERA GALICIA (…)`, `TERCERA FUTGAL (…)`), así que se deduce de ahí;
+  cuando el nombre no la dice se prueban todas las categorías de esa jornada y desempata el
+  nombre del rival, que ya estaba implementado.
+- **Playwright transpila los `e2e/*.spec.ts` a CommonJS**: `import.meta.url` revienta ahí con
+  «Cannot use 'import.meta' outside a module». En las pruebas de navegador va `__dirname`; en
+  las de Vitest, `new URL(import.meta.url)` de un solo argumento.
+- **La primera versión de la prueba e2e subía el fichero al sitio equivocado.** `input[type=file]`
+  con `.first()` cogía el del escudo del club, que está más arriba en la página. Con el
+  identificador propio (`#acta-file-input`) deja de ser ambiguo.
+- **El parser avisa siempre de los penaltis** («Los PDF no indican penaltis: revisar el tipo de
+  gol antes de guardar»), así que toda ficha llega con al menos un aviso. El panel de avisos de
+  la pantalla ya los pinta.
 
 ## Lo que este plan no hace
 
