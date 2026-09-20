@@ -1,7 +1,7 @@
 /**
  * scripts/shoot-admin.ts
  * Captura cada pestaña del admin para revisión visual (no entra en la app).
- * Requiere el dev server con bypass:  DEV_AUTH_BYPASS=1 pnpm dev
+ * Requiere el dev server levantado:  pnpm dev
  * Uso:  pnpm dlx tsx scripts/shoot-admin.ts [baseURL]
  */
 import { chromium } from "playwright";
