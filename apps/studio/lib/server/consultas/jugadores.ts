@@ -6,8 +6,11 @@ import type { JugadorDto } from "@/lib/dto";
 import { urlMedia } from "@/lib/media";
 import { obtenerDb } from "@/lib/server/db";
 
-/** Plantilla de una categoría, por dorsal; quien no tiene dorsal va al final. */
-export async function listarJugadores(categoria: string): Promise<JugadorDto[]> {
+/**
+ * Plantilla de una categoría, por dorsal; quien no tiene dorsal va al final.
+ * Sin `categoria` devuelve las tres, que es lo que necesita el importador en lote.
+ */
+export async function listarJugadores(categoria?: string): Promise<JugadorDto[]> {
   const { db } = await obtenerDb();
   const filas = await db
     .select({
@@ -22,7 +25,7 @@ export async function listarJugadores(categoria: string): Promise<JugadorDto[]> 
       historial: schema.jugadores.historial,
     })
     .from(schema.jugadores)
-    .where(eq(schema.jugadores.categoria, normalizarCategoria(categoria)))
+    .where(categoria ? eq(schema.jugadores.categoria, normalizarCategoria(categoria)) : undefined)
     .orderBy(
       sql`${schema.jugadores.dorsal} is null`,
       asc(schema.jugadores.dorsal),

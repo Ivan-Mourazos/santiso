@@ -16,8 +16,11 @@ import { listarCampos } from "@/lib/server/consultas/campos";
 import { listarJugadores } from "@/lib/server/consultas/jugadores";
 import { obtenerDb } from "@/lib/server/db";
 
-/** Todo lo que necesita un importador de actas, en una sola acción. */
-export async function cargarPantallaActa(categoria: string): Promise<{
+/**
+ * Todo lo que necesita un importador de actas, en una sola acción.
+ * Sin `categoria` trae las tres, que es lo que usa el importador en lote.
+ */
+export async function cargarPantallaActa(categoria?: string): Promise<{
   partidos: PartidoActaDto[];
   jugadores: JugadorDto[];
   campos: CampoDto[];

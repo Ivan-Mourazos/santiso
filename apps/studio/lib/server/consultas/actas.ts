@@ -1,15 +1,23 @@
 import "server-only";
 import { schema } from "@santiso/db";
 import { normalizarCategoria } from "@santiso/domain";
-import { aliasedTable, asc, desc, eq } from "drizzle-orm";
+import { aliasedTable, and, asc, desc, eq } from "drizzle-orm";
 import type { PartidoActaDto } from "@/lib/dto";
+import { temporadaActivaId } from "@/lib/server/consultas/temporadas";
 import { obtenerDb } from "@/lib/server/db";
 
 /**
  * Partidos de una categoría con lo que los importadores necesitan mostrar: nombres de los dos
  * equipos, número de jornada y campo. La categoría la determina la competición de la jornada.
+ * Solo los de la temporada activa: es el filtro que hacían antes las pantallas en el cliente.
+ * Sin `categoria` devuelve las tres, que es lo que necesita el importador en lote.
  */
-export async function partidosParaActa(categoria: string): Promise<PartidoActaDto[]> {
+export async function partidosParaActa(categoria?: string): Promise<PartidoActaDto[]> {
+  const temporadaId = await temporadaActivaId();
+  if (!temporadaId) return [];
+  const filtroCategoria = categoria
+    ? eq(schema.competiciones.categoria, normalizarCategoria(categoria))
+    : undefined;
   const local = aliasedTable(schema.equipos, "equipo_local");
   const visitante = aliasedTable(schema.equipos, "equipo_visitante");
 
@@ -39,7 +47,7 @@ export async function partidosParaActa(categoria: string): Promise<PartidoActaDt
     .innerJoin(local, eq(local.id, schema.partidos.equipoLocalId))
     .innerJoin(visitante, eq(visitante.id, schema.partidos.equipoVisitanteId))
     .leftJoin(schema.campos, eq(schema.campos.id, schema.partidos.campoId))
-    .where(eq(schema.competiciones.categoria, normalizarCategoria(categoria)))
+    .where(and(eq(schema.competiciones.temporadaId, temporadaId), filtroCategoria))
     .orderBy(desc(schema.partidos.fecha));
 
   return filas.map((f) => ({

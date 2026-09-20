@@ -1,16 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase-browser";
+import { cargarPantallaActa, guardarActa } from "@/lib/server/acciones/actas";
 import BusyBanner from "./BusyBanner";
 import {
   competitionsForCategory,
   pickDefaultCompetitionId,
   type CompetenciaRow,
 } from "@/lib/competition";
-import { fetchCompeticiones, fetchSeasons } from "@/lib/supabase-queries";
+import { fetchCompeticiones } from "@/lib/supabase-queries";
 import { parseFutgalActaText } from "@/lib/actas/futgal-parser";
-import { saveReviewedActa } from "@/lib/actas/save-acta";
 import type {
   ActaCampoDb,
   ActaCategoria,
@@ -301,48 +300,27 @@ export default function AdminActaImporter({
   async function fetchBaseData() {
     setBusy(true);
     setBusyText("Cargando partidos y plantilla...");
-    const { active } = await fetchSeasons();
 
-    const [playersResult, matchesResult, camposResult] = await Promise.all([
-      supabase
-        .from("jugadores")
-        .select("id, dorsal, nombre, apodo, categoria")
-        .eq("categoria", categoria)
-        .order("dorsal", { ascending: true }),
-      supabase
-        .from("partidos_liga")
-        .select(
-          "id, categoria, competicion, competicion_id, estado, fecha, goles_local, goles_visitante, campo_id, equipo_local_id, equipo_visitante_id, equipo_local:equipo_local_id(nombre), equipo_visitante:equipo_visitante_id(nombre), jornada:jornada_id(numero, competicion, competicion_id, temporada_id), campo:campo_id(nombre, poblacion)",
-        )
-        .eq("categoria", categoria)
-        .order("fecha", { ascending: false }),
-      supabase
-        .from("campos_futbol")
-        .select("id, nombre, poblacion")
-        .order("nombre", { ascending: true }),
-    ]);
+    // Una sola acción: Next despacha las del cliente en serie, así que tres serían tres viajes.
+    // La temporada activa ya la filtra la consulta.
+    const { partidos, jugadores: plantilla, campos: sedes } = await cargarPantallaActa(categoria);
+    setJugadores(plantilla as unknown as ActaPlayerDb[]);
+    setCampos(sedes as ActaCampoDb[]);
 
-    if (playersResult.data) setJugadores(playersResult.data as ActaPlayerDb[]);
-    if (camposResult.data) setCampos(camposResult.data as ActaCampoDb[]);
-
-    if (matchesResult.data) {
-      const data = (matchesResult.data as ActaMatchDb[]).filter((match) => {
-        const local = match.equipo_local?.nombre?.toLowerCase() || "";
-        const visitante = match.equipo_visitante?.nombre?.toLowerCase() || "";
-        const isSantiso = local.includes("santiso") || visitante.includes("santiso");
-        const sameSeason = active?.id ? match.jornada?.temporada_id === active.id : true;
-        const sameCompetition =
-          !selectedCompetitionId ||
-          match.competicion_id === selectedCompetitionId ||
-          match.jornada?.competicion_id === selectedCompetitionId ||
-          match.jornada?.competicion_id === null;
-        return isSantiso && sameSeason && sameCompetition;
-      });
-      setMatches(data);
-      setSelectedMatchId((current) =>
-        data.some((match) => match.id === current) ? current : data[0]?.id || "",
-      );
-    }
+    const data = (partidos as unknown as ActaMatchDb[]).filter((match) => {
+      const local = match.equipo_local?.nombre?.toLowerCase() || "";
+      const visitante = match.equipo_visitante?.nombre?.toLowerCase() || "";
+      const isSantiso = local.includes("santiso") || visitante.includes("santiso");
+      const sameCompetition =
+        !selectedCompetitionId ||
+        match.competicion_id === selectedCompetitionId ||
+        match.jornada?.competicion_id === selectedCompetitionId;
+      return isSantiso && sameCompetition;
+    });
+    setMatches(data);
+    setSelectedMatchId((current) =>
+      data.some((match) => match.id === current) ? current : data[0]?.id || "",
+    );
 
     setBusy(false);
   }
@@ -545,12 +523,13 @@ export default function AdminActaImporter({
     setBusy(true);
     setBusyText("Insertando datos revisados...");
     try {
-      await saveReviewedActa({ supabase, partidoId: selectedMatchId, acta });
+      const resultado = await guardarActa(selectedMatchId, acta);
+      if (!resultado.ok) {
+        showToast(resultado.error, "error");
+        return;
+      }
       showToast("Acta insertada correctamente");
       await fetchBaseData();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Error desconocido";
-      showToast(message, "error");
     } finally {
       setBusy(false);
     }

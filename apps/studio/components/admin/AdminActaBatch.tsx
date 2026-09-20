@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/lib/supabase-browser";
-import { saveReviewedActa } from "@/lib/actas/save-acta";
-import { fetchSeasons } from "@/lib/supabase-queries";
+import { cargarPantallaActa, guardarActa } from "@/lib/server/acciones/actas";
 import type {
   ActaCampoDb,
   ActaEvent,
@@ -382,10 +380,12 @@ function BatchReviewModal({ item, allMatches, jugadoresByCategoria, campos, onSa
     if (!selectedMatch || !canSave) return;
     setSaving(true);
     try {
-      await saveReviewedActa({ supabase, partidoId: selectedMatch.id, acta });
+      const resultado = await guardarActa(selectedMatch.id, acta);
+      if (!resultado.ok) {
+        alert(resultado.error);
+        return;
+      }
       onSaved(item.id);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al guardar");
     } finally {
       setSaving(false);
     }
@@ -557,36 +557,24 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
   useEffect(() => {
     (async () => {
       setLoadingData(true);
-      const { active } = await fetchSeasons();
 
-      const [matchesRes, jugadoresRes, camposRes] = await Promise.all([
-        supabase
-          .from("partidos_liga")
-          .select("id, categoria, competicion, competicion_id, estado, fecha, goles_local, goles_visitante, campo_id, equipo_local_id, equipo_visitante_id, equipo_local:equipo_local_id(nombre), equipo_visitante:equipo_visitante_id(nombre), jornada:jornada_id(numero, competicion, competicion_id, temporada_id), campo:campo_id(nombre, poblacion)")
-          .order("fecha", { ascending: false }),
-        supabase.from("jugadores").select("id, dorsal, nombre, apodo, categoria").order("dorsal", { ascending: true }),
-        supabase.from("campos_futbol").select("id, nombre, poblacion"),
-      ]);
+      // Sin categoría: el lote trabaja con las tres. La temporada activa la filtra la consulta.
+      const { partidos, jugadores: plantilla, campos: sedes } = await cargarPantallaActa();
 
-      if (matchesRes.data) {
-        const santiso = (matchesRes.data as ActaMatchDb[]).filter((m) => {
-          const local = m.equipo_local?.nombre?.toLowerCase() || "";
-          const visitante = m.equipo_visitante?.nombre?.toLowerCase() || "";
-          const sameSeason = active?.id ? m.jornada?.temporada_id === active.id : true;
-          return (local.includes("santiso") || visitante.includes("santiso")) && sameSeason;
-        });
-        setAllMatches(santiso);
+      const santiso = (partidos as unknown as ActaMatchDb[]).filter((m) => {
+        const local = m.equipo_local?.nombre?.toLowerCase() || "";
+        const visitante = m.equipo_visitante?.nombre?.toLowerCase() || "";
+        return local.includes("santiso") || visitante.includes("santiso");
+      });
+      setAllMatches(santiso);
+
+      const bycat: Record<string, ActaPlayerDb[]> = {};
+      for (const j of plantilla as unknown as ActaPlayerDb[]) {
+        (bycat[j.categoria] = bycat[j.categoria] || []).push(j);
       }
+      setJugadoresByCategoria(bycat);
 
-      if (jugadoresRes.data) {
-        const bycat: Record<string, ActaPlayerDb[]> = {};
-        for (const j of jugadoresRes.data as ActaPlayerDb[]) {
-          (bycat[j.categoria] = bycat[j.categoria] || []).push(j);
-        }
-        setJugadoresByCategoria(bycat);
-      }
-
-      if (camposRes.data) setCampos(camposRes.data as ActaCampoDb[]);
+      setCampos(sedes as ActaCampoDb[]);
       setLoadingData(false);
     })();
   }, []);
@@ -694,15 +682,16 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
 
       // 6. Save
       updateItem(item.id, { status: "saving" });
-      try {
-        await saveReviewedActa({ supabase, partidoId: match.id, acta: resolved });
+      // Un fallo marca solo esta fila y el lote continúa: lo que pide la auditoría (§8.1).
+      const resultado = await guardarActa(match.id, resolved);
+      if (resultado.ok) {
         updateItem(item.id, { status: "done", partido: matchLabel(match) });
         savedCount++;
-      } catch (err) {
+      } else {
         updateItem(item.id, {
           status: "error",
           partido: matchLabel(match),
-          error: err instanceof Error ? err.message : "Error al guardar",
+          error: resultado.error,
         });
         errorCount++;
       }
