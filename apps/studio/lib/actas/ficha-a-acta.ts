@@ -48,6 +48,18 @@ function refDeNombre(nombre: string, equipo: EquipoFicha): ActaPlayerRef {
   };
 }
 
+/**
+ * La ficha nombra la competición en claro («VETERANOS - PRIMERA GALICIA (…)», «TERCERA FUTGAL
+ * (…)»), pero no la categoría. Solo se deduce cuando el nombre lo dice: devolver `""` y que
+ * la pantalla pregunte es mejor que suponer Senior y guardar el acta en el partido de otro.
+ */
+export function categoriaDeCompeticion(competicion: string): "Veteranos" | "Femenino" | "" {
+  const texto = clave(competicion);
+  if (texto.includes("vetera")) return "Veteranos";
+  if (texto.includes("femin") || texto.includes("femen")) return "Femenino";
+  return "";
+}
+
 /** La tabla solo tiene amarilla y roja: la doble amarilla entra como una sola roja. */
 const TIPO_TARJETA: Record<string, ActaEventType | null> = {
   amarilla: "tarjeta_amarilla",

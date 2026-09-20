@@ -1,7 +1,7 @@
 "use server";
 
 import { parsearFichaPdf } from "@santiso/actas";
-import { actaDeFicha } from "@/lib/actas/ficha-a-acta";
+import { actaDeFicha, categoriaDeCompeticion } from "@/lib/actas/ficha-a-acta";
 import type { ParsedActa } from "@/lib/actas/types";
 import { exito, fallo, type Resultado } from "@/lib/resultado";
 
@@ -14,6 +14,8 @@ export interface DeteccionFicha {
   localTeam: string;
   visitorTeam: string;
   competicion: string;
+  /** Vacía cuando el nombre de la competición no la dice; entonces la elige el usuario. */
+  categoria: "Veteranos" | "Femenino" | "";
   fecha: string;
 }
 
@@ -46,6 +48,7 @@ export async function leerFichaPdf(formulario: FormData): Promise<Resultado<Fich
         localTeam: ficha.local.nombre,
         visitorTeam: ficha.visitante.nombre,
         competicion: ficha.competicion,
+        categoria: categoriaDeCompeticion(ficha.competicion),
         fecha: ficha.fecha,
       },
     });

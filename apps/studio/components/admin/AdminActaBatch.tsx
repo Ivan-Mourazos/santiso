@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cargarPantallaActa, guardarActa } from "@/lib/server/acciones/actas";
+import { leerFichaPdf } from "@/lib/server/acciones/fichas";
 import type {
   ActaCampoDb,
   ActaEvent,
@@ -136,7 +137,32 @@ function getIssues(acta: ParsedActa): string[] {
 
 // ── API calls ────────────────────────────────────────────────────────────────
 
+/**
+ * La ficha federativa en PDF se lee en local, sin IA. Devuelve `null` cuando el fichero no es
+ * un PDF o el parser lo rechaza, y entonces el lote sigue por Gemini como hasta ahora.
+ */
+async function leerEnLocal(file: File, santisoEsLocal: boolean) {
+  if (file.type !== "application/pdf") return null;
+  const fd = new FormData();
+  fd.append("ficha", file);
+  fd.append("santisoEsLocal", santisoEsLocal ? "1" : "0");
+  const resultado = await leerFichaPdf(fd);
+  return resultado.ok ? resultado.datos : null;
+}
+
 async function callDetect(file: File): Promise<DetectedMeta | null> {
+  const local = await leerEnLocal(file, true);
+  if (local) {
+    const { deteccion } = local;
+    return {
+      jornada: deteccion.jornada,
+      localTeam: deteccion.localTeam,
+      visitorTeam: deteccion.visitorTeam,
+      categoria: deteccion.categoria,
+      competicion: deteccion.competicion,
+    };
+  }
+
   const fd = new FormData();
   fd.append("image", file);
   const res = await fetch("/api/admin/acta-detect", { method: "POST", body: fd });
@@ -147,6 +173,10 @@ async function callDetect(file: File): Promise<DetectedMeta | null> {
 }
 
 async function callAnalyze(file: File, match: ActaMatchDb, jugadores: ActaPlayerDb[], campos: ActaCampoDb[]): Promise<ParsedActa | null> {
+  const santisoEsLocal = match.equipo_local?.nombre?.toLowerCase().includes("santiso") ?? true;
+  const local = await leerEnLocal(file, santisoEsLocal);
+  if (local) return local.acta;
+
   const fd = new FormData();
   fd.append("image", file);
   fd.append("match", JSON.stringify(match));
@@ -622,8 +652,12 @@ export default function AdminActaBatch({ showToast }: AdminActaBatchProps) {
 
       // 2. Find match — primero filtrar por categoria+jornada, luego elegir
       //    el mejor por similitud de nombre de equipo rival detectado.
+      // La ficha no siempre dice la categoría: con la categoría vacía se prueban todas y
+      // decide el nombre del rival, que es el desempate de más abajo.
       const candidates = allMatches.filter(
-        (m) => m.categoria === meta.categoria && String(m.jornada?.numero) === String(meta.jornada),
+        (m) =>
+          (!meta.categoria || m.categoria === meta.categoria) &&
+          String(m.jornada?.numero) === String(meta.jornada),
       );
       const match = (() => {
         if (candidates.length === 0) return null;

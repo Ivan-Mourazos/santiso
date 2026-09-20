@@ -343,7 +343,7 @@ export default function AdminActaImporter({
       jornada: deteccion.jornada,
       localTeam: deteccion.localTeam,
       visitorTeam: deteccion.visitorTeam,
-      categoria: "",
+      categoria: deteccion.categoria,
       competicion: deteccion.competicion,
       fecha: deteccion.fecha,
     };

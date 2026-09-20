@@ -1,6 +1,6 @@
 import type { CambioFicha, EquipoFicha, Ficha, GolFicha, TarjetaFicha } from "@santiso/actas";
 import { describe, expect, it } from "vitest";
-import { actaDeFicha } from "./ficha-a-acta";
+import { actaDeFicha, categoriaDeCompeticion } from "./ficha-a-acta";
 import { eventosDeActa } from "./transformar";
 
 const SANTISO: EquipoFicha = {
@@ -295,6 +295,24 @@ describe("minutos y avisos", () => {
       campoNombre: "A Carballeira",
       campoPoblacion: "Santiso",
     });
+  });
+});
+
+describe("categoriaDeCompeticion", () => {
+  // Cadenas tal cual salen de las fichas de prueba del parser.
+  it("reconoce veteranos", () => {
+    expect(categoriaDeCompeticion("VETERANOS - PRIMERA GALICIA (SANTIAGO | GRUPO 2)")).toBe(
+      "Veteranos",
+    );
+  });
+
+  it("reconoce femenino con las dos grafías", () => {
+    expect(categoriaDeCompeticion("PRIMERA FEMININA GALEGA")).toBe("Femenino");
+    expect(categoriaDeCompeticion("Liga Femenina Aficionada")).toBe("Femenino");
+  });
+
+  it("no inventa categoría cuando el nombre no la dice", () => {
+    expect(categoriaDeCompeticion("TERCERA FUTGAL (SANTIAGO | GRUPO 4 > FASE PREVIA)")).toBe("");
   });
 });
 
