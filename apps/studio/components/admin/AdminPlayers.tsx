@@ -1,8 +1,7 @@
 "use client";
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase-browser";
-import { processAndUploadImage } from "@/lib/image-utils";
-import { v4 as uuidv4 } from "uuid";
+import { prepararImagen } from "@/lib/imagen-cliente";
+import { borrarJugador, cargarJugadores, guardarJugador } from "@/lib/server/acciones/jugadores";
 import BusyBanner from "./BusyBanner";
 
 interface AdminPlayersProps {
@@ -69,12 +68,7 @@ export default function AdminPlayers({
   const fetchJugadores = useCallback(async () => {
     await Promise.resolve();
     setIsFetching(true);
-    const { data } = await supabase
-      .from("jugadores")
-      .select("*")
-      .eq("categoria", categoria)
-      .order("dorsal", { ascending: true });
-    setJugadores((data ?? []) as Jugador[]);
+    setJugadores((await cargarJugadores(categoria)) as Jugador[]);
     setIsFetching(false);
   }, [categoria]);
 
@@ -91,63 +85,31 @@ export default function AdminPlayers({
     setBusyProgress(5);
     setLoading(true);
 
-    let foto_url = "";
-    if (editingId) {
-      const current = jugadores.find((j) => j.id === editingId);
-      foto_url = current?.foto_url || "";
-    }
-
+    const cuerpo = new FormData();
+    cuerpo.set("id", editingId ?? "");
+    cuerpo.set("nombre", nombre);
+    cuerpo.set("apodo", apodo);
+    cuerpo.set("dorsal", dorsal);
+    cuerpo.set("posicion", posicion);
+    cuerpo.set("categoria", categoria);
+    cuerpo.set("fechaNacimiento", fechaNacimiento);
+    cuerpo.set("historial", historial);
     if (fotoFile) {
-      const processed = await processAndUploadImage(fotoFile, (percent) => {
-        setBusyText("Procesando foto...");
-        setBusyProgress(percent * 0.6);
-      });
-      if (processed) {
-        setBusyText("Subiendo foto...");
-        setBusyProgress(75);
-        const fileName = `jugadores/${uuidv4()}.webp`;
-        const { data, error: uploadError } = await supabase.storage
-          .from("fotos")
-          .upload(fileName, processed);
-        if (uploadError) throw uploadError;
-        if (data) {
-          setBusyText("Guardando jugador...");
-          setBusyProgress(90);
-          const { data: pUrl } = supabase.storage
-            .from("fotos")
-            .getPublicUrl(fileName);
-          foto_url = pUrl.publicUrl;
-        }
-      }
+      setBusyText("Preparando foto...");
+      setBusyProgress(40);
+      cuerpo.set("foto", await prepararImagen(fotoFile));
     }
 
-    const historialArr = historial
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean);
+    setBusyText("Guardando jugador...");
+    setBusyProgress(80);
+    const resultado = await guardarJugador(cuerpo);
 
-    const payload = {
-      nombre,
-      apodo,
-      dorsal: parseInt(dorsal),
-      posicion,
-      foto_url,
-      categoria,
-      fecha_nacimiento: fechaNacimiento || null,
-      historial_deportivo: historialArr.length > 0 ? historialArr : null,
-    };
-
-    const { error } = editingId
-      ? await supabase.from("jugadores").update(payload).eq("id", editingId)
-      : await supabase.from("jugadores").insert([payload]);
-
-    if (!error) {
+    if (resultado.ok) {
       resetForm();
       fetchJugadores();
       showToast(editingId ? "Jugador actualizado correctamente" : "Jugador añadido correctamente", "success");
     } else {
-      console.error("Error guardando jugador:", error);
-      showToast(`Error: ${error.message}`, "error");
+      showToast(resultado.error, "error");
     }
     setLoading(false);
     setBusyProgress(undefined);
@@ -157,36 +119,36 @@ export default function AdminPlayers({
     setBusyText("Procesando y subiendo foto...");
     setBusyProgress(5);
     setLoading(true);
-    const processed = await processAndUploadImage(file, (percent) => {
-      setBusyText("Procesando foto...");
-      setBusyProgress(percent * 0.6);
-    });
-    if (processed) {
-      setBusyText("Subiendo foto...");
-      setBusyProgress(75);
-      const fileName = `jugadores/${uuidv4()}.webp`;
-      const { data, error: uploadError } = await supabase.storage
-        .from("fotos")
-        .upload(fileName, processed);
+    const jugador = jugadores.find((j) => j.id === id);
+    if (!jugador) {
+      showToast("No se encontró el jugador", "error");
+      setLoading(false);
+      setBusyProgress(undefined);
+      return;
+    }
+    // `guardarJugador` reescribe la fila entera: hay que reenviar los valores actuales o se
+    // perderían dorsal, posición, apodo, fecha de nacimiento e historial al cambiar la foto.
+    const cuerpo = new FormData();
+    cuerpo.set("id", id);
+    cuerpo.set("nombre", jugador.nombre);
+    cuerpo.set("apodo", jugador.apodo ?? "");
+    cuerpo.set("dorsal", jugador.dorsal?.toString() ?? "");
+    cuerpo.set("posicion", jugador.posicion ?? "");
+    cuerpo.set("categoria", categoria);
+    cuerpo.set("fechaNacimiento", jugador.fecha_nacimiento ?? "");
+    cuerpo.set("historial", (jugador.historial_deportivo ?? []).join("\n"));
+    setBusyText("Preparando foto...");
+    setBusyProgress(40);
+    cuerpo.set("foto", await prepararImagen(file));
 
-      if (uploadError) {
-        showToast("Error subiendo foto", "error");
-      } else if (data) {
-        setBusyText("Guardando foto...");
-        setBusyProgress(90);
-        const { data: pUrl } = supabase.storage
-          .from("fotos")
-          .getPublicUrl(fileName);
-        const { error: dbError } = await supabase
-          .from("jugadores")
-          .update({ foto_url: pUrl.publicUrl })
-          .eq("id", id);
-
-        if (!dbError) {
-          showToast("Foto actualizada");
-          fetchJugadores();
-        }
-      }
+    setBusyText("Guardando foto...");
+    setBusyProgress(80);
+    const resultado = await guardarJugador(cuerpo);
+    if (resultado.ok) {
+      showToast("Foto actualizada");
+      fetchJugadores();
+    } else {
+      showToast(resultado.error, "error");
     }
     setLoading(false);
     setBusyProgress(undefined);
@@ -194,9 +156,13 @@ export default function AdminPlayers({
 
   async function handleDeleteJugador(id: string) {
     showConfirm("¿Borrar jugador?", async () => {
-      await supabase.from("jugadores").delete().eq("id", id);
-      fetchJugadores();
-      showToast("Jugador eliminado");
+      const resultado = await borrarJugador(id);
+      if (resultado.ok) {
+        fetchJugadores();
+        showToast("Jugador eliminado");
+      } else {
+        showToast(resultado.error, "error");
+      }
     });
   }
 

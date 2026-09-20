@@ -49,3 +49,16 @@ export interface PantallaClasificacion {
   filas: FilaClasificacion[];
   reglas: ReglaClasificacion[];
 }
+
+/** @deprecated Ver TemporadaDto. `foto_url` es ahora una ruta local `/media/<clave>`. */
+export interface JugadorDto {
+  id: string;
+  nombre: string;
+  apodo: string | null;
+  dorsal: number | null;
+  posicion: string | null;
+  foto_url: string | null;
+  categoria: string;
+  fecha_nacimiento: string | null;
+  historial_deportivo: string[];
+}
