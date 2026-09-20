@@ -1,4 +1,5 @@
 import { getDocumentProxy } from "unpdf";
+import { extraerMarcasPdf } from "./iconos";
 import { parsearFicha } from "./ficha";
 import type { Ficha, Fragmento } from "./ficha";
 
@@ -26,7 +27,7 @@ export async function parsearFichaPdf(bytes: Uint8Array): Promise<Ficha> {
         y: (vista.height - y) / vista.height,
       });
     }
-    return parsearFicha(fragmentos);
+    return parsearFicha(fragmentos, await extraerMarcasPdf(pdf, 1));
   } finally {
     await pdf.loadingTask.destroy();
   }

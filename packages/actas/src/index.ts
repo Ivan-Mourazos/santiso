@@ -6,6 +6,15 @@ export type {
   EquipoFicha,
   JugadorFicha,
   GolFicha,
+  CambioFicha,
   TarjetaFicha,
   Lado,
 } from "./ficha";
+export { parsearCalendario, parsearCalendarioPdf } from "./calendario";
+export type { MarcaFicha } from "./iconos";
+export type {
+  Calendario,
+  EquipoCalendario,
+  JornadaCalendario,
+  FragmentoCalendario,
+} from "./calendario";
