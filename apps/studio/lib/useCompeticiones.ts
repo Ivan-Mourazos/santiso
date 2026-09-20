@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { borrarCompeticion, crearCompeticion } from "@/lib/server/acciones/competiciones";
-import { fetchCompeticiones } from "@/lib/supabase-queries";
+import { fetchCompeticiones } from "@/lib/lecturas-cliente";
 import {
   competitionsForCategory,
   pickDefaultCompetitionId,

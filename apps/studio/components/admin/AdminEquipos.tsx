@@ -14,7 +14,7 @@ import {
   pickDefaultCompetitionId,
   type CompetenciaRow,
 } from "@/lib/competition";
-import { fetchCompeticiones } from "@/lib/supabase-queries";
+import { fetchCompeticiones } from "@/lib/lecturas-cliente";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import AvisoError from "./AvisoError";
 

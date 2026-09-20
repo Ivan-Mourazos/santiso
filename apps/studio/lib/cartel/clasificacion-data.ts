@@ -2,7 +2,7 @@ import { calcularClasificacion } from "@santiso/domain";
 import { cargarJornadasDeCompeticion } from "@/lib/server/acciones/calendario";
 import { cargarReglas } from "@/lib/server/acciones/competiciones";
 import { cargarPartidosDeCompeticion } from "@/lib/server/acciones/clasificacion";
-import { fetchCompeticiones, fetchTeamsForCompetition } from "@/lib/supabase-queries";
+import { fetchCompeticiones, fetchTeamsForCompetition } from "@/lib/lecturas-cliente";
 
 /**
  * Datos del cartel de clasificación. El cálculo vive en `@santiso/domain`: aquí solo se leen

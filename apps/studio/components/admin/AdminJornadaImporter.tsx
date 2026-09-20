@@ -12,7 +12,7 @@ import {
   pickDefaultCompetitionId,
   type CompetenciaRow,
 } from "@/lib/competition";
-import { fetchCompeticiones, type Team } from "@/lib/supabase-queries";
+import { fetchCompeticiones, type Team } from "@/lib/lecturas-cliente";
 import { matchLocalDateTimeToIso } from "./cartel/matchDateTime";
 import type { JornadaGeminiResponse, JornadaMatchExtracted } from "@/app/api/admin/jornada-gemini/route";
 

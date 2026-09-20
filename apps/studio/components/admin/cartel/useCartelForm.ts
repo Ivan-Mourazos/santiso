@@ -14,7 +14,7 @@ import { cargarEquiposDeCategoria } from "@/lib/server/acciones/equipos";
 import type { FormState } from "./types";
 import type { SelectorMatch } from "./Common";
 import type { Player, CronEvent, NextMatch } from "@/lib/cartel-draw";
-import { fetchCompeticiones, type CompetenciaRow } from "@/lib/supabase-queries";
+import { fetchCompeticiones, type CompetenciaRow } from "@/lib/lecturas-cliente";
 import { pickDefaultCompetitionId } from "@/lib/competition";
 import { matchDateInput, matchTimeInput } from "./matchDateTime";
 interface CartelPlayer {

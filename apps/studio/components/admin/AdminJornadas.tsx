@@ -29,7 +29,7 @@ import {
   fetchSeasons,
   fetchTeamsForCompetition,
   mergeMissingTeams,
-} from "@/lib/supabase-queries";
+} from "@/lib/lecturas-cliente";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import AvisoError from "./AvisoError";
 import {

@@ -1,7 +1,7 @@
 import type { LineaClasificacion, ReglaClasificacion } from "@santiso/domain";
 
 /**
- * Formas que esperan los componentes heredados, con los nombres de campo que devolvía Supabase.
+ * Formas que esperan los componentes heredados, con los nombres de campo del modelo anterior.
  * @deprecated Temporal de la Fase 2B. Las Fases 4–6 reescriben las pantallas contra los tipos
  * de `@santiso/db` y estos DTO desaparecen.
  */
