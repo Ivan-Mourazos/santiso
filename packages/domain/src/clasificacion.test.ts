@@ -14,6 +14,13 @@ const finalizado = (
   estado: "finalizado",
 });
 
+/** Posición de un equipo en la tabla; falla si no está. */
+const posicionDe = (tabla: { equipoId: string }[], equipoId: string) => {
+  const indice = tabla.findIndex((f) => f.equipoId === equipoId);
+  if (indice < 0) throw new Error(`el equipo ${equipoId} no está en la tabla`);
+  return indice;
+};
+
 describe("calcularClasificacion", () => {
   it("incluye a todos los equipos aunque no hayan jugado", () => {
     const tabla = calcularClasificacion(["a", "b"], []);
@@ -93,5 +100,62 @@ describe("calcularClasificacion", () => {
   it("desempata por orden alfabético de id cuando todo lo demás coincide", () => {
     const tabla = calcularClasificacion(["b", "a"], []);
     expect(tabla.map((f) => f.equipoId)).toEqual(["a", "b"]);
+  });
+
+  it("con los mismos puntos, gana quien ganó el enfrentamiento directo", () => {
+    // a y b acaban empatados a 3 puntos, a diferencia y a goles a favor. Solo los separa que
+    // b le ganó a a; sin ese criterio, el desempate por id pondría primero a "a".
+    const tabla = calcularClasificacion(
+      ["a", "b", "x", "y"],
+      [finalizado("b", "a", 1, 0), finalizado("a", "x", 2, 1), finalizado("y", "b", 2, 1)],
+    );
+    expect(posicionDe(tabla, "b")).toBeLessThan(posicionDe(tabla, "a"));
+  });
+
+  it("el enfrentamiento directo manda sobre la diferencia de goles", () => {
+    // a empata a puntos con b y tiene mucha mejor diferencia (+5 frente a 0), pero b le ganó.
+    const tabla = calcularClasificacion(
+      ["a", "b", "x", "y"],
+      [finalizado("b", "a", 1, 0), finalizado("a", "x", 6, 0), finalizado("y", "b", 2, 1)],
+    );
+    expect(posicionDe(tabla, "b")).toBeLessThan(posicionDe(tabla, "a"));
+  });
+
+  it("si el directo queda empatado, decide la diferencia de goles", () => {
+    const tabla = calcularClasificacion(
+      ["a", "b", "x", "y"],
+      [finalizado("a", "b", 1, 1), finalizado("a", "x", 5, 0), finalizado("b", "y", 1, 0)],
+    );
+    expect(posicionDe(tabla, "a")).toBeLessThan(posicionDe(tabla, "b"));
+  });
+
+  it("resuelve un empate a tres con la mini-liga entre ellos", () => {
+    // a, b y c empatan a 6 puntos en la general. Entre ellos: a gana a b, b gana a c y c gana
+    // a a, así que los tres suman 3 puntos en la mini-liga y decide su diferencia interna:
+    // a +2 (3-1 y 0-1), b -1 (1-3 y 2-1), c -1 (1-2 y 1-0)... el orden lo fija esa diferencia.
+    const tabla = calcularClasificacion(
+      ["a", "b", "c", "x"],
+      [
+        finalizado("a", "b", 3, 1),
+        finalizado("b", "c", 2, 1),
+        finalizado("c", "a", 1, 0),
+        finalizado("a", "x", 1, 0),
+        finalizado("b", "x", 1, 0),
+        finalizado("c", "x", 1, 0),
+      ],
+    );
+    const tres = tabla.filter((f) => ["a", "b", "c"].includes(f.equipoId));
+    expect(tres.every((f) => f.puntos === 6)).toBe(true);
+    // a es el único con diferencia positiva en la mini-liga, así que va primero de los tres.
+    expect(tres[0]?.equipoId).toBe("a");
+  });
+
+  it("no aplica el directo cuando los puntos difieren", () => {
+    // b le ganó a a, pero a tiene el doble de puntos: el directo no entra.
+    const tabla = calcularClasificacion(
+      ["a", "b", "x", "y"],
+      [finalizado("b", "a", 1, 0), finalizado("a", "x", 1, 0), finalizado("a", "y", 1, 0)],
+    );
+    expect(tabla[0]?.equipoId).toBe("a");
   });
 });
