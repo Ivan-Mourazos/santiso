@@ -1,6 +1,7 @@
 export * from "./ajustes";
 export * from "./catalogos";
 export * from "./categorias";
+export * from "./clasificacion";
 export * from "./competiciones";
 export * from "./fechas";
 export * from "./nombres";
