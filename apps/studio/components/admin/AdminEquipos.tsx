@@ -1,8 +1,13 @@
 "use client";
 import { Fragment, useState, useEffect, useMemo } from "react";
-import { supabase } from "@/lib/supabase-browser";
-import { processAndUploadImage } from "@/lib/image-utils";
-import { v4 as uuidv4 } from "uuid";
+import { prepararImagen } from "@/lib/imagen-cliente";
+import {
+  borrarEquipo,
+  cargarPantallaEquipos,
+  guardarEquipo,
+  inscribirEquipo,
+  quitarEquipoDeCompeticion,
+} from "@/lib/server/acciones/equipos";
 import BusyBanner from "./BusyBanner";
 import {
   competitionsForCategory,
@@ -23,10 +28,6 @@ interface Equipo {
   nombre: string;
   escudo_url: string;
   categoria: string;
-}
-
-interface EquipoCompeticion {
-  equipo_id: string;
 }
 
 export default function AdminEquipos({
@@ -73,38 +74,13 @@ export default function AdminEquipos({
     if (!selectedCompetitionId) return;
     fetchEquipos();
   }, [categoria, selectedCompetitionId]);
-  async function fetchAllTeams() {
-    const { data } = await supabase
-      .from("equipos")
-      .select("*")
-      .order("nombre", { ascending: true });
-    const teams = (data || []) as Equipo[];
-    setAllCategoryTeams(teams);
-    return teams;
-  }
-
   async function fetchEquipos() {
     setIsFetching(true);
-    const teams = await fetchAllTeams();
-
-    const { data: relData, error: relError } = await supabase
-      .from("equipo_competiciones")
-      .select("equipo_id")
-      .eq("categoria", categoria)
-      .eq("competicion_id", selectedCompetitionId);
-
-    if (relError) {
-      setRelationEnabled(false);
-      setEquipos(teams);
-      setSelectedExistingId("");
-      setIsFetching(false);
-      return;
-    }
-
+    const { todos, inscritos } = await cargarPantallaEquipos(categoria, selectedCompetitionId);
+    const ids = new Set(inscritos.map((e) => e.id));
+    setAllCategoryTeams(todos as Equipo[]);
     setRelationEnabled(true);
-    const rels = (relData || []) as EquipoCompeticion[];
-    const ids = new Set(rels.map((r) => r.equipo_id));
-    setEquipos(teams.filter((t) => ids.has(t.id)));
+    setEquipos(todos.filter((t) => ids.has(t.id)) as Equipo[]);
     setSelectedExistingId("");
     setIsFetching(false);
   }
@@ -125,16 +101,9 @@ export default function AdminEquipos({
   );
 
   async function ensureTeamInLeague(teamId: string) {
-    if (!relationEnabled || !selectedCompetitionId) return;
-    const { error } = await supabase
-      .from("equipo_competiciones")
-      .upsert(
-        [{ equipo_id: teamId, categoria, competicion_id: selectedCompetitionId }],
-        {
-          onConflict: "equipo_id,competicion_id",
-        },
-      );
-    if (error) throw error;
+    if (!selectedCompetitionId) return;
+    const resultado = await inscribirEquipo(selectedCompetitionId, teamId);
+    if (!resultado.ok) throw new Error(resultado.error);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -147,70 +116,26 @@ export default function AdminEquipos({
     setLoading(true);
 
     try {
-      let url = "";
-
-      if (editingId) {
-        const current = equipos.find((eq) => eq.id === editingId);
-        url = current?.escudo_url || "";
-      }
-
+      const cuerpo = new FormData();
+      cuerpo.set("id", editingId ?? "");
+      cuerpo.set("nombre", nombreEquipo);
+      cuerpo.set("categoria", categoria);
+      if (selectedCompetitionId) cuerpo.set("competicionId", selectedCompetitionId);
       if (escudoEquipo) {
-        const processed = await processAndUploadImage(
-          escudoEquipo,
-          (percent) => {
-            setBusyText("Procesando escudo...");
-            setBusyProgress(percent * 0.6);
-          },
-        );
-        if (processed) {
-          setBusyText("Subiendo escudo...");
-          setBusyProgress(75);
-          const fileName = `escudos/${uuidv4()}.webp`;
-          const { data } = await supabase.storage
-            .from("fotos")
-            .upload(fileName, processed);
-          if (data) {
-            setBusyText("Guardando datos equipo...");
-            setBusyProgress(90);
-            const { data: pUrl } = supabase.storage
-              .from("fotos")
-              .getPublicUrl(fileName);
-            url = pUrl.publicUrl;
-          }
-        }
+        setBusyText("Preparando escudo...");
+        setBusyProgress(40);
+        cuerpo.set("escudo", await prepararImagen(escudoEquipo));
       }
 
-      if (editingId) {
-        const { error } = await supabase
-          .from("equipos")
-          .update({ nombre: nombreEquipo, escudo_url: url })
-          .eq("id", editingId);
-
-        if (!error) {
-          await ensureTeamInLeague(editingId);
-          showToast("Equipo actualizado");
-          resetForm();
-          fetchEquipos();
-        }
+      setBusyText("Guardando equipo...");
+      setBusyProgress(80);
+      const resultado = await guardarEquipo(cuerpo);
+      if (resultado.ok) {
+        showToast(editingId ? "Equipo actualizado" : "Equipo añadido");
+        resetForm();
+        fetchEquipos();
       } else {
-        const { data: inserted, error } = await supabase
-          .from("equipos")
-          .insert([
-            {
-              nombre: nombreEquipo,
-              escudo_url: url,
-              categoria,
-            },
-          ])
-          .select("id")
-          .single();
-
-        if (!error) {
-          if (inserted?.id) await ensureTeamInLeague(inserted.id);
-          showToast("Equipo añadido");
-          resetForm();
-          fetchEquipos();
-        }
+        showToast(resultado.error, "error");
       }
     } catch (err) {
       console.error(err);
@@ -246,19 +171,15 @@ export default function AdminEquipos({
         ? "¿Quitar equipo de esta liga?"
         : "¿Borrar equipo de librería?",
       async () => {
-        if (relationEnabled) {
-          await supabase
-            .from("equipo_competiciones")
-            .delete()
-            .eq("equipo_id", id)
-            .eq("categoria", categoria)
-            .eq("competicion_id", selectedCompetitionId);
-          showToast("Equipo quitado de liga");
+        const resultado = relationEnabled
+          ? await quitarEquipoDeCompeticion(selectedCompetitionId, id)
+          : await borrarEquipo(id);
+        if (resultado.ok) {
+          showToast(relationEnabled ? "Equipo quitado de liga" : "Equipo eliminado");
+          fetchEquipos();
         } else {
-          await supabase.from("equipos").delete().eq("id", id);
-          showToast("Equipo eliminado");
+          showToast(resultado.error, "error");
         }
-        fetchEquipos();
       },
     );
   }
@@ -268,42 +189,23 @@ export default function AdminEquipos({
     setBusyProgress(5);
     setLoading(true);
     try {
-      const processed = await processAndUploadImage(file, (percent) => {
-        setBusyText("Procesando escudo...");
-        setBusyProgress(percent * 0.6);
-      });
-      if (!processed) {
-        showToast("No se pudo procesar imagen", "error");
-        return;
-      }
+      const cuerpo = new FormData();
+      cuerpo.set("id", id);
+      cuerpo.set("nombre", allCategoryTeams.find((e) => e.id === id)?.nombre ?? "");
+      cuerpo.set("categoria", categoria);
+      setBusyText("Preparando escudo...");
+      setBusyProgress(40);
+      cuerpo.set("escudo", await prepararImagen(file));
 
-      setBusyText("Subiendo escudo...");
-      setBusyProgress(75);
-      const fileName = `escudos/${uuidv4()}.webp`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("fotos")
-        .upload(fileName, processed);
-      if (uploadError || !uploadData) {
-        showToast("Error subiendo escudo", "error");
-        return;
-      }
-
-      const { data: pUrl } = supabase.storage
-        .from("fotos")
-        .getPublicUrl(fileName);
       setBusyText("Guardando escudo...");
-      setBusyProgress(90);
-      const { error: dbError } = await supabase
-        .from("equipos")
-        .update({ escudo_url: pUrl.publicUrl })
-        .eq("id", id);
-      if (dbError) {
-        showToast("Error guardando escudo", "error");
-        return;
+      setBusyProgress(80);
+      const resultado = await guardarEquipo(cuerpo);
+      if (resultado.ok) {
+        showToast("Escudo actualizado");
+        fetchEquipos();
+      } else {
+        showToast(resultado.error, "error");
       }
-
-      showToast("Escudo actualizado");
-      fetchEquipos();
     } catch (err) {
       console.error(err);
       showToast("Error actualizando escudo", "error");

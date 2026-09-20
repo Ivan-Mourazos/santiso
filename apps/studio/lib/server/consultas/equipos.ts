@@ -1,5 +1,6 @@
 import "server-only";
 import { schema } from "@santiso/db";
+import { normalizarCategoria } from "@santiso/domain";
 import { asc, eq, inArray } from "drizzle-orm";
 import type { EquipoDto } from "@/lib/dto";
 import { urlMedia } from "@/lib/media";
@@ -47,6 +48,17 @@ export async function equiposPorIds(ids: readonly string[]): Promise<EquipoDto[]
     .select(columnas)
     .from(schema.equipos)
     .where(inArray(schema.equipos.id, unicos))
+    .orderBy(asc(schema.equipos.nombre));
+  return filas.map(aDto);
+}
+
+/** Todos los equipos de una categoría, inscritos o no: la «librería» de la pantalla. */
+export async function listarEquiposDeCategoria(categoria: string): Promise<EquipoDto[]> {
+  const { db } = await obtenerDb();
+  const filas = await db
+    .select(columnas)
+    .from(schema.equipos)
+    .where(eq(schema.equipos.categoria, normalizarCategoria(categoria)))
     .orderBy(asc(schema.equipos.nombre));
   return filas.map(aDto);
 }
