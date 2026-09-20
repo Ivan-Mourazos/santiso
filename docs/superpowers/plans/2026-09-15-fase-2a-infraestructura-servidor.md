@@ -1,6 +1,6 @@
 # Fase 2A — Infraestructura de servidor, media local y endurecimiento: plan de implementación
 
-> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [ ]`) para el seguimiento.
+> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [x]`) para el seguimiento.
 
 **Objetivo:** dejar lista la base técnica sobre la que la Fase 2B reconectará las pantallas a SQLite, sin cambiar todavía ninguna pantalla:
 - conexión de servidor a `data/santiso.db`,
@@ -84,7 +84,7 @@ Contexto: la revisión final de la Fase 1 dejó dos puntos aplazados.
 - Consume: `moverBdActualABackup(rutaBd, bdBackup): string[]`, `intercambiarFicheros(parametros): void`, `BdEnUsoError`, `IntercambioFallidoError`, `esErrorFicheroEnUso` (existentes); `abrirDb`, `urlArchivo` (`@santiso/db`).
 - Produce: mismas firmas; nuevo comportamiento documentado abajo.
 
-- [ ] **Paso 1: Escribir las pruebas que fallan en `intercambio-bd.test.ts`**
+- [x] **Paso 1: Escribir las pruebas que fallan en `intercambio-bd.test.ts`**
 
 Añadir al final del `describe("moverBdActualABackup", …)`:
 
@@ -132,7 +132,7 @@ Añadir al final del `describe("intercambiarFicheros", …)`:
   });
 ```
 
-- [ ] **Paso 2: Sustituir la prueba de `busy_timeout` en `packages/db/src/client.test.ts`**
+- [x] **Paso 2: Sustituir la prueba de `busy_timeout` en `packages/db/src/client.test.ts`**
 
 Reemplazar el `it("aplica el busy_timeout de 5000ms a cada conexión del pool, no solo a la inicial", …)` completo por:
 
@@ -148,7 +148,7 @@ Reemplazar el `it("aplica el busy_timeout de 5000ms a cada conexión del pool, n
   });
 ```
 
-- [ ] **Paso 3: Ejecutar y comprobar qué falla**
+- [x] **Paso 3: Ejecutar y comprobar qué falla**
 
 ```bash
 pnpm exec vitest run tools/migracion-supabase/src/cli/intercambio-bd.test.ts packages/db/src/client.test.ts
@@ -164,7 +164,7 @@ Comprobar que la prueba de `busy_timeout` detecta la regresión:
 2. Ejecutar `pnpm exec vitest run packages/db/src/client.test.ts` → FAIL (`expected 0 to be 5000`).
 3. Restaurar `timeout: 5000` y comprobar con `git diff packages/db/src/client.ts` que no queda ningún cambio.
 
-- [ ] **Paso 4: Implementar en `intercambio-bd.ts`**
+- [x] **Paso 4: Implementar en `intercambio-bd.ts`**
 
 Sustituir el cuerpo de `moverBdActualABackup` desde `const sufijosRespaldados: string[] = [];` hasta el `return` por:
 
@@ -242,7 +242,7 @@ Sustituir el bloque `catch (error) { … }` de `intercambiarFicheros` por:
   }
 ```
 
-- [ ] **Paso 5: Ejecutar las pruebas**
+- [x] **Paso 5: Ejecutar las pruebas**
 
 ```bash
 pnpm exec vitest run tools/migracion-supabase/src/cli/intercambio-bd.test.ts packages/db/src/client.test.ts
@@ -250,7 +250,7 @@ pnpm exec vitest run tools/migracion-supabase/src/cli/intercambio-bd.test.ts pac
 
 Esperado: todas en verde.
 
-- [ ] **Paso 6: Puerta de calidad y commit**
+- [x] **Paso 6: Puerta de calidad y commit**
 
 ```bash
 pnpm check
@@ -272,7 +272,7 @@ git commit -m "fix(migracion): marcha atrás completa al respaldar la BD y prueb
 - Consume: paquetes `@santiso/db` y `@santiso/domain` (Fase 1).
 - Produce: la app puede importar `@santiso/db` y `@santiso/domain` desde código de servidor; servidor en `http://127.0.0.1:3000`.
 
-- [ ] **Paso 1: Registrar la línea base de lint de la app**
+- [x] **Paso 1: Registrar la línea base de lint de la app**
 
 ```bash
 pnpm lint:studio 2>&1 | tail -3
@@ -280,7 +280,7 @@ pnpm lint:studio 2>&1 | tail -3
 
 Anotar el recuento (`✖ N problems (E errors, W warnings)`). Hoy son unos 103 problemas previos a este plan. Esta tarea no debe aumentarlo.
 
-- [ ] **Paso 2: Actualizar `apps/studio/package.json`**
+- [x] **Paso 2: Actualizar `apps/studio/package.json`**
 
 Cambiar solo estas claves (el resto igual):
 
@@ -304,7 +304,7 @@ En `dependencies`:
 En `devDependencies`:
 - `"eslint-config-next": "16.3.5"`
 
-- [ ] **Paso 3: Transpilar los paquetes del workspace en `apps/studio/next.config.ts`**
+- [x] **Paso 3: Transpilar los paquetes del workspace en `apps/studio/next.config.ts`**
 
 ```ts
 import type { NextConfig } from "next";
@@ -328,12 +328,12 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 ```
 
-- [ ] **Paso 4: URL por defecto de capturas y README**
+- [x] **Paso 4: URL por defecto de capturas y README**
 
 - En `apps/studio/scripts/shoot-admin.ts`, cambiar `"http://localhost:3000"` por `"http://127.0.0.1:3000"`.
 - En `README.md`, cambiar `pnpm dev          # http://localhost:3000/admin` por `pnpm dev          # http://127.0.0.1:3000/admin (solo accesible desde este equipo)`.
 
-- [ ] **Paso 5: Instalar y verificar**
+- [x] **Paso 5: Instalar y verificar**
 
 ```bash
 pnpm install
@@ -347,7 +347,7 @@ Esperado:
 - `build` termina con `✓ Compiled successfully` y lista `/admin`.
 - El lint de la app no supera la línea base del Paso 1. Si hay reglas nuevas de `eslint-config-next` 16.3.5, anotar la diferencia en el informe **sin corregir componentes** (se reescriben en fases posteriores).
 
-- [ ] **Paso 6: Comprobar la escucha**
+- [x] **Paso 6: Comprobar la escucha**
 
 ```bash
 (pnpm dev > /tmp/dev.log 2>&1 &) ; for i in $(seq 1 30); do code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/admin); [ "$code" = "200" ] && break; sleep 2; done; echo "127.0.0.1 → $code"
@@ -356,7 +356,7 @@ grep -iE "ready|local:" /tmp/dev.log | head -3
 
 Esperado: `127.0.0.1 → 200` y el log muestra `http://127.0.0.1:3000`. Parar el servidor (`kill` del proceso de `next dev`) y comprobar que el puerto deja de responder.
 
-- [ ] **Paso 7: Puerta de calidad y commit**
+- [x] **Paso 7: Puerta de calidad y commit**
 
 ```bash
 pnpm check
@@ -383,7 +383,7 @@ Contexto: `rutas.ts` y `migraciones.ts` calculan rutas con `import.meta.url` **a
   - `dirMigraciones(): string` sustituye a la constante `DIR_MIGRACIONES` (solo se usaba dentro de `migraciones.ts`).
   - `migrarBd(db: Db, carpeta?: string): Promise<void>`.
 
-- [ ] **Paso 1: Escribir la prueba que falla**
+- [x] **Paso 1: Escribir la prueba que falla**
 
 `packages/db/src/rutas.test.ts`:
 
@@ -415,12 +415,12 @@ describe("resolverDirDatos", () => {
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y comprobar que falla**
+- [x] **Paso 2: Ejecutar y comprobar que falla**
 
 Ejecutar: `pnpm exec vitest run packages/db/src/rutas.test.ts`
 Esperado: FAIL, `resolverDirDatos` no existe.
 
-- [ ] **Paso 3: Implementar**
+- [x] **Paso 3: Implementar**
 
 Sustituir en `packages/db/src/rutas.ts` las líneas desde `import path` hasta `export const DIR_INFORMES…` por:
 
@@ -465,7 +465,7 @@ export async function migrarBd(db: Db, carpeta = dirMigraciones()): Promise<void
 }
 ```
 
-- [ ] **Paso 4: Ejecutar las pruebas del paquete y de la migración**
+- [x] **Paso 4: Ejecutar las pruebas del paquete y de la migración**
 
 ```bash
 pnpm exec vitest run packages/db tools/migracion-supabase
@@ -473,7 +473,7 @@ pnpm exec vitest run packages/db tools/migracion-supabase
 
 Esperado: todo en verde.
 
-- [ ] **Paso 5: Puerta de calidad y commit**
+- [x] **Paso 5: Puerta de calidad y commit**
 
 ```bash
 pnpm check
@@ -509,7 +509,7 @@ git commit -m "refactor(db): rutas de datos y migraciones sin evaluar import.met
   - `GET /api/estado` → `{ ok: true, temporadaActiva: string | null, partidos: number }` o `503 { ok: false, error }`
   - Pruebas de Vitest en `apps/studio/{lib,app}/**/*.test.ts`, con alias `@/` → `apps/studio/` y `server-only` → módulo vacío.
 
-- [ ] **Paso 1: Dependencias y configuración de Vitest**
+- [x] **Paso 1: Dependencias y configuración de Vitest**
 
 En `pnpm-workspace.yaml`, añadir al `catalog:` (orden alfabético):
 
@@ -560,7 +560,7 @@ export default defineConfig({
 
 Ejecutar `pnpm install`.
 
-- [ ] **Paso 2: Escribir las pruebas que fallan**
+- [x] **Paso 2: Escribir las pruebas que fallan**
 
 `apps/studio/lib/resultado.test.ts`:
 
@@ -717,12 +717,12 @@ describe("GET /api/estado", () => {
 });
 ```
 
-- [ ] **Paso 3: Ejecutar y comprobar que fallan**
+- [x] **Paso 3: Ejecutar y comprobar que fallan**
 
 Ejecutar: `pnpm exec vitest run apps/studio`
 Esperado: FAIL en los tres ficheros por módulos inexistentes.
 
-- [ ] **Paso 4: Implementar**
+- [x] **Paso 4: Implementar**
 
 `apps/studio/lib/resultado.ts`:
 
@@ -828,12 +828,12 @@ export async function GET() {
 }
 ```
 
-- [ ] **Paso 5: Ejecutar las pruebas**
+- [x] **Paso 5: Ejecutar las pruebas**
 
 Ejecutar: `pnpm exec vitest run apps/studio`
 Esperado: 3 ficheros en verde.
 
-- [ ] **Paso 6: Configurar la ruta de datos de la app**
+- [x] **Paso 6: Configurar la ruta de datos de la app**
 
 Añadir a `apps/studio/.env.example`, al final:
 
@@ -858,7 +858,7 @@ En `README.md`, sección «Puesta en marcha», añadir tras el bloque de código
 La app lee los datos de `SANTISO_DATA_DIR` (ruta absoluta a `data/`), definida en `apps/studio/.env.local`. Comprueba la conexión con `http://127.0.0.1:3000/api/estado`.
 ```
 
-- [ ] **Paso 7: Verificar con la BD real**
+- [x] **Paso 7: Verificar con la BD real**
 
 ```bash
 pnpm build
@@ -871,7 +871,7 @@ Esperado:
 
 Si responde `ok:false`, anotar el mensaje: suele ser `SANTISO_DATA_DIR` o la resolución de `@santiso/db` dentro del bundle. Parar el servidor.
 
-- [ ] **Paso 8: Puerta de calidad y commit**
+- [x] **Paso 8: Puerta de calidad y commit**
 
 ```bash
 pnpm check
@@ -910,7 +910,7 @@ En la Fase 2B el cliente seguirá convirtiendo HEIC y enviará el fichero a una 
   - `leerImagenDeFormulario(formulario: FormData, campo: string): Promise<Resultado<Uint8Array>>`
   - `GET /media/<clave>`: 200 con el fichero y caché inmutable, o 404.
 
-- [ ] **Paso 1: Dependencias**
+- [x] **Paso 1: Dependencias**
 
 En `pnpm-workspace.yaml`, añadir al `catalog:` en orden alfabético:
 
@@ -933,7 +933,7 @@ pnpm --filter @santiso/studio exec node -e "import('sharp').then(s => console.lo
 
 Esperado: `0.35.4`. `sharp` usa binarios precompilados (`@img/sharp-win32-x64`), así que no necesita el script de build que ignora `ignoredBuiltDependencies`.
 
-- [ ] **Paso 2: Escribir las pruebas que fallan**
+- [x] **Paso 2: Escribir las pruebas que fallan**
 
 `apps/studio/lib/media.test.ts`:
 
@@ -1125,12 +1125,12 @@ describe("GET /media/[...clave]", () => {
 });
 ```
 
-- [ ] **Paso 3: Ejecutar y comprobar que fallan**
+- [x] **Paso 3: Ejecutar y comprobar que fallan**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/media.test.ts apps/studio/lib/server/media.test.ts "apps/studio/app/media"`
 Esperado: FAIL por módulos inexistentes.
 
-- [ ] **Paso 4: Implementar**
+- [x] **Paso 4: Implementar**
 
 `apps/studio/lib/media.ts`:
 
@@ -1304,12 +1304,12 @@ export async function GET(
 }
 ```
 
-- [ ] **Paso 5: Ejecutar las pruebas**
+- [x] **Paso 5: Ejecutar las pruebas**
 
 Ejecutar: `pnpm exec vitest run apps/studio`
 Esperado: todas en verde.
 
-- [ ] **Paso 6: Verificar con la media real**
+- [x] **Paso 6: Verificar con la media real**
 
 ```bash
 pnpm build
@@ -1324,7 +1324,7 @@ Esperado:
 
 Parar el servidor.
 
-- [ ] **Paso 7: Formato, lint y commit**
+- [x] **Paso 7: Formato, lint y commit**
 
 Prettier y el lint raíz ignoran `apps/studio` (código heredado pendiente de reescritura). Los ficheros nuevos se formatean y se lintan de forma explícita:
 
@@ -1363,7 +1363,7 @@ Mientras exista el login de Supabase (se retira en la 2C), `/admin` solo es acce
   - `pnpm e2e` (raíz) → `pnpm --filter @santiso/studio e2e` → `playwright test`. No forma parte de `pnpm check`.
   - Capturas en `data/referencias/antes-fase-2/`, que no se versionan.
 
-- [ ] **Paso 1: Dependencias, scripts e ignorados**
+- [x] **Paso 1: Dependencias, scripts e ignorados**
 
 - En `pnpm-workspace.yaml`, añadir al `catalog:` (primera clave, orden alfabético): `"@playwright/test": 1.61.1`.
 - En `apps/studio/package.json`:
@@ -1384,7 +1384,7 @@ pnpm install
 pnpm --filter @santiso/studio exec playwright install chromium
 ```
 
-- [ ] **Paso 2: Configuración de Playwright**
+- [x] **Paso 2: Configuración de Playwright**
 
 `apps/studio/playwright.config.ts`:
 
@@ -1411,7 +1411,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Paso 3: Prueba de humo**
+- [x] **Paso 3: Prueba de humo**
 
 `apps/studio/e2e/humo.spec.ts`:
 
@@ -1457,7 +1457,7 @@ test("sirve la media local", async ({ request }) => {
 });
 ```
 
-- [ ] **Paso 4: Ejecutar la prueba de humo**
+- [x] **Paso 4: Ejecutar la prueba de humo**
 
 Ejecutar: `pnpm e2e`
 Esperado: `3 passed`.
@@ -1467,7 +1467,7 @@ Si falla una etiqueta de sección:
 2. Ajustar solo la lista `SECCIONES`, sin tocar componentes.
 3. Anotar el cambio en el informe.
 
-- [ ] **Paso 5: Formato y lint de los ficheros nuevos**
+- [x] **Paso 5: Formato y lint de los ficheros nuevos**
 
 ```bash
 pnpm exec prettier --write --ignore-path .gitignore apps/studio/playwright.config.ts apps/studio/e2e
@@ -1477,7 +1477,7 @@ pnpm --filter @santiso/studio typecheck
 
 Esperado: sin problemas.
 
-- [ ] **Paso 6: Capturas de referencia (no se versionan)**
+- [x] **Paso 6: Capturas de referencia (no se versionan)**
 
 Con `pnpm dev` en marcha:
 
@@ -1496,7 +1496,7 @@ Esperado:
 
 Parar el servidor.
 
-- [ ] **Paso 7: Documentación**
+- [x] **Paso 7: Documentación**
 
 En `README.md`, sección de comandos, añadir:
 
@@ -1513,7 +1513,7 @@ En `AGENTS.md`, sección de verificación, añadir:
 
 Si alguna de esas secciones no existe con ese nombre, añadir el texto al final del bloque de comandos correspondiente.
 
-- [ ] **Paso 8: Puerta de calidad y commit**
+- [x] **Paso 8: Puerta de calidad y commit**
 
 ```bash
 pnpm check
@@ -1525,10 +1525,10 @@ git commit -m "test(studio): pruebas e2e de humo con Playwright y capturas de re
 
 ## Verificación final de la fase
 
-- [ ] `pnpm check` en verde.
-- [ ] `pnpm build` correcto.
-- [ ] `pnpm e2e` → `3 passed`.
-- [ ] `curl http://127.0.0.1:3000/api/estado` → `{"ok":true,"temporadaActiva":"2026/27","partidos":688}`.
-- [ ] `git status --short` limpio y sin `data/` ni `.env.local`.
-- [ ] La app sigue funcionando igual contra Supabase: ninguna pantalla cambió.
-- [ ] Ledger: R14 y R15 cerrados. R13 cerrado parcialmente (`rutas.ts`/`migraciones.ts` perezosos); el resto sigue aplazado a 2B/2C.
+- [x] `pnpm check` en verde.
+- [x] `pnpm build` correcto.
+- [x] `pnpm e2e` → `3 passed`.
+- [x] `curl http://127.0.0.1:3000/api/estado` → `{"ok":true,"temporadaActiva":"2026/27","partidos":688}`.
+- [x] `git status --short` limpio y sin `data/` ni `.env.local`.
+- [x] La app sigue funcionando igual contra Supabase: ninguna pantalla cambió.
+- [x] Ledger: R14 y R15 cerrados. R13 cerrado parcialmente (`rutas.ts`/`migraciones.ts` perezosos); el resto sigue aplazado a 2B/2C.
