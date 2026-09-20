@@ -2,19 +2,17 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { supabase } from "@/lib/supabase-browser";
-import { processAndUploadImage } from "@/lib/image-utils";
-import { v4 as uuidv4 } from "uuid";
+import type { AjustesCartelDto } from "@/lib/dto";
+import { prepararImagen } from "@/lib/imagen-cliente";
+import {
+  borrarLogoPatrocinador,
+  cargarAjustesCartel,
+  guardarLogoAjuste,
+  guardarLogoPatrocinador,
+  guardarOrdenLogos,
+  moverLogoPatrocinador,
+} from "@/lib/server/acciones/ajustes-cartel";
 import BusyBanner from "./BusyBanner";
-
-interface Asset {
-  id:      string;
-  nombre:  string;
-  tipo:    string;
-  subtipo: string | null;
-  url:     string;
-  orden:   number;
-}
 
 interface Props {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -22,30 +20,26 @@ interface Props {
   onAssetsChanged?: () => void;
 }
 
-/** Strips accents + invalid storage-key characters → safe slug */
-function sanitizeKey(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/[^a-z0-9-]/g, "-")
-    .replace(/-{2,}/g, "-")
-    .replace(/^-+|-+$/g, "")
-    || "asset";
-}
-
-// Keys for institutional logos
+/** Logos institucionales: cada uno vive en su propia clave de `ajustes`. */
 const INST_LOGOS = [
-  { subtipo: "xunta", label: "Xunta de Galicia", hint: "Esquina superior" },
-  { subtipo: "rfgf",  label: "RFGF",             hint: "Esquina superior" },
-];
+  { clave: "cartel.logo_xunta", campo: "logoXunta", label: "Xunta de Galicia", hint: "Esquina superior" },
+  { clave: "cartel.logo_rfgf", campo: "logoRfgf", label: "RFGF", hint: "Esquina superior" },
+] as const;
+
+const AJUSTES_VACIOS: AjustesCartelDto = {
+  escudoClub: null,
+  logoXunta: null,
+  logoRfgf: null,
+  ordenLogos: "xunta_izquierda",
+  patrocinadores: [],
+};
 
 export default function AdminCartelAssets({
   showToast,
   showConfirm,
   onAssetsChanged,
 }: Props) {
-  const [assets, setAssets]   = useState<Asset[]>([]);
+  const [ajustes, setAjustes] = useState<AjustesCartelDto>(AJUSTES_VACIOS);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [isFetching, setIsFetching] = useState(true);
   const [uploadProgress, setUploadProgress] = useState<number | undefined>(undefined);
@@ -54,93 +48,92 @@ export default function AdminCartelAssets({
 
   async function fetchAssets() {
     setIsFetching(true);
-    const { data } = await supabase
-      .from("cartel_assets")
-      .select("*")
-      .order("orden", { ascending: true });
-    if (data) setAssets(data as Asset[]);
+    const resultado = await cargarAjustesCartel();
+    if (resultado.ok) setAjustes(resultado.datos);
+    else showToast(resultado.error, "error");
     setIsFetching(false);
   }
 
-  // Generic upload helper
-  async function uploadAsset(
-    file: File,
-    tipo: string,
-    subtipo: string,
-    nombre: string,
-    orden = 0
-  ) {
-    const key = `${tipo}_${subtipo}`;
-    setLoading(p => ({ ...p, [key]: true }));
-    setUploadProgress(5);
+  /** Logo institucional o escudo: una imagen apuntada desde una clave de `ajustes`. */
+  async function subirLogoAjuste(file: File, clave: string, label: string) {
+    setLoading(p => ({ ...p, [clave]: true }));
+    setUploadProgress(30);
     try {
-      const processed = await processAndUploadImage(file, (percent) => {
-        setUploadProgress(percent * 0.6);
-      });
-      if (!processed) throw new Error("Error procesando imagen");
-
+      const cuerpo = new FormData();
+      cuerpo.set("imagen", await prepararImagen(file));
       setUploadProgress(80);
-      const path = `cartel/${sanitizeKey(tipo)}/${sanitizeKey(subtipo)}-${uuidv4()}.webp`;
-      const { error: uploadErr } = await supabase.storage
-        .from("fotos")
-        .upload(path, processed, { upsert: true, contentType: "image/webp" });
-      if (uploadErr) throw uploadErr;
-
-      const { data: pUrl } = supabase.storage.from("fotos").getPublicUrl(path);
-      const url = pUrl.publicUrl;
-
-      // Check existing row to decide insert vs update
-      setUploadProgress(92);
-      const existing = assets.find(a => a.tipo === tipo && a.subtipo === subtipo);
-      if (existing) {
-        await supabase.from("cartel_assets").update({ url, nombre }).eq("id", existing.id);
+      const resultado = await guardarLogoAjuste(clave, cuerpo);
+      if (resultado.ok) {
+        showToast(`${label} actualizado correctamente`);
+        fetchAssets();
+        onAssetsChanged?.();
       } else {
-        await supabase.from("cartel_assets").insert([{ nombre, tipo, subtipo, url, orden }]);
+        showToast(resultado.error, "error");
       }
-
-      showToast(`${nombre} actualizado correctamente`);
-      fetchAssets();
-      onAssetsChanged?.();
-    } catch (err: unknown) {
-      console.error(err);
-      showToast("Error al subir imagen", "error");
     } finally {
-      setLoading(p => ({ ...p, [key]: false }));
+      setLoading(p => ({ ...p, [clave]: false }));
+      setUploadProgress(undefined);
+    }
+  }
+
+  /** Logo de la barra inferior: es un patrocinador con `en_carteles`. */
+  async function subirLogoPatrocinador(file: File, nombre: string) {
+    setLoading(p => ({ ...p, patrocinador: true }));
+    setUploadProgress(30);
+    try {
+      const cuerpo = new FormData();
+      cuerpo.set("nombre", nombre);
+      cuerpo.set("logo", await prepararImagen(file));
+      setUploadProgress(80);
+      const resultado = await guardarLogoPatrocinador(cuerpo);
+      if (resultado.ok) {
+        showToast(`${nombre} actualizado correctamente`);
+        fetchAssets();
+        onAssetsChanged?.();
+      } else {
+        showToast(resultado.error, "error");
+      }
+    } finally {
+      setLoading(p => ({ ...p, patrocinador: false }));
       setUploadProgress(undefined);
     }
   }
 
   async function deleteAsset(id: string) {
     showConfirm("¿Borrar este activo del generador?", async () => {
-      await supabase.from("cartel_assets").delete().eq("id", id);
-      showToast("Activo eliminado");
-      fetchAssets();
-      onAssetsChanged?.();
+      const resultado = await borrarLogoPatrocinador(id);
+      if (resultado.ok) {
+        showToast("Activo eliminado");
+        fetchAssets();
+        onAssetsChanged?.();
+      } else {
+        showToast(resultado.error, "error");
+      }
     });
   }
 
   async function moveOrder(id: string, dir: -1 | 1) {
-    const sponsors = assets.filter(a => a.tipo === "logo_patrocinador").sort((a, b) => a.orden - b.orden);
-    const idx = sponsors.findIndex(s => s.id === id);
-    const swapIdx = idx + dir;
-    if (swapIdx < 0 || swapIdx >= sponsors.length) return;
-
-    const a = sponsors[idx];
-    const b = sponsors[swapIdx];
-    await Promise.all([
-      supabase.from("cartel_assets").update({ orden: b.orden }).eq("id", a.id),
-      supabase.from("cartel_assets").update({ orden: a.orden }).eq("id", b.id),
-    ]);
+    const resultado = await moverLogoPatrocinador(id, dir);
+    if (!resultado.ok) {
+      showToast(resultado.error, "error");
+      return;
+    }
     fetchAssets();
     onAssetsChanged?.();
   }
 
-  // Collect categorised data
-  const instLogos  = assets.filter(a => a.tipo === "logo_institucional");
-  const sponsors   = assets.filter(a => a.tipo === "logo_patrocinador").sort((a, b) => a.orden - b.orden);
-  const isUploading = Object.values(loading).some(Boolean);
+  async function cambiarOrdenLogos(orden: string) {
+    const resultado = await guardarOrdenLogos(orden);
+    if (!resultado.ok) {
+      showToast(resultado.error, "error");
+      return;
+    }
+    fetchAssets();
+    onAssetsChanged?.();
+  }
 
-  function getInst(subtipo: string)  { return instLogos.find(l => l.subtipo === subtipo); }
+  const sponsors = ajustes.patrocinadores;
+  const isUploading = Object.values(loading).some(Boolean);
 
   // Upload input helper
   function UploadZone({
@@ -203,34 +196,14 @@ export default function AdminCartelAssets({
           <p style={{ fontSize: "0.72rem", color: "#666", margin: "2px 0 0" }}>Determina qué logo va a la izquierda (Xunta o RFGF).</p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button 
-            onClick={() => {
-              const nombre = "xunta_left";
-              const existing = assets.find(a => a.tipo === "config" && a.subtipo === "logo_order");
-              const query = existing
-                ? supabase.from("cartel_assets").update({ nombre }).eq("id", existing.id)
-                : supabase.from("cartel_assets").insert([{ tipo: "config", subtipo: "logo_order", nombre, url: "", orden: 0 }]);
-              query.then(() => {
-                fetchAssets();
-                onAssetsChanged?.();
-              });
-            }}
-            style={ assets.find(a => a.tipo === "config" && a.subtipo === "logo_order")?.nombre !== "rfgf_left" ? activeBtnStyle : inactiveBtnStyle }>
+          <button
+            onClick={() => cambiarOrdenLogos("xunta_izquierda")}
+            style={ ajustes.ordenLogos !== "rfgf_izquierda" ? activeBtnStyle : inactiveBtnStyle }>
             Xunta Izquierda
           </button>
-          <button 
-            onClick={() => {
-              const nombre = "rfgf_left";
-              const existing = assets.find(a => a.tipo === "config" && a.subtipo === "logo_order");
-              const query = existing
-                ? supabase.from("cartel_assets").update({ nombre }).eq("id", existing.id)
-                : supabase.from("cartel_assets").insert([{ tipo: "config", subtipo: "logo_order", nombre, url: "", orden: 0 }]);
-              query.then(() => {
-                fetchAssets();
-                onAssetsChanged?.();
-              });
-            }}
-            style={ assets.find(a => a.tipo === "config" && a.subtipo === "logo_order")?.nombre === "rfgf_left" ? activeBtnStyle : inactiveBtnStyle }>
+          <button
+            onClick={() => cambiarOrdenLogos("rfgf_izquierda")}
+            style={ ajustes.ordenLogos === "rfgf_izquierda" ? activeBtnStyle : inactiveBtnStyle }>
             RFGF Izquierda
           </button>
         </div>
@@ -239,14 +212,14 @@ export default function AdminCartelAssets({
       {/* ── Logos institucionales ──────────────────────────────────────────── */}
       {sectionTitle("Logos Institucionales")}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-        {INST_LOGOS.map(({ subtipo, label, hint }) => (
+        {INST_LOGOS.map(({ clave, campo, label, hint }) => (
           <UploadZone
-            key={subtipo}
+            key={clave}
             label={label}
             hint={hint}
-            url={getInst(subtipo)?.url}
-            isLoading={!!loading[`logo_institucional_${subtipo}`]}
-            onFile={f => uploadAsset(f, "logo_institucional", subtipo, label)}
+            url={ajustes[campo] ?? undefined}
+            isLoading={!!loading[clave]}
+            onFile={f => subirLogoAjuste(f, clave, label)}
           />
         ))}
       </div>
@@ -267,7 +240,7 @@ export default function AdminCartelAssets({
             <span style={{ color: "var(--primary)", fontWeight: 900, fontSize: "0.85rem", width: 20 }}>
               {i + 1}
             </span>
-            <Image src={sp.url} alt={sp.nombre} width={52} height={36}
+            <Image src={sp.logo_url ?? ""} alt={sp.nombre} width={52} height={36}
               style={{ width: 52, height: 36, objectFit: "contain",
                        background: "rgba(255,255,255,0.04)", borderRadius: 6 }} />
             <span style={{ flex: 1, fontWeight: 700, fontSize: "0.9rem" }}>{sp.nombre}</span>
@@ -296,8 +269,7 @@ export default function AdminCartelAssets({
               if (!file) return;
               const nombre = prompt("Nombre del patrocinador:", file.name.replace(/\.[^.]+$/, ""));
               if (!nombre) return;
-              const nextOrden = sponsors.length;
-              await uploadAsset(file, "logo_patrocinador", nombre.toLowerCase().replace(/\s/g, "-"), nombre, nextOrden);
+              await subirLogoPatrocinador(file, nombre);
             }} />
         </label>
       </div>

@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { supabase, getSupabaseBrowserClient } from "@/lib/supabase-browser";
+// `getSupabaseBrowserClient` sigue aquí solo para cerrar sesión: el login se retira en la 2C.
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useRouter } from "next/navigation";
-import { processAndUploadImage } from "@/lib/image-utils";
+import { prepararImagen } from "@/lib/imagen-cliente";
+import { cargarAjustesCartel, guardarLogoAjuste } from "@/lib/server/acciones/ajustes-cartel";
 import BusyBanner from "./BusyBanner";
 
 interface AdminShieldProps {
@@ -33,8 +35,9 @@ export default function AdminShield({ showToast, showConfirm, compact }: AdminSh
 
   async function fetchClubShield() {
     setIsFetching(true);
-    const { data } = supabase.storage.from("fotos").getPublicUrl(`escudo_club.webp?t=${Date.now()}`);
-    if (data) setClubShield(data.publicUrl);
+    // No hace falta romper la caché a mano: cada subida genera una clave nueva con uuid.
+    const resultado = await cargarAjustesCartel();
+    if (resultado.ok) setClubShield(resultado.datos.escudoClub);
     setIsFetching(false);
   }
 
@@ -52,18 +55,16 @@ export default function AdminShield({ showToast, showConfirm, compact }: AdminSh
     setBusyProgress(5);
     setLoading(true);
     try {
-      const processed = await processAndUploadImage(tempShieldFile, (percent) => {
-        setBusyProgress(percent * 0.6);
-      });
-      if (!processed) return;
+      const cuerpo = new FormData();
+      setBusyProgress(40);
+      cuerpo.set("imagen", await prepararImagen(tempShieldFile));
 
       setBusyProgress(80);
-      const { data, error } = await supabase.storage.from("fotos").upload("escudo_club.webp", processed, {
-        upsert: true,
-        contentType: 'image/webp'
-      });
-
-      if (error) throw error;
+      const resultado = await guardarLogoAjuste("club.escudo", cuerpo);
+      if (!resultado.ok) {
+        showToast(resultado.error, "error");
+        return;
+      }
 
       setTempShieldFile(null);
       setPreviewUrl(null);
@@ -72,7 +73,7 @@ export default function AdminShield({ showToast, showConfirm, compact }: AdminSh
       showToast("Escudo oficial actualizado y aplicado");
     } catch (err) {
       console.error(err);
-      showToast("Error de permisos: Revisa políticas SQL", "error");
+      showToast("No se pudo actualizar el escudo", "error");
     } finally {
       setLoading(false);
       setBusyProgress(undefined);
