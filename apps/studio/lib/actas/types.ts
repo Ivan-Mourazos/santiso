@@ -1,10 +1,6 @@
 export type ActaCategoria = "Senior" | "Femenino" | "Veteranos";
 
-export type ActaEventType =
-  | "gol"
-  | "tarjeta_amarilla"
-  | "tarjeta_roja"
-  | "cambio";
+export type ActaEventType = "gol" | "tarjeta_amarilla" | "tarjeta_roja" | "cambio";
 
 export interface ActaPlayerRef {
   id: string;

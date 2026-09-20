@@ -133,11 +133,8 @@ function buildStats(acta: ParsedActa) {
 function buildEventRows(partidoId: string, acta: ParsedActa) {
   const rows = acta.eventos.map((event) => {
     const jugadorId =
-      event.tipo === "cambio"
-        ? event.jugadorEntra?.jugadorId
-        : event.jugador?.jugadorId;
-    const jugadorRelacionadoId =
-      event.tipo === "cambio" ? event.jugadorSale?.jugadorId : null;
+      event.tipo === "cambio" ? event.jugadorEntra?.jugadorId : event.jugador?.jugadorId;
+    const jugadorRelacionadoId = event.tipo === "cambio" ? event.jugadorSale?.jugadorId : null;
 
     assertSantisoPlayer(event, jugadorId || undefined);
     if (event.tipo === "cambio" && !event.isRival && !jugadorRelacionadoId) {
@@ -152,7 +149,9 @@ function buildEventRows(partidoId: string, acta: ParsedActa) {
       jugador_relacionado_id: event.isRival ? null : jugadorRelacionadoId,
       es_rival: event.isRival,
       nombre_mostrado: event.isRival
-        ? event.esPropiaSantiso ? "En propia" : event.nombreRival?.trim() || null
+        ? event.esPropiaSantiso
+          ? "En propia"
+          : event.nombreRival?.trim() || null
         : event.esPropia
           ? event.nombreRival?.trim() || "En propia"
           : null,
@@ -170,17 +169,8 @@ function buildEventRows(partidoId: string, acta: ParsedActa) {
   });
 }
 
-export async function saveReviewedActa({
-  supabase,
-  partidoId,
-  acta,
-}: SaveActaInput) {
-  const campoId = await ensureCampo(
-    supabase,
-    acta.campoId,
-    acta.campoNombre,
-    acta.campoPoblacion,
-  );
+export async function saveReviewedActa({ supabase, partidoId, acta }: SaveActaInput) {
+  const campoId = await ensureCampo(supabase, acta.campoId, acta.campoNombre, acta.campoPoblacion);
 
   const updatePayload: Record<string, string | number | null> = {
     goles_local: Number(acta.marcadorLocal) || 0,
@@ -220,45 +210,28 @@ export async function saveReviewedActa({
     .eq("id", partidoId);
   if (matchError) throw explainSupabaseError("partidos_liga", "actualizar", matchError);
 
-  const [{ error: statsDeleteError }, { error: eventsDeleteError }] =
-    await Promise.all([
-      supabase.from("jugador_partido_stats").delete().eq("partido_id", partidoId),
-      supabase.from("partido_eventos_santiso").delete().eq("partido_id", partidoId),
-    ]);
+  const [{ error: statsDeleteError }, { error: eventsDeleteError }] = await Promise.all([
+    supabase.from("jugador_partido_stats").delete().eq("partido_id", partidoId),
+    supabase.from("partido_eventos_santiso").delete().eq("partido_id", partidoId),
+  ]);
   if (statsDeleteError) {
-    throw explainSupabaseError(
-      "jugador_partido_stats",
-      "borrar",
-      statsDeleteError,
-    );
+    throw explainSupabaseError("jugador_partido_stats", "borrar", statsDeleteError);
   }
   if (eventsDeleteError) {
-    throw explainSupabaseError(
-      "partido_eventos_santiso",
-      "borrar",
-      eventsDeleteError,
-    );
+    throw explainSupabaseError("partido_eventos_santiso", "borrar", eventsDeleteError);
   }
 
   if (stats.length > 0) {
     const { error } = await supabase.from("jugador_partido_stats").insert(stats);
     if (error) {
-      throw explainSupabaseError(
-        "jugador_partido_stats",
-        "insertar",
-        error,
-      );
+      throw explainSupabaseError("jugador_partido_stats", "insertar", error);
     }
   }
 
   if (events.length > 0) {
     const { error } = await supabase.from("partido_eventos_santiso").insert(events);
     if (error) {
-      throw explainSupabaseError(
-        "partido_eventos_santiso",
-        "insertar",
-        error,
-      );
+      throw explainSupabaseError("partido_eventos_santiso", "insertar", error);
     }
   }
 }
