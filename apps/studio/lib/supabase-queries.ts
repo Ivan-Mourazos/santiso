@@ -1,4 +1,5 @@
 import type { CompetenciaRow } from "@/lib/competition";
+import { cargarCompeticiones } from "@/lib/server/acciones/competiciones";
 import { cargarTemporadas } from "@/lib/server/acciones/temporadas";
 import { supabase } from "@/lib/supabase";
 
@@ -56,18 +57,8 @@ export interface LeagueMatch {
 }
 
 export async function fetchCompeticiones(): Promise<CompetenciaRow[]> {
-  try {
-    const { data, error } = await supabase
-      .from("competiciones")
-      .select("id,categoria,nombre,orden,activa,formato")
-      .order("categoria", { ascending: true })
-      .order("orden", { ascending: true });
-
-    if (error || !data) return [];
-    return (data as CompetenciaRow[]).filter((r) => r.activa !== false);
-  } catch {
-    return [];
-  }
+  const resultado = await cargarCompeticiones();
+  return resultado.ok ? resultado.datos : [];
 }
 
 export function sortTeamsByName<T extends { nombre?: string | null }>(

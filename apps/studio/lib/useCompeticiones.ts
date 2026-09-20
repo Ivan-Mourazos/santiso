@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { supabase } from "@/lib/supabase-browser";
+import { borrarCompeticion, crearCompeticion } from "@/lib/server/acciones/competiciones";
 import { fetchCompeticiones } from "@/lib/supabase-queries";
 import {
   competitionsForCategory,
@@ -53,47 +53,23 @@ export function useCompeticiones(categoria?: string) {
 
   const addCompeticion = useCallback(
     async (nombre: string, cat: string, formato: string = "liga") => {
-      if (!nombre.trim() || !cat)
-        return { error: new Error("Nombre o categoría inválidos") };
-
-      const existentes = competitionsForCategory(competicionesCatalog, cat);
-      const maxOrden = existentes.reduce((max, c) => Math.max(max, c.orden), 0);
-
-      const { data, error } = await supabase
-        .from("competiciones")
-        .insert([
-          {
-            categoria: cat,
-            nombre: nombre.trim(),
-            orden: maxOrden + 10,
-            activa: true,
-            formato,
-          },
-        ])
-        .select()
-        .single();
-
-      if (!error) {
-        await loadCompeticiones();
-        if (data?.id) setSelectedCompetitionId(data.id);
-      }
-      return { data, error };
+      // El orden lo calcula el servidor a partir de las competiciones ya inscritas.
+      const resultado = await crearCompeticion({ nombre, categoria: cat, formato });
+      if (!resultado.ok) return { data: null, error: new Error(resultado.error) };
+      await loadCompeticiones();
+      setSelectedCompetitionId(resultado.datos.id);
+      return { data: resultado.datos, error: null };
     },
-    [competicionesCatalog, loadCompeticiones],
+    [loadCompeticiones],
   );
 
   const removeCompeticion = useCallback(
     async (id: string) => {
       if (!id) return { error: new Error("ID inválido") };
-      const { error } = await supabase
-        .from("competiciones")
-        .delete()
-        .eq("id", id);
-
-      if (!error) {
-        await loadCompeticiones();
-      }
-      return { error };
+      const resultado = await borrarCompeticion(id);
+      if (!resultado.ok) return { error: new Error(resultado.error) };
+      await loadCompeticiones();
+      return { error: null };
     },
     [loadCompeticiones],
   );
