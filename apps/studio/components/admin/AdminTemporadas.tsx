@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase-browser";
+import type { TemporadaDto } from "@/lib/dto";
+import { activarTemporada, cargarTemporadas, crearTemporada } from "@/lib/server/acciones/temporadas";
 import BusyBanner from "./BusyBanner";
 
 interface AdminTemporadasProps {
@@ -9,7 +10,7 @@ interface AdminTemporadasProps {
 }
 
 export default function AdminTemporadas({ showToast, showConfirm }: AdminTemporadasProps) {
-  const [temporadas, setTemporadas] = useState<any[]>([]);
+  const [temporadas, setTemporadas] = useState<TemporadaDto[]>([]);
   const [nombre, setNombre] = useState("");
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -21,8 +22,9 @@ export default function AdminTemporadas({ showToast, showConfirm }: AdminTempora
 
   async function fetchTemporadas() {
     setIsFetching(true);
-    const { data } = await supabase.from("temporadas").select("*").order("created_at", { ascending: false });
-    if (data) setTemporadas(data);
+    const resultado = await cargarTemporadas();
+    if (resultado.ok) setTemporadas(resultado.datos);
+    else showToast(resultado.error, "error");
     setIsFetching(false);
   }
 
@@ -32,14 +34,14 @@ export default function AdminTemporadas({ showToast, showConfirm }: AdminTempora
     setBusyText("Creando temporada...");
     setLoading(true);
 
-    const { error } = await supabase.from("temporadas").insert([{ nombre, activa: temporadas.length === 0 }]);
-    
-    if (!error) {
+    const resultado = await crearTemporada(nombre);
+
+    if (resultado.ok) {
       showToast("Temporada creada");
       setNombre("");
       fetchTemporadas();
     } else {
-      showToast("Error al crear", "error");
+      showToast(resultado.error, "error");
     }
     setLoading(false);
   }
@@ -47,14 +49,12 @@ export default function AdminTemporadas({ showToast, showConfirm }: AdminTempora
   async function setActiva(id: string) {
     setBusyText("Activando temporada...");
     setLoading(true);
-    // Desactivar todas
-    await supabase.from("temporadas").update({ activa: false }).neq("id", id);
-    // Activar seleccionada
-    const { error } = await supabase.from("temporadas").update({ activa: true }).eq("id", id);
-    
-    if (!error) {
+    const resultado = await activarTemporada(id);
+    if (resultado.ok) {
       showToast("Temporada activa actualizada");
       fetchTemporadas();
+    } else {
+      showToast(resultado.error, "error");
     }
     setLoading(false);
   }

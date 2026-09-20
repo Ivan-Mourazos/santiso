@@ -1,4 +1,5 @@
 import type { CompetenciaRow } from "@/lib/competition";
+import { cargarTemporadas } from "@/lib/server/acciones/temporadas";
 import { supabase } from "@/lib/supabase";
 
 export type { CompetenciaRow };
@@ -80,22 +81,12 @@ export function sortTeamsByName<T extends { nombre?: string | null }>(
 }
 
 export async function fetchSeasons() {
-  try {
-    const { data, error } = await supabase
-      .from("temporadas")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    return {
-      data: (data || []) as Season[],
-      error,
-      active: ((data || []).find((t: Season) => t.activa) ||
-        data?.[0] ||
-        null) as Season | null,
-    };
-  } catch {
-    return { data: [], error: null, active: null };
+  const resultado = await cargarTemporadas();
+  if (!resultado.ok) {
+    return { data: [] as Season[], error: new Error(resultado.error), active: null };
   }
+  const data = resultado.datos as Season[];
+  return { data, error: null, active: data.find((t) => t.activa) ?? data[0] ?? null };
 }
 
 export async function fetchTeamsByIds(ids: string[]) {
