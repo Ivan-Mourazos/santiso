@@ -135,9 +135,7 @@ function miniLiga(
   disputados: readonly PartidoClasificacion[],
 ): Map<string, { puntos: number; golesFavor: number; diferencia: number }> {
   const dentro = new Set(equipoIds);
-  const tabla = new Map(
-    equipoIds.map((id) => [id, { puntos: 0, golesFavor: 0, diferencia: 0 }]),
-  );
+  const tabla = new Map(equipoIds.map((id) => [id, { puntos: 0, golesFavor: 0, diferencia: 0 }]));
   if (equipoIds.length < 2) return tabla;
 
   for (const partido of disputados) {
