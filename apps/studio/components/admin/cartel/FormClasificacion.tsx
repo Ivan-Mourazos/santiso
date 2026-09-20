@@ -7,6 +7,7 @@ import React, { useEffect, useState } from "react";
 import type { FormState } from "./types";
 import { CategorySelector, SectionLabel, Toggle } from "./Common";
 import { useCompeticiones } from "@/lib/useCompeticiones";
+import AvisoError from "../AvisoError";
 import { getClasificacionData } from "@/lib/cartel/clasificacion-data";
 
 interface Props {
@@ -15,7 +16,7 @@ interface Props {
 }
 
 export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
-  const { competicionesEnCategoria } = useCompeticiones(form.categoria);
+  const { competicionesEnCategoria, errorCompeticiones } = useCompeticiones(form.categoria);
   const [loading, setLoading] = useState(false);
   const [competicionId, setCompeticionId] = useState("");
   const [modoManual, setModoManual] = useState(false);
@@ -99,6 +100,7 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
   return (
     <>
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
+      <AvisoError mensaje={errorCompeticiones} />
 
       <SectionLabel>Modo de datos</SectionLabel>
       <div style={{ display: "flex", gap: "0.8rem", marginBottom: "1.2rem" }}>
