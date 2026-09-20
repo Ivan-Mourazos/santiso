@@ -28,6 +28,7 @@
 - libSQL no libera el fichero de BD hasta que termina el proceso (`EBUSY`/`EPERM` en Windows). Parar `pnpm dev` antes de mover o reimportar la BD.
 - Dominio en español: nombres de funciones de negocio, mensajes y textos. Sin `any`. `as` solo con un comentario que lo justifique. Sin `catch` vacíos.
 - `pnpm check` en verde antes de cada commit. `pnpm e2e` al cerrar cada tarea que cambie una pantalla.
+- **Prettier y ESLint solo sobre los ficheros nuevos.** `apps/studio` está en `.prettierignore` a propósito (código heredado pendiente de reescritura): pasar Prettier sobre un componente existente lo reformatea entero y convierte un cambio de tres líneas en un diff de doscientas. En los ficheros heredados se editan solo las líneas que toca la tarea. Sus avisos de ESLint forman parte de la línea base de 103 problemas; lo que hay que comprobar es que esa cifra **no sube**, con `pnpm --filter @santiso/studio exec eslint .`
 - Cada commit en Conventional Commits en español, con esta línea final:
   `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`
 
@@ -533,13 +534,16 @@ Abrir `http://127.0.0.1:3000/admin`, pestaña **Temporadas**, y comprobar a mano
 - Crear «2027/28» otra vez muestra el error de nombre repetido.
 - Recargar la página conserva el estado.
 
-Dejar la temporada de prueba: desaparece en la reimportación de 2B-3. Parar el servidor.
+Después, borrar la temporada de prueba de la BD real: no hay ninguna reimportación posterior que la limpie sola. Con el servidor parado (libSQL bloquea el fichero), un script `.ts` en `apps/studio` ejecutado con `pnpm --filter @santiso/studio exec tsx` que borre la fila por nombre y liste las restantes, y borrar el script al terminar. Ojo: `apps/studio` no declara `"type": "module"`, así que el script no admite `await` de primer nivel — envuélvelo en una función `main()`.
+
+Esperado al listar: solo `2025/26` y `2026/27 (ACTIVA)`. Parar el servidor.
 
 - [ ] **Paso 10: Formato, lint, puerta de calidad y commit**
 
 ```bash
-pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib/dto.ts apps/studio/lib/server/consultas apps/studio/lib/server/acciones apps/studio/components/admin/AdminTemporadas.tsx apps/studio/lib/supabase-queries.ts
-pnpm --filter @santiso/studio exec eslint lib/dto.ts lib/server lib/supabase-queries.ts components/admin/AdminTemporadas.tsx
+pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib/dto.ts apps/studio/lib/server/consultas apps/studio/lib/server/acciones
+pnpm --filter @santiso/studio exec eslint lib/dto.ts lib/server
+pnpm --filter @santiso/studio exec eslint . 2>&1 | tail -1   # debe seguir en 103 problemas
 pnpm check
 pnpm e2e
 git add apps/studio/lib/dto.ts apps/studio/lib/server apps/studio/lib/supabase-queries.ts apps/studio/components/admin/AdminTemporadas.tsx
@@ -963,8 +967,9 @@ Nota: `competicionesCatalog` ya no se usa dentro de `addCompeticion` (el orden l
 - [ ] **Paso 7: Puerta de calidad y commit**
 
 ```bash
-pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib/server apps/studio/lib/supabase-queries.ts apps/studio/lib/useCompeticiones.ts
-pnpm --filter @santiso/studio exec eslint lib/server lib/supabase-queries.ts lib/useCompeticiones.ts
+pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib/server
+pnpm --filter @santiso/studio exec eslint lib/server
+pnpm --filter @santiso/studio exec eslint . 2>&1 | tail -1   # debe seguir en 103 problemas
 pnpm check
 pnpm e2e
 git add apps/studio/lib/server apps/studio/lib/supabase-queries.ts apps/studio/lib/useCompeticiones.ts
@@ -1836,8 +1841,9 @@ Parar el servidor.
 - [ ] **Paso 11: Puerta de calidad y commit**
 
 ```bash
-pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib apps/studio/e2e apps/studio/components/admin/AdminLeague.tsx
-pnpm --filter @santiso/studio exec eslint lib e2e components/admin/AdminLeague.tsx
+pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib/dto.ts apps/studio/lib/server apps/studio/e2e
+pnpm --filter @santiso/studio exec eslint lib/server e2e
+pnpm --filter @santiso/studio exec eslint . 2>&1 | tail -1   # debe seguir en 103 problemas
 pnpm check
 pnpm e2e
 git add apps/studio/lib apps/studio/components/admin/AdminLeague.tsx apps/studio/e2e
