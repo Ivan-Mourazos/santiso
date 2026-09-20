@@ -336,6 +336,13 @@ Cada fase deja software funcionando y verificable. Orden por valor y dependencia
 
 ### Fase 2 — Corte de Supabase
 
+> **Actualización 15/09/2026:** la fase se divide en tres planes, cada uno con software funcionando:
+> - **2A — Infraestructura de servidor** ([plan](../plans/2026-09-15-fase-2a-infraestructura-servidor.md)): Next 16.3, `127.0.0.1`, conexión y `Resultado<T>`, media local con `sharp`, arreglos R14/R15, e2e y capturas de referencia. No reconecta pantallas.
+> - **2B — Reconexión de secciones:** consultas y acciones por sección sobre SQLite, DTOs de compatibilidad y guardado atómico de actas. Empieza con una reimportación desde Supabase y, desde ese momento, no se edita en Supabase.
+> - **2C — Retirada de Supabase:** login, proxy, dependencias, variables y datos estáticos; verificación final contra las capturas de referencia.
+>
+> El código de servidor vive en `apps/studio/lib/server/` (estructura existente de la app) en lugar de `src/server/`.
+
 - **Objetivo:** la app lee y escribe solo en SQLite y media local; desaparecen Supabase y el login.
 - **Alcance:**
   - Actualizar Next 16.3 y React 19.3 (guía local de actualización).
