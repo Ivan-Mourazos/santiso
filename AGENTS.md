@@ -10,6 +10,8 @@
 - **Base de datos:** Drizzle 0.45 (solo query builder core, nunca `db.query`) sobre libSQL. Cambios de esquema: editar `packages/db/src/schema`, `pnpm db:generate --name <cambio>`, pruebas en `packages/db/src/schema.test.ts`.
 - **libSQL en Windows:** no libera el fichero hasta que termina el proceso. Para mover o borrar ficheros de BD, hazlo desde otro proceso y con `pnpm dev` parado.
 - **Supabase:** solo lectura y solo desde `tools/migracion-supabase` hasta su retirada en la Fase 2.
+- `pnpm check` es la puerta de cada commit. `pnpm e2e` se ejecuta al cerrar cada tarea que cambie pantallas; necesita `data/santiso.db` y `DEV_AUTH_BYPASS=1` mientras exista el login.
+- Las capturas de `data/referencias/antes-fase-2/` son la referencia visual para validar las Fases 2B y 2C. Cubren las 9 secciones del panel (escritorio y móvil) y 3 de las 7 plantillas de cartel: partido, proximos y resumo.
 <!-- END:tooling-env -->
 
 <!-- BEGIN:nextjs-agent-rules -->

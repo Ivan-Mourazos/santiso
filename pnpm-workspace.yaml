@@ -9,6 +9,7 @@ ignoredBuiltDependencies:
 
 catalog:
   "@libsql/client": 0.18.0
+  "@playwright/test": 1.61.1
   "@types/node": ^22.0.0
   drizzle-kit: 0.31.10
   drizzle-orm: 0.45.2

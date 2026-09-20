@@ -32,6 +32,8 @@ yarn-error.log*
 
 # salida de scripts de revisión visual
 apps/studio/scripts/.out/
+apps/studio/test-results/
+apps/studio/playwright-report/
 
 # metadatos de IA y agentes
 .agents/

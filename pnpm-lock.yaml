@@ -9,6 +9,9 @@ catalogs:
     '@libsql/client':
       specifier: 0.18.0
       version: 0.18.0
+    '@playwright/test':
+      specifier: 1.61.1
+      version: 1.61.1
     '@types/node':
       specifier: ^22.0.0
       version: 22.20.2
@@ -94,7 +97,7 @@ importers:
         version: 0.0.4
       next:
         specifier: 16.3.5
-        version: 16.3.5(@babel/core@7.29.0)(@types/node@20.19.39)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 16.3.5(@babel/core@7.29.0)(@playwright/test@1.61.1)(@types/node@20.19.39)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -120,6 +123,9 @@ importers:
       '@napi-rs/canvas':
         specifier: ^1.0.1
         version: 1.0.1
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.61.1
       '@types/node':
         specifier: ^20
         version: 20.19.39
@@ -1193,6 +1199,11 @@ packages:
 
   '@oxc-project/types@0.149.0':
     resolution: {integrity: sha512-Efcc+iF0j3Bf67YjEqIqWXbX5XddXoK/Mw4K1/JuXwRCZ8N16VR7iT23nlCc9XrveFVh/E5Rqs2StT0V8v9LdA==}
+
+  '@playwright/test@1.61.1':
+    resolution: {integrity: sha512-8nKv6+0RJSL9FE4jYOEGXnPeM/Hg12qZpmqzZjRh3qM0Y7c3z1mrOTfFLids72RDQYVh9WpLEfR5WdpNX4fkig==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   '@rolldown/binding-android-arm-eabi@1.2.8':
     resolution: {integrity: sha512-tN5aztYkKCte4i5SIrrz5yK/HMjEuCqCSCJa418jOV8tZ1cBY3YF2otxB1ktPxzsLA1BeTqwapK0bfjxNvHJVw==}
@@ -3900,6 +3911,10 @@ snapshots:
 
   '@oxc-project/types@0.149.0': {}
 
+  '@playwright/test@1.61.1':
+    dependencies:
+      playwright: 1.61.1
+
   '@rolldown/binding-android-arm-eabi@1.2.8':
     optional: true
 
@@ -5342,7 +5357,7 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  next@16.3.5(@babel/core@7.29.0)(@types/node@20.19.39)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
+  next@16.3.5(@babel/core@7.29.0)(@playwright/test@1.61.1)(@types/node@20.19.39)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:
       '@next/env': 16.3.5
       '@swc/helpers': 0.5.23
@@ -5361,6 +5376,7 @@ snapshots:
       '@next/swc-linux-x64-musl': 16.3.5
       '@next/swc-win32-arm64-msvc': 16.3.5
       '@next/swc-win32-x64-msvc': 16.3.5
+      '@playwright/test': 1.61.1
       babel-plugin-react-compiler: 1.0.0
       sharp: 0.35.4(@types/node@20.19.39)
     transitivePeerDependencies:

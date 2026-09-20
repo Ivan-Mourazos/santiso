@@ -36,6 +36,7 @@ La app lee los datos de `SANTISO_DATA_DIR` (ruta absoluta a `data/`), definida e
 | `pnpm dev` / `pnpm build` | Arranca o compila la app |
 | `pnpm check` | Tipos, lint, formato y pruebas: obligatorio antes de cada commit |
 | `pnpm test` | Pruebas (Vitest) |
+| `pnpm e2e` | Pruebas de humo en navegador (arranca `pnpm dev` si no está en marcha) |
 | `pnpm db:generate --name <nombre>` | Genera una migración tras cambiar el esquema |
 | `pnpm db:migrate` | Aplica las migraciones a `data/santiso.db` |
 | `pnpm db:backup` | Copia consistente de la BD en `data/backups/` |
