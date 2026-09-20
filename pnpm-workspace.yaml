@@ -22,3 +22,4 @@ catalog:
   typescript-eslint: ^8.0.0
   vitest: 4.1.11
   zod: 4.6.4
+  unpdf: 1.8.1
