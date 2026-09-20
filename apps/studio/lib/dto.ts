@@ -62,3 +62,14 @@ export interface JugadorDto {
   fecha_nacimiento: string | null;
   historial_deportivo: string[];
 }
+
+/** @deprecated Ver TemporadaDto. `tipo` se devuelve ya en el catálogo nuevo (`tecnico`/`directiva`). */
+export interface StaffDto {
+  id: string;
+  nombre: string;
+  cargo: string;
+  tipo: string;
+  categoria: string | null;
+  foto_url: string | null;
+  orden: number;
+}

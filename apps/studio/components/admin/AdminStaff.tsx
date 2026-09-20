@@ -1,8 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase-browser";
-import { processAndUploadImage } from "@/lib/image-utils";
-import { v4 as uuidv4 } from "uuid";
+import type { StaffDto } from "@/lib/dto";
+import { prepararImagen } from "@/lib/imagen-cliente";
+import {
+  borrarMiembroStaff,
+  cargarStaff,
+  guardarMiembroStaff,
+} from "@/lib/server/acciones/staff";
 import BusyBanner from "./BusyBanner";
 
 interface AdminStaffProps {
@@ -13,7 +17,7 @@ interface AdminStaffProps {
 }
 
 export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: AdminStaffProps) {
-  const [staff, setStaff] = useState<any[]>([]);
+  const [staff, setStaff] = useState<StaffDto[]>([]);
   const [nombre, setNombre] = useState("");
   const [cargo, setCargo] = useState("");
   const [fotoFile, setFotoFile] = useState<File | null>(null);
@@ -28,15 +32,7 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
 
   async function fetchStaff() {
     setIsFetching(true);
-    let query = supabase.from("staff_club").select("*").eq("tipo", tipo);
-    if (tipo === "Tecnico" && categoria) {
-      query = query.eq("categoria", categoria);
-    }
-    const { data } = await query.order("created_at", { ascending: true });
-    if (data) {
-      console.log(`Cargados ${data.length} registros de ${tipo} (${categoria || 'General'})`);
-      setStaff(data);
-    }
+    setStaff(await cargarStaff(tipo, categoria));
     setIsFetching(false);
   }
 
@@ -47,46 +43,30 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
     setBusyProgress(5);
     setLoading(true);
 
-    console.log("Añadiendo staff:", { nombre, cargo, tipo, categoria });
-
-    let foto_url = "";
+    const cuerpo = new FormData();
+    cuerpo.set("id", "");
+    cuerpo.set("nombre", nombre);
+    cuerpo.set("cargo", cargo);
+    cuerpo.set("tipo", tipo);
+    cuerpo.set("categoria", categoria ?? "");
     if (fotoFile) {
-      const processed = await processAndUploadImage(fotoFile, (percent) => {
-        setBusyText("Procesando foto...");
-        setBusyProgress(percent * 0.6);
-      });
-      if (processed) {
-        setBusyText("Subiendo foto...");
-        setBusyProgress(75);
-        const fileName = `staff/${uuidv4()}.webp`;
-        const { data } = await supabase.storage.from("fotos").upload(fileName, processed);
-        if (data) {
-          setBusyText("Guardando datos staff...");
-          setBusyProgress(90);
-          const { data: pUrl } = supabase.storage.from("fotos").getPublicUrl(fileName);
-          foto_url = pUrl.publicUrl;
-        }
-      }
+      setBusyText("Preparando foto...");
+      setBusyProgress(40);
+      cuerpo.set("foto", await prepararImagen(fotoFile));
     }
 
-    const { error } = await supabase.from("staff_club").insert([{
-      nombre,
-      cargo,
-      tipo,
-      categoria: tipo === "Tecnico" ? categoria : null,
-      foto_url
-    }]);
+    setBusyText("Guardando staff...");
+    setBusyProgress(80);
+    const resultado = await guardarMiembroStaff(cuerpo);
 
-    if (!error) {
-      console.log("Guardado exitoso en staff_club");
+    if (resultado.ok) {
       setNombre("");
       setCargo("");
       setFotoFile(null);
       fetchStaff();
       showToast(`${tipo === 'Tecnico' ? 'Técnico' : 'Directivo'} añadido correctamente`);
     } else {
-      console.error("Error al guardar staff:", error);
-      showToast("Error al añadir: " + error.message, "error");
+      showToast(resultado.error, "error");
     }
     setLoading(false);
     setBusyProgress(undefined);
@@ -96,25 +76,32 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
     setBusyText("Procesando y subiendo foto...");
     setBusyProgress(5);
     setLoading(true);
-    const processed = await processAndUploadImage(file, (percent) => {
-      setBusyText("Procesando foto...");
-      setBusyProgress(percent * 0.6);
-    });
-    if (processed) {
-      setBusyText("Subiendo foto...");
-      setBusyProgress(75);
-      const fileName = `staff/${uuidv4()}.webp`;
-      const { data } = await supabase.storage.from("fotos").upload(fileName, processed);
-      if (data) {
-        setBusyText("Guardando foto...");
-        setBusyProgress(90);
-        const { data: pUrl } = supabase.storage.from("fotos").getPublicUrl(fileName);
-        const { error } = await supabase.from("staff_club").update({ foto_url: pUrl.publicUrl }).eq("id", id);
-        if (!error) {
-          showToast("Foto actualizada");
-          fetchStaff();
-        }
-      }
+    const miembro = staff.find((s) => s.id === id);
+    if (!miembro) {
+      showToast("No se encontró el miembro", "error");
+      setLoading(false);
+      setBusyProgress(undefined);
+      return;
+    }
+    // `guardarMiembroStaff` reescribe la fila entera: hay que reenviar nombre, cargo y tipo.
+    const cuerpo = new FormData();
+    cuerpo.set("id", id);
+    cuerpo.set("nombre", miembro.nombre);
+    cuerpo.set("cargo", miembro.cargo);
+    cuerpo.set("tipo", miembro.tipo);
+    cuerpo.set("categoria", miembro.categoria ?? "");
+    setBusyText("Preparando foto...");
+    setBusyProgress(40);
+    cuerpo.set("foto", await prepararImagen(file));
+
+    setBusyText("Guardando foto...");
+    setBusyProgress(80);
+    const resultado = await guardarMiembroStaff(cuerpo);
+    if (resultado.ok) {
+      showToast("Foto actualizada");
+      fetchStaff();
+    } else {
+      showToast(resultado.error, "error");
     }
     setLoading(false);
     setBusyProgress(undefined);
@@ -122,10 +109,12 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
 
   async function handleDeleteStaff(id: string) {
     showConfirm(`¿Eliminar a este miembro del ${tipo === 'Tecnico' ? 'cuerpo técnico' : 'staff'}?`, async () => {
-      const { error } = await supabase.from("staff_club").delete().eq("id", id);
-      if (!error) {
+      const resultado = await borrarMiembroStaff(id);
+      if (resultado.ok) {
         fetchStaff();
         showToast("Miembro eliminado");
+      } else {
+        showToast(resultado.error, "error");
       }
     });
   }
