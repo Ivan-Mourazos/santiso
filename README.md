@@ -13,7 +13,7 @@ Herramienta local de UD Santiso para carteles, calendario, actas y estadísticas
 
 ```bash
 pnpm install
-pnpm dev          # http://localhost:3000/admin
+pnpm dev          # http://127.0.0.1:3000/admin (solo accesible desde este equipo)
 ```
 
 ## Estructura

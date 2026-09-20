@@ -13,7 +13,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const outDir = join(here, ".out");
 mkdirSync(outDir, { recursive: true });
 
-const base = process.argv[2] || "http://localhost:3000";
+const base = process.argv[2] || "http://127.0.0.1:3000";
 const slug = (s: string) => s.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 const viewports = [
