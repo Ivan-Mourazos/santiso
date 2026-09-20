@@ -1,6 +1,6 @@
 # Fase 2B-3 — Calendario sobre SQLite: plan de implementación
 
-> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [ ]`) para el seguimiento.
+> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [x]`) para el seguimiento.
 
 **Objetivo:** que jornadas, partidos y descansos se lean y escriban **solo** en SQLite, y unificar el cálculo de la clasificación, que hoy existe por duplicado con reglas distintas.
 
@@ -78,7 +78,7 @@ Aviso sobre el método: el enfrentamiento directo **no es transitivo** (A puede 
 - Consume: nada.
 - Produce: `calcularClasificacion(equipoIds, partidos)` con el mismo tipo de antes; cambia solo el orden del resultado.
 
-- [ ] **Paso 1: Escribir las pruebas que fallan**
+- [x] **Paso 1: Escribir las pruebas que fallan**
 
 Añadir a `packages/domain/src/clasificacion.test.ts`, antes del cierre del `describe`:
 
@@ -130,12 +130,12 @@ Añadir a `packages/domain/src/clasificacion.test.ts`, antes del cierre del `des
   });
 ```
 
-- [ ] **Paso 2: Ejecutar y comprobar que fallan**
+- [x] **Paso 2: Ejecutar y comprobar que fallan**
 
 Ejecutar: `pnpm exec vitest run packages/domain/src/clasificacion.test.ts`
 Esperado: FAIL en las pruebas del enfrentamiento directo; las anteriores siguen en verde, porque sus equipos no se enfrentan entre sí.
 
-- [ ] **Paso 3: Implementar**
+- [x] **Paso 3: Implementar**
 
 En `packages/domain/src/clasificacion.ts`, sustituir el bloque `return [...tabla.values()]…` final por:
 
@@ -222,7 +222,7 @@ Ampliar además el comentario de cabecera de `calcularClasificacion` para que di
  * lista se ordena antes por los criterios que sí lo son para que el resultado sea estable.
 ```
 
-- [ ] **Paso 4: Ejecutar las pruebas y commit**
+- [x] **Paso 4: Ejecutar las pruebas y commit**
 
 ```bash
 pnpm exec vitest run packages/domain
@@ -233,7 +233,7 @@ git commit -m "feat(domain): desempate por enfrentamiento directo en la clasific
 
 Esperado: las 13 pruebas del fichero en verde (8 previas más 5 nuevas).
 
-- [ ] **Paso 5: Comprobar el efecto sobre los datos reales**
+- [x] **Paso 5: Comprobar el efecto sobre los datos reales**
 
 Con el servidor parado, un script `.ts` en `apps/studio` ejecutado con `pnpm --filter @santiso/studio exec tsx` (envuelto en `main()`, porque el paquete no es ESM) que recorra las competiciones de la temporada 2025/26, calcule la tabla y compruebe la coherencia interna: `GF total == GC total`, `puntos == 3×PG + PE`, `PG total == PP total` y `suma PJ == 2 × partidos disputados`. Borrar el script al terminar.
 
@@ -262,7 +262,7 @@ Contexto: tres tablas cambian de forma. `jornadas` pierde `temporada_id` y `cate
   - `anadirDescanso(jornadaId, equipoId)`, `quitarDescanso(jornadaId, equipoId)`
   - `crearPartido(entrada)`, `guardarMarcador(id, local, visitante)`, `cambiarEstadoPartido(id, estado)`, `cambiarFechaPartido(id, fecha)`, `cambiarCampoPartido(id, campoId)`, `borrarPartido(id)`
 
-- [ ] **Paso 1: Añadir los DTO**
+- [x] **Paso 1: Añadir los DTO**
 
 Añadir al final de `apps/studio/lib/dto.ts`:
 
@@ -306,7 +306,7 @@ export interface PantallaCalendario {
 }
 ```
 
-- [ ] **Paso 2: Escribir las pruebas que fallan**
+- [x] **Paso 2: Escribir las pruebas que fallan**
 
 `apps/studio/lib/server/acciones/calendario.test.ts`:
 
@@ -690,12 +690,12 @@ describe("acciones de calendario", () => {
 });
 ```
 
-- [ ] **Paso 3: Ejecutar y comprobar que fallan**
+- [x] **Paso 3: Ejecutar y comprobar que fallan**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/server/acciones/calendario.test.ts`
 Esperado: FAIL, el módulo `./calendario` no existe.
 
-- [ ] **Paso 4: Implementar la consulta**
+- [x] **Paso 4: Implementar la consulta**
 
 `apps/studio/lib/server/consultas/calendario.ts`:
 
@@ -813,7 +813,7 @@ export async function listarDescansos(jornadaId: string): Promise<DescansoDto[]>
 }
 ```
 
-- [ ] **Paso 5: Implementar las acciones**
+- [x] **Paso 5: Implementar las acciones**
 
 `apps/studio/lib/server/acciones/calendario.ts`:
 
@@ -1127,12 +1127,12 @@ export async function quitarDescanso(
 }
 ```
 
-- [ ] **Paso 6: Ejecutar las pruebas**
+- [x] **Paso 6: Ejecutar las pruebas**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/server/acciones/calendario.test.ts`
 Esperado: 16 pruebas en verde.
 
-- [ ] **Paso 7: Conectar los dos helpers que quedaban en `supabase-queries.ts`**
+- [x] **Paso 7: Conectar los dos helpers que quedaban en `supabase-queries.ts`**
 
 En `apps/studio/lib/supabase-queries.ts`:
 
@@ -1173,7 +1173,7 @@ export async function fetchMatchesForMatchday(
 
 4. Quitar el import de `supabase` y el de `CompetenciaRow` si dejan de usarse. Comprobar con `pnpm --filter @santiso/studio typecheck` y con `grep -n "supabase" apps/studio/lib/supabase-queries.ts`: al terminar, el fichero **no** debe importar `@/lib/supabase`.
 
-- [ ] **Paso 8: Puerta de calidad y commit**
+- [x] **Paso 8: Puerta de calidad y commit**
 
 ```bash
 pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib/dto.ts apps/studio/lib/server
@@ -1203,7 +1203,7 @@ Dos cambios de comportamiento que hay que respetar:
 - Consume: todo lo que produce la Tarea 2, más `cargarCompeticiones` (2B-1) y `guardarReglas`/`reglasDeCompeticion` (2B-1).
 - Produce: nada nuevo.
 
-- [ ] **Paso 1: Inventariar las llamadas que quedan**
+- [x] **Paso 1: Inventariar las llamadas que quedan**
 
 ```bash
 grep -n "supabase" apps/studio/components/admin/AdminJornadas.tsx
@@ -1211,14 +1211,14 @@ grep -n "supabase" apps/studio/components/admin/AdminJornadas.tsx
 
 Anotar la lista. Son nueve, sobre seis tablas: `reglas_liga`, `campos_futbol`, `temporadas`, `jornada_equipo_descanso`, `jornadas` y `partidos_liga`.
 
-- [ ] **Paso 2: Sustituir las lecturas**
+- [x] **Paso 2: Sustituir las lecturas**
 
 - Las de `temporadas` pasan a `fetchSeasons` (ya migrada en 2B-1) o se eliminan si solo servían para filtrar jornadas: la competición ya determina la temporada.
 - Las de `reglas_liga` pasan a `reglasDeCompeticion` / `guardarReglas` de `@/lib/server/acciones/competiciones`.
 - Las de `campos_futbol` pasan a los `campos` que devuelve `cargarPantallaCalendario`.
 - `fetchJornadas`, `fetchPartidos` y `fetchDescansos` se funden en **una** llamada a `cargarPantallaCalendario(selectedCompetitionId, selectedJornada ?? "")`, que rellena los cuatro estados de golpe. Tres acciones separadas serían tres viajes en serie.
 
-- [ ] **Paso 3: Sustituir las escrituras**
+- [x] **Paso 3: Sustituir las escrituras**
 
 | Función de la pantalla | Acción nueva |
 | --- | --- |
@@ -1238,7 +1238,7 @@ Todas muestran `resultado.error` en el toast cuando fallan, en vez de tragarse e
 
 En el JSX, la fila de descanso deja de pasar `d.id` y pasa `d.equipo_id` junto con la jornada seleccionada.
 
-- [ ] **Paso 4: Comprobar que no queda Supabase**
+- [x] **Paso 4: Comprobar que no queda Supabase**
 
 ```bash
 grep -n "supabase" apps/studio/components/admin/AdminJornadas.tsx
@@ -1248,7 +1248,7 @@ pnpm build
 
 Esperado: el `grep` no devuelve nada, y typecheck y build en verde.
 
-- [ ] **Paso 5: Prueba e2e del calendario**
+- [x] **Paso 5: Prueba e2e del calendario**
 
 `apps/studio/e2e/calendario.spec.ts`:
 
@@ -1274,7 +1274,7 @@ test("el calendario carga jornadas y partidos desde la base de datos local", asy
 
 Ejecutar `pnpm e2e`. Esperado: `11 passed`.
 
-- [ ] **Paso 6: Comprobar en el navegador con los datos reales**
+- [x] **Paso 6: Comprobar en el navegador con los datos reales**
 
 Con `pnpm dev`, pestaña **Calendario**, competición Senior de la temporada activa:
 - Se listan las jornadas de la competición (la 2026/27 Senior tiene calendario completo).
@@ -1286,7 +1286,7 @@ Con `pnpm dev`, pestaña **Calendario**, competición Senior de la temporada act
 
 Deshacer los cambios de prueba antes de terminar: la temporada activa es la real. Si se ha creado alguna jornada de prueba, borrarla desde la propia pantalla.
 
-- [ ] **Paso 7: Puerta de calidad y commit**
+- [x] **Paso 7: Puerta de calidad y commit**
 
 ```bash
 pnpm exec prettier --write --ignore-path .gitignore apps/studio/e2e
@@ -1302,14 +1302,24 @@ git commit -m "feat(studio): calendario sobre SQLite con marcador y estado coher
 
 ## Verificación final de la subfase
 
-- [ ] `pnpm check` en verde.
-- [ ] `pnpm build` correcto.
-- [ ] `pnpm e2e` → `11 passed`.
-- [ ] `grep -n "supabase" apps/studio/components/admin/AdminJornadas.tsx` sin resultados.
-- [ ] `apps/studio/lib/supabase-queries.ts` ya **no** importa `@/lib/supabase`.
-- [ ] La línea base de ESLint de la app no supera los **100 problemas**.
-- [ ] `git status --short` limpio y sin `data/` ni `.env.local`.
-- [ ] Las pantallas de 2B-4 siguen intactas: `git diff --name-only` no toca `AdminActaImporter`, `AdminActaBatch`, `AdminJornadaImporter`, `useCartelForm`, `useCartelAssets` ni `lib/actas/`.
+- [x] `pnpm check` en verde.
+- [x] `pnpm build` correcto.
+- [x] `pnpm e2e` → `11 passed`.
+- [x] `grep -n "supabase" apps/studio/components/admin/AdminJornadas.tsx` sin resultados.
+- [x] `apps/studio/lib/supabase-queries.ts` ya **no** importa `@/lib/supabase`.
+- [x] La línea base de ESLint de la app no supera los **100 problemas**.
+- [x] `git status --short` limpio y sin `data/` ni `.env.local`.
+- [x] Las pantallas de 2B-4 siguen intactas: `git diff --name-only` no toca `AdminActaImporter`, `AdminActaBatch`, `AdminJornadaImporter`, `useCartelForm`, `useCartelAssets` ni `lib/actas/`.
+
+## Hallazgo de la Tarea 1
+
+El desempate por enfrentamiento directo del cartel **no funcionaba**. Se aplicaba dentro del
+comparador de `sort` y ese criterio no es transitivo: el orden de dos equipos podía deducirse
+a través de un tercero sin llegar a compararlos entre sí. Se comprobó reproduciéndolo en una
+prueba, donde un equipo que había ganado el enfrentamiento directo acababa por debajo. Se ha
+sustituido por una mini-liga entre los equipos empatados a puntos, que además resuelve los
+empates de tres o más. Los datos reales mantienen la coherencia interna en las 8 competiciones,
+y hay 7 grupos de empate a puntos donde el criterio nuevo sí actúa.
 
 ## Pendientes que hereda 2B-4
 
