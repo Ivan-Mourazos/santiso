@@ -35,11 +35,39 @@ export function moverBdActualABackup(rutaBd: string, bdBackup: string): string[]
     throw error;
   }
   const sufijosRespaldados: string[] = [];
-  for (const sufijo of ["-wal", "-shm"]) {
-    if (existsSync(rutaBd + sufijo)) {
-      renameSync(rutaBd + sufijo, bdBackup + sufijo);
-      sufijosRespaldados.push(sufijo);
+  try {
+    for (const sufijo of ["-wal", "-shm"]) {
+      if (existsSync(rutaBd + sufijo)) {
+        renameSync(rutaBd + sufijo, bdBackup + sufijo);
+        sufijosRespaldados.push(sufijo);
+      }
     }
+  } catch (error) {
+    // Intenta todos los pasos aunque uno falle; conserva las copias para recuperación manual.
+    const fallos: string[] = [];
+    const restaurar = (origen: string, destino: string) => {
+      try {
+        renameSync(origen, destino);
+      } catch (fallo) {
+        fallos.push(`${origen} -> ${destino}: ${String(fallo)}`);
+      }
+    };
+    for (const sufijo of [...sufijosRespaldados].reverse()) {
+      restaurar(bdBackup + sufijo, rutaBd + sufijo);
+    }
+    restaurar(bdBackup, rutaBd);
+    if (fallos.length > 0) {
+      throw new IntercambioFallidoError(
+        `No se pudo restaurar todo automáticamente: ${fallos.join("; ")}. ` +
+          `No uses la app. Revisa ${rutaBd} y ${bdBackup}. Error original: ${String(error)}`,
+      );
+    }
+    if (esErrorFicheroEnUso(error)) {
+      throw new BdEnUsoError(
+        "La base de datos está en uso. Cierra `pnpm dev` y repite la importación.",
+      );
+    }
+    throw error;
   }
   return sufijosRespaldados;
 }
@@ -85,12 +113,30 @@ export function intercambiarFicheros(parametros: ParametrosIntercambio): void {
       deshacer.push(() => renameSync(dirMedia, mediaTemporal));
     }
   } catch (error) {
-    for (const paso of deshacer.reverse()) paso();
+    const fallosAlDeshacer: string[] = [];
+    const intentar = (paso: () => void) => {
+      try {
+        paso();
+      } catch (errorDeshacer) {
+        fallosAlDeshacer.push(
+          errorDeshacer instanceof Error ? errorDeshacer.message : String(errorDeshacer),
+        );
+      }
+    };
+    for (const paso of deshacer.reverse()) intentar(paso);
     if (existsSync(bdBackup)) {
-      renameSync(bdBackup, rutaBd);
-      for (const sufijo of sufijosBdRespaldados) renameSync(bdBackup + sufijo, rutaBd + sufijo);
+      intentar(() => renameSync(bdBackup, rutaBd));
+      for (const sufijo of sufijosBdRespaldados) {
+        intentar(() => renameSync(bdBackup + sufijo, rutaBd + sufijo));
+      }
     }
     const motivo = error instanceof Error ? error.message : String(error);
+    if (fallosAlDeshacer.length > 0) {
+      throw new IntercambioFallidoError(
+        `No se pudo completar el intercambio de ficheros (${motivo}) y no se pudo restaurar todo automáticamente (${fallosAlDeshacer.join("; ")}). ` +
+          `No uses la app hasta revisar ${rutaBd}, ${bdBackup} y ${bdTemporal}: ninguna copia se ha borrado.`,
+      );
+    }
     throw new IntercambioFallidoError(
       `No se pudo completar el intercambio de ficheros (${motivo}). ` +
         `Se restauraron los datos anteriores en ${rutaBd}; la build nueva de la importación sigue disponible en ${bdTemporal}.`,

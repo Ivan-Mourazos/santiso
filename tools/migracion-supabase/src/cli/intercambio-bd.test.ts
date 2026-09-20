@@ -55,6 +55,21 @@ describe("moverBdActualABackup", () => {
     expect(existsSync(`${bdBackup}-wal`)).toBe(true);
     expect(existsSync(`${bdBackup}-shm`)).toBe(true);
   });
+
+  it("si falla al mover -wal/-shm, devuelve la BD a su sitio", () => {
+    const { rutaBd, bdBackup } = escenario();
+    writeFileSync(rutaBd, "bd-anterior");
+    writeFileSync(`${rutaBd}-wal`, "wal");
+    // Un directorio no vacío en el destino hace fallar el rename del -wal en cualquier sistema.
+    mkdirSync(`${bdBackup}-wal`, { recursive: true });
+    writeFileSync(path.join(`${bdBackup}-wal`, "ocupado"), "x");
+
+    expect(() => moverBdActualABackup(rutaBd, bdBackup)).toThrow();
+
+    expect(readFileSync(rutaBd, "utf8")).toBe("bd-anterior");
+    expect(readFileSync(`${rutaBd}-wal`, "utf8")).toBe("wal");
+    expect(existsSync(bdBackup)).toBe(false);
+  });
 });
 
 describe("intercambiarFicheros", () => {
@@ -136,5 +151,28 @@ describe("intercambiarFicheros", () => {
     expect(readFileSync(rutaBd, "utf8")).toBe("bd-anterior");
     expect(readFileSync(bdTemporal, "utf8")).toBe("bd-nueva");
     expect(existsSync(mediaTemporal)).toBe(true);
+  });
+
+  it("si deshacer también falla, lo explica y no pierde la copia de la BD anterior", () => {
+    const { rutaBd, dirMedia, bdTemporal, mediaTemporal, bdBackup, mediaBackup } = escenario();
+    writeFileSync(bdBackup, "bd-anterior");
+    // rutaBd ocupada por un directorio no vacío: falla el paso bdTemporal -> rutaBd (bdTemporal no
+    // existe) y también la restauración bdBackup -> rutaBd.
+    mkdirSync(rutaBd, { recursive: true });
+    writeFileSync(path.join(rutaBd, "ocupado"), "x");
+
+    expect(() =>
+      intercambiarFicheros({
+        rutaBd,
+        dirMedia,
+        bdTemporal,
+        mediaTemporal,
+        bdBackup,
+        mediaBackup,
+        sufijosBdRespaldados: [],
+      }),
+    ).toThrow(/no se pudo restaurar todo automáticamente/);
+
+    expect(readFileSync(bdBackup, "utf8")).toBe("bd-anterior");
   });
 });

@@ -32,14 +32,13 @@ describe("abrirDb", () => {
     expect(fk).toBe(1);
   });
 
-  it("aplica el busy_timeout de 5000ms a cada conexión del pool, no solo a la inicial", async () => {
+  it("aplica el busy_timeout a una segunda conexión abierta mientras la primera está ocupada", async () => {
     const { cliente, cerrar } = await abrirDb(urlArchivo(rutaTemporal()));
+    // La transacción retiene la conexión inicial; execute() obliga al pool a abrir otra.
     const transaccion = await cliente.transaction("write");
-    const dentro = (await transaccion.execute("PRAGMA busy_timeout")).rows[0]?.["timeout"];
-    await transaccion.commit();
-    const fuera = (await cliente.execute("PRAGMA busy_timeout")).rows[0]?.["timeout"];
+    const otraConexion = (await cliente.execute("PRAGMA busy_timeout")).rows[0]?.["timeout"];
+    await transaccion.rollback();
     cerrar();
-    expect(dentro).toBe(5000);
-    expect(fuera).toBe(5000);
+    expect(otraConexion).toBe(5000);
   });
 });
