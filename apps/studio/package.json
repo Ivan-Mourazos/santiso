@@ -11,6 +11,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@santiso/actas": "workspace:*",
     "@santiso/db": "workspace:*",
     "@santiso/domain": "workspace:*",
     "@supabase/ssr": "^0.10.2",

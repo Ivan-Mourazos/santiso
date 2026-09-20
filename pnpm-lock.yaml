@@ -77,6 +77,9 @@ importers:
 
   apps/studio:
     dependencies:
+      '@santiso/actas':
+        specifier: workspace:*
+        version: link:../../packages/actas
       '@santiso/db':
         specifier: workspace:*
         version: link:../../packages/db

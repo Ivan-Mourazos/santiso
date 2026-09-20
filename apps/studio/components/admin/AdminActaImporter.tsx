@@ -10,6 +10,7 @@ import {
 } from "@/lib/competition";
 import { fetchCompeticiones } from "@/lib/supabase-queries";
 import { parseFutgalActaText } from "@/lib/actas/futgal-parser";
+import { leerFichaPdf } from "@/lib/server/acciones/fichas";
 import type {
   ActaCampoDb,
   ActaCategoria,
@@ -257,6 +258,8 @@ export default function AdminActaImporter({
 
   const selectedMatch = matches.find((match) => match.id === selectedMatchId);
   const santisoLocal = isSantisoLocal(selectedMatch);
+  /** La ficha federativa en PDF se lee en local; una foto del acta necesita OCR o IA. */
+  const esFicha = file?.type === "application/pdf";
 
   const competitionsInCategory = useMemo(
     () => competitionsForCategory(competicionesCatalog, categoria),
@@ -325,15 +328,42 @@ export default function AdminActaImporter({
     setBusy(false);
   }
 
+  /**
+   * La ficha en PDF ya trae jornada, equipos y competición: se lee en local y no hace falta
+   * ir a la nube. Para una foto del acta sigue haciendo falta la detección con IA.
+   */
+  async function detectarDesdeFicha(f: File): Promise<DetectedActaMeta | null> {
+    const formData = new FormData();
+    formData.append("ficha", f);
+    formData.append("santisoEsLocal", santisoLocal ? "1" : "0");
+    const resultado = await leerFichaPdf(formData);
+    if (!resultado.ok) return null;
+    const { deteccion } = resultado.datos;
+    return {
+      jornada: deteccion.jornada,
+      localTeam: deteccion.localTeam,
+      visitorTeam: deteccion.visitorTeam,
+      categoria: deteccion.categoria,
+      competicion: deteccion.competicion,
+      fecha: deteccion.fecha,
+    };
+  }
+
   async function detectMatch(f: File) {
     setIsDetecting(true);
     setDetectedMeta(null);
     try {
-      const formData = new FormData();
-      formData.append("image", f);
-      const res = await fetch("/api/admin/acta-detect", { method: "POST", body: formData });
-      if (!res.ok) return;
-      const data = (await res.json()) as DetectedActaMeta;
+      let data: DetectedActaMeta | null = null;
+      if (f.type === "application/pdf") {
+        data = await detectarDesdeFicha(f);
+      }
+      if (!data) {
+        const formData = new FormData();
+        formData.append("image", f);
+        const res = await fetch("/api/admin/acta-detect", { method: "POST", body: formData });
+        if (!res.ok) return;
+        data = (await res.json()) as DetectedActaMeta;
+      }
       if (!data.jornada) return;
       setDetectedMeta(data);
       if (data.categoria && CATEGORIES.includes(data.categoria as ActaCategoria)) {
@@ -381,6 +411,42 @@ export default function AdminActaImporter({
       console.error(error);
       const message = error instanceof Error ? error.message : "Error con Gemini";
       showToast(message, "error");
+    } finally {
+      setBusy(false);
+      setProgress(undefined);
+    }
+  }
+
+  /** Lectura local de la ficha federativa en PDF: sin OCR, sin IA y sin salir del ordenador. */
+  async function analizarFichaPdf() {
+    if (!file || !selectedMatch) {
+      showToast("Selecciona partido y ficha antes de leerla.", "error");
+      return;
+    }
+
+    setBusy(true);
+    setProgress(undefined);
+    setBusyText("Leyendo la ficha PDF...");
+
+    try {
+      const formData = new FormData();
+      formData.append("ficha", file);
+      formData.append("santisoEsLocal", santisoLocal ? "1" : "0");
+      const resultado = await leerFichaPdf(formData);
+      if (!resultado.ok) {
+        showToast(resultado.error, "error");
+        return;
+      }
+
+      const { acta: leida } = resultado.datos;
+      setOcrText(leida.rawText);
+      setActa(resolveCampo(resolveParsedActa(leida, jugadores), campos));
+      showToast(
+        leida.warnings.length > 0
+          ? `Ficha leída con ${leida.warnings.length} aviso(s). Revísalos antes de insertar.`
+          : "Ficha leída. Revisa antes de insertar.",
+        leida.warnings.length > 0 ? "error" : "success",
+      );
     } finally {
       setBusy(false);
       setProgress(undefined);
@@ -611,7 +677,7 @@ export default function AdminActaImporter({
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
             <span style={{ fontSize: "0.85rem", color: file ? "#facc15" : "#666", fontWeight: 600 }}>
-              {file ? file.name : "Arrastra la captura aquí o haz clic"}
+              {file ? file.name : "Arrastra la ficha PDF o la captura aquí, o haz clic"}
             </span>
             {file && (
               <span style={{ fontSize: "0.72rem", color: "#555" }}>
@@ -651,25 +717,31 @@ export default function AdminActaImporter({
       </div>
 
       <div className="analyze-actions">
-        <button className="btn-primary analyze-btn" onClick={analyzeImage} disabled={busy || !file || !selectedMatchId}>
-          Analizar con Gemini
+        {/* Con un PDF el lector local es mejor que la nube: es exacto y no sale del ordenador. */}
+        <button
+          className="btn-primary analyze-btn"
+          onClick={esFicha ? analizarFichaPdf : analyzeImage}
+          disabled={busy || !file || !selectedMatchId}
+        >
+          {esFicha ? "Leer ficha PDF (sin IA)" : "Analizar con Gemini"}
         </button>
       </div>
       <div style={{ textAlign: "center", marginTop: "0.5rem", display: "flex", justifyContent: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+        {/* Con un PDF el respaldo es Gemini; con una imagen, el OCR del navegador. */}
         <button
-          onClick={analyzeWithLocalOcr}
-          disabled={busy || !file || !selectedMatchId || file.type === "application/pdf"}
+          onClick={esFicha ? analyzeImage : analyzeWithLocalOcr}
+          disabled={busy || !file || !selectedMatchId}
           style={{
             background: "none",
             border: "none",
-            color: busy || !file || !selectedMatchId || file.type === "application/pdf" ? "#333" : "#555",
+            color: busy || !file || !selectedMatchId ? "#333" : "#555",
             fontSize: "0.78rem",
-            cursor: busy || !file || !selectedMatchId || file.type === "application/pdf" ? "not-allowed" : "pointer",
+            cursor: busy || !file || !selectedMatchId ? "not-allowed" : "pointer",
             textDecoration: "underline",
             padding: "0.3rem 0.5rem",
           }}
         >
-          Usar OCR local (fallback)
+          {esFicha ? "Probar con Gemini (fallback)" : "Usar OCR local (fallback)"}
         </button>
         <button
           onClick={() => {
