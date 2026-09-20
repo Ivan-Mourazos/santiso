@@ -1,10 +1,19 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const RAIZ_REPO = fileURLToPath(new URL("../../../", import.meta.url));
+/**
+ * Directorio de datos locales (BD, media, snapshots, copias, informes).
+ * `SANTISO_DATA_DIR` lo sobrescribe y se resuelve a ruta absoluta. Sin ella se usa `<repo>/data`,
+ * calculado desde este fichero: solo es fiable fuera de un bundler (CLIs y pruebas), por eso
+ * `import.meta.url` únicamente se evalúa en ese caso.
+ */
+export function resolverDirDatos(entorno: NodeJS.ProcessEnv = process.env): string {
+  const configurado = entorno.SANTISO_DATA_DIR?.trim();
+  if (configurado) return path.resolve(configurado);
+  return path.join(fileURLToPath(new URL("../../../", import.meta.url)), "data");
+}
 
-/** Directorio de datos locales (BD, media, snapshots, copias, informes). `SANTISO_DATA_DIR` lo sobrescribe. */
-export const DIR_DATOS = process.env.SANTISO_DATA_DIR ?? path.join(RAIZ_REPO, "data");
+export const DIR_DATOS = resolverDirDatos();
 export const RUTA_BD = path.join(DIR_DATOS, "santiso.db");
 export const DIR_MEDIA = path.join(DIR_DATOS, "media");
 export const DIR_SNAPSHOTS = path.join(DIR_DATOS, "snapshots");
