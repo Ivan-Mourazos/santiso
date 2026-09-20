@@ -1,6 +1,6 @@
 # Fase 2B-4 — Actas y datos de carteles sobre SQLite: plan de implementación
 
-> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [ ]`) para el seguimiento.
+> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [x]`) para el seguimiento.
 
 **Objetivo:** cerrar la reconexión de la aplicación a SQLite. Al terminar, ninguna pantalla lee ni escribe en Supabase, y el guardado de un acta deja de poder perder datos.
 
@@ -95,7 +95,7 @@ Cualquier otra combinación es un error que **detiene el guardado**: es preferib
   - `participacionesDeActa(acta: ParsedActa): ParticipacionActa[]`
   - `eventosDeActa(acta: ParsedActa): EventoActa[]`
 
-- [ ] **Paso 1: Escribir las pruebas que fallan**
+- [x] **Paso 1: Escribir las pruebas que fallan**
 
 `apps/studio/lib/actas/transformar.test.ts`:
 
@@ -303,12 +303,12 @@ describe("eventosDeActa", () => {
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y comprobar que fallan**
+- [x] **Paso 2: Ejecutar y comprobar que fallan**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/actas/transformar.test.ts`
 Esperado: FAIL, el módulo `./transformar` no existe.
 
-- [ ] **Paso 3: Implementar**
+- [x] **Paso 3: Implementar**
 
 `apps/studio/lib/actas/transformar.ts`:
 
@@ -457,7 +457,7 @@ export function eventosDeActa(acta: ParsedActa): EventoActa[] {
 }
 ```
 
-- [ ] **Paso 4: Ejecutar las pruebas y commit**
+- [x] **Paso 4: Ejecutar las pruebas y commit**
 
 ```bash
 pnpm exec vitest run apps/studio/lib/actas/transformar.test.ts
@@ -486,7 +486,7 @@ Un detalle del esquema: `partido_participaciones` y `partido_eventos` tienen cla
 - Consume: `participacionesDeActa`, `eventosDeActa`, `ErrorActa` (Tarea 1); `asegurarCampo` (2B-1).
 - Produce: `guardarActa(partidoId: string, acta: ParsedActa): Promise<Resultado<null>>`
 
-- [ ] **Paso 1: Escribir las pruebas que fallan**
+- [x] **Paso 1: Escribir las pruebas que fallan**
 
 `apps/studio/lib/server/acciones/actas.test.ts`:
 
@@ -751,12 +751,12 @@ describe("guardarActa", () => {
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y comprobar que fallan**
+- [x] **Paso 2: Ejecutar y comprobar que fallan**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/server/acciones/actas.test.ts`
 Esperado: FAIL, el módulo `./actas` no existe.
 
-- [ ] **Paso 3: Implementar**
+- [x] **Paso 3: Implementar**
 
 `apps/studio/lib/server/acciones/actas.ts`:
 
@@ -848,12 +848,12 @@ export async function guardarActa(
 }
 ```
 
-- [ ] **Paso 4: Ejecutar las pruebas**
+- [x] **Paso 4: Ejecutar las pruebas**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/server/acciones/actas.test.ts`
 Esperado: 7 pruebas en verde. Las dos de «no toca nada» son las que demuestran que P1 #3 está cerrado.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib/server
@@ -880,7 +880,7 @@ Contexto: los tres importadores necesitan la misma información: los partidos de
   - `type PartidoActaDto` con la forma que espera `ActaMatchDb`.
   - `cargarPantallaActa(categoria: string): Promise<{ partidos: PartidoActaDto[]; jugadores: JugadorDto[]; campos: CampoDto[] }>` — una sola llamada.
 
-- [ ] **Paso 1: Añadir el DTO**
+- [x] **Paso 1: Añadir el DTO**
 
 Añadir al final de `apps/studio/lib/dto.ts`:
 
@@ -905,7 +905,7 @@ export interface PartidoActaDto {
 }
 ```
 
-- [ ] **Paso 2: Implementar la consulta**
+- [x] **Paso 2: Implementar la consulta**
 
 `apps/studio/lib/server/consultas/actas.ts`:
 
@@ -974,7 +974,7 @@ export async function partidosParaActa(categoria: string): Promise<PartidoActaDt
 }
 ```
 
-- [ ] **Paso 3: Añadir la carga de pantalla a las acciones**
+- [x] **Paso 3: Añadir la carga de pantalla a las acciones**
 
 Añadir a `apps/studio/lib/server/acciones/actas.ts`:
 
@@ -996,7 +996,7 @@ export async function cargarPantallaActa(categoria: string): Promise<{
 
 con los imports correspondientes de `@/lib/server/consultas/actas`, `@/lib/server/consultas/jugadores` y `@/lib/server/consultas/campos`.
 
-- [ ] **Paso 4: Comprobar contra los datos reales y commit**
+- [x] **Paso 4: Comprobar contra los datos reales y commit**
 
 Un script `.ts` en `apps/studio` con `tsx` (envuelto en `main()`) que llame a `partidosParaActa("Senior")` y compruebe que devuelve partidos con los dos nombres de equipo y el número de jornada rellenos, y que el total coincide con los partidos de las competiciones Senior. Borrar el script al terminar.
 
@@ -1018,11 +1018,11 @@ Contexto: `AdminActaImporter`, `AdminActaBatch` y `AdminJornadaImporter` compart
 - Modificar: `apps/studio/components/admin/AdminActaImporter.tsx`, `apps/studio/components/admin/AdminActaBatch.tsx`, `apps/studio/components/admin/AdminJornadaImporter.tsx`
 - Borrar: `apps/studio/lib/actas/save-acta.ts`
 
-- [ ] **Paso 1: Sustituir las lecturas**
+- [x] **Paso 1: Sustituir las lecturas**
 
 En los tres, la carga inicial pasa a **una** llamada a `cargarPantallaActa(categoria)` (o, en el importador de jornada, a `cargarPantallaCalendario` más `cargarCampos`). Se eliminan los `Promise.all` de varias consultas a Supabase: Next las serializaría igual y una sola acción es un único viaje.
 
-- [ ] **Paso 2: Sustituir el guardado del acta**
+- [x] **Paso 2: Sustituir el guardado del acta**
 
 `saveReviewedActa({ supabase, partidoId, acta })` pasa a `guardarActa(partidoId, acta)`, que devuelve `Resultado<null>`:
 
@@ -1036,11 +1036,11 @@ if (!resultado.ok) {
 
 Son tres puntos de llamada: `AdminActaImporter.tsx:548`, `AdminActaBatch.tsx:385` y `AdminActaBatch.tsx:698`. El tercero está dentro del guardado en lote: ahí el error debe marcar **esa fila** como fallida y dejar que el resto siga, que es justo lo que pide la auditoría (§8.1).
 
-- [ ] **Paso 3: Sustituir las escrituras del importador de jornada**
+- [x] **Paso 3: Sustituir las escrituras del importador de jornada**
 
 `AdminJornadaImporter` crea jornadas, crea o actualiza partidos y registra campos. Usa `crearJornada`, `crearPartido`, `guardarMarcador`, `cambiarFechaPartido`, `cambiarCampoPartido` y `asegurarCampo`, todas ya existentes. La creación de campo por nombre se resuelve con `asegurarCampo`, que ya hace «buscar o crear» y rellena la población si faltaba.
 
-- [ ] **Paso 4: Borrar el guardado antiguo**
+- [x] **Paso 4: Borrar el guardado antiguo**
 
 ```bash
 rm apps/studio/lib/actas/save-acta.ts
@@ -1049,14 +1049,14 @@ grep -rn "save-acta\|saveReviewedActa" apps --include="*.ts" --include="*.tsx"
 
 Esperado: sin resultados.
 
-- [ ] **Paso 5: Comprobar en el navegador**
+- [x] **Paso 5: Comprobar en el navegador**
 
 Con `pnpm dev`, pestañas **Actas** y **Jornada**:
 - La lista de partidos sale con los nombres de los dos equipos y el número de jornada.
 - El desplegable de plantilla trae los jugadores de la categoría.
 - No hace falta importar un acta real para validar la pantalla; lo que sí hay que comprobar es que **carga sin errores de JavaScript y sin peticiones a `supabase.co`**.
 
-- [ ] **Paso 6: Puerta de calidad y commit**
+- [x] **Paso 6: Puerta de calidad y commit**
 
 ```bash
 pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib
@@ -1082,7 +1082,7 @@ Dos avisos concretos:
 - Modificar: `apps/studio/components/admin/cartel/useCartelAssets.ts`, `apps/studio/components/admin/cartel/useCartelForm.ts`, `apps/studio/lib/cartel/clasificacion-data.ts`
 - Modificar: `apps/studio/lib/server/consultas/actas.ts` (añadir `eventosDePartido`, `participacionesDePartido`)
 
-- [ ] **Paso 1: Apuntar `useCartelAssets` a los ajustes**
+- [x] **Paso 1: Apuntar `useCartelAssets` a los ajustes**
 
 Sustituir el cuerpo de `loadAssets` por una llamada a `cargarAjustesCartel()` (2B-2) y mapear:
 
@@ -1107,7 +1107,7 @@ Sustituir el cuerpo de `loadAssets` por una llamada a `cargarAjustesCartel()` (2
 
 `listarPatrocinadores(true)` ya devuelve los logos ordenados por `orden`, así que el `sort` del hook desaparece.
 
-- [ ] **Paso 2: Apuntar la clasificación del cartel al dominio**
+- [x] **Paso 2: Apuntar la clasificación del cartel al dominio**
 
 En `lib/cartel/clasificacion-data.ts`, sustituir todo el cálculo (desde `const withStats = ...` hasta el `sorted`) por una llamada a `calcularClasificacion` del dominio, y quedarse con el mapeo a la forma que espera el cartel (`equipo_id`, `nombre`, `escudo_url`, `pj`, `pg`, `pe`, `pp`, `gf`, `gc`, `pts`).
 
@@ -1115,7 +1115,7 @@ Conservar la rama de `formato === "eliminatoria"`, que devuelve rondas en vez de
 
 Al terminar, `lib/cartel/clasificacion-data.ts` no debe contener ninguna suma de puntos: solo lectura y mapeo.
 
-- [ ] **Paso 3: Añadir las lecturas de eventos y convocatoria**
+- [x] **Paso 3: Añadir las lecturas de eventos y convocatoria**
 
 Añadir a `apps/studio/lib/server/consultas/actas.ts`:
 
@@ -1168,7 +1168,7 @@ export async function participacionesDePartido(partidoId: string) {
 
 Requiere añadir `asc` al import de `drizzle-orm` del fichero. Sus envoltorios `"use server"` en `acciones/actas.ts` son dos funciones de una línea que simplemente los reexportan, como `cargarEquiposDeCompeticion` en 2B-2.
 
-- [ ] **Paso 4: Conectar `useCartelForm`**
+- [x] **Paso 4: Conectar `useCartelForm`**
 
 - Jugadores, equipos y campos: de las acciones ya existentes (`cargarJugadores`, `cargarEquiposDeCategoria`, `cargarCampos`).
 - Partidos del selector: de `partidosParaActa`, que ya trae nombres de equipo y jornada.
@@ -1182,13 +1182,13 @@ Requiere añadir `asc` al import de `drizzle-orm` del fichero. Sus envoltorios `
 
 - Once: de `participacionesDePartido`, con el mismo criterio de orden (titulares primero, luego por dorsal).
 
-- [ ] **Paso 5: Comprobar los carteles contra las referencias**
+- [x] **Paso 5: Comprobar los carteles contra las referencias**
 
 Con `pnpm dev`, generar los carteles que cubren las capturas de `data/referencias/antes-fase-2/`: `partido`, `proximos` y `resumo`. Compararlos a ojo con las referencias. Debe coincidir **todo**: escudos, logos institucionales, orden de los logos, patrocinadores de la barra inferior y, en el de clasificación, el orden de la tabla salvo donde el desempate por mini-liga (2B-3) lo corrija.
 
 Anotar cualquier diferencia. Las cuatro plantillas sin captura de referencia (`clasificacion`, `cronoloxia`, `multiusos`, `noso11`) se revisan a ojo contra lo que se esperaría.
 
-- [ ] **Paso 6: Puerta de calidad y commit**
+- [x] **Paso 6: Puerta de calidad y commit**
 
 ```bash
 pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib
@@ -1204,14 +1204,28 @@ git commit -m "feat(studio): datos de carteles sobre SQLite" -m "Co-Authored-By:
 
 ## Verificación final de la subfase
 
-- [ ] `pnpm check` en verde.
-- [ ] `pnpm build` correcto.
-- [ ] `pnpm e2e` en verde.
-- [ ] `grep -rn "supabase" apps/studio/components apps/studio/lib --include="*.ts" --include="*.tsx"` deja **solo** `AdminShield.tsx` (el `signOut`, que se retira en 2C) y el nombre del fichero `supabase-queries.ts`.
-- [ ] `apps/studio/lib/actas/save-acta.ts` ya no existe.
-- [ ] La línea base de ESLint de la app no supera los **97 problemas**.
-- [ ] `git status --short` limpio y sin `data/` ni `.env.local`.
-- [ ] Los carteles `partido`, `proximos` y `resumo` coinciden con las capturas de referencia.
+- [x] `pnpm check` en verde.
+- [x] `pnpm build` correcto.
+- [x] `pnpm e2e` en verde.
+- [x] `grep -rn "supabase" apps/studio/components apps/studio/lib --include="*.ts" --include="*.tsx"` deja **solo** `AdminShield.tsx` (el `signOut`, que se retira en 2C) y el nombre del fichero `supabase-queries.ts`.
+- [x] `apps/studio/lib/actas/save-acta.ts` ya no existe.
+- [x] La línea base de ESLint de la app no supera los **97 problemas**.
+- [x] `git status --short` limpio y sin `data/` ni `.env.local`.
+- [x] Los carteles `partido`, `proximos` y `resumo` coinciden con las capturas de referencia.
+
+## Hallazgos de la ejecución
+
+- **La comparación de carteles no prueba lo que parece.** `scripts/render-cartel.ts` dibuja
+  desde datos fijos dentro del propio script, no de la base de datos. Que los 5 carteles salgan
+  idénticos byte a byte a las referencias demuestra que el motor de dibujo y las plantillas no
+  han cambiado, pero **no** verifica el camino de datos. Eso se comprobó aparte, abriendo el
+  generador con datos reales: el lienzo de 2160x2700 se pinta entero y el formulario trae
+  rivales reales de la base de datos.
+- **`components/ui/BracketTree.tsx` era código muerto.** No lo importaba nadie y consultaba el
+  esquema antiguo (`jornadas.categoria`), así que ya estaba roto contra la base nueva. Se borró
+  en vez de migrarlo; mantenerlo habría obligado a dejar vivo `lib/supabase.ts` en la 2C.
+- **El importador en lote y el generador trabajan con las tres categorías**, no con una. Por eso
+  `partidosParaActa` y `listarJugadores` aceptan la categoría como opcional.
 
 ## Lo que queda para 2C
 
