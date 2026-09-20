@@ -1,6 +1,6 @@
 # Fase 2B-1 — Catálogos sobre SQLite: plan de implementación
 
-> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [ ]`) para el seguimiento.
+> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [x]`) para el seguimiento.
 
 **Objetivo:** que temporadas, competiciones, reglas de clasificación y campos se lean y escriban **solo** en SQLite, y que el editor manual de clasificación pase a ser una vista calculada, sin tocar el resto de secciones.
 
@@ -72,7 +72,7 @@ Contexto: la migración es determinista y repetible (spec §6.3). Esta tarea dej
 - Consume: `pnpm migracion:exportar`, `pnpm migracion:importar`, `pnpm migracion:verificar` (Fase 1); `pnpm db:backup` (Fase 1).
 - Produce: `data/santiso.db` reimportada y verificada; copia de seguridad fechada en `data/backups/` y otra fuera del repositorio.
 
-- [ ] **Paso 1: Parar la app y respaldar lo que ya existe**
+- [x] **Paso 1: Parar la app y respaldar lo que ya existe**
 
 ```bash
 netstat -ano | grep ":3000.*LISTENING" || echo "sin dev server"
@@ -82,7 +82,7 @@ ls -la data/backups/ | tail -3
 
 Esperado: un fichero `santiso-<marca>.db` nuevo. Si `netstat` muestra algo escuchando, pararlo antes de seguir: libSQL bloquea el fichero.
 
-- [ ] **Paso 2: Copia manual fuera del repositorio**
+- [x] **Paso 2: Copia manual fuera del repositorio**
 
 ```bash
 cp data/santiso.db "$HOME/santiso-antes-de-2b.db"
@@ -91,7 +91,7 @@ ls -la "$HOME/santiso-antes-de-2b.db"
 
 Esperado: el fichero existe y pesa lo mismo que `data/santiso.db`. Es la red de seguridad si la reimportación sale mal; no borrarla hasta que 2B-3 termine.
 
-- [ ] **Paso 3: Exportar, importar y verificar**
+- [x] **Paso 3: Exportar, importar y verificar**
 
 ```bash
 pnpm migracion:exportar
@@ -101,7 +101,7 @@ pnpm migracion:verificar
 
 Esperado: `verificar` termina sin fallos. Si `importar` se detiene con un `ErrorMigracion`, **no** lo rodees: significa que hay un dato que exige una decisión humana. Anota el mensaje, resuélvelo en Supabase (es la última vez que se permite editarla) y repite los tres comandos.
 
-- [ ] **Paso 4: Registrar el estado de partida**
+- [x] **Paso 4: Registrar el estado de partida**
 
 ```bash
 ls -t data/informes/ | head -1
@@ -110,7 +110,7 @@ head -40 "data/informes/$(ls -t data/informes/ | head -1)"
 
 Anotar en el informe de la tarea: número de temporadas, competiciones, equipos y partidos importados. Son las cifras contra las que se comparan las pruebas de las tareas siguientes.
 
-- [ ] **Paso 5: Comprobar que la app ve los datos nuevos**
+- [x] **Paso 5: Comprobar que la app ve los datos nuevos**
 
 ```bash
 (pnpm dev > /dev/null 2>&1 &)
@@ -119,7 +119,7 @@ curl -s --retry 40 --retry-delay 2 --retry-connrefused http://127.0.0.1:3000/api
 
 Esperado: `{"ok":true,"temporadaActiva":"<temporada>","partidos":<n>}` con las cifras del Paso 4. Parar el servidor después: en Windows hay que matar el proceso que escucha en el 3000, porque `next dev` sobrevive al cierre de `pnpm`.
 
-- [ ] **Paso 6: Commit del hito**
+- [x] **Paso 6: Commit del hito**
 
 ```bash
 git status --short
@@ -151,7 +151,7 @@ Contexto: esta tarea establece el patrón que repiten todas las secciones y lo e
   - `crearTemporada(nombre: string): Promise<Resultado<TemporadaDto>>`
   - `activarTemporada(id: string): Promise<Resultado<null>>`
 
-- [ ] **Paso 1: Escribir los DTO de compatibilidad**
+- [x] **Paso 1: Escribir los DTO de compatibilidad**
 
 `apps/studio/lib/dto.ts`:
 
@@ -195,7 +195,7 @@ export interface EquipoDto {
 }
 ```
 
-- [ ] **Paso 2: Escribir las pruebas que fallan**
+- [x] **Paso 2: Escribir las pruebas que fallan**
 
 `apps/studio/lib/server/acciones/temporadas.test.ts`:
 
@@ -312,12 +312,12 @@ describe("acciones de temporadas", () => {
 });
 ```
 
-- [ ] **Paso 3: Ejecutar y comprobar que fallan**
+- [x] **Paso 3: Ejecutar y comprobar que fallan**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/server/acciones/temporadas.test.ts`
 Esperado: FAIL, el módulo `./temporadas` no existe.
 
-- [ ] **Paso 4: Implementar la consulta**
+- [x] **Paso 4: Implementar la consulta**
 
 `apps/studio/lib/server/consultas/temporadas.ts`:
 
@@ -359,7 +359,7 @@ export async function temporadaActivaId(): Promise<string | null> {
 }
 ```
 
-- [ ] **Paso 5: Implementar las acciones**
+- [x] **Paso 5: Implementar las acciones**
 
 `apps/studio/lib/server/acciones/temporadas.ts`:
 
@@ -439,12 +439,12 @@ export async function activarTemporada(id: string): Promise<Resultado<null>> {
 }
 ```
 
-- [ ] **Paso 6: Ejecutar las pruebas**
+- [x] **Paso 6: Ejecutar las pruebas**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/server/acciones/temporadas.test.ts`
 Esperado: 8 pruebas en verde.
 
-- [ ] **Paso 7: Conectar `fetchSeasons`**
+- [x] **Paso 7: Conectar `fetchSeasons`**
 
 En `apps/studio/lib/supabase-queries.ts`, añadir el import al principio:
 
@@ -465,7 +465,7 @@ export async function fetchSeasons() {
 }
 ```
 
-- [ ] **Paso 8: Conectar `AdminTemporadas`**
+- [x] **Paso 8: Conectar `AdminTemporadas`**
 
 En `apps/studio/components/admin/AdminTemporadas.tsx`:
 
@@ -520,7 +520,7 @@ import {
     }
 ```
 
-- [ ] **Paso 9: Comprobar en el navegador**
+- [x] **Paso 9: Comprobar en el navegador**
 
 ```bash
 (pnpm dev > /dev/null 2>&1 &)
@@ -538,7 +538,7 @@ Después, borrar la temporada de prueba de la BD real: no hay ninguna reimportac
 
 Esperado al listar: solo `2025/26` y `2026/27 (ACTIVA)`. Parar el servidor.
 
-- [ ] **Paso 10: Formato, lint, puerta de calidad y commit**
+- [x] **Paso 10: Formato, lint, puerta de calidad y commit**
 
 ```bash
 pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib/dto.ts apps/studio/lib/server/consultas apps/studio/lib/server/acciones
@@ -576,7 +576,7 @@ Contexto: cambian dos cosas a la vez. `competiciones.activa` desaparece (la jera
   - `borrarCompeticion(id: string): Promise<Resultado<null>>`
   - `guardarReglas(competicionId: string, reglas: unknown): Promise<Resultado<null>>`
 
-- [ ] **Paso 1: Escribir las pruebas que fallan**
+- [x] **Paso 1: Escribir las pruebas que fallan**
 
 `apps/studio/lib/server/acciones/competiciones.test.ts`:
 
@@ -747,12 +747,12 @@ describe("acciones de competiciones", () => {
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y comprobar que fallan**
+- [x] **Paso 2: Ejecutar y comprobar que fallan**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/server/acciones/competiciones.test.ts`
 Esperado: FAIL, el módulo `./competiciones` no existe.
 
-- [ ] **Paso 3: Implementar la consulta**
+- [x] **Paso 3: Implementar la consulta**
 
 `apps/studio/lib/server/consultas/competiciones.ts`:
 
@@ -799,7 +799,7 @@ export async function reglasDeCompeticion(competicionId: string): Promise<ReglaC
 }
 ```
 
-- [ ] **Paso 4: Implementar las acciones**
+- [x] **Paso 4: Implementar las acciones**
 
 `apps/studio/lib/server/acciones/competiciones.ts`:
 
@@ -914,12 +914,12 @@ export async function guardarReglas(
 }
 ```
 
-- [ ] **Paso 5: Ejecutar las pruebas**
+- [x] **Paso 5: Ejecutar las pruebas**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/server/acciones/competiciones.test.ts`
 Esperado: 9 pruebas en verde.
 
-- [ ] **Paso 6: Conectar `fetchCompeticiones` y `useCompeticiones`**
+- [x] **Paso 6: Conectar `fetchCompeticiones` y `useCompeticiones`**
 
 En `apps/studio/lib/supabase-queries.ts`, sustituir `fetchCompeticiones` completa por:
 
@@ -964,7 +964,7 @@ En `apps/studio/lib/useCompeticiones.ts`:
 
 Nota: `competicionesCatalog` ya no se usa dentro de `addCompeticion` (el orden lo calcula el servidor); quítalo de su lista de dependencias.
 
-- [ ] **Paso 7: Puerta de calidad y commit**
+- [x] **Paso 7: Puerta de calidad y commit**
 
 ```bash
 pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib/server
@@ -994,7 +994,7 @@ Contexto: `campos_futbol` pasa a `campos` y gana una columna `clave` única, cal
   - `cargarCampos(): Promise<Resultado<CampoDto[]>>`
   - `asegurarCampo(nombre: string, poblacion: string | null): Promise<Resultado<CampoDto>>` — devuelve el existente (actualizando la población si llega una nueva y no había) o crea uno.
 
-- [ ] **Paso 1: Escribir las pruebas que fallan**
+- [x] **Paso 1: Escribir las pruebas que fallan**
 
 `apps/studio/lib/server/acciones/campos.test.ts`:
 
@@ -1072,12 +1072,12 @@ describe("acciones de campos", () => {
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y comprobar que fallan**
+- [x] **Paso 2: Ejecutar y comprobar que fallan**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/server/acciones/campos.test.ts`
 Esperado: FAIL, el módulo `./campos` no existe.
 
-- [ ] **Paso 3: Implementar la consulta**
+- [x] **Paso 3: Implementar la consulta**
 
 `apps/studio/lib/server/consultas/campos.ts`:
 
@@ -1116,7 +1116,7 @@ export async function buscarCampoPorNombre(nombre: string): Promise<CampoDto | n
 }
 ```
 
-- [ ] **Paso 4: Implementar las acciones**
+- [x] **Paso 4: Implementar las acciones**
 
 `apps/studio/lib/server/acciones/campos.ts`:
 
@@ -1174,7 +1174,7 @@ export async function asegurarCampo(
 }
 ```
 
-- [ ] **Paso 5: Ejecutar las pruebas y commit**
+- [x] **Paso 5: Ejecutar las pruebas y commit**
 
 ```bash
 pnpm exec vitest run apps/studio/lib/server/acciones/campos.test.ts
@@ -1204,7 +1204,7 @@ Contexto: por D12 la clasificación deja de guardarse y se calcula desde los par
   - `type LineaClasificacion = { equipoId: string; puntos: number; jugados: number; ganados: number; empatados: number; perdidos: number; golesFavor: number; golesContra: number; diferencia: number }`
   - `calcularClasificacion(equipoIds: readonly string[], partidos: readonly PartidoClasificacion[]): LineaClasificacion[]`
 
-- [ ] **Paso 1: Escribir las pruebas que fallan**
+- [x] **Paso 1: Escribir las pruebas que fallan**
 
 `packages/domain/src/clasificacion.test.ts`:
 
@@ -1287,12 +1287,12 @@ describe("calcularClasificacion", () => {
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y comprobar que fallan**
+- [x] **Paso 2: Ejecutar y comprobar que fallan**
 
 Ejecutar: `pnpm exec vitest run packages/domain/src/clasificacion.test.ts`
 Esperado: FAIL, `./clasificacion` no existe.
 
-- [ ] **Paso 3: Implementar**
+- [x] **Paso 3: Implementar**
 
 `packages/domain/src/clasificacion.ts`:
 
@@ -1391,7 +1391,7 @@ En `packages/domain/src/index.ts`, añadir en orden alfabético:
 export * from "./clasificacion";
 ```
 
-- [ ] **Paso 4: Ejecutar las pruebas y commit**
+- [x] **Paso 4: Ejecutar las pruebas y commit**
 
 ```bash
 pnpm exec vitest run packages/domain
@@ -1424,7 +1424,7 @@ Contexto: `AdminLeague` es hoy un editor manual que escribe `equipos.pts/pj/pg/p
   - `type FilaClasificacion` y `type PantallaClasificacion` en `@/lib/dto`
   - `cargarPantallaClasificacion(competicionId: string): Promise<Resultado<PantallaClasificacion>>` — **una sola llamada** que trae equipos, reglas y tabla, porque Next serializa las acciones que lanza el cliente.
 
-- [ ] **Paso 1: Ampliar los DTO**
+- [x] **Paso 1: Ampliar los DTO**
 
 Añadir esta línea **arriba del todo** de `apps/studio/lib/dto.ts` (los imports van al principio del fichero, no junto al tipo que los usa):
 
@@ -1448,7 +1448,7 @@ export interface PantallaClasificacion {
 }
 ```
 
-- [ ] **Paso 2: Escribir las pruebas que fallan**
+- [x] **Paso 2: Escribir las pruebas que fallan**
 
 `apps/studio/lib/server/acciones/clasificacion.test.ts`:
 
@@ -1575,12 +1575,12 @@ describe("cargarPantallaClasificacion", () => {
 });
 ```
 
-- [ ] **Paso 3: Ejecutar y comprobar que fallan**
+- [x] **Paso 3: Ejecutar y comprobar que fallan**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/server/acciones/clasificacion.test.ts`
 Esperado: FAIL, el módulo `./clasificacion` no existe.
 
-- [ ] **Paso 4: Implementar las consultas**
+- [x] **Paso 4: Implementar las consultas**
 
 `apps/studio/lib/server/consultas/equipos.ts`:
 
@@ -1682,7 +1682,7 @@ export async function clasificacionDeCompeticion(
 }
 ```
 
-- [ ] **Paso 5: Implementar la acción**
+- [x] **Paso 5: Implementar la acción**
 
 `apps/studio/lib/server/acciones/clasificacion.ts`:
 
@@ -1711,12 +1711,12 @@ export async function cargarPantallaClasificacion(
 }
 ```
 
-- [ ] **Paso 6: Ejecutar las pruebas**
+- [x] **Paso 6: Ejecutar las pruebas**
 
 Ejecutar: `pnpm exec vitest run apps/studio/lib/server/acciones/clasificacion.test.ts`
 Esperado: 5 pruebas en verde.
 
-- [ ] **Paso 7: Conectar los helpers de equipos**
+- [x] **Paso 7: Conectar los helpers de equipos**
 
 En `apps/studio/lib/supabase-queries.ts`:
 
@@ -1738,7 +1738,7 @@ export async function fetchTeamsForCompetition(_categoria: string, competicionId
 }
 ```
 
-- [ ] **Paso 8: Convertir `AdminLeague` en vista calculada**
+- [x] **Paso 8: Convertir `AdminLeague` en vista calculada**
 
 En `apps/studio/components/admin/AdminLeague.tsx`:
 
@@ -1803,7 +1803,7 @@ import { cargarPantallaClasificacion } from "@/lib/server/acciones/clasificacion
 7. En el `BusyBanner`, dejar `show={isFetching}` y `text="Cargando clasificación..."`.
 8. Borrar el bloque `<style jsx>` de `.league-editor input`, que ya no aplica; dejar la regla de `.league-editor td`.
 
-- [ ] **Paso 9: Prueba e2e de la pantalla**
+- [x] **Paso 9: Prueba e2e de la pantalla**
 
 `apps/studio/e2e/catalogos.spec.ts`:
 
@@ -1829,7 +1829,7 @@ test("la pestaña de temporadas lista la temporada activa", async ({ page }) => 
 });
 ```
 
-- [ ] **Paso 10: Comprobar en el navegador**
+- [x] **Paso 10: Comprobar en el navegador**
 
 Con `pnpm dev` en marcha, abrir la pestaña **Ligas** y comprobar contra las capturas de `data/referencias/antes-fase-2/`:
 - Los mismos equipos aparecen en la tabla.
@@ -1838,7 +1838,7 @@ Con `pnpm dev` en marcha, abrir la pestaña **Ligas** y comprobar contra las cap
 
 Parar el servidor.
 
-- [ ] **Paso 11: Puerta de calidad y commit**
+- [x] **Paso 11: Puerta de calidad y commit**
 
 ```bash
 pnpm exec prettier --write --ignore-path .gitignore apps/studio/lib/dto.ts apps/studio/lib/server apps/studio/e2e
@@ -1856,20 +1856,22 @@ Esperado: `pnpm e2e` en `5 passed` (3 de humo más 2 de catálogos).
 
 ## Verificación final de la subfase
 
-- [ ] `pnpm check` en verde.
-- [ ] `pnpm build` correcto.
-- [ ] `pnpm e2e` → `5 passed`.
-- [ ] `grep -rn "supabase" apps/studio/components/admin/AdminTemporadas.tsx apps/studio/components/admin/AdminLeague.tsx apps/studio/lib/useCompeticiones.ts` sin resultados.
-- [ ] `apps/studio/lib/supabase-queries.ts` **sigue importando** `@/lib/supabase`, y es correcto: `fetchMatchdaysForCompetition` y `fetchMatchesForMatchday` no se migran hasta 2B-3. Lo que debe cumplirse es que `fetchSeasons`, `fetchCompeticiones`, `fetchTeamsByIds` y `fetchTeamsForCompetition` ya no lo usen.
-- [ ] `curl http://127.0.0.1:3000/api/estado` responde con las cifras del informe de la Tarea 1.
-- [ ] Temporadas: crear, activar y listar funcionan en el navegador; exactamente una activa.
-- [ ] Ligas: la tabla calculada coincide con la clasificación manual del informe de migración, salvo desajustes anotados.
-- [ ] `git status --short` limpio y sin `data/` ni `.env.local`.
-- [ ] Las secciones de 2B-2 y 2B-3 siguen leyendo de Supabase y sin cambios: `git diff --name-only` no toca `AdminEquipos`, `AdminPlayers`, `AdminStaff`, `AdminSponsors`, `AdminCartelAssets`, `AdminShield`, `AdminJornadas`, `AdminActaImporter`, `AdminActaBatch`, `AdminJornadaImporter`, `useCartelForm` ni `useCartelAssets`.
+- [x] `pnpm check` en verde.
+- [x] `pnpm build` correcto.
+- [x] `pnpm e2e` → `5 passed`.
+- [x] `grep -rn "supabase" apps/studio/components/admin/AdminTemporadas.tsx apps/studio/components/admin/AdminLeague.tsx apps/studio/lib/useCompeticiones.ts` sin resultados.
+- [x] `apps/studio/lib/supabase-queries.ts` **sigue importando** `@/lib/supabase`, y es correcto: `fetchMatchdaysForCompetition` y `fetchMatchesForMatchday` no se migran hasta 2B-3. Lo que debe cumplirse es que `fetchSeasons`, `fetchCompeticiones`, `fetchTeamsByIds` y `fetchTeamsForCompetition` ya no lo usen.
+- [x] `curl http://127.0.0.1:3000/api/estado` responde con las cifras del informe de la Tarea 1.
+- [x] Temporadas: crear, activar y listar funcionan en el navegador; exactamente una activa.
+- [x] Ligas: la tabla calculada coincide con la clasificación manual del informe de migración, salvo desajustes anotados.
+- [x] `git status --short` limpio y sin `data/` ni `.env.local`.
+- [x] Las secciones de 2B-2 y 2B-3 siguen leyendo de Supabase y sin cambios: `git diff --name-only` no toca `AdminEquipos`, `AdminPlayers`, `AdminStaff`, `AdminSponsors`, `AdminCartelAssets`, `AdminShield`, `AdminJornadas`, `AdminActaImporter`, `AdminActaBatch`, `AdminJornadaImporter`, `useCartelForm` ni `useCartelAssets`.
 
 ## Pendientes que heredan 2B-2 y 2B-3
 
 - **`serverActions.bodySizeLimit`**: el límite por defecto de una Server Action es 1 MB, pero `leerImagenDeFormulario` (Fase 2A) admite hasta 15 MB. 2B-2 debe subirlo en `next.config.ts` o mover las subidas a un route handler, y probarlo con una foto real grande.
 - **`lib/data/season-2026-2027.ts`**: `useCompeticiones` todavía lo usa como respaldo cuando el catálogo viene vacío. Eso enmascara fallos de lectura. Se retira en 2C junto con el resto de datos estáticos.
-- **Clasificación contra el informe**: los desajustes anotados en la Tarea 6, Paso 10 son la entrada del editor de ajustes de la Fase 6.
+- **La clasificación manual antigua no sirve como referencia.** Se comprobó en la Tarea 6: ninguna de las 24 filas comparables coincide, y el motivo no es el cálculo. `equipos.pts/pj/…` era **una sola fila global por equipo**, pero un equipo juega varias competiciones a la vez (Fase Previa, Fase Copa y Campeón Fase Copa en Senior), así que ese número no corresponde a ninguna competición concreta; además estaba desactualizado (PJ 25 frente a los 30 reales en Veteranos, PJ 6 frente a 18 en Senior). Lo que sí se validó es la coherencia interna del cálculo sobre los 576 partidos reales de la 2025/26: 64 comprobaciones en 8 competiciones, todas correctas (GF total = GC total, GF total = goles de los partidos, PG total = PP total, puntos = 3×PG + PE, y el número de partidos por equipo cuadra con una liga a doble vuelta: 10 equipos → 90 partidos, 15 → 210, 16 → 240). La Fase 6 **no debe** intentar cuadrar contra la tabla manual; la referencia buena son los partidos.
+- **La temporada activa 2026/27 no tiene ningún partido disputado**: sus 56 partidos están en `programado` y empiezan el 12/09/2026. Por eso la clasificación sale a cero en pantalla, y es correcto.
+- **Femenino se queda sin competición en 2026/27**: la temporada activa solo tiene Senior y Veteranos, así que el selector de competición sale vacío en esa categoría. Coincide con el dato estático `season-2026-2027.ts`, o sea que refleja la realidad de la temporada, no un fallo.
 - **Cobertura visual de carteles**: solo hay referencia de 3 de las 7 plantillas (`partido`, `proximos`, `resumo`). Falta `clasificacion`, `cronoloxia`, `multiusos` y `noso11` antes de la 2C.
