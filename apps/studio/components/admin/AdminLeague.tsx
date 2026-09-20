@@ -1,13 +1,14 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/lib/supabase-browser";
 import BusyBanner from "./BusyBanner";
 import {
   competitionsForCategory,
   pickDefaultCompetitionId,
   type CompetenciaRow,
 } from "@/lib/competition";
-import { fetchCompeticiones, fetchTeamsForCompetition } from "@/lib/supabase-queries";
+import type { FilaClasificacion } from "@/lib/dto";
+import { cargarPantallaClasificacion } from "@/lib/server/acciones/clasificacion";
+import { fetchCompeticiones } from "@/lib/supabase-queries";
 
 interface AdminLeagueProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -23,15 +24,13 @@ interface LeagueRule {
 }
 
 export default function AdminLeague({ showToast, showConfirm, categoria }: AdminLeagueProps) {
-  const [equipos, setEquipos] = useState<any[]>([]);
+  const [filas, setFilas] = useState<FilaClasificacion[]>([]);
   const [competicionesCatalog, setCompeticionesCatalog] = useState<
     CompetenciaRow[]
   >([]);
   const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
-  const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [leagueRules, setLeagueRules] = useState<LeagueRule[]>([]);
-  const [temporadaActiva, setTemporadaActiva] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,90 +58,26 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
     [competicionesCatalog, categoria],
   );
 
-  // Cargar temporada activa
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from("temporadas")
-        .select("id")
-        .eq("activa", true)
-        .single();
-      if (data) setTemporadaActiva(data.id);
-    }
-    load();
-  }, []);
-
-  // Cargar reglas de liga
-  useEffect(() => {
-    if (!temporadaActiva || !selectedCompetitionId) return;
-    async function load() {
-      const { data } = await supabase
-        .from("reglas_liga")
-        .select("reglas")
-        .eq("temporada_id", temporadaActiva)
-        .eq("categoria", categoria)
-        .eq("competicion_id", selectedCompetitionId)
-        .maybeSingle();
-      if (data?.reglas && Array.isArray(data.reglas)) {
-        setLeagueRules(data.reglas as LeagueRule[]);
-      } else {
-        setLeagueRules([]);
-      }
-    }
-    load();
-  }, [temporadaActiva, selectedCompetitionId, categoria]);
-
+  // Tabla y reglas llegan en una sola acción: Next despacha las del cliente de una en una.
   useEffect(() => {
     if (!selectedCompetitionId) return;
-    fetchEquipos();
-  }, [categoria, selectedCompetitionId]);
-
-  async function fetchEquipos() {
-    setIsFetching(true);
-    const data = await fetchTeamsForCompetition(categoria, selectedCompetitionId);
-    setEquipos(data);
-    setIsFetching(false);
-  }
-
-  const handleInputChange = (id: string, field: string, value: string) => {
-    const numValue = parseInt(value) || 0;
-    setEquipos(prev => prev.map(eq => eq.id === id ? { ...eq, [field]: numValue } : eq));
-  };
-
-  async function handleSaveLeague() {
-    setLoading(true);
-    try {
-      const updates = equipos.map(eq => 
-        supabase.from("equipos").update({
-          pts: eq.pts,
-          pj: eq.pj,
-          pg: eq.pg,
-          pe: eq.pe,
-          pp: eq.pp,
-          gf: eq.gf,
-          gc: eq.gc
-        }).eq("id", eq.id)
-      );
-
-      await Promise.all(updates);
-      showToast("Clasificación guardada con éxito");
-      fetchEquipos();
-    } catch (err) {
-      console.error(err);
-      showToast("Error al guardar liga", "error");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // Ordenar equipos por puntos descendente
-  const equiposOrdenados = [...equipos].sort((a, b) => {
-    if (b.pts !== a.pts) return b.pts - a.pts;
-    const dgA = (a.gf || 0) - (a.gc || 0);
-    const dgB = (b.gf || 0) - (b.gc || 0);
-    if (dgB !== dgA) return dgB - dgA;
-    return (b.gf || 0) - (a.gf || 0);
-  });
+    let cancelado = false;
+    (async () => {
+      setIsFetching(true);
+      const pantalla = await cargarPantallaClasificacion(selectedCompetitionId);
+      if (cancelado) return;
+      if (pantalla.ok) {
+        setFilas(pantalla.datos.filas);
+        setLeagueRules(pantalla.datos.reglas);
+      } else {
+        showToast(pantalla.error, "error");
+      }
+      setIsFetching(false);
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [selectedCompetitionId, showToast]);
 
   // Buscar la regla que aplica a una posición dada
   function getRuleForPosition(pos: number): LeagueRule | null {
@@ -154,13 +89,13 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
 
   return (
     <div className="card full-width glass" style={{ marginBottom: '2rem' }}>
-      <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando clasificación..." : "Guardando clasificación..."} />
+      <BusyBanner show={isFetching} text="Cargando clasificación..." />
       <div className="input-group" style={{ marginBottom: "1rem", maxWidth: "480px" }}>
         <label>Competición</label>
         <select
           value={selectedCompetitionId}
           onChange={(e) => setSelectedCompetitionId(e.target.value)}
-          disabled={loading || isFetching}
+          disabled={isFetching}
         >
           {competicionesEnCategoria.map((c) => (
             <option key={c.id} value={c.id}>{c.nombre}</option>
@@ -212,14 +147,12 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div>
-          <h3>Editor de Clasificación de la Liga</h3>
-          <p style={{ color: '#a3a3a3', fontSize: '0.9rem' }}>Actualiza los puntos y estadísticas de todos los equipos en bloque.</p>
-        </div>
-        <button onClick={handleSaveLeague} className="btn btn-primary" disabled={loading} style={{ padding: '0.8rem 2rem' }}>
-          {loading ? "Guardando..." : "Guardar Clasificación"}
-        </button>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h3>Clasificación</h3>
+        <p style={{ color: '#a3a3a3', fontSize: '0.9rem' }}>
+          Se calcula desde los partidos finalizados. El editor de sanciones y puntos concedidos
+          llega en una fase posterior.
+        </p>
       </div>
 
       <div className="table-responsive">
@@ -240,12 +173,12 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
             </tr>
           </thead>
           <tbody>
-            {equiposOrdenados.map((eq, index) => {
+            {filas.map((fila, index) => {
               const posicion = index + 1;
               const rule = getRuleForPosition(posicion);
               return (
                 <tr
-                  key={eq.id}
+                  key={fila.equipoId}
                   style={
                     rule
                       ? {
@@ -258,17 +191,17 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
                   <td style={{ fontWeight: 800, color: rule ? rule.color : "#666", textAlign: "center" }}>
                     {posicion}
                   </td>
-                  <td>{eq.escudo_url && eq.escudo_url !== "" && <img src={eq.escudo_url} alt="" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />}</td>
-                  <td style={{ fontWeight: 700, color: rule ? rule.color : "white" }}>{eq.nombre}</td>
-                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pts} onChange={(e) => handleInputChange(eq.id, 'pts', e.target.value)} /></td>
-                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pj}  onChange={(e) => handleInputChange(eq.id, 'pj',  e.target.value)} /></td>
-                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pg}  onChange={(e) => handleInputChange(eq.id, 'pg',  e.target.value)} /></td>
-                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pe}  onChange={(e) => handleInputChange(eq.id, 'pe',  e.target.value)} /></td>
-                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.pp}  onChange={(e) => handleInputChange(eq.id, 'pp',  e.target.value)} /></td>
-                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.gf}  onChange={(e) => handleInputChange(eq.id, 'gf',  e.target.value)} /></td>
-                  <td><input type="text" inputMode="numeric" pattern="[0-9]*" value={eq.gc}  onChange={(e) => handleInputChange(eq.id, 'gc',  e.target.value)} /></td>
-                  <td style={{ fontWeight: 800, color: (eq.gf - eq.gc) >= 0 ? '#10b981' : '#ef4444' }}>
-                    {eq.gf - eq.gc}
+                  <td>{fila.escudoUrl && <img src={fila.escudoUrl} alt="" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />}</td>
+                  <td style={{ fontWeight: 700, color: rule ? rule.color : "white" }}>{fila.nombre}</td>
+                  <td>{fila.puntos}</td>
+                  <td>{fila.jugados}</td>
+                  <td>{fila.ganados}</td>
+                  <td>{fila.empatados}</td>
+                  <td>{fila.perdidos}</td>
+                  <td>{fila.golesFavor}</td>
+                  <td>{fila.golesContra}</td>
+                  <td style={{ fontWeight: 800, color: fila.diferencia >= 0 ? '#10b981' : '#ef4444' }}>
+                    {fila.diferencia}
                   </td>
                 </tr>
               );
@@ -278,17 +211,6 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
       </div>
 
       <style jsx>{`
-        .league-editor input {
-          width: 60px;
-          padding: 0.4rem;
-          text-align: center;
-          font-weight: 700;
-          border-color: rgba(255,255,255,0.1);
-        }
-        .league-editor input:focus {
-          border-color: var(--primary);
-          outline: none;
-        }
         .league-editor td { padding: 0.5rem 1rem; }
       `}</style>
     </div>

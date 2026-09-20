@@ -1,5 +1,9 @@
 import type { CompetenciaRow } from "@/lib/competition";
 import { cargarCompeticiones } from "@/lib/server/acciones/competiciones";
+import {
+  cargarEquiposDeCompeticion,
+  cargarEquiposPorIds,
+} from "@/lib/server/acciones/equipos";
 import { cargarTemporadas } from "@/lib/server/acciones/temporadas";
 import { supabase } from "@/lib/supabase";
 
@@ -81,50 +85,16 @@ export async function fetchSeasons() {
 }
 
 export async function fetchTeamsByIds(ids: string[]) {
-  const uniqueIds = [...new Set(ids.filter(Boolean))];
-  if (uniqueIds.length === 0) return [] as Team[];
-
-  try {
-    const { data, error } = await supabase
-      .from("equipos")
-      .select("*")
-      .in("id", uniqueIds)
-      .order("nombre", { ascending: true });
-
-    if (error || !data) return [] as Team[];
-    return data as Team[];
-  } catch {
-    return [] as Team[];
-  }
+  // `Team` arrastra un índice de cadena de la época de Supabase, donde la fila traía columnas
+  // arbitrarias. `EquipoDto` es un subconjunto estricto con los mismos nombres, así que la
+  // conversión es segura; desaparece cuando las Fases 4-6 retiren los DTO de compatibilidad.
+  return (await cargarEquiposPorIds(ids)) as unknown as Team[];
 }
 
-export async function fetchTeamsForCompetition(
-  categoria: string,
-  competicionId: string,
-) {
-  try {
-    const { data: relations, error: relErr } = await supabase
-      .from("equipo_competiciones")
-      .select("equipo_id")
-      .eq("categoria", categoria)
-      .eq("competicion_id", competicionId);
-
-    if (relErr || !relations) return [];
-    const teamIds = relations.map((r: any) => r.equipo_id);
-
-    if (teamIds.length === 0) return [];
-
-    const { data: teams, error: teamsErr } = await supabase
-      .from("equipos")
-      .select("*")
-      .in("id", teamIds)
-      .order("nombre", { ascending: true });
-
-    if (teamsErr || !teams) return [];
-    return teams as Team[];
-  } catch {
-    return [];
-  }
+/** `categoria` ya no filtra: la competición determina la categoría. Se conserva por compatibilidad. */
+export async function fetchTeamsForCompetition(_categoria: string, competicionId: string) {
+  // Misma conversión documentada que en `fetchTeamsByIds`.
+  return (await cargarEquiposDeCompeticion(competicionId)) as unknown as Team[];
 }
 
 export async function mergeMissingTeams(current: Team[], ids: string[]) {

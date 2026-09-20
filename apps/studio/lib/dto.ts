@@ -1,3 +1,5 @@
+import type { LineaClasificacion, ReglaClasificacion } from "@santiso/domain";
+
 /**
  * Formas que esperan los componentes heredados, con los nombres de campo que devolvía Supabase.
  * @deprecated Temporal de la Fase 2B. Las Fases 4–6 reescriben las pantallas contra los tipos
@@ -34,4 +36,16 @@ export interface EquipoDto {
   categoria: string;
   escudo_url: string | null;
   es_propio: boolean;
+}
+
+/** Fila de la clasificación calculada, ya con los datos de presentación del equipo. */
+export interface FilaClasificacion extends LineaClasificacion {
+  nombre: string;
+  escudoUrl: string | null;
+}
+
+/** Todo lo que necesita la pantalla de clasificación en una sola respuesta. */
+export interface PantallaClasificacion {
+  filas: FilaClasificacion[];
+  reglas: ReglaClasificacion[];
 }
