@@ -92,3 +92,41 @@ export interface AjustesCartelDto {
   ordenLogos: string;
   patrocinadores: PatrocinadorDto[];
 }
+
+/** @deprecated Ver TemporadaDto. Sin `temporada_id` ni `categoria`: los da la competición. */
+export interface JornadaDto {
+  id: string;
+  numero: number;
+  nombre_fase: string | null;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  competicion_id: string;
+}
+
+/** @deprecated Ver TemporadaDto. Sin `categoria` ni `competicion_id`: los da la jornada. */
+export interface PartidoDto {
+  id: string;
+  jornada_id: string;
+  equipo_local_id: string;
+  equipo_visitante_id: string;
+  goles_local: number | null;
+  goles_visitante: number | null;
+  estado: string;
+  fecha: string | null;
+  campo_id: string | null;
+}
+
+/** El descanso ya no tiene id propio: lo identifica el par (jornada, equipo). */
+export interface DescansoDto {
+  jornada_id: string;
+  equipo_id: string;
+}
+
+/** Todo lo que necesita la pantalla de calendario en una sola respuesta. */
+export interface PantallaCalendario {
+  jornadas: JornadaDto[];
+  partidos: PartidoDto[];
+  descansos: DescansoDto[];
+  equipos: EquipoDto[];
+  campos: CampoDto[];
+}

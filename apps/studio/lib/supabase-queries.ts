@@ -1,11 +1,14 @@
 import type { CompetenciaRow } from "@/lib/competition";
+import {
+  cargarJornadasDeCompeticion,
+  cargarPartidosDeJornada,
+} from "@/lib/server/acciones/calendario";
 import { cargarCompeticiones } from "@/lib/server/acciones/competiciones";
 import {
   cargarEquiposDeCompeticion,
   cargarEquiposPorIds,
 } from "@/lib/server/acciones/equipos";
 import { cargarTemporadas } from "@/lib/server/acciones/temporadas";
-import { supabase } from "@/lib/supabase";
 
 export type { CompetenciaRow };
 
@@ -108,47 +111,28 @@ export async function mergeMissingTeams(current: Team[], ids: string[]) {
   return sortTeamsByName([...byId.values()]);
 }
 
+/** `temporadaId` y `categoria` ya no filtran: los determina la competición. */
 export async function fetchMatchdaysForCompetition(
-  temporadaId: string,
-  categoria: string,
+  _temporadaId: string,
+  _categoria: string,
   competicionId: string,
 ) {
-  try {
-    const { data, error } = await supabase
-      .from("jornadas")
-      .select("*")
-      .eq("temporada_id", temporadaId)
-      .eq("categoria", categoria)
-      .eq("competicion_id", competicionId)
-      .order("numero", { ascending: true });
-
-    return { data: (data || []) as Matchday[], error };
-  } catch {
-    return { data: [], error: null };
-  }
+  const jornadas = await cargarJornadasDeCompeticion(competicionId);
+  // `Matchday` arrastra un índice de cadena de la época de Supabase; el DTO es un subconjunto
+  // estricto con los mismos nombres, así que la conversión es segura.
+  return { data: jornadas as unknown as Matchday[], error: null };
 }
 
+/**
+ * `categoria` y `competicionId` ya no filtran: los determina la jornada. `embed` desaparece;
+ * la pantalla resuelve equipos y campos con los catálogos que ya carga.
+ */
 export async function fetchMatchesForMatchday(
   jornadaId: string,
-  categoria: string,
-  competicionId: string,
-  options: { embed?: boolean } = {},
+  _categoria?: string,
+  _competicionId?: string,
 ) {
-  const select = options.embed
-    ? "*,equipo_local:equipo_local_id(*),equipo_visitante:equipo_visitante_id(*),campo:campo_id(*),competiciones:competicion_id(id,nombre)"
-    : "*";
-
-  try {
-    const { data, error } = await supabase
-      .from("partidos_liga")
-      .select(select)
-      .eq("jornada_id", jornadaId)
-      .eq("categoria", categoria)
-      .eq("competicion_id", competicionId)
-      .order("fecha", { ascending: true });
-
-    return { data: (data || []) as unknown as LeagueMatch[], error };
-  } catch {
-    return { data: [] as unknown as LeagueMatch[], error: null };
-  }
+  const partidos = await cargarPartidosDeJornada(jornadaId);
+  // Misma conversión documentada que en `fetchMatchdaysForCompetition`.
+  return { data: partidos as unknown as LeagueMatch[], error: null };
 }

@@ -1,6 +1,21 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/lib/supabase-browser";
+import {
+  anadirDescanso,
+  borrarJornada,
+  borrarPartido,
+  cambiarCampoPartido,
+  cambiarEstadoPartido,
+  cambiarFechaPartido,
+  cargarPantallaCalendario,
+  crearJornada,
+  crearJornadasEnLote,
+  crearPartido,
+  guardarMarcador,
+  quitarDescanso,
+} from "@/lib/server/acciones/calendario";
+import { cargarReglas, guardarReglas } from "@/lib/server/acciones/competiciones";
+import { activarTemporada, crearTemporada } from "@/lib/server/acciones/temporadas";
 import BusyBanner from "./BusyBanner";
 import {
   competitionsForCategory,
@@ -117,68 +132,29 @@ export default function AdminJornadas({
     [competicionesCatalog, selectedCompetitionId],
   );
 
-  // Cargar reglas de liga existentes
+  // Cargar reglas de clasificación: ahora viven en la propia competición, como JSON validado.
   useEffect(() => {
-    if (!temporadaActiva || !selectedCompetitionId) return;
-    async function load() {
-      try {
-        const { data } = await supabase
-          .from("reglas_liga")
-          .select("*")
-          .eq("temporada_id", temporadaActiva.id)
-          .eq("categoria", categoria)
-          .eq("competicion_id", selectedCompetitionId)
-          .maybeSingle();
-        if (data?.reglas) {
-          setLeagueRules(Array.isArray(data.reglas) ? data.reglas : []);
-        } else {
-          setLeagueRules([]);
-        }
-      } catch {
-        setLeagueRules([]);
-      }
-    }
-    load();
-  }, [temporadaActiva, selectedCompetitionId, categoria]);
+    if (!selectedCompetitionId) return;
+    let cancelado = false;
+    (async () => {
+      const reglas = await cargarReglas(selectedCompetitionId);
+      if (!cancelado) setLeagueRules(reglas);
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [selectedCompetitionId]);
 
   async function handleSaveLeagueRules() {
-    if (!temporadaActiva) return;
     if (!selectedCompetitionId) {
       showToast("Selecciona una competición", "error");
       return;
     }
     setSavingRules(true);
 
-    const basePayload = {
-      temporada_id: temporadaActiva.id,
-      categoria,
-      competicion_id: selectedCompetitionId,
-      reglas: leagueRules,
-    };
-
-    const { data: existing, error: findError } = await supabase
-      .from("reglas_liga")
-      .select("id")
-      .eq("temporada_id", temporadaActiva.id)
-      .eq("categoria", categoria)
-      .eq("competicion_id", selectedCompetitionId)
-      .maybeSingle();
-
-    if (findError) {
-      showToast("Error al guardar reglas: " + findError.message, "error");
-      setSavingRules(false);
-      return;
-    }
-
-    const { error } = existing?.id
-      ? await supabase
-          .from("reglas_liga")
-          .update({ reglas: leagueRules })
-          .eq("id", existing.id)
-      : await supabase.from("reglas_liga").insert([basePayload]);
-
-    if (!error) showToast("Reglas de liga guardadas");
-    else showToast("Error al guardar reglas: " + error.message, "error");
+    const resultado = await guardarReglas(selectedCompetitionId, leagueRules);
+    if (resultado.ok) showToast("Reglas de liga guardadas");
+    else showToast(resultado.error, "error");
     setSavingRules(false);
   }
 
@@ -226,16 +202,9 @@ export default function AdminJornadas({
       if (active) setTemporadaActiva(active);
       setEquipos(eData || []);
 
-      // Campos
-      const { data: cData, error: cError } = await supabase
-        .from("campos_futbol")
-        .select("*")
-        .order("nombre");
-      if (cError) {
-        console.error("Error cargando campos:", cError);
-      } else if (cData) {
-        setCampos(cData);
-      }
+      // Campos: llegan con el resto de la pantalla de calendario.
+      const { campos: cData } = await cargarPantallaCalendario(selectedCompetitionId, "");
+      setCampos(cData);
     } catch {
       // Ignorar fallos de rede
     } finally {
@@ -256,17 +225,11 @@ export default function AdminJornadas({
       return;
     }
     setIsFetching(true);
-    const { data, error } = await fetchMatchdaysForCompetition(
+    const { data } = await fetchMatchdaysForCompetition(
       temporadaActiva.id,
       categoria,
       selectedCompetitionId,
     );
-
-    if (error) {
-      showToast("Error cargando jornadas: " + error.message, "error");
-      setIsFetching(false);
-      return;
-    }
 
     setJornadas(data);
     if (data.length === 0) setSelectedJornada(null);
@@ -283,18 +246,13 @@ export default function AdminJornadas({
     if (!nuevaTemporadaNombre) return;
     setBusyText("Creando temporada...");
     setLoading(true);
-    const { error } = await supabase.from("temporadas").insert([
-      {
-        nombre: nuevaTemporadaNombre,
-        activa: temporadas.length === 0,
-      },
-    ]);
-    if (!error) {
+    const resultado = await crearTemporada(nuevaTemporadaNombre);
+    if (resultado.ok) {
       showToast("Temporada creada");
       setNuevaTemporadaNombre("");
       fetchBaseData();
     } else {
-      showToast("Error al crear: " + error.message, "error");
+      showToast(resultado.error, "error");
     }
     setLoading(false);
   }
@@ -302,16 +260,12 @@ export default function AdminJornadas({
   async function toggleTemporadaActiva(id: string) {
     setBusyText("Cambiando temporada activa...");
     setLoading(true);
-    await supabase.from("temporadas").update({ activa: false }).neq("id", id);
-    const { error } = await supabase
-      .from("temporadas")
-      .update({ activa: true })
-      .eq("id", id);
-    if (!error) {
+    const resultado = await activarTemporada(id);
+    if (resultado.ok) {
       showToast("Temporada activa cambiada");
       fetchBaseData();
     } else {
-      showToast("Error al activar: " + error.message, "error");
+      showToast(resultado.error, "error");
     }
     setLoading(false);
   }
@@ -349,16 +303,11 @@ export default function AdminJornadas({
 
   async function fetchDescansos() {
     if (!selectedJornada) return;
-    const { data, error } = await supabase
-      .from("jornada_equipo_descanso")
-      .select("id, equipo_id")
-      .eq("jornada_id", selectedJornada);
-    if (error) {
-      console.error("jornada_equipo_descanso:", error.message);
-      setDescansos([]);
-      return;
-    }
-    setDescansos(data || []);
+    const { descansos: filas } = await cargarPantallaCalendario(
+      selectedCompetitionId,
+      selectedJornada,
+    );
+    setDescansos(filas);
   }
 
   async function fetchPartidos() {
@@ -369,39 +318,30 @@ export default function AdminJornadas({
       return;
     }
 
-    const { data, error } = await fetchMatchesForMatchday(
-      selectedJornada,
-      categoria,
-      selectedCompetitionId,
-    );
-    if (error) showToast("Error cargando partidos: " + error.message, "error");
+    const { data } = await fetchMatchesForMatchday(selectedJornada);
     setPartidos(data);
     setIsFetching(false);
   }
 
   async function handleCreateJornada(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    if (!temporadaActiva) return showToast("No hay temporada activa", "error");
     if (!selectedCompetitionId)
       return showToast("Selecciona una competición", "error");
     setBusyText("Creando jornada...");
     setLoading(true);
-    const payload: any = {
-      temporada_id: temporadaActiva.id,
-      categoria,
-      numero: parseInt(numJornada),
-      fecha_inicio: fechaInicio || null,
-      competicion_id: selectedCompetitionId,
-      nombre_fase: nombreFase.trim() || null,
-    };
-    const { error } = await supabase.from("jornadas").insert([payload]);
-    if (!error) {
+    const resultado = await crearJornada({
+      competicionId: selectedCompetitionId,
+      numero: numJornada,
+      fechaInicio,
+      nombreFase,
+    });
+    if (resultado.ok) {
       showToast("Jornada creada");
       setNumJornada("");
       setNombreFase("");
       fetchJornadas();
     } else {
-      showToast("Error al crear jornada", "error");
+      showToast(resultado.error, "error");
     }
     setLoading(false);
   }
@@ -409,45 +349,33 @@ export default function AdminJornadas({
   async function handleAddDescanso(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedJornada || !descansoEquipoId) return;
-    const teamAlreadyPlays = partidos.some(
-      (p: any) =>
-        p.equipo_local_id === descansoEquipoId ||
-        p.equipo_visitante_id === descansoEquipoId,
-    );
-    if (teamAlreadyPlays)
-      return showToast("Ese equipo ya tiene partido en esta jornada", "error");
 
     setBusyText("Marcando descanso...");
     setLoading(true);
-    const { error } = await supabase
-      .from("jornada_equipo_descanso")
-      .insert([{ jornada_id: selectedJornada, equipo_id: descansoEquipoId }]);
-    if (error) {
-      if (error.code === "23505")
-        showToast("Ese equipo ya tiene descanso en esta jornada", "error");
-      else if (error.message?.includes("does not exist")) {
-        showToast(
-          "Ejecuta scripts/migration_jornada_descanso.sql en Supabase",
-          "error",
-        );
-      } else showToast(error.message, "error");
-    } else {
+    // La comprobación de «ya juega esta jornada» la hace la acción, contra la base de datos.
+    const resultado = await anadirDescanso(selectedJornada, descansoEquipoId);
+    if (resultado.ok) {
       showToast("Descanso registrado");
       setDescansoEquipoId("");
       fetchDescansos();
+    } else {
+      showToast(resultado.error, "error");
     }
     setLoading(false);
   }
 
-  async function handleRemoveDescanso(rowId: string) {
-    showConfirm(
-      "¿Quitar el descanso de este equipo en esta jornada?",
-      async () => {
-        await supabase.from("jornada_equipo_descanso").delete().eq("id", rowId);
+  /** El descanso ya no tiene id propio: lo identifica el par (jornada, equipo). */
+  async function handleRemoveDescanso(equipoId: string) {
+    if (!selectedJornada) return;
+    showConfirm("¿Quitar el descanso de este equipo en esta jornada?", async () => {
+      const resultado = await quitarDescanso(selectedJornada, equipoId);
+      if (resultado.ok) {
         fetchDescansos();
         showToast("Descanso eliminado");
-      },
-    );
+      } else {
+        showToast(resultado.error, "error");
+      }
+    });
   }
 
   async function handleAddPartido(e: React.FormEvent) {
@@ -474,57 +402,67 @@ export default function AdminJornadas({
 
     setBusyText("Añadiendo partido...");
     setLoading(true);
-    const payload: any = {
-      jornada_id: selectedJornada,
-      categoria,
-      competicion_id: selectedCompetitionId,
-      equipo_local_id: localId,
-      equipo_visitante_id: visitanteId,
-      goles_local: null,
-      goles_visitante: null,
-      fecha: matchLocalDateTimeToIso(fechaPartido),
-      campo_id: campoId || null,
-      estado: "programado",
-    };
-    const { error } = await supabase.from("partidos_liga").insert([payload]);
-    if (!error) {
+    const resultado = await crearPartido({
+      jornadaId: selectedJornada,
+      equipoLocalId: localId,
+      equipoVisitanteId: visitanteId,
+      fecha: matchLocalDateTimeToIso(fechaPartido) ?? "",
+      campoId,
+    });
+    if (resultado.ok) {
       showToast("Partido añadido");
       setLocalId("");
       setVisitanteId("");
       setCampoId("");
       fetchPartidos();
     } else {
-      showToast("Error añadiendo partido: " + error.message, "error");
+      showToast(resultado.error, "error");
     }
     setLoading(false);
   }
 
-  async function updatePartidoState(id: string, field: string, value: any) {
-    const updateObj = { [field]: value };
-    const { error } = await supabase
-      .from("partidos_liga")
-      .update(updateObj)
-      .eq("id", id);
-    if (!error) fetchPartidos();
+  async function cambiarEstado(id: string, estado: string) {
+    const resultado = await cambiarEstadoPartido(id, estado);
+    if (resultado.ok) fetchPartidos();
+    else showToast(resultado.error, "error");
   }
 
-  async function saveMatchScore(id: string, local: number, vis: number) {
-    const { error } = await supabase
-      .from("partidos_liga")
-      .update({
-        goles_local: local,
-        goles_visitante: vis,
-      })
-      .eq("id", id);
-    if (!error) showToast("Marcador guardado");
+  async function cambiarFecha(id: string, fecha: string) {
+    const resultado = await cambiarFechaPartido(id, fecha);
+    if (resultado.ok) fetchPartidos();
+    else showToast(resultado.error, "error");
+  }
+
+  async function cambiarCampo(id: string, nuevoCampoId: string) {
+    const resultado = await cambiarCampoPartido(id, nuevoCampoId);
+    if (resultado.ok) fetchPartidos();
+    else showToast(resultado.error, "error");
+  }
+
+  /**
+   * Guardar marcador finaliza el partido y borrarlo lo devuelve a programado: los CHECK de la
+   * tabla no admiten un finalizado sin goles ni un marcador a medias. Por eso hay que recargar.
+   */
+  async function saveMatchScore(id: string, local: string, vis: string) {
+    const resultado = await guardarMarcador(id, local, vis);
+    if (resultado.ok) {
+      showToast("Marcador guardado");
+      fetchPartidos();
+    } else {
+      showToast(resultado.error, "error");
+    }
   }
 
   async function handleDeletePartido(id: string) {
     showConfirm("¿Borrar este partido de la jornada?", async () => {
       setRowBusy((prev) => ({ ...prev, [id]: true }));
-      await supabase.from("partidos_liga").delete().eq("id", id);
-      fetchPartidos();
-      showToast("Partido eliminado");
+      const resultado = await borrarPartido(id);
+      if (resultado.ok) {
+        fetchPartidos();
+        showToast("Partido eliminado");
+      } else {
+        showToast(resultado.error, "error");
+      }
       setRowBusy((prev) => ({ ...prev, [id]: false }));
     });
   }
@@ -533,61 +471,37 @@ export default function AdminJornadas({
     showConfirm(
       "¿Eliminar TODA la jornada y sus partidos? Esto recalculará la clasificación.",
       async () => {
-        await supabase.from("jornadas").delete().eq("id", id);
-        setSelectedJornada(null);
-        fetchJornadas();
-        showToast("Jornada borrada");
+        const resultado = await borrarJornada(id);
+        if (resultado.ok) {
+          setSelectedJornada(null);
+          fetchJornadas();
+          showToast("Jornada borrada");
+        } else {
+          showToast(resultado.error, "error");
+        }
       },
     );
   }
 
   async function handleBulkCreateJornadas() {
-    if (!temporadaActiva || !selectedCompetitionId) return;
-    setBusyText(`Verificando jornadas existentes...`);
+    if (!selectedCompetitionId) return;
+    setBusyText(`Creando las jornadas que falten...`);
     setLoading(true);
 
     try {
-      const { data: existing } = await supabase
-        .from("jornadas")
-        .select("numero")
-        .eq("temporada_id", temporadaActiva.id)
-        .eq("categoria", categoria)
-        .eq("competicion_id", selectedCompetitionId);
-
-      const existingNums = new Set(
-        existing?.map((j: { numero: number }) => j.numero) || [],
-      );
-      
-      // 2. Filtrar las que faltan de 1..bulkCount
-      const toInsert = [];
-      for (let i = 1; i <= bulkCount; i++) {
-        if (!existingNums.has(i)) {
-          toInsert.push({
-            temporada_id: temporadaActiva.id,
-            categoria,
-            competicion_id: selectedCompetitionId,
-            numero: i,
-          });
-        }
-      }
-
-      if (toInsert.length === 0) {
-        showToast("Las jornadas ya estaban creadas");
-        setShowConfigPanel(false);
-        setLoading(false);
+      // La acción calcula cuáles faltan de 1..bulkCount y devuelve cuántas creó.
+      const resultado = await crearJornadasEnLote(selectedCompetitionId, bulkCount);
+      if (!resultado.ok) {
+        showToast(resultado.error, "error");
         return;
       }
-
-      setBusyText(`Insertando ${toInsert.length} nuevas jornadas...`);
-      const { error } = await supabase.from("jornadas").insert(toInsert);
-      
-      if (error) throw error;
-
-      showToast(`Generadas ${toInsert.length} jornadas faltantes`);
+      showToast(
+        resultado.datos === 0
+          ? "Las jornadas ya estaban creadas"
+          : `Generadas ${resultado.datos} jornadas faltantes`,
+      );
       setShowConfigPanel(false);
       fetchJornadas();
-    } catch (err: any) {
-      showToast("Error al crear jornadas: " + err.message, "error");
     } finally {
       setLoading(false);
     }
@@ -1338,7 +1252,7 @@ export default function AdminJornadas({
                   </span>
                   {descansos.map((d) => (
                     <span
-                      key={d.id}
+                      key={d.equipo_id}
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
@@ -1352,7 +1266,7 @@ export default function AdminJornadas({
                       {getTeamName(d.equipo_id)}
                       <button
                         type="button"
-                        onClick={() => handleRemoveDescanso(d.id)}
+                        onClick={() => handleRemoveDescanso(d.equipo_id)}
                         style={{
                           background: "none",
                           border: "none",
@@ -1649,7 +1563,7 @@ export default function AdminJornadas({
                         <select
                           value={p.estado}
                           onChange={(e) =>
-                            updatePartidoState(p.id, "estado", e.target.value)
+                            cambiarEstado(p.id, e.target.value)
                           }
                           style={{
                             height: "45px",
@@ -1678,22 +1592,21 @@ export default function AdminJornadas({
                         disabled={!!rowBusy[p.id]}
                         onClick={async () => {
                           setRowBusy((prev) => ({ ...prev, [p.id]: true }));
-                          const { error } = await supabase
-                            .from("partidos_liga")
-                            .update({
-                              goles_local:
-                                typeof p.goles_local === "number"
-                                  ? p.goles_local
-                                  : null,
-                              goles_visitante:
-                                typeof p.goles_visitante === "number"
-                                  ? p.goles_visitante
-                                  : null,
-                              fecha: matchLocalDateTimeToIso(p.fecha),
-                              campo_id: p.campo_id,
-                            })
-                            .eq("id", p.id);
-                          if (!error) showToast("Cambios guardados");
+                          // Marcador, fecha y campo son acciones distintas: el marcador cambia
+                          // además el estado, y las otras dos no deben tocarlo.
+                          const marcador = await guardarMarcador(
+                            p.id,
+                            typeof p.goles_local === "number" ? String(p.goles_local) : "",
+                            typeof p.goles_visitante === "number" ? String(p.goles_visitante) : "",
+                          );
+                          if (!marcador.ok) {
+                            showToast(marcador.error, "error");
+                            setRowBusy((prev) => ({ ...prev, [p.id]: false }));
+                            return;
+                          }
+                          await cambiarFecha(p.id, matchLocalDateTimeToIso(p.fecha) ?? "");
+                          await cambiarCampo(p.id, p.campo_id ?? "");
+                          showToast("Cambios guardados");
                           setRowBusy((prev) => ({ ...prev, [p.id]: false }));
                         }}
                         style={{

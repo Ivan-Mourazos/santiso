@@ -5,17 +5,23 @@ import {
   esValorDe,
   FORMATOS_COMPETICION,
   normalizarCategoria,
+  type ReglaClasificacion,
   reglasClasificacionSchema,
 } from "@santiso/domain";
 import { and, eq, max } from "drizzle-orm";
 import type { CompeticionDto } from "@/lib/dto";
 import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
-import { listarCompeticiones } from "@/lib/server/consultas/competiciones";
+import { listarCompeticiones, reglasDeCompeticion } from "@/lib/server/consultas/competiciones";
 import { temporadaActivaId } from "@/lib/server/consultas/temporadas";
 import { obtenerDb } from "@/lib/server/db";
 
 export async function cargarCompeticiones(): Promise<Resultado<CompeticionDto[]>> {
   return capturar("No se pudieron cargar las competiciones.", listarCompeticiones);
+}
+
+/** Lectura de reglas para los componentes cliente; `consultas/` lleva `server-only`. */
+export async function cargarReglas(competicionId: string): Promise<ReglaClasificacion[]> {
+  return competicionId ? reglasDeCompeticion(competicionId) : [];
 }
 
 export async function crearCompeticion(entrada: {
