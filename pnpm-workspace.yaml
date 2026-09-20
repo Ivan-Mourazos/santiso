@@ -14,6 +14,7 @@ catalog:
   drizzle-orm: 0.45.2
   eslint: ^9.0.0
   prettier: 3.9.6
+  server-only: 0.0.1
   tsx: 4.23.13
   typescript: 5.9.3
   typescript-eslint: ^8.0.0

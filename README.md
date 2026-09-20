@@ -16,6 +16,8 @@ pnpm install
 pnpm dev          # http://127.0.0.1:3000/admin (solo accesible desde este equipo)
 ```
 
+La app lee los datos de `SANTISO_DATA_DIR` (ruta absoluta a `data/`), definida en `apps/studio/.env.local`. Comprueba la conexión con `http://127.0.0.1:3000/api/estado`.
+
 ## Estructura
 
 | Ruta | Contenido |
