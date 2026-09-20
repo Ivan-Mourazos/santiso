@@ -10,7 +10,10 @@ import { fileURLToPath } from "node:url";
 export function resolverDirDatos(entorno: NodeJS.ProcessEnv = process.env): string {
   const configurado = entorno.SANTISO_DATA_DIR?.trim();
   if (configurado) return path.resolve(configurado);
-  return path.join(fileURLToPath(new URL("../../../", import.meta.url)), "data");
+  // `new URL(especificador, import.meta.url)` lo resuelve el bundler como si fuera un módulo
+  // (Turbopack falla con "Can't resolve ../../../"). La forma de un solo argumento es opaca para él.
+  const dirFichero = path.dirname(fileURLToPath(new URL(import.meta.url)));
+  return path.join(dirFichero, "..", "..", "..", "data");
 }
 
 export const DIR_DATOS = resolverDirDatos();
