@@ -26,6 +26,10 @@ export async function cargarEquiposPorIds(ids: string[]): Promise<EquipoDto[]> {
   return equiposPorIds(ids);
 }
 
+export async function cargarEquiposDeCategoria(categoria: string): Promise<EquipoDto[]> {
+  return listarEquiposDeCategoria(categoria);
+}
+
 /**
  * Carga de la pantalla de equipos en una sola acción: la librería de la categoría y los
  * inscritos en la competición. Dos acciones separadas serían dos viajes en serie.

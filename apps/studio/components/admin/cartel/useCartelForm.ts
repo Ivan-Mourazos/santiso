@@ -5,11 +5,16 @@
 
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { supabase } from "@/lib/supabase-browser";
+import {
+  cargarEventosDePartido,
+  cargarPantallaActa,
+  cargarParticipacionesDePartido,
+} from "@/lib/server/acciones/actas";
+import { cargarEquiposDeCategoria } from "@/lib/server/acciones/equipos";
 import type { FormState } from "./types";
 import type { SelectorMatch } from "./Common";
 import type { Player, CronEvent, NextMatch } from "@/lib/cartel-draw";
-import { fetchSeasons, fetchCompeticiones, type CompetenciaRow } from "@/lib/supabase-queries";
+import { fetchCompeticiones, type CompetenciaRow } from "@/lib/supabase-queries";
 import { pickDefaultCompetitionId } from "@/lib/competition";
 import { matchDateInput, matchTimeInput } from "./matchDateTime";
 import {
@@ -40,22 +45,6 @@ interface CartelField {
   poblacion: string;
 }
 
-interface DbCronEventRow {
-  id: string | null;
-  tipo: string;
-  minuto: number | null;
-  es_rival?: boolean | null;
-  nombre_mostrado?: string | null;
-  jugador: CartelPlayer | CartelPlayer[] | null;
-  jugador_relacionado: CartelPlayer | CartelPlayer[] | null;
-}
-
-interface DbLineupRow {
-  titular: boolean | null;
-  jugo: boolean | null;
-  jugador: CartelPlayer | CartelPlayer[] | null;
-}
-
 function normalizePlayerRelation(
   player: CartelPlayer | CartelPlayer[] | null,
 ) {
@@ -69,6 +58,14 @@ function getPlayerDisplayName(player: CartelPlayer | CartelPlayer[] | null) {
   if (!normalized.nombre) return "";
   const parts = normalized.nombre.trim().split(/\s+/);
   return parts.length > 1 ? `${parts[0]} ${parts[1]}` : normalized.nombre;
+}
+
+/** Nombre corto para el cartel: el apodo si lo hay, si no nombre y primer apellido. */
+function nombreVisible(nombre: string | null, apodo: string | null) {
+  if (apodo?.trim()) return apodo.trim();
+  if (!nombre) return "";
+  const partes = nombre.trim().split(/\s+/);
+  return partes.length > 1 ? `${partes[0]} ${partes[1]}` : nombre;
 }
 
 function mapDbEventType(tipo: string): CronEvent["tipo"] {
@@ -172,17 +169,23 @@ export function useCartelForm() {
   useEffect(() => {
     async function loadData() {
       try {
-        const { active } = await fetchSeasons();
         const comps = await fetchCompeticiones();
         const activeComps = comps && comps.length > 0 ? comps : COMPETICIONES_2026_2027;
         setCompeticionesCatalog(activeComps);
 
-        const { data: jData } = await supabase.from("jugadores").select("*");
-        if (jData && jData.length > 0) setJugadores(jData);
+        // Una sola acción trae partidos, plantilla y campos de la temporada activa; sin
+        // categoría, porque el generador trabaja con las tres.
+        const { partidos, jugadores: plantilla, campos: sedes } = await cargarPantallaActa();
+        if (plantilla.length > 0) setJugadores(plantilla as unknown as typeof jugadores);
+        if (sedes.length > 0) setCampos(sedes as unknown as typeof campos);
 
-        const { data: eData } = await supabase.from("equipos").select("*");
-        if (eData && eData.length > 0) {
-          setEquipos(eData);
+        const equiposDeTodas = (
+          await Promise.all(
+            ["Senior", "Femenino", "Veteranos"].map((c) => cargarEquiposDeCategoria(c)),
+          )
+        ).flat();
+        if (equiposDeTodas.length > 0) {
+          setEquipos(equiposDeTodas as unknown as typeof equipos);
         } else {
           const fallbackTeams = [
             ...EQUIPOS_SENIOR_2026.map((n) => ({ id: n, nombre: n, escudo_url: "", categoria: "Senior" })),
@@ -191,21 +194,8 @@ export function useCartelForm() {
           setEquipos(fallbackTeams as any);
         }
 
-        const { data: cData } = await supabase.from("campos_futbol").select("*");
-        if (cData && cData.length > 0) setCampos(cData);
-
-        const { data: mData } = await supabase
-          .from("partidos_liga")
-          .select(
-            "*, equipo_local:equipo_local_id(*), equipo_visitante:equipo_visitante_id(*), jornada:jornada_id(*), campo:campo_id(*), competiciones:competicion_id(id, nombre)",
-          )
-          .order("fecha", { ascending: false });
-        if (mData && mData.length > 0) {
-          const matches = mData as SelectorMatch[];
-          const activeMatches = active?.id
-            ? matches.filter((match) => match.jornada?.temporada_id === active.id)
-            : matches;
-          setDbMatches(activeMatches);
+        if (partidos.length > 0) {
+          setDbMatches(partidos as unknown as SelectorMatch[]);
         } else {
           setDbMatches(TODOS_PARTIDOS_2026);
         }
@@ -410,103 +400,53 @@ export function useCartelForm() {
       events: [],
     }));
 
-    supabase
-      .from("partido_eventos_santiso")
-      .select(
-        `
-        id,
-        tipo,
-        minuto,
-        es_rival,
-        nombre_mostrado,
-        jugador:jugador_id(id, nombre, apodo),
-        jugador_relacionado:jugador_relacionado_id(id, nombre, apodo)
-      `,
-      )
-      .eq("partido_id", match.id)
-      .order("minuto", { ascending: true })
-      .then(({ data, error }: { data: unknown; error: { message: string } | null }) => {
-        if (error || !data) return;
+    // `propia` ya es una columna: no hay que deducirla del nombre mostrado como antes.
+    cargarEventosDePartido(match.id).then((filas) => {
+      const events: CronEvent[] = filas.map((fila) => {
+        let tipo = mapDbEventType(fila.tipo);
+        if (tipo === "gol" && fila.propia) tipo = "propia";
+        const esRival = fila.lado === "rival";
+        const nombreJugador = nombreVisible(fila.jugadorNombre, fila.jugadorApodo);
+        const nombreSale = nombreVisible(fila.saleNombre, fila.saleApodo);
 
-        const rows = data as DbCronEventRow[];
-        const events: CronEvent[] = rows.map((row) => {
-          let tipo = mapDbEventType(row.tipo);
-          const jugador = getPlayerDisplayName(row.jugador);
-          const jugadorRelacionado = getPlayerDisplayName(
-            row.jugador_relacionado,
-          );
-          const nombreLibre = row.nombre_mostrado?.trim() || "";
-          const esRival = Boolean(row.es_rival);
+        return {
+          id: fila.id || uuidv4(),
+          minuto: fila.minuto !== null ? String(fila.minuto) : "",
+          tipo,
+          equipo: esRival ? "rival" : "local",
+          jugador:
+            tipo === "cambio"
+              ? nombreSale
+              : nombreJugador || fila.nombreRival?.trim() || "",
+          jugadorEntra: tipo === "cambio" ? nombreJugador : undefined,
+        };
+      });
 
-          // Propia del Santiso: es_rival=true + jugador Santiso + nombre_mostrado="En propia"
-          const esPropiaSantiso = esRival && Boolean(row.jugador) && nombreLibre === "En propia";
-          // Propia del rival: es_rival=false + sin jugador_id + nombre_mostrado presente
-          const esPropia = !esRival && !row.jugador && Boolean(nombreLibre);
-          if (tipo === "gol" && (esPropiaSantiso || esPropia)) tipo = "propia";
+      setForm((p) => ({ ...p, events }));
+    });
 
-          return {
-            id: row.id || uuidv4(),
-            minuto: row.minuto ? String(row.minuto) : "",
-            tipo,
-            equipo: esRival ? "rival" : "local",
-            jugador:
-              tipo === "cambio"
-                ? jugadorRelacionado
-                : esPropiaSantiso
-                  ? jugador          // nombre del jugador Santiso que marcó en propia
-                  : nombreLibre || jugador,
-            jugadorEntra: tipo === "cambio" ? jugador : undefined,
-          };
+    // La consulta ya devuelve titulares primero y luego por dorsal.
+    cargarParticipacionesDePartido(match.id).then((filas) => {
+      if (filas.length === 0) return;
+
+      const aJugador = (fila: (typeof filas)[number]) =>
+        toCartelPlayer({
+          id: fila.id,
+          nombre: fila.nombre,
+          apodo: fila.apodo,
+          dorsal: fila.dorsal,
+          categoria: fila.categoria,
         });
 
-        setForm((p) => ({ ...p, events }));
-      });
+      const titulares = filas.filter((f) => f.titular).map(aJugador).slice(0, 11);
+      const suplentes = filas.filter((f) => !f.titular).map(aJugador);
+      if (titulares.length === 0 && suplentes.length === 0) return;
 
-    supabase
-      .from("jugador_partido_stats")
-      .select(
-        `
-        titular,
-        jugo,
-        jugador:jugador_id(id, nombre, apodo, dorsal, categoria)
-      `,
-      )
-      .eq("partido_id", match.id)
-      .then(({ data, error }: { data: unknown; error: { message: string } | null }) => {
-        if (error || !Array.isArray(data) || data.length === 0) return;
+      while (titulares.length < 11) titulares.push(mkPlayer());
+      while (suplentes.length < 5) suplentes.push(mkPlayer());
 
-        const rows = (data as DbLineupRow[])
-          .map((row) => ({
-            ...row,
-            jugador: normalizePlayerRelation(row.jugador),
-          }))
-          .filter((row): row is DbLineupRow & { jugador: CartelPlayer } =>
-            Boolean(row.jugador),
-          )
-          .sort((a, b) => {
-            if (a.titular !== b.titular) return a.titular ? -1 : 1;
-            return (a.jugador.dorsal || 999) - (b.jugador.dorsal || 999);
-          });
-
-        const titulares = rows
-          .filter((row) => row.titular)
-          .map((row) => toCartelPlayer(row.jugador))
-          .slice(0, 11);
-        const suplentes = rows
-          .filter((row) => !row.titular)
-          .map((row) => toCartelPlayer(row.jugador));
-
-        if (titulares.length === 0 && suplentes.length === 0) return;
-
-        while (titulares.length < 11) titulares.push(mkPlayer());
-        while (suplentes.length < 5) suplentes.push(mkPlayer());
-
-        setForm((p) => ({
-          ...p,
-          titulares,
-          suplentes,
-        }));
-      });
+      setForm((p) => ({ ...p, titulares, suplentes }));
+    });
   }
 
   function handleMultiusosFile(num: 1 | 2, file: File | null) {

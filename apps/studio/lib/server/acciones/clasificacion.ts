@@ -1,9 +1,15 @@
 "use server";
 
-import type { PantallaClasificacion } from "@/lib/dto";
+import type { PantallaClasificacion, PartidoDto } from "@/lib/dto";
 import { capturar, type Resultado } from "@/lib/resultado";
+import { listarPartidosDeCompeticion } from "@/lib/server/consultas/calendario";
 import { clasificacionDeCompeticion } from "@/lib/server/consultas/clasificacion";
 import { reglasDeCompeticion } from "@/lib/server/consultas/competiciones";
+
+/** Partidos de una competición para el cliente; `consultas/` lleva `server-only`. */
+export async function cargarPartidosDeCompeticion(competicionId: string): Promise<PartidoDto[]> {
+  return competicionId ? listarPartidosDeCompeticion(competicionId) : [];
+}
 
 /**
  * Todo lo que pinta la pantalla de clasificación, en una sola acción: Next despacha las acciones

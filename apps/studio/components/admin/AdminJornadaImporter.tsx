@@ -1,20 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase-browser";
+import {
+  cargarPantallaCalendario,
+  crearJornada,
+  guardarPartidoDeJornada,
+} from "@/lib/server/acciones/calendario";
 import BusyBanner from "./BusyBanner";
 import {
   competitionsForCategory,
   pickDefaultCompetitionId,
   type CompetenciaRow,
 } from "@/lib/competition";
-import {
-  fetchCompeticiones,
-  fetchMatchdaysForCompetition,
-  fetchSeasons,
-  fetchTeamsForCompetition,
-  type Team,
-} from "@/lib/supabase-queries";
+import { fetchCompeticiones, type Team } from "@/lib/supabase-queries";
 import { matchLocalDateTimeToIso } from "./cartel/matchDateTime";
 import type { JornadaGeminiResponse, JornadaMatchExtracted } from "@/app/api/admin/jornada-gemini/route";
 
@@ -163,38 +161,21 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
     setBusyText("Cargando datos...");
 
     try {
-      // Usar directamente el cliente de browser para evitar líos de sesión
-      const { data: seasons, error: sErr } = await supabase
-        .from("temporadas")
-        .select("*")
-        .order("created_at", { ascending: false });
-        
-      if (sErr) throw sErr;
-      const active = seasons?.find((s: { activa?: boolean }) => s.activa) || seasons?.[0];
-      if (!active) {
-        setBusy(false);
-        return;
-      }
+      // Una sola acción trae jornadas, equipos inscritos y campos. La temporada la determina
+      // la competición, así que ya no hace falta buscarla aparte.
+      const { jornadas: jornadasData, equipos: equiposData, campos: camposData } =
+        await cargarPantallaCalendario(competicionId, "");
 
-      const [equiposData, jornadasResult, cRes] = await Promise.all([
-        fetchTeamsForCompetition(categoria, competicionId),
-        fetchMatchdaysForCompetition(active.id, categoria, competicionId),
-        supabase
-          .from("campos_futbol")
-          .select("id, nombre, poblacion")
-          .order("nombre"),
-      ]);
-
-      setEquipos(equiposData);
-      setJornadas(jornadasResult.data);
-      if (jornadasResult.data.length > 0) {
+      setEquipos(equiposData as unknown as EquipoDB[]);
+      setCampos(camposData as CampoDB[]);
+      setJornadas(jornadasData as unknown as JornadaDB[]);
+      if (jornadasData.length > 0) {
         setSelectedJornadaId((prev) =>
-          jornadasResult.data.some((j) => j.id === prev)
+          jornadasData.some((j) => j.id === prev)
             ? prev
-            : jornadasResult.data[jornadasResult.data.length - 1].id,
+            : (jornadasData[jornadasData.length - 1]?.id ?? ""),
         );
       }
-      if (cRes.data) setCampos(cRes.data as CampoDB[]);
     } catch (err) {
       console.error("Error en fetchBaseData:", err);
       showToast("Error al cargar datos de la liga", "error");
@@ -260,17 +241,12 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
         if (bestCat !== categoria || bestCompId !== competicionId) {
           setCategoria(bestCat);
           setCompeticionId(bestCompId);
-          const { active } = await fetchSeasons();
-          if (active) {
-            const [newEquipos, newJornadas] = await Promise.all([
-              fetchTeamsForCompetition(bestCat, bestCompId),
-              fetchMatchdaysForCompetition(active.id, bestCat, bestCompId)
-            ]);
-            currentEquipos = newEquipos;
-            currentJornadas = newJornadas.data;
-            setEquipos(newEquipos);
-            setJornadas(newJornadas.data);
-          }
+          const { equipos: newEquipos, jornadas: newJornadas } =
+            await cargarPantallaCalendario(bestCompId, "");
+          currentEquipos = newEquipos as unknown as EquipoDB[];
+          currentJornadas = newJornadas as unknown as JornadaDB[];
+          setEquipos(currentEquipos);
+          setJornadas(currentJornadas);
         }
       }
 
@@ -297,41 +273,22 @@ export default function AdminJornadaImporter({ showToast, showConfirm }: Props) 
   setBusy(true);
   setBusyText(`Creando jornada ${numero}...`);
   try {
-    const { data: seasons, error: sErr } = await supabase
-      .from("temporadas")
-      .select("*")
-      .order("created_at", { ascending: false });
-      
-    if (sErr) throw sErr;
-    const active = seasons?.find((s: { activa?: boolean }) => s.activa) || seasons?.[0];
-    if (!active) throw new Error("No hay temporada activa configurada");
-    
-    const { data, error } = await supabase
-      .from("jornadas")
-      .insert({
-        temporada_id: active.id,
-        categoria,
-        competicion_id: competicionId,
-        numero
-      })
-      .select("id")
-      .maybeSingle();
-      
-    if (error) {
-      if (error.code === "23505") {
-        showToast(`La jornada ${numero} ya existe. Refrescando...`);
-        await fetchBaseData();
-        return;
-      }
-      throw error;
+    // La competición determina temporada y categoría, así que la acción solo necesita el número.
+    const resultado = await crearJornada({
+      competicionId,
+      numero: String(numero),
+      fechaInicio: "",
+      nombreFase: "",
+    });
+    if (!resultado.ok) {
+      showToast(resultado.error, "error");
+      await fetchBaseData();
+      return;
     }
 
     showToast(`Jornada ${numero} creada correctamente`);
     await fetchBaseData();
-    if (data?.id) setSelectedJornadaId(data.id);
-  } catch (err: any) {
-    console.error("Error detallado al crear jornada:", err);
-    showToast(err.message || "Error al crear jornada", "error");
+    setSelectedJornadaId(resultado.datos.id);
   } finally {
     setBusy(false);
   }
@@ -402,77 +359,25 @@ function buildRows(data: JornadaGeminiResponse, currentEquipos: EquipoDB[]) {
     let errors = 0;
 
     for (const row of toSave) {
-      // Buscar si ya existe el partido (local + visitante + jornada)
-      const { data: existing } = await supabase
-        .from("partidos_liga")
-        .select("id")
-        .eq("jornada_id", selectedJornadaId)
-        .eq("equipo_local_id", row.localId)
-        .eq("equipo_visitante_id", row.visitanteId)
-        .maybeSingle();
+      // Una sola acción por fila: identifica el partido por el cruce, resuelve el campo por
+      // nombre y deja el estado coherente con el marcador.
+      const resultado = await guardarPartidoDeJornada({
+        jornadaId: selectedJornadaId,
+        equipoLocalId: row.localId,
+        equipoVisitanteId: row.visitanteId,
+        golesLocal: row.golesLocal,
+        golesVisitante: row.golesVisitante,
+        fecha: matchLocalDateTimeToIso(normalizeFecha(row.fecha)) ?? "",
+        campoId: row.campoId || "",
+        campoNombre: row.campoNombre,
+        campoPoblacion: row.campoPoblacion,
+      });
 
-      // Resolver campo: usar existente o crear nuevo
-      let resolvedCampoId = row.campoId || null;
-      if (!resolvedCampoId && row.campoNombre.trim()) {
-        // Buscar primero por nombre exacto (ilike)
-        const { data: existing } = await supabase
-          .from("campos_futbol")
-          .select("id")
-          .ilike("nombre", row.campoNombre.trim())
-          .limit(1)
-          .maybeSingle();
-        if (existing?.id) {
-          resolvedCampoId = existing.id;
-          // Actualizar poblacion si la tenemos
-          if (row.campoPoblacion.trim()) {
-            await supabase
-              .from("campos_futbol")
-              .update({ poblacion: row.campoPoblacion.trim() })
-              .eq("id", existing.id);
-          }
-        } else {
-          const { data: inserted, error: campoErr } = await supabase
-            .from("campos_futbol")
-            .insert({ nombre: row.campoNombre.trim(), poblacion: row.campoPoblacion.trim() || null })
-            .select("id")
-            .single();
-          if (campoErr) {
-            console.error("Error creando campo:", campoErr.message);
-          } else {
-            resolvedCampoId = inserted.id;
-          }
-        }
-      }
-
-      const payload = {
-        jornada_id: selectedJornadaId,
-        categoria,
-        competicion_id: competicionId,
-        equipo_local_id: row.localId,
-        equipo_visitante_id: row.visitanteId,
-        goles_local: row.golesLocal !== "" ? parseInt(row.golesLocal, 10) : null,
-        goles_visitante:
-          row.golesVisitante !== "" ? parseInt(row.golesVisitante, 10) : null,
-        fecha: matchLocalDateTimeToIso(normalizeFecha(row.fecha)),
-        campo_id: resolvedCampoId,
-        estado: (row.golesLocal !== "" && row.golesVisitante !== "") ? "finalizado" : "programado",
-      };
-
-      let error;
-      if (existing?.id) {
-        ({ error } = await supabase
-          .from("partidos_liga")
-          .update(payload)
-          .eq("id", existing.id));
-      } else {
-        ({ error } = await supabase.from("partidos_liga").insert([payload]));
-      }
-
-      if (error) {
+      if (resultado.ok) ok++;
+      else {
         errors++;
-        console.error("Supabase error:", error.message, error.details, error.hint);
+        console.error("No se pudo guardar la fila:", resultado.error);
       }
-      else ok++;
     }
 
     setBusy(false);

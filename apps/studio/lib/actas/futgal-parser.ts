@@ -65,7 +65,10 @@ function normalizeOcrText(text: string) {
     .replace(/\r/g, "\n")
     .replace(/[‐‑‒–—]/g, "-")
     .replace(/([a-záéíóúñ])([A-ZÁÉÍÓÚÑ])/g, "$1\n$2")
-    .replace(/(Titulares|Suplentes|Cuerpo Técnico|Arbitros|Árbitros|Goles|Tarjetas|Cambios|Estadio|Ciudad)\s*/gi, "\n$1\n")
+    .replace(
+      /(Titulares|Suplentes|Cuerpo Técnico|Arbitros|Árbitros|Goles|Tarjetas|Cambios|Estadio|Ciudad)\s*/gi,
+      "\n$1\n",
+    )
     .replace(/([⚽🟨🟥])/g, "\n$1 ")
     .replace(/(\d{1,2}\s*-\s*\d{1,2})/g, "\n$1 ")
     .replace(/\((\d{1,3}|999)\s*['’]?\)/g, "($1')")
@@ -106,9 +109,7 @@ function parsePlayerLine(line: string): ActaPlayerRef | null {
 }
 
 function parsePlayers(lines: string[]) {
-  return lines.map(parsePlayerLine).filter((player): player is ActaPlayerRef =>
-    Boolean(player),
-  );
+  return lines.map(parsePlayerLine).filter((player): player is ActaPlayerRef => Boolean(player));
 }
 
 function parseScore(text: string) {
@@ -120,12 +121,8 @@ function parseScore(text: string) {
 }
 
 function parseCampo(lines: string[]) {
-  const estadioLine = lines.find((line) =>
-    normalizeForSearch(line).startsWith("estadio"),
-  );
-  const ciudadLine = lines.find((line) =>
-    normalizeForSearch(line).startsWith("ciudad"),
-  );
+  const estadioLine = lines.find((line) => normalizeForSearch(line).startsWith("estadio"));
+  const ciudadLine = lines.find((line) => normalizeForSearch(line).startsWith("ciudad"));
 
   const campoNombre = estadioLine
     ? cleanText(estadioLine.replace(/estadio\s*:?/i, "").replace(/^:\s*/, ""))
@@ -169,11 +166,7 @@ function findPlayerByName(name: string, players: ActaPlayerRef[]) {
   });
 }
 
-function parseGoals(
-  lines: string[],
-  santisoIsLocal: boolean,
-  santisoPlayers: ActaPlayerRef[],
-) {
+function parseGoals(lines: string[], santisoIsLocal: boolean, santisoPlayers: ActaPlayerRef[]) {
   const eventos: ActaEvent[] = [];
   let previousLocal = 0;
   let previousVisitante = 0;
@@ -268,10 +261,7 @@ function parseChanges(lines: string[], santisoPlayers: ActaPlayerRef[]) {
 
 export function parseFutgalActaText(text: string, santisoIsLocal: boolean): ParsedActa {
   const normalizedText = normalizeOcrText(text);
-  const lines = normalizedText
-    .split(/\r?\n/)
-    .map(cleanText)
-    .filter(Boolean);
+  const lines = normalizedText.split(/\r?\n/).map(cleanText).filter(Boolean);
 
   const titulares = parsePlayers(
     sectionLines(lines, ["titulares"], ["suplentes", "cuerpo tecnico", "arbitros", "goles"]),

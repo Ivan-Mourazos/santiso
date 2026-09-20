@@ -4,17 +4,8 @@
  */
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase-browser";
+import { cargarAjustesCartel } from "@/lib/server/acciones/ajustes-cartel";
 import type { AssetUrls, TemplateId } from "./types";
-
-/** Fila mínima devuelta por `cartel_assets`. */
-interface CartelAssetRow {
-  tipo: string;
-  subtipo: string;
-  url?: string | null;
-  orden?: number | null;
-  nombre?: string | null;
-}
 
 const DEFAULT_URLS: AssetUrls = {
   xunta: "",
@@ -29,42 +20,24 @@ export function useCartelAssets(tipo: TemplateId, refreshKey = 0) {
 
   useEffect(() => {
     async function loadAssets() {
-      // 1. Get Santiso shield from storage
-      const { data: sd } = supabase.storage.from("fotos").getPublicUrl("escudo_club.webp");
-      const santisoUrl = sd?.publicUrl || "";
-
-      // 2. Get assets from cartel_assets table
-      try {
-        const { data: rows } = await supabase.from("cartel_assets").select("*").order("orden");
-
-        if (!rows) {
-          setAssetUrls({ ...DEFAULT_URLS, santiso: santisoUrl });
-          return;
-        }
-
-        const list = rows as CartelAssetRow[];
-
-        const xunta    = list.find((r) => r.tipo === "logo_institucional" && r.subtipo === "xunta")?.url || "";
-        const rfgf     = list.find((r) => r.tipo === "logo_institucional" && r.subtipo === "rfgf")?.url  || "";
-        const sponsors = list
-          .filter((r) => r.tipo === "logo_patrocinador")
-          .sort((a, b) => (a.orden || 0) - (b.orden || 0))
-          .map((r) => r.url)
-          .filter((u): u is string => typeof u === "string" && u.length > 0);
-
-        const configRow = list.find((r) => r.tipo === "config" && r.subtipo === "logo_order");
-        const xuntaIsLeft = configRow ? configRow.nombre === "xunta_left" : true;
-
-        setAssetUrls({
-          xunta,
-          rfgf,
-          xuntaIsLeft,
-          santiso:  santisoUrl,
-          sponsors,
-        });
-      } catch {
-        setAssetUrls({ ...DEFAULT_URLS, santiso: santisoUrl });
+      const resultado = await cargarAjustesCartel();
+      if (!resultado.ok) {
+        setAssetUrls(DEFAULT_URLS);
+        return;
       }
+      const { escudoClub, logoXunta, logoRfgf, ordenLogos, patrocinadores } = resultado.datos;
+
+      setAssetUrls({
+        xunta: logoXunta ?? "",
+        rfgf: logoRfgf ?? "",
+        // El valor antiguo era "xunta_left"; el nuevo, "xunta_izquierda".
+        xuntaIsLeft: ordenLogos !== "rfgf_izquierda",
+        santiso: escudoClub ?? "",
+        // `listarPatrocinadores(true)` ya los devuelve ordenados por `orden`.
+        sponsors: patrocinadores
+          .map((p) => p.logo_url)
+          .filter((u): u is string => typeof u === "string" && u.length > 0),
+      });
     }
 
     loadAssets();

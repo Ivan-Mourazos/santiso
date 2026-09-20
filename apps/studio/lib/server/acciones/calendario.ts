@@ -5,6 +5,7 @@ import { ESTADOS_PARTIDO, esValorDe } from "@santiso/domain";
 import { and, eq, or } from "drizzle-orm";
 import type { JornadaDto, PantallaCalendario, PartidoDto } from "@/lib/dto";
 import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
+import { asegurarCampo } from "@/lib/server/acciones/campos";
 import {
   aJornadaDto,
   aPartidoDto,
@@ -156,6 +157,86 @@ export async function crearPartido(entrada: {
     if (!fila) throw new Error("La inserción no devolvió ninguna fila");
     return aPartidoDto(fila);
   });
+}
+
+/**
+ * Alta o actualización de un partido tal y como lo trae el importador de jornada: identifica el
+ * partido por el cruce dentro de la jornada, resuelve el campo por nombre y deja el estado
+ * coherente con el marcador. Va en una sola acción porque Next serializa las del cliente y
+ * hacerlo en cuatro pasos sería cuatro viajes por cada fila importada.
+ */
+export async function guardarPartidoDeJornada(entrada: {
+  jornadaId: string;
+  equipoLocalId: string;
+  equipoVisitanteId: string;
+  golesLocal: string;
+  golesVisitante: string;
+  fecha: string;
+  campoId: string;
+  campoNombre: string;
+  campoPoblacion: string;
+}): Promise<Resultado<null>> {
+  const { jornadaId, equipoLocalId, equipoVisitanteId } = entrada;
+  if (!jornadaId) return fallo("Elige una jornada de destino.");
+  if (!equipoLocalId || !equipoVisitanteId) return fallo("Faltan equipos en la fila.");
+  if (equipoLocalId === equipoVisitanteId) {
+    return fallo("Un equipo no puede jugar contra sí mismo.");
+  }
+
+  const textoLocal = entrada.golesLocal.trim();
+  const textoVisitante = entrada.golesVisitante.trim();
+  if (!textoLocal !== !textoVisitante) {
+    return fallo("El marcador debe tener los dos goles o ninguno.");
+  }
+  let golesLocal: number | null = null;
+  let golesVisitante: number | null = null;
+  if (textoLocal && textoVisitante) {
+    golesLocal = Number(textoLocal);
+    golesVisitante = Number(textoVisitante);
+    const valido = (n: number) => Number.isInteger(n) && n >= 0;
+    if (!valido(golesLocal) || !valido(golesVisitante)) {
+      return fallo("Los goles deben ser números enteros no negativos.");
+    }
+  }
+
+  let campoId = entrada.campoId.trim() || null;
+  if (!campoId && entrada.campoNombre.trim()) {
+    const campo = await asegurarCampo(entrada.campoNombre, entrada.campoPoblacion);
+    if (!campo.ok) return campo;
+    campoId = campo.datos.id;
+  }
+
+  const { db } = await obtenerDb();
+  const resultado = await capturar("No se pudo guardar el partido.", async () => {
+    const [existente] = await db
+      .select({ id: schema.partidos.id })
+      .from(schema.partidos)
+      .where(
+        and(
+          eq(schema.partidos.jornadaId, jornadaId),
+          eq(schema.partidos.equipoLocalId, equipoLocalId),
+          eq(schema.partidos.equipoVisitanteId, equipoVisitanteId),
+        ),
+      );
+
+    const valores = {
+      golesLocal,
+      golesVisitante,
+      estado: golesLocal === null ? ("programado" as const) : ("finalizado" as const),
+      fecha: entrada.fecha.trim() || null,
+      ...(campoId ? { campoId } : {}),
+    };
+
+    if (existente) {
+      await db.update(schema.partidos).set(valores).where(eq(schema.partidos.id, existente.id));
+    } else {
+      await db
+        .insert(schema.partidos)
+        .values({ jornadaId, equipoLocalId, equipoVisitanteId, ...valores });
+    }
+    return null;
+  });
+  return resultado.ok ? exito(null) : resultado;
 }
 
 /**
