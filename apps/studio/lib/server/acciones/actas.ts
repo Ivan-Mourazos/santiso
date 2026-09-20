@@ -4,9 +4,40 @@ import { schema } from "@santiso/db";
 import { eq } from "drizzle-orm";
 import { ErrorActa, eventosDeActa, participacionesDeActa } from "@/lib/actas/transformar";
 import type { ParsedActa } from "@/lib/actas/types";
+import type { CampoDto, JugadorDto, PartidoActaDto } from "@/lib/dto";
 import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
 import { asegurarCampo } from "@/lib/server/acciones/campos";
+import {
+  eventosDePartido,
+  participacionesDePartido,
+  partidosParaActa,
+} from "@/lib/server/consultas/actas";
+import { listarCampos } from "@/lib/server/consultas/campos";
+import { listarJugadores } from "@/lib/server/consultas/jugadores";
 import { obtenerDb } from "@/lib/server/db";
+
+/** Todo lo que necesita un importador de actas, en una sola acción. */
+export async function cargarPantallaActa(categoria: string): Promise<{
+  partidos: PartidoActaDto[];
+  jugadores: JugadorDto[];
+  campos: CampoDto[];
+}> {
+  const [partidos, jugadores, campos] = await Promise.all([
+    partidosParaActa(categoria),
+    listarJugadores(categoria),
+    listarCampos(),
+  ]);
+  return { partidos, jugadores, campos };
+}
+
+/** Envoltorios de servidor: `consultas/` lleva `server-only` y el cliente no puede importarlo. */
+export async function cargarEventosDePartido(partidoId: string) {
+  return partidoId ? eventosDePartido(partidoId) : [];
+}
+
+export async function cargarParticipacionesDePartido(partidoId: string) {
+  return partidoId ? participacionesDePartido(partidoId) : [];
+}
 
 /**
  * Guarda un acta revisada. Todo el trabajo va en **una** transacción: actualizar el partido,

@@ -130,3 +130,22 @@ export interface PantallaCalendario {
   equipos: EquipoDto[];
   campos: CampoDto[];
 }
+
+/** @deprecated Ver TemporadaDto. Forma que esperan los importadores de actas. */
+export interface PartidoActaDto {
+  id: string;
+  categoria: string;
+  competicion_id: string | null;
+  competicion: string | null;
+  equipo_local_id: string | null;
+  equipo_visitante_id: string | null;
+  goles_local: number | null;
+  goles_visitante: number | null;
+  estado: string | null;
+  fecha: string | null;
+  campo_id: string | null;
+  equipo_local: { nombre: string | null } | null;
+  equipo_visitante: { nombre: string | null } | null;
+  jornada: { numero: number | null; competicion_id: string | null } | null;
+  campo: { nombre: string | null; poblacion: string | null } | null;
+}
