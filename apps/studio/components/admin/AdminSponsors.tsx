@@ -1,8 +1,11 @@
 "use client";
 import { Fragment, useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase-browser";
-import { processAndUploadImage } from "@/lib/image-utils";
-import { v4 as uuidv4 } from "uuid";
+import { prepararImagen } from "@/lib/imagen-cliente";
+import {
+  borrarPatrocinador,
+  cargarPatrocinadores,
+  guardarPatrocinador,
+} from "@/lib/server/acciones/patrocinadores";
 import BusyBanner from "./BusyBanner";
 
 interface AdminSponsorsProps {
@@ -39,11 +42,7 @@ export default function AdminSponsors({
 
   async function fetchPatrocinadores() {
     setIsFetching(true);
-    const { data } = await supabase
-      .from("patrocinadores")
-      .select("*")
-      .order("orden", { ascending: true });
-    setPatrocinadores((data ?? []) as Sponsor[]);
+    setPatrocinadores((await cargarPatrocinadores()) as Sponsor[]);
     setIsFetching(false);
   }
 
@@ -69,50 +68,27 @@ export default function AdminSponsors({
     setLoading(true);
 
     try {
-      const current = editingId
-        ? patrocinadores.find((s) => s.id === editingId)
-        : null;
-      let logoUrl = current?.logo_url || "";
-
+      const cuerpo = new FormData();
+      cuerpo.set("id", editingId ?? "");
+      cuerpo.set("nombre", nombreSponsor);
+      cuerpo.set("webUrl", webSponsor);
       if (logoSponsor) {
-        const processed = await processAndUploadImage(logoSponsor, (percent) => {
-          setBusyText("Procesando logo...");
-          setBusyProgress(percent * 0.6);
-        });
-        if (!processed) return;
-
-        setBusyText("Subiendo logo...");
-        setBusyProgress(75);
-        const fileName = `sponsors/${uuidv4()}.webp`;
-        const { error: uploadError } = await supabase.storage
-          .from("fotos")
-          .upload(fileName, processed);
-
-        if (uploadError) throw uploadError;
-
-        const { data: pUrl } = supabase.storage
-          .from("fotos")
-          .getPublicUrl(fileName);
-        logoUrl = pUrl.publicUrl;
+        setBusyText("Preparando logo...");
+        setBusyProgress(40);
+        cuerpo.set("logo", await prepararImagen(logoSponsor));
       }
 
       setBusyText("Guardando patrocinador...");
-      setBusyProgress(90);
-      const payload = {
-        nombre: nombreSponsor,
-        logo_url: logoUrl,
-        web_url: webSponsor,
-      };
+      setBusyProgress(80);
+      const resultado = await guardarPatrocinador(cuerpo);
 
-      const { error: dbError } = editingId
-        ? await supabase.from("patrocinadores").update(payload).eq("id", editingId)
-        : await supabase.from("patrocinadores").insert([payload]);
-
-      if (dbError) throw dbError;
-
-      resetForm();
-      fetchPatrocinadores();
-      showToast(editingId ? "Patrocinador actualizado correctamente" : "Patrocinador añadido correctamente");
+      if (resultado.ok) {
+        resetForm();
+        fetchPatrocinadores();
+        showToast(editingId ? "Patrocinador actualizado correctamente" : "Patrocinador añadido correctamente");
+      } else {
+        showToast(resultado.error, "error");
+      }
     } catch (err) {
       console.error(err);
       showToast("Error al añadir patrocinador", "error");
@@ -124,9 +100,13 @@ export default function AdminSponsors({
 
   async function handleDeleteSponsor(id: string) {
     showConfirm("¿Borrar este patrocinador?", async () => {
-      await supabase.from("patrocinadores").delete().eq("id", id);
-      fetchPatrocinadores();
-      showToast("Patrocinador eliminado");
+      const resultado = await borrarPatrocinador(id);
+      if (resultado.ok) {
+        fetchPatrocinadores();
+        showToast("Patrocinador eliminado");
+      } else {
+        showToast(resultado.error, "error");
+      }
     });
   }
 

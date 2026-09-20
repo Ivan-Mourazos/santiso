@@ -73,3 +73,13 @@ export interface StaffDto {
   foto_url: string | null;
   orden: number;
 }
+
+/** @deprecated Ver TemporadaDto. `logo_url` es ahora una ruta local `/media/<clave>`. */
+export interface PatrocinadorDto {
+  id: string;
+  nombre: string;
+  logo_url: string | null;
+  web_url: string | null;
+  orden: number;
+  en_carteles: boolean;
+}
