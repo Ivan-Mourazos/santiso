@@ -26,5 +26,6 @@ test("la clasificación trae equipos de la base de datos local", async ({ page }
 test("la pestaña de temporadas lista la temporada activa", async ({ page }) => {
   await page.goto("/admin");
   await page.getByRole("link", { name: "Temporadas", exact: true }).click();
-  await expect(page.getByText("(ACTIVA)").first()).toBeVisible();
+  await expect(page.getByText("Activa").first()).toBeVisible();
 });
+
