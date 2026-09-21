@@ -8,7 +8,7 @@ import {
   pickDefaultCompetitionId,
   type CompetenciaRow,
 } from "@/lib/competition";
-import { fetchCompeticiones } from "@/lib/supabase-queries";
+import { fetchCompeticiones } from "@/lib/lecturas-cliente";
 import { parseFutgalActaText } from "@/lib/actas/futgal-parser";
 import { leerFichaPdf } from "@/lib/server/acciones/fichas";
 import type {

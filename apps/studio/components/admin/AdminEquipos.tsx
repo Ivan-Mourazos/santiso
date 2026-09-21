@@ -14,8 +14,9 @@ import {
   pickDefaultCompetitionId,
   type CompetenciaRow,
 } from "@/lib/competition";
-import { fetchCompeticiones } from "@/lib/supabase-queries";
+import { fetchCompeticiones } from "@/lib/lecturas-cliente";
 import { useCompeticiones } from "@/lib/useCompeticiones";
+import AvisoError from "./AvisoError";
 
 interface AdminEquiposProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -42,6 +43,7 @@ export default function AdminEquipos({
     selectedCompetitionId,
     setSelectedCompetitionId,
     competicionesEnCategoria,
+    errorCompeticiones,
     addCompeticion,
     removeCompeticion,
   } = useCompeticiones(categoria);
@@ -323,6 +325,7 @@ export default function AdminEquipos({
 
       <div className="input-group" style={{ marginBottom: "1rem" }}>
         <label>Liga / Competición</label>
+        <AvisoError mensaje={errorCompeticiones} />
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <select
             value={selectedCompetitionId}

@@ -1,6 +1,6 @@
 /**
  * components/admin/cartel/useCartelAssets.ts
- * Hook to fetch and manage static assets (fondo, logos, sponsors) from Supabase.
+ * Carga los recursos fijos del cartel (fondo, logos, patrocinadores) desde la media local.
  */
 
 import { useState, useEffect } from "react";

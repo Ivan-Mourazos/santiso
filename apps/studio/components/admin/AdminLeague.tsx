@@ -8,7 +8,7 @@ import {
 } from "@/lib/competition";
 import type { FilaClasificacion } from "@/lib/dto";
 import { cargarPantallaClasificacion } from "@/lib/server/acciones/clasificacion";
-import { fetchCompeticiones } from "@/lib/supabase-queries";
+import { fetchCompeticiones } from "@/lib/lecturas-cliente";
 
 interface AdminLeagueProps {
   showToast: (msg: string, type?: "success" | "error") => void;

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// App interna: la raíz lleva al panel. Sin sesión, proxy.ts redirige a /login.
+// Herramienta interna, sin login: la raíz lleva al panel.
 export default function RootPage() {
   redirect("/admin");
 }

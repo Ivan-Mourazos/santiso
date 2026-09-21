@@ -1,8 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-// `getSupabaseBrowserClient` sigue aquí solo para cerrar sesión: el login se retira en la 2C.
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { useRouter } from "next/navigation";
 import { prepararImagen } from "@/lib/imagen-cliente";
 import { cargarAjustesCartel, guardarLogoAjuste } from "@/lib/server/acciones/ajustes-cartel";
 import BusyBanner from "./BusyBanner";
@@ -14,20 +11,12 @@ interface AdminShieldProps {
 }
 
 export default function AdminShield({ showToast, showConfirm, compact }: AdminShieldProps) {
-  const router = useRouter();
   const [clubShield, setClubShield] = useState<string | null>(null);
   const [tempShieldFile, setTempShieldFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [busyProgress, setBusyProgress] = useState<number | undefined>(undefined);
-
-  async function handleLogout() {
-    const sb = getSupabaseBrowserClient();
-    await sb.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
 
   useEffect(() => {
     fetchClubShield();
@@ -107,20 +96,6 @@ export default function AdminShield({ showToast, showConfirm, compact }: AdminSh
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
           </button>
         )}
-
-        <button onClick={handleLogout} title="Cerrar sesión"
-          style={{
-            background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)',
-            borderRadius: 'var(--radius-sm)', width: '36px', height: '36px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: '#f87171', flexShrink: 0,
-          }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </button>
       </div>
     );
   }
