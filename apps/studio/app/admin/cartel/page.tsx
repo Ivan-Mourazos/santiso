@@ -1,9 +1,12 @@
-import GeneradorCartel from "@/components/admin/GeneradorCartel";
-
-export const metadata = {
-  title: "Generador de Carteles | UD Santiso Admin",
-};
-
-export default function CartelPage() {
-  return <GeneradorCartel />;
+import { redirect } from "next/navigation";
+export default async function CartelPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params))
+    if (typeof value === "string") query.set(key, value);
+  redirect(`/admin/carteles${query.size ? `?${query}` : ""}`);
 }

@@ -1,0 +1,50 @@
+/* Inventario de marca existente. Solo se aplica al contenedor explícito. */
+.theme {
+  --ui-bg: #000;
+  --ui-surface: #171717;
+  --ui-raised: #242424;
+  --ui-text: #fff;
+  --ui-muted: #aaa;
+  --ui-border: #666;
+  --ui-accent: #facc15;
+  --ui-on-accent: #000;
+  --ui-danger: #f87171;
+  --ui-success: #4ade80;
+  --ui-warning: #f59e0b;
+  --ui-radius: 0.75rem;
+  --ui-radius-lg: 1.125rem;
+  --ui-space-1: 0.25rem;
+  --ui-space-2: 0.5rem;
+  --ui-space-3: 0.75rem;
+  --ui-space-4: 1rem;
+  --ui-space-5: 1.5rem;
+  --ui-space-6: 2rem;
+  --ui-font-body: var(--font-nunito), sans-serif;
+  --ui-font-title: var(--font-outfit), sans-serif;
+  --ui-shadow: 0 14px 40px rgb(0 0 0 / 45%);
+  --ui-duration: 140ms;
+  --ui-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --ui-text-sm: 0.875rem;
+  --ui-text-base: 1rem;
+  --ui-text-title: clamp(1.75rem, 4vw, 2.5rem);
+  color-scheme: dark;
+  color: var(--ui-text);
+  background: var(--ui-bg);
+  font-family: var(--ui-font-body);
+  font-size: var(--ui-text-base);
+  line-height: 1.5;
+}
+.theme *,
+.theme *::before,
+.theme *::after {
+  box-sizing: border-box;
+}
+.theme :focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme {
+    --ui-duration: 0ms;
+  }
+}

@@ -1,0 +1,45 @@
+.field {
+  display: grid;
+  gap: var(--ui-space-2);
+  min-width: 0;
+}
+.label {
+  font-weight: 800;
+}
+.control {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font: inherit;
+}
+.control:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+.control[aria-invalid="true"] {
+  border-color: var(--ui-danger);
+}
+.control:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.hint,
+.error {
+  margin: 0;
+  font-size: var(--ui-text-sm);
+  overflow-wrap: anywhere;
+}
+.hint {
+  color: var(--ui-muted);
+}
+.error {
+  color: var(--ui-danger);
+}
+.textarea {
+  resize: vertical;
+}

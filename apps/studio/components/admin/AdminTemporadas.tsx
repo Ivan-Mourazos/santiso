@@ -1,87 +1,182 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef, type FormEvent } from "react";
 import type { TemporadaDto } from "@/lib/dto";
-import { activarTemporada, cargarTemporadas, crearTemporada } from "@/lib/server/acciones/temporadas";
-import BusyBanner from "./BusyBanner";
+import {
+  activarTemporada,
+  cargarTemporadas,
+  crearTemporada,
+} from "@/lib/server/acciones/temporadas";
+import { useUnsavedChanges } from "@/components/studio/StudioContext";
+import { Button } from "@/components/ui/foundation/Button";
+import { Field } from "@/components/ui/foundation/Fields";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
+import styles from "./AdminTemporadas.module.css";
 
 interface AdminTemporadasProps {
   showToast: (msg: string, type?: "success" | "error") => void;
-  showConfirm: (msg: string, onConfirm: () => void) => void;
+  showConfirm: (msg: string, onConfirm: () => void | Promise<void>) => void;
 }
 
 export default function AdminTemporadas({ showToast, showConfirm }: AdminTemporadasProps) {
   const [temporadas, setTemporadas] = useState<TemporadaDto[]>([]);
   const [nombre, setNombre] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [busyText, setBusyText] = useState("Cargando temporadas...");
+  const [pending, setPending] = useState<string | null>(null);
+  const operation = useRef(false);
+  const [fetching, setFetching] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string>();
+  const [activationError, setActivationError] = useState<string | null>(null);
+  useUnsavedChanges(nombre !== "");
 
-  useEffect(() => {
-    fetchTemporadas();
+  const load = useCallback(async () => {
+    setFetching(true);
+    setLoadError(null);
+    try {
+      const result = await cargarTemporadas();
+      if (result.ok) setTemporadas(result.datos);
+      else setLoadError(result.error);
+    } catch {
+      setLoadError("No se pudieron cargar las temporadas.");
+    } finally {
+      setFetching(false);
+    }
   }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-  async function fetchTemporadas() {
-    setIsFetching(true);
-    const resultado = await cargarTemporadas();
-    if (resultado.ok) setTemporadas(resultado.datos);
-    else showToast(resultado.error, "error");
-    setIsFetching(false);
-  }
-
-  async function handleAdd(e: React.FormEvent) {
-    e.preventDefault();
-    if (!nombre) return;
-    setBusyText("Creando temporada...");
-    setLoading(true);
-
-    const resultado = await crearTemporada(nombre);
-
-    if (resultado.ok) {
-      showToast("Temporada creada");
+  async function create(event: FormEvent) {
+    event.preventDefault();
+    if (operation.current || !nombre.trim()) return;
+    operation.current = true;
+    setPending("create");
+    setFormError(undefined);
+    try {
+      const result = await crearTemporada(nombre.trim());
+      if (!result.ok) {
+        setFormError(result.error);
+        return;
+      }
+      setTemporadas((previous) =>
+        [...previous, result.datos].sort((a, b) => b.nombre.localeCompare(a.nombre)),
+      );
       setNombre("");
-      fetchTemporadas();
-    } else {
-      showToast(resultado.error, "error");
+      showToast("Temporada creada");
+    } catch {
+      setFormError("No se pudo crear la temporada. Tus datos siguen aquí.");
+    } finally {
+      operation.current = false;
+      setPending(null);
     }
-    setLoading(false);
   }
 
-  async function setActiva(id: string) {
-    setBusyText("Activando temporada...");
-    setLoading(true);
-    const resultado = await activarTemporada(id);
-    if (resultado.ok) {
+  async function activate(id: string) {
+    if (operation.current) return;
+    operation.current = true;
+    setPending(id);
+    setActivationError(null);
+    try {
+      const result = await activarTemporada(id);
+      if (!result.ok) {
+        setActivationError(result.error);
+        return;
+      }
+      setTemporadas((previous) =>
+        previous.map((season) => ({ ...season, activa: season.id === id })),
+      );
       showToast("Temporada activa actualizada");
-      fetchTemporadas();
-    } else {
-      showToast(resultado.error, "error");
+    } catch {
+      setActivationError("No se pudo activar la temporada. Vuelve a intentarlo.");
+    } finally {
+      operation.current = false;
+      setPending(null);
     }
-    setLoading(false);
   }
 
   return (
-    <div className="card glass full-width">
-      <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando temporadas..." : busyText} />
-      <form onSubmit={handleAdd} className="form-grid-3" style={{ marginBottom: '2rem' }}>
-        <div className="input-group">
-          <label>Nombre de Temporada</label>
-          <input type="text" placeholder="Ej: 2024/25" value={nombre} onChange={e => setNombre(e.target.value)} required />
+    <div className={styles.layout}>
+      <section className={styles.list} aria-labelledby="temporadas-listado">
+        <div className={styles.intro}>
+          <h2 id="temporadas-listado">Tu historial deportivo</h2>
+          <p>
+            La temporada activa se usa como destino por defecto. Consultar otra temporada en
+            Calendario no cambia cuál está activa.
+          </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-          <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%' }}>+ Nueva Temporada</button>
-        </div>
-      </form>
-
-      <div className="equipos-list">
-        {temporadas.map(t => (
-          <div key={t.id} className="admin-item glass" style={{ border: t.activa ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ fontWeight: 800 }}>{t.nombre} {t.activa && <span className="text-primary">(ACTIVA)</span>}</div>
-            {!t.activa && (
-              <button onClick={() => setActiva(t.id)} className="btn-confirm" style={{ padding: '0.4rem 0.8rem', fontSize: '0.7rem' }}>Activar</button>
-            )}
-          </div>
-        ))}
-      </div>
+        {activationError && <ErrorState title={activationError} />}
+        {fetching ? (
+          <LoadingState title="Cargando temporadas…" />
+        ) : loadError ? (
+          <ErrorState
+            title={loadError}
+            action={
+              <Button variant="secondary" onClick={() => void load()}>
+                Reintentar
+              </Button>
+            }
+          />
+        ) : temporadas.length === 0 ? (
+          <EmptyState
+            title="Todavía no hay temporadas"
+            detail="Crea la primera para empezar a organizar las competiciones."
+          />
+        ) : (
+          <ul className={styles.seasons}>
+            {temporadas.map((season) => (
+              <li key={season.id} className={`${styles.row} ${season.activa ? styles.active : ""}`}>
+                <div className={styles.identity}>
+                  <strong>{season.nombre}</strong>
+                  {season.activa && <span className={styles.badge}>Activa</span>}
+                </div>
+                {!season.activa && (
+                  <Button
+                    variant="secondary"
+                    disabled={pending !== null}
+                    pending={pending === season.id}
+                    pendingLabel="Activando…"
+                    aria-label={`Usar ${season.nombre} como temporada activa`}
+                    onClick={() =>
+                      showConfirm(
+                        `Usar ${season.nombre} como temporada activa cambia el destino por defecto de las nuevas operaciones. Los datos de las otras temporadas se conservan.`,
+                        () => activate(season.id),
+                      )
+                    }
+                  >
+                    Usar como activa
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      <section className={styles.create} aria-labelledby="temporadas-crear">
+        <h2 id="temporadas-crear">Nueva temporada</h2>
+        <p>La primera queda activa automáticamente. Las siguientes se activan cuando tú decidas.</p>
+        <form onSubmit={create} className={styles.form}>
+          <Field
+            label="Nombre de temporada"
+            hint="Formato: 2026/27"
+            placeholder="2026/27"
+            value={nombre}
+            onChange={(event) => {
+              setNombre(event.target.value);
+              setFormError(undefined);
+            }}
+            error={formError}
+            disabled={pending !== null}
+            required
+          />
+          <Button
+            type="submit"
+            disabled={pending !== null || fetching || loadError !== null || !nombre.trim()}
+            pending={pending === "create"}
+            pendingLabel="Creando…"
+          >
+            Crear temporada
+          </Button>
+        </form>
+      </section>
     </div>
   );
 }

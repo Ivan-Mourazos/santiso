@@ -6,6 +6,7 @@ import {
   cargarPatrocinadores,
   guardarPatrocinador,
 } from "@/lib/server/acciones/patrocinadores";
+import { useUnsavedChanges } from "@/components/studio/StudioContext";
 import BusyBanner from "./BusyBanner";
 
 interface AdminSponsorsProps {
@@ -36,6 +37,14 @@ export default function AdminSponsors({
     undefined,
   );
 
+  const [originalSponsor, setOriginalSponsor] = useState<Sponsor | null>(null);
+
+  useUnsavedChanges(
+    nombreSponsor !== (originalSponsor?.nombre || "") ||
+      webSponsor !== (originalSponsor?.web_url || "") ||
+      logoSponsor !== null,
+  );
+
   useEffect(() => {
     fetchPatrocinadores();
   }, []);
@@ -51,6 +60,7 @@ export default function AdminSponsors({
     setLogoSponsor(null);
     setWebSponsor("");
     setEditingId(null);
+    setOriginalSponsor(null);
   }
 
   function startEditSponsor(sponsor: Sponsor) {
@@ -58,6 +68,7 @@ export default function AdminSponsors({
     setWebSponsor(sponsor.web_url || "");
     setLogoSponsor(null);
     setEditingId(sponsor.id);
+    setOriginalSponsor(sponsor);
   }
 
   async function handleSubmitSponsor(e: React.FormEvent) {

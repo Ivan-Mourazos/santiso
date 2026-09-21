@@ -2,14 +2,17 @@ import { expect, test } from "@playwright/test";
 
 const SECCIONES = [
   "Temporadas",
-  "Ligas",
+  "Clasificación",
   "Equipos",
-  "Plantilla",
-  "Sponsors",
+  "Jugadores",
+  "Patrocinadores",
   "Calendario",
   "Carteles",
   "Actas",
-  "Jornada",
+  "Importar jornada",
+  "Cuerpo técnico",
+  "Directiva",
+  "Ajustes gráficos",
 ];
 
 test("el panel carga con todas sus secciones", async ({ page }) => {

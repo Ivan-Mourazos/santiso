@@ -2,6 +2,7 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { prepararImagen } from "@/lib/imagen-cliente";
 import { borrarJugador, cargarJugadores, guardarJugador } from "@/lib/server/acciones/jugadores";
+import { useUnsavedChanges } from "@/components/studio/StudioContext";
 import BusyBanner from "./BusyBanner";
 
 interface AdminPlayersProps {
@@ -35,12 +36,26 @@ export default function AdminPlayers({
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [historial, setHistorial] = useState("");
   const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [pendingPhotos, setPendingPhotos] = useState<Record<string, File>>({});
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(true);
   const [busyText, setBusyText] = useState("Cargando jugadores...");
   const [busyProgress, setBusyProgress] = useState<number | undefined>(
     undefined,
+  );
+
+  const [originalJugador, setOriginalJugador] = useState<Jugador | null>(null);
+
+  useUnsavedChanges(
+    nombre !== (originalJugador?.nombre || "") ||
+      apodo !== (originalJugador?.apodo || "") ||
+      dorsal !== (originalJugador?.dorsal?.toString() || "") ||
+      posicion !== (originalJugador?.posicion || "") ||
+      fechaNacimiento !== (originalJugador?.fecha_nacimiento || "") ||
+      historial !== (originalJugador?.historial_deportivo || []).join("\n") ||
+      fotoFile !== null ||
+      Object.keys(pendingPhotos).length > 0,
   );
 
   function resetForm() {
@@ -52,6 +67,7 @@ export default function AdminPlayers({
     setHistorial("");
     setFotoFile(null);
     setEditingId(null);
+    setOriginalJugador(null);
   }
 
   function startEditJugador(jugador: Jugador) {
@@ -63,6 +79,7 @@ export default function AdminPlayers({
     setHistorial((jugador.historial_deportivo || []).join("\n"));
     setFotoFile(null);
     setEditingId(jugador.id);
+    setOriginalJugador(jugador);
   }
 
   const fetchJugadores = useCallback(async () => {
@@ -85,40 +102,47 @@ export default function AdminPlayers({
     setBusyProgress(5);
     setLoading(true);
 
-    const cuerpo = new FormData();
-    cuerpo.set("id", editingId ?? "");
-    cuerpo.set("nombre", nombre);
-    cuerpo.set("apodo", apodo);
-    cuerpo.set("dorsal", dorsal);
-    cuerpo.set("posicion", posicion);
-    cuerpo.set("categoria", categoria);
-    cuerpo.set("fechaNacimiento", fechaNacimiento);
-    cuerpo.set("historial", historial);
-    if (fotoFile) {
-      setBusyText("Preparando foto...");
-      setBusyProgress(40);
-      cuerpo.set("foto", await prepararImagen(fotoFile));
-    }
+    try {
+      const cuerpo = new FormData();
+      cuerpo.set("id", editingId ?? "");
+      cuerpo.set("nombre", nombre);
+      cuerpo.set("apodo", apodo);
+      cuerpo.set("dorsal", dorsal);
+      cuerpo.set("posicion", posicion);
+      cuerpo.set("categoria", categoria);
+      cuerpo.set("fechaNacimiento", fechaNacimiento);
+      cuerpo.set("historial", historial);
+      if (fotoFile) {
+        setBusyText("Preparando foto...");
+        setBusyProgress(40);
+        cuerpo.set("foto", await prepararImagen(fotoFile));
+      }
 
-    setBusyText("Guardando jugador...");
-    setBusyProgress(80);
-    const resultado = await guardarJugador(cuerpo);
+      setBusyText("Guardando jugador...");
+      setBusyProgress(80);
+      const resultado = await guardarJugador(cuerpo);
 
-    if (resultado.ok) {
-      resetForm();
-      fetchJugadores();
-      showToast(editingId ? "Jugador actualizado correctamente" : "Jugador añadido correctamente", "success");
-    } else {
-      showToast(resultado.error, "error");
+      if (resultado.ok) {
+        resetForm();
+        fetchJugadores();
+        showToast(editingId ? "Jugador actualizado correctamente" : "Jugador añadido correctamente", "success");
+      } else {
+        showToast(resultado.error, "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Error al guardar jugador", "error");
+    } finally {
+      setLoading(false);
+      setBusyProgress(undefined);
     }
-    setLoading(false);
-    setBusyProgress(undefined);
   }
 
   async function handleUpdateFoto(id: string, file: File) {
     setBusyText("Procesando y subiendo foto...");
     setBusyProgress(5);
     setLoading(true);
+    setPendingPhotos((pending) => ({ ...pending, [id]: file }));
     const jugador = jugadores.find((j) => j.id === id);
     if (!jugador) {
       showToast("No se encontró el jugador", "error");
@@ -126,32 +150,43 @@ export default function AdminPlayers({
       setBusyProgress(undefined);
       return;
     }
-    // `guardarJugador` reescribe la fila entera: hay que reenviar los valores actuales o se
-    // perderían dorsal, posición, apodo, fecha de nacimiento e historial al cambiar la foto.
-    const cuerpo = new FormData();
-    cuerpo.set("id", id);
-    cuerpo.set("nombre", jugador.nombre);
-    cuerpo.set("apodo", jugador.apodo ?? "");
-    cuerpo.set("dorsal", jugador.dorsal?.toString() ?? "");
-    cuerpo.set("posicion", jugador.posicion ?? "");
-    cuerpo.set("categoria", categoria);
-    cuerpo.set("fechaNacimiento", jugador.fecha_nacimiento ?? "");
-    cuerpo.set("historial", (jugador.historial_deportivo ?? []).join("\n"));
-    setBusyText("Preparando foto...");
-    setBusyProgress(40);
-    cuerpo.set("foto", await prepararImagen(file));
+    try {
+      // `guardarJugador` reescribe la fila entera: hay que reenviar los valores actuales o se
+      // perderían dorsal, posición, apodo, fecha de nacimiento e historial al cambiar la foto.
+      const cuerpo = new FormData();
+      cuerpo.set("id", id);
+      cuerpo.set("nombre", jugador.nombre);
+      cuerpo.set("apodo", jugador.apodo ?? "");
+      cuerpo.set("dorsal", jugador.dorsal?.toString() ?? "");
+      cuerpo.set("posicion", jugador.posicion ?? "");
+      cuerpo.set("categoria", categoria);
+      cuerpo.set("fechaNacimiento", jugador.fecha_nacimiento ?? "");
+      cuerpo.set("historial", (jugador.historial_deportivo ?? []).join("\n"));
+      setBusyText("Preparando foto...");
+      setBusyProgress(40);
+      cuerpo.set("foto", await prepararImagen(file));
 
-    setBusyText("Guardando foto...");
-    setBusyProgress(80);
-    const resultado = await guardarJugador(cuerpo);
-    if (resultado.ok) {
-      showToast("Foto actualizada");
-      fetchJugadores();
-    } else {
-      showToast(resultado.error, "error");
+      setBusyText("Guardando foto...");
+      setBusyProgress(80);
+      const resultado = await guardarJugador(cuerpo);
+      if (resultado.ok) {
+        showToast("Foto actualizada");
+        setPendingPhotos((pending) => {
+          const remaining = { ...pending };
+          delete remaining[id];
+          return remaining;
+        });
+        fetchJugadores();
+      } else {
+        showToast(resultado.error, "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Error actualizando foto", "error");
+    } finally {
+      setLoading(false);
+      setBusyProgress(undefined);
     }
-    setLoading(false);
-    setBusyProgress(undefined);
   }
 
   async function handleDeleteJugador(id: string) {
@@ -593,6 +628,7 @@ export default function AdminPlayers({
                         onChange={(e) => {
                           const f = e.target.files?.[0];
                           if (f) handleUpdateFoto(j.id, f);
+                          e.currentTarget.value = "";
                         }}
                       />
                     </label>

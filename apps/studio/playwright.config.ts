@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const URL_BASE = "http://127.0.0.1:3000";
+const URL_BASE = process.env.STUDIO_E2E_URL ?? "http://127.0.0.1:3000";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -12,9 +12,9 @@ export default defineConfig({
   use: { baseURL: URL_BASE, trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "pnpm dev",
+    command: `pnpm exec next dev -H 127.0.0.1 -p ${new URL(URL_BASE).port || "3000"}`,
     url: `${URL_BASE}/api/estado`,
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

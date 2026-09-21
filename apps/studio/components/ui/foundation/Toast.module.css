@@ -1,0 +1,37 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  border-radius: var(--ui-radius);
+  font-family: var(--ui-font-body);
+  color: var(--ui-text);
+}
+.root:has(.close) {
+  padding: var(--ui-space-3) var(--ui-space-4);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-success);
+}
+.root[data-kind="error"]:has(.close) {
+  border-color: var(--ui-danger);
+}
+.message {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.close {
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-raised);
+  color: var(--ui-text);
+  font: inherit;
+  cursor: pointer;
+}
+.close:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}

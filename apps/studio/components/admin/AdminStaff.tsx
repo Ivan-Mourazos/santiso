@@ -7,6 +7,7 @@ import {
   cargarStaff,
   guardarMiembroStaff,
 } from "@/lib/server/acciones/staff";
+import { useUnsavedChanges } from "@/components/studio/StudioContext";
 import BusyBanner from "./BusyBanner";
 
 interface AdminStaffProps {
@@ -21,10 +22,15 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
   const [nombre, setNombre] = useState("");
   const [cargo, setCargo] = useState("");
   const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [pendingPhotos, setPendingPhotos] = useState<Record<string, File>>({});
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [busyText, setBusyText] = useState("Cargando staff...");
   const [busyProgress, setBusyProgress] = useState<number | undefined>(undefined);
+
+  useUnsavedChanges(
+    nombre !== "" || cargo !== "" || fotoFile !== null || Object.keys(pendingPhotos).length > 0,
+  );
 
   useEffect(() => {
     fetchStaff();
@@ -43,39 +49,46 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
     setBusyProgress(5);
     setLoading(true);
 
-    const cuerpo = new FormData();
-    cuerpo.set("id", "");
-    cuerpo.set("nombre", nombre);
-    cuerpo.set("cargo", cargo);
-    cuerpo.set("tipo", tipo);
-    cuerpo.set("categoria", categoria ?? "");
-    if (fotoFile) {
-      setBusyText("Preparando foto...");
-      setBusyProgress(40);
-      cuerpo.set("foto", await prepararImagen(fotoFile));
-    }
+    try {
+      const cuerpo = new FormData();
+      cuerpo.set("id", "");
+      cuerpo.set("nombre", nombre);
+      cuerpo.set("cargo", cargo);
+      cuerpo.set("tipo", tipo);
+      cuerpo.set("categoria", categoria ?? "");
+      if (fotoFile) {
+        setBusyText("Preparando foto...");
+        setBusyProgress(40);
+        cuerpo.set("foto", await prepararImagen(fotoFile));
+      }
 
-    setBusyText("Guardando staff...");
-    setBusyProgress(80);
-    const resultado = await guardarMiembroStaff(cuerpo);
+      setBusyText("Guardando staff...");
+      setBusyProgress(80);
+      const resultado = await guardarMiembroStaff(cuerpo);
 
-    if (resultado.ok) {
-      setNombre("");
-      setCargo("");
-      setFotoFile(null);
-      fetchStaff();
-      showToast(`${tipo === 'Tecnico' ? 'Técnico' : 'Directivo'} añadido correctamente`);
-    } else {
-      showToast(resultado.error, "error");
+      if (resultado.ok) {
+        setNombre("");
+        setCargo("");
+        setFotoFile(null);
+        fetchStaff();
+        showToast(`${tipo === 'Tecnico' ? 'Técnico' : 'Directivo'} añadido correctamente`);
+      } else {
+        showToast(resultado.error, "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Error al guardar miembro", "error");
+    } finally {
+      setLoading(false);
+      setBusyProgress(undefined);
     }
-    setLoading(false);
-    setBusyProgress(undefined);
   }
 
   async function handleUpdateFoto(id: string, file: File) {
     setBusyText("Procesando y subiendo foto...");
     setBusyProgress(5);
     setLoading(true);
+    setPendingPhotos((pending) => ({ ...pending, [id]: file }));
     const miembro = staff.find((s) => s.id === id);
     if (!miembro) {
       showToast("No se encontró el miembro", "error");
@@ -83,28 +96,39 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
       setBusyProgress(undefined);
       return;
     }
-    // `guardarMiembroStaff` reescribe la fila entera: hay que reenviar nombre, cargo y tipo.
-    const cuerpo = new FormData();
-    cuerpo.set("id", id);
-    cuerpo.set("nombre", miembro.nombre);
-    cuerpo.set("cargo", miembro.cargo);
-    cuerpo.set("tipo", miembro.tipo);
-    cuerpo.set("categoria", miembro.categoria ?? "");
-    setBusyText("Preparando foto...");
-    setBusyProgress(40);
-    cuerpo.set("foto", await prepararImagen(file));
+    try {
+      // `guardarMiembroStaff` reescribe la fila entera: hay que reenviar nombre, cargo y tipo.
+      const cuerpo = new FormData();
+      cuerpo.set("id", id);
+      cuerpo.set("nombre", miembro.nombre);
+      cuerpo.set("cargo", miembro.cargo);
+      cuerpo.set("tipo", miembro.tipo);
+      cuerpo.set("categoria", miembro.categoria ?? "");
+      setBusyText("Preparando foto...");
+      setBusyProgress(40);
+      cuerpo.set("foto", await prepararImagen(file));
 
-    setBusyText("Guardando foto...");
-    setBusyProgress(80);
-    const resultado = await guardarMiembroStaff(cuerpo);
-    if (resultado.ok) {
-      showToast("Foto actualizada");
-      fetchStaff();
-    } else {
-      showToast(resultado.error, "error");
+      setBusyText("Guardando foto...");
+      setBusyProgress(80);
+      const resultado = await guardarMiembroStaff(cuerpo);
+      if (resultado.ok) {
+        showToast("Foto actualizada");
+        setPendingPhotos((pending) => {
+          const remaining = { ...pending };
+          delete remaining[id];
+          return remaining;
+        });
+        fetchStaff();
+      } else {
+        showToast(resultado.error, "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Error actualizando foto", "error");
+    } finally {
+      setLoading(false);
+      setBusyProgress(undefined);
     }
-    setLoading(false);
-    setBusyProgress(undefined);
   }
 
   async function handleDeleteStaff(id: string) {
@@ -185,6 +209,7 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
                         <input disabled={loading} type="file" className="hidden-input" accept="image/*" onChange={(e) => {
                           const f = e.target.files?.[0];
                           if (f) handleUpdateFoto(s.id, f);
+                          e.currentTarget.value = "";
                         }} />
                       </label>
                     </div>
