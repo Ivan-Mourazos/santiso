@@ -590,6 +590,27 @@ input[type="number"] {
   transform: scale(1.05);
 }
 
+.btn-edit-icon-only {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  color: #555;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-edit-icon-only:hover {
+  background: var(--primary);
+  color: black;
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+
 .file-input-label {
   display: flex !important;
   align-items: center !important;
