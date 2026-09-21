@@ -1,16 +1,18 @@
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import { vigilarSalidasAInternet } from "./red";
 
 // Playwright transpila estos ficheros a CommonJS: aquí no hay `import.meta`.
 const FICHA = path.resolve(__dirname, "../../../packages/actas/src/fixtures/senior-1.pdf");
 
 test("la ficha PDF rellena el acta sin salir del ordenador", async ({ page }) => {
   const errores: string[] = [];
+  const externas = vigilarSalidasAInternet(page);
   const aLaNube: string[] = [];
   page.on("pageerror", (error) => errores.push(error.message));
+  // Las rutas /api/admin/acta-* son las de Gemini: leer un PDF no debe llamarlas.
   page.on("request", (peticion) => {
-    const url = peticion.url();
-    if (url.includes("supabase.co") || url.includes("/api/admin/acta-")) aLaNube.push(url);
+    if (peticion.url().includes("/api/admin/acta-")) aLaNube.push(peticion.url());
   });
 
   await page.goto("/admin");
@@ -42,4 +44,5 @@ test("la ficha PDF rellena el acta sin salir del ordenador", async ({ page }) =>
 
   expect(errores).toEqual([]);
   expect(aLaNube).toEqual([]);
+  expect(externas).toEqual([]);
 });

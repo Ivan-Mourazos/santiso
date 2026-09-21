@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { vigilarSalidasAInternet } from "./red";
 
 const SECCIONES_CON_IMAGEN = ["Equipos", "Plantilla", "Sponsors"];
 
@@ -21,16 +22,13 @@ for (const seccion of SECCIONES_CON_IMAGEN) {
   });
 }
 
-test("las secciones migradas ya no piden nada a Supabase", async ({ page }) => {
-  const supabase: string[] = [];
-  page.on("response", (respuesta) => {
-    if (respuesta.url().includes("supabase.co")) supabase.push(respuesta.url());
-  });
+test("las secciones migradas no salen a internet", async ({ page }) => {
+  const externas = vigilarSalidasAInternet(page);
 
   await page.goto("/admin");
   for (const seccion of SECCIONES_CON_IMAGEN) {
     await page.getByText(seccion, { exact: true }).first().click();
     await page.waitForTimeout(1200);
   }
-  expect(supabase).toEqual([]);
+  expect(externas).toEqual([]);
 });

@@ -88,7 +88,7 @@ export async function fetchSeasons() {
 }
 
 export async function fetchTeamsByIds(ids: string[]) {
-  // `Team` arrastra un índice de cadena de la época de Supabase, donde la fila traía columnas
+  // `Team` arrastra un índice de cadena del modelo anterior, donde la fila traía columnas
   // arbitrarias. `EquipoDto` es un subconjunto estricto con los mismos nombres, así que la
   // conversión es segura; desaparece cuando las Fases 4-6 retiren los DTO de compatibilidad.
   return (await cargarEquiposPorIds(ids)) as unknown as Team[];
@@ -118,7 +118,7 @@ export async function fetchMatchdaysForCompetition(
   competicionId: string,
 ) {
   const jornadas = await cargarJornadasDeCompeticion(competicionId);
-  // `Matchday` arrastra un índice de cadena de la época de Supabase; el DTO es un subconjunto
+  // `Matchday` arrastra un índice de cadena del modelo anterior; el DTO es un subconjunto
   // estricto con los mismos nombres, así que la conversión es segura.
   return { data: jornadas as unknown as Matchday[], error: null };
 }
