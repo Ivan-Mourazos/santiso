@@ -14,16 +14,9 @@ import { cargarEquiposDeCategoria } from "@/lib/server/acciones/equipos";
 import type { FormState } from "./types";
 import type { SelectorMatch } from "./Common";
 import type { Player, CronEvent, NextMatch } from "@/lib/cartel-draw";
-import { fetchCompeticiones, type CompetenciaRow } from "@/lib/supabase-queries";
+import { fetchCompeticiones, type CompetenciaRow } from "@/lib/lecturas-cliente";
 import { pickDefaultCompetitionId } from "@/lib/competition";
 import { matchDateInput, matchTimeInput } from "./matchDateTime";
-import {
-  COMPETICIONES_2026_2027,
-  TODOS_PARTIDOS_2026,
-  EQUIPOS_SENIOR_2026,
-  EQUIPOS_VETERANOS_2026,
-} from "@/lib/data/season-2026-2027";
-
 interface CartelPlayer {
   id: string;
   nombre: string;
@@ -151,6 +144,7 @@ export function useCartelForm() {
   const [equipos, setEquipos] = useState<CartelTeam[]>([]);
   const [jugadores, setJugadores] = useState<CartelPlayer[]>([]);
   const [dbMatches, setDbMatches] = useState<SelectorMatch[]>([]);
+  const [errorDatos, setErrorDatos] = useState<string | null>(null);
   const [campos, setCampos] = useState<CartelField[]>([]);
   const [competicionesCatalog, setCompeticionesCatalog] = useState<
     CompetenciaRow[]
@@ -170,8 +164,7 @@ export function useCartelForm() {
     async function loadData() {
       try {
         const comps = await fetchCompeticiones();
-        const activeComps = comps && comps.length > 0 ? comps : COMPETICIONES_2026_2027;
-        setCompeticionesCatalog(activeComps);
+        setCompeticionesCatalog(comps);
 
         // Una sola acción trae partidos, plantilla y campos de la temporada activa; sin
         // categoría, porque el generador trabaja con las tres.
@@ -184,29 +177,18 @@ export function useCartelForm() {
             ["Senior", "Femenino", "Veteranos"].map((c) => cargarEquiposDeCategoria(c)),
           )
         ).flat();
-        if (equiposDeTodas.length > 0) {
-          setEquipos(equiposDeTodas as unknown as typeof equipos);
-        } else {
-          const fallbackTeams = [
-            ...EQUIPOS_SENIOR_2026.map((n) => ({ id: n, nombre: n, escudo_url: "", categoria: "Senior" })),
-            ...EQUIPOS_VETERANOS_2026.map((n) => ({ id: n, nombre: n, escudo_url: "", categoria: "Veteranos" })),
-          ];
-          setEquipos(fallbackTeams as any);
-        }
-
-        if (partidos.length > 0) {
-          setDbMatches(partidos as unknown as SelectorMatch[]);
-        } else {
-          setDbMatches(TODOS_PARTIDOS_2026);
-        }
-      } catch {
-        setCompeticionesCatalog(COMPETICIONES_2026_2027);
-        setDbMatches(TODOS_PARTIDOS_2026);
-        const fallbackTeams = [
-          ...EQUIPOS_SENIOR_2026.map((n) => ({ id: n, nombre: n, escudo_url: "", categoria: "Senior" })),
-          ...EQUIPOS_VETERANOS_2026.map((n) => ({ id: n, nombre: n, escudo_url: "", categoria: "Veteranos" })),
-        ];
-        setEquipos(fallbackTeams as any);
+        setEquipos(equiposDeTodas as unknown as typeof equipos);
+        setDbMatches(partidos as unknown as SelectorMatch[]);
+        setErrorDatos(null);
+      } catch (error) {
+        // Sin respaldo inventado: antes se rellenaba con equipos y partidos escritos a mano,
+        // cuyos identificadores no existen en la base de datos. El cartel salía con datos
+        // falsos y sin avisar.
+        console.error("cargarDatosDelCartel", error);
+        setCompeticionesCatalog([]);
+        setDbMatches([]);
+        setEquipos([]);
+        setErrorDatos("No se pudieron cargar los datos. Revisa la base de datos.");
       }
     }
     loadData();
@@ -469,6 +451,7 @@ export function useCartelForm() {
   return {
     form,
     set,
+    errorDatos,
     equipos,
     setEquipos,
     jugadores,

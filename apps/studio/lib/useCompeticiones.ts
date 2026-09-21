@@ -1,32 +1,36 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { borrarCompeticion, crearCompeticion } from "@/lib/server/acciones/competiciones";
-import { fetchCompeticiones } from "@/lib/supabase-queries";
+import { fetchCompeticiones } from "@/lib/lecturas-cliente";
 import {
   competitionsForCategory,
   pickDefaultCompetitionId,
   type CompetenciaRow,
 } from "@/lib/competition";
 
-import { COMPETICIONES_2026_2027 } from "@/lib/data/season-2026-2027";
-
 export function useCompeticiones(categoria?: string) {
   const [competicionesCatalog, setCompeticionesCatalog] = useState<
     CompetenciaRow[]
-  >(COMPETICIONES_2026_2027);
+  >([]);
   const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
   const [loadingCompeticiones, setLoadingCompeticiones] = useState(false);
+  const [errorCompeticiones, setErrorCompeticiones] = useState<string | null>(null);
 
   const loadCompeticiones = useCallback(async () => {
     setLoadingCompeticiones(true);
     try {
       const list = await fetchCompeticiones();
-      const activeList = list && list.length > 0 ? list : COMPETICIONES_2026_2027;
-      setCompeticionesCatalog(activeList);
-      return activeList;
-    } catch {
-      setCompeticionesCatalog(COMPETICIONES_2026_2027);
-      return COMPETICIONES_2026_2027;
+      setCompeticionesCatalog(list);
+      setErrorCompeticiones(null);
+      return list;
+    } catch (error) {
+      // Antes se rellenaba con un catálogo escrito a mano. Los identificadores de aquel
+      // catálogo no existen en la base de datos, así que la pantalla parecía llena y todo lo
+      // que se guardara contra ellos apuntaba a la nada. Es mejor no enseñar nada y decirlo.
+      console.error("cargarCompeticiones", error);
+      setCompeticionesCatalog([]);
+      setErrorCompeticiones("No se pudieron cargar las competiciones.");
+      return [];
     } finally {
       setLoadingCompeticiones(false);
     }
@@ -80,6 +84,7 @@ export function useCompeticiones(categoria?: string) {
     setSelectedCompetitionId,
     competicionesEnCategoria,
     loadingCompeticiones,
+    errorCompeticiones,
     loadCompeticiones,
     addCompeticion,
     removeCompeticion,

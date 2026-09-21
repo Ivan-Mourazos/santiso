@@ -14,6 +14,7 @@ import AdminCartelAssets from "./AdminCartelAssets";
 // UI Components & Hooks
 import { TEMPLATES, type TemplateId } from "./cartel/types";
 import { useCartelForm } from "./cartel/useCartelForm";
+import AvisoError from "./AvisoError";
 import { useCartelAssets } from "./cartel/useCartelAssets";
 import { Toggle } from "./cartel/Common";
 import { FormPartido } from "./cartel/FormPartido";
@@ -58,6 +59,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
     loadMatchFromDb,
     resetForm,
     competicionesCatalog,
+    errorDatos,
   } = useCartelForm();
 
   const [tipoInternal, setTipoInternal] = useState<string>("partido");
@@ -273,6 +275,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
   return (
     <main style={hideLayout ? {} : { minHeight: "100vh", background: "#000", padding: "3rem 0 5rem" }}>
       <div className={hideLayout ? "" : "container"}>
+        <AvisoError mensaje={errorDatos} />
         {!hideLayout && (
           <>
             <header style={{ marginBottom: "3.5rem", borderLeft: "4px solid var(--primary)", paddingLeft: "2rem", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>

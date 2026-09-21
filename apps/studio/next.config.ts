@@ -12,14 +12,6 @@ const nextConfig: NextConfig = {
     // El motivo del 1 MB por defecto (recursos y DoS) no aplica: escuchamos solo en 127.0.0.1.
     serverActions: { bodySizeLimit: "16mb" },
   },
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**.supabase.co",
-      },
-    ],
-  },
 };
 
 export default nextConfig;

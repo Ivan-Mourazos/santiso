@@ -29,8 +29,9 @@ import {
   fetchSeasons,
   fetchTeamsForCompetition,
   mergeMissingTeams,
-} from "@/lib/supabase-queries";
+} from "@/lib/lecturas-cliente";
 import { useCompeticiones } from "@/lib/useCompeticiones";
+import AvisoError from "./AvisoError";
 import {
   matchDateTimeLocalInput,
   matchLocalDateTimeToIso,
@@ -73,6 +74,7 @@ export default function AdminJornadas({
     selectedCompetitionId,
     setSelectedCompetitionId,
     competicionesEnCategoria,
+    errorCompeticiones,
     addCompeticion,
     removeCompeticion,
   } = useCompeticiones(categoria);
@@ -611,6 +613,7 @@ export default function AdminJornadas({
             <label style={{ color: "#888", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", marginBottom: "0.6rem", display: "block" }}>
               ⚔️ Competición
             </label>
+            <AvisoError mensaje={errorCompeticiones} />
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <select
                 value={selectedCompetitionId}
