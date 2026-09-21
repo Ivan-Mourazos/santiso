@@ -11,7 +11,7 @@ import {
 } from "@/lib/server/acciones/jugadores";
 import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
-import { EmptyState } from "@/components/ui/foundation/States";
+import { EmptyState, ErrorState } from "@/components/ui/foundation/States";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import type { JugadorDto } from "@/lib/dto";
 import BusyBanner from "./BusyBanner";
@@ -53,6 +53,7 @@ export default function AdminPlayers({
     null,
   );
   const [cargandoCandidatos, setCargandoCandidatos] = useState(false);
+  const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [nombre, setNombre] = useState("");
   const [apodo, setApodo] = useState("");
   const [dorsal, setDorsal] = useState("");
@@ -110,19 +111,33 @@ export default function AdminPlayers({
     await Promise.resolve();
     if (!temporadaId) return;
     setIsFetching(true);
-    setJugadores((await cargarJugadores(categoria, temporadaId)) as Jugador[]);
-    setIsFetching(false);
+    try {
+      setJugadores((await cargarJugadores(categoria, temporadaId)) as Jugador[]);
+      setErrorCarga(null);
+    } catch (err) {
+      console.error(err);
+      setErrorCarga("No se pudo cargar la plantilla. Comprueba la conexión e inténtalo de nuevo.");
+    } finally {
+      setIsFetching(false);
+    }
   }, [categoria, temporadaId]);
 
   const fetchCandidatos = useCallback(
     async (todasLasCategorias: boolean) => {
       if (!temporadaId) return;
       setCargandoCandidatos(true);
-      const resultado = await cargarCandidatosJugadores(categoria, temporadaId, !todasLasCategorias);
-      setCandidatos(
-        resultado.origen ? { origen: resultado.origen.nombre, jugadores: resultado.jugadores } : null,
-      );
-      setCargandoCandidatos(false);
+      try {
+        const resultado = await cargarCandidatosJugadores(categoria, temporadaId, !todasLasCategorias);
+        setCandidatos(
+          resultado.origen ? { origen: resultado.origen.nombre, jugadores: resultado.jugadores } : null,
+        );
+      } catch (err) {
+        console.error(err);
+        // Un fallo aquí no bloquea la pantalla: solo desaparece el botón de incorporar.
+        setCandidatos(null);
+      } finally {
+        setCargandoCandidatos(false);
+      }
     },
     [categoria, temporadaId],
   );
@@ -522,6 +537,14 @@ export default function AdminPlayers({
         )}
       </div>
 
+      {errorCarga ? (
+        <ErrorState
+          title="No se pudo cargar la plantilla"
+          detail={errorCarga}
+          action={<Button onClick={fetchJugadores}>Reintentar</Button>}
+        />
+      ) : (
+        <>
       {!editingId && (
       <form
         onSubmit={handleSubmitJugador}
@@ -876,6 +899,8 @@ export default function AdminPlayers({
           </tbody>
         </table>
       </div>
+        </>
+      )}
     </div>
   );
 }

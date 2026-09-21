@@ -11,6 +11,7 @@ import {
 } from "@/lib/server/acciones/staff";
 import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
+import { ErrorState } from "@/components/ui/foundation/States";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import BusyBanner from "./BusyBanner";
 import BarraTemporada from "./plantilla/BarraTemporada";
@@ -33,8 +34,11 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
   const [candidatos, setCandidatos] = useState<{ origen: string; miembros: StaffDto[] } | null>(
     null,
   );
+  const [editingInscripcionId, setEditingInscripcionId] = useState<string | null>(null);
+  const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
   const [nombre, setNombre] = useState("");
   const [cargo, setCargo] = useState("");
+  const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [pendingPhotos, setPendingPhotos] = useState<Record<string, File>>({});
   const [loading, setLoading] = useState(false);
@@ -50,12 +54,19 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
     await Promise.resolve();
     if (!temporadaId) return;
     setIsFetching(true);
-    setStaff(await cargarStaff(tipo, categoria, temporadaId));
-    const resultado = await cargarCandidatosStaff(tipo, categoria, temporadaId);
-    setCandidatos(
-      resultado.origen ? { origen: resultado.origen.nombre, miembros: resultado.miembros } : null,
-    );
-    setIsFetching(false);
+    try {
+      setStaff(await cargarStaff(tipo, categoria, temporadaId));
+      const resultado = await cargarCandidatosStaff(tipo, categoria, temporadaId);
+      setCandidatos(
+        resultado.origen ? { origen: resultado.origen.nombre, miembros: resultado.miembros } : null,
+      );
+      setErrorCarga(null);
+    } catch (err) {
+      console.error(err);
+      setErrorCarga("No se pudo cargar el staff. Comprueba la conexión e inténtalo de nuevo.");
+    } finally {
+      setIsFetching(false);
+    }
   }, [tipo, categoria, temporadaId]);
 
   useEffect(() => {
@@ -79,16 +90,34 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
     fetchStaff();
   }
 
+  function startEdit(miembro: StaffDto) {
+    setEditingInscripcionId(miembro.inscripcion_id);
+    setEditingStaffId(miembro.id);
+    setNombre(miembro.nombre);
+    setCargo(miembro.cargo);
+    setFotoFile(null);
+  }
+
+  function cancelEdit() {
+    setEditingInscripcionId(null);
+    setEditingStaffId(null);
+    setNombre("");
+    setCargo("");
+    setFotoFile(null);
+  }
+
   async function handleAddStaff(e: React.FormEvent) {
     e.preventDefault();
     if (!nombre || !cargo) return;
-    setBusyText("Procesando foto y guardando staff...");
+    const editando = editingInscripcionId !== null;
+    setBusyText(editando ? "Guardando cambios..." : "Procesando foto y guardando staff...");
     setBusyProgress(5);
     setLoading(true);
 
     try {
       const cuerpo = new FormData();
-      cuerpo.set("id", "");
+      cuerpo.set("id", editingStaffId ?? "");
+      cuerpo.set("inscripcionId", editingInscripcionId ?? "");
       cuerpo.set("temporadaId", temporadaId);
       cuerpo.set("nombre", nombre);
       cuerpo.set("cargo", cargo);
@@ -105,11 +134,13 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
       const resultado = await guardarMiembroStaff(cuerpo);
 
       if (resultado.ok) {
-        setNombre("");
-        setCargo("");
-        setFotoFile(null);
+        cancelEdit();
         fetchStaff();
-        showToast(`${tipo === 'Tecnico' ? 'Técnico' : 'Directivo'} añadido correctamente`);
+        showToast(
+          editando
+            ? "Cambios guardados"
+            : `${tipo === 'Tecnico' ? 'Técnico' : 'Directivo'} añadido correctamente`,
+        );
       } else {
         showToast(resultado.error, "error");
       }
@@ -219,7 +250,15 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
           </Button>
         )}
       </div>
-      
+
+      {errorCarga ? (
+        <ErrorState
+          title="No se pudo cargar el staff"
+          detail={errorCarga}
+          action={<Button onClick={fetchStaff}>Reintentar</Button>}
+        />
+      ) : (
+        <>
       <form onSubmit={handleAddStaff} className="admin-form" style={{ marginBottom: '2.5rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 150px auto', gap: '1rem', alignItems: 'flex-end' }}>
           <div className="input-group">
@@ -240,9 +279,16 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
               </label>
             </div>
           </div>
-          <button type="submit" className="btn-primary" disabled={loading} style={{ height: '50px', padding: '0 2rem', borderRadius: '10px' }}>
-            {loading ? "..." : "+"}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button type="submit" className="btn-primary" disabled={loading} style={{ height: '50px', padding: '0 1.5rem', borderRadius: '10px' }}>
+              {loading ? "..." : editingInscripcionId ? "Guardar" : "+"}
+            </button>
+            {editingInscripcionId && (
+              <button type="button" className="btn-delete" disabled={loading} onClick={cancelEdit} style={{ height: '50px', padding: '0 1rem', borderRadius: '10px' }}>
+                Cancelar
+              </button>
+            )}
+          </div>
         </div>
       </form>
 
@@ -292,7 +338,10 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
                   </td>
                   <td style={{ fontWeight: 800 }}>{s.nombre}</td>
                   <td><span className="badge-posicion">{s.cargo}</span></td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td style={{ textAlign: 'right', display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                    <button disabled={loading} onClick={() => startEdit(s)} className="btn-edit-icon-only" title="Editar nombre y cargo" aria-label={`Editar a ${s.nombre}`} style={{ opacity: loading ? 0.6 : 1 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                    </button>
                     <button disabled={loading} onClick={() => handleQuitarStaff(s)} className="btn-delete-icon-only" title="Quitar de la temporada" aria-label={`Quitar a ${s.nombre} de la temporada`} style={{ opacity: loading ? 0.6 : 1 }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                     </button>
@@ -303,6 +352,8 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
           </tbody>
         </table>
       </div>
+        </>
+      )}
     </div>
   );
 }

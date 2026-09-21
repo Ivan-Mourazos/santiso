@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 
@@ -52,13 +52,24 @@ export default function IncorporarDeTemporada({
   const [dorsales, setDorsales] = useState<Record<string, string>>({});
   const [pendiente, setPendiente] = useState(false);
 
-  // Cada vez que cambia la lista (se abre, o se amplía a otras categorías) se parte de cero.
+  // Solo se reinicia cuando cambia de verdad el CONJUNTO de candidatos (se abre el diálogo o
+  // se amplía a otras categorías), nunca por una identidad de array nueva: el padre construye
+  // `candidatos` con `.map()` en cada render, y eso no puede tirar la selección del usuario.
+  const firma = candidatos
+    .map((c) => c.clave)
+    .sort()
+    .join("|");
+  const firmaAnterior = useRef<string | null>(null);
   useEffect(() => {
+    if (firmaAnterior.current === firma) return;
+    firmaAnterior.current = firma;
     setMarcados({});
     setDorsales(
       Object.fromEntries(candidatos.map((c) => [c.clave, c.dorsal?.toString() ?? ""])),
     );
-  }, [candidatos]);
+    // Solo la firma decide si toca reiniciar; `candidatos` cambia de identidad cada render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firma]);
 
   const elegidos = candidatos.filter((c) => marcados[c.clave]);
   const dorsalNoValido = elegidos.some((c) => {
