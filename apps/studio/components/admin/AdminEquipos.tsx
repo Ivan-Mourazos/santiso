@@ -8,6 +8,7 @@ import {
   inscribirEquipo,
   quitarEquipoDeCompeticion,
 } from "@/lib/server/acciones/equipos";
+import { useUnsavedChanges } from "@/components/studio/StudioContext";
 import BusyBanner from "./BusyBanner";
 import {
   competitionsForCategory,
@@ -17,6 +18,7 @@ import {
 import { fetchCompeticiones } from "@/lib/lecturas-cliente";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import AvisoError from "./AvisoError";
+import { LoadingState } from "@/components/ui/foundation/States";
 
 interface AdminEquiposProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -39,6 +41,7 @@ export default function AdminEquipos({
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [allCategoryTeams, setAllCategoryTeams] = useState<Equipo[]>([]);
   const {
+    contextoListo,
     competicionesCatalog,
     selectedCompetitionId,
     setSelectedCompetitionId,
@@ -46,7 +49,7 @@ export default function AdminEquipos({
     errorCompeticiones,
     addCompeticion,
     removeCompeticion,
-  } = useCompeticiones(categoria);
+  } = useCompeticiones(categoria, true);
 
   const [nuevaCompeticionNombre, setNuevaCompeticionNombre] = useState("");
   const [nuevoFormato, setNuevoFormato] = useState("liga");
@@ -58,11 +61,23 @@ export default function AdminEquipos({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [relationEnabled, setRelationEnabled] = useState(true);
 
+  const [pendingPhotos, setPendingPhotos] = useState<Record<string, File>>({});
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [busyText, setBusyText] = useState("Cargando equipos...");
   const [busyProgress, setBusyProgress] = useState<number | undefined>(
     undefined,
+  );
+
+  const [originalEquipo, setOriginalEquipo] = useState<Equipo | null>(null);
+
+  useUnsavedChanges(
+    nombreEquipo !== (originalEquipo?.nombre ?? "") ||
+      escudoEquipo !== null ||
+      selectedExistingId !== "" ||
+      nuevaCompeticionNombre !== "" ||
+      nuevoFormato !== "liga" ||
+      Object.keys(pendingPhotos).length > 0,
   );
 
   const selectedCompeticionNombre = useMemo(
@@ -91,11 +106,14 @@ export default function AdminEquipos({
     setNombreEquipo("");
     setEscudoEquipo(null);
     setEditingId(null);
+    setOriginalEquipo(null);
   };
 
   const startEdit = (equipo: Equipo) => {
     setNombreEquipo(equipo.nombre);
     setEditingId(equipo.id);
+    setEscudoEquipo(null);
+    setOriginalEquipo(equipo);
   };
 
   const availableTeams = allCategoryTeams.filter(
@@ -190,6 +208,7 @@ export default function AdminEquipos({
     setBusyText("Procesando y subiendo escudo...");
     setBusyProgress(5);
     setLoading(true);
+    setPendingPhotos((pending) => ({ ...pending, [id]: file }));
     try {
       const cuerpo = new FormData();
       cuerpo.set("id", id);
@@ -204,6 +223,11 @@ export default function AdminEquipos({
       const resultado = await guardarEquipo(cuerpo);
       if (resultado.ok) {
         showToast("Escudo actualizado");
+        setPendingPhotos((pending) => {
+          const remaining = { ...pending };
+          delete remaining[id];
+          return remaining;
+        });
         fetchEquipos();
       } else {
         showToast(resultado.error, "error");
@@ -288,6 +312,8 @@ export default function AdminEquipos({
       </form>
     );
   }
+
+  if (!contextoListo && !errorCompeticiones) return <LoadingState title="Cargando contexto deportivo…" />;
 
   return (
     <div className="card glass">

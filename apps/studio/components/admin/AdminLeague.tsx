@@ -1,14 +1,10 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import BusyBanner from "./BusyBanner";
-import {
-  competitionsForCategory,
-  pickDefaultCompetitionId,
-  type CompetenciaRow,
-} from "@/lib/competition";
+import { useCompeticiones } from "@/lib/useCompeticiones";
 import type { FilaClasificacion } from "@/lib/dto";
 import { cargarPantallaClasificacion } from "@/lib/server/acciones/clasificacion";
-import { fetchCompeticiones } from "@/lib/lecturas-cliente";
+
 
 interface AdminLeagueProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -25,42 +21,18 @@ interface LeagueRule {
 
 export default function AdminLeague({ showToast, showConfirm, categoria }: AdminLeagueProps) {
   const [filas, setFilas] = useState<FilaClasificacion[]>([]);
-  const [competicionesCatalog, setCompeticionesCatalog] = useState<
-    CompetenciaRow[]
-  >([]);
-  const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
-  const [isFetching, setIsFetching] = useState(true);
+  const { selectedCompetitionId, setSelectedCompetitionId, competicionesEnCategoria, loadingCompeticiones } = useCompeticiones(categoria, true);
+  const [isFetching, setIsFetching] = useState(false);
   const [leagueRules, setLeagueRules] = useState<LeagueRule[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const list = await fetchCompeticiones();
-      if (!cancelled) setCompeticionesCatalog(list);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (competicionesCatalog.length === 0) return;
-    const def = pickDefaultCompetitionId(competicionesCatalog, categoria);
-    setSelectedCompetitionId((prev) => {
-      const opts = competitionsForCategory(competicionesCatalog, categoria);
-      if (prev && opts.some((o) => o.id === prev)) return prev;
-      return def;
-    });
-  }, [categoria, competicionesCatalog]);
-
-  const competicionesEnCategoria = useMemo(
-    () => competitionsForCategory(competicionesCatalog, categoria),
-    [competicionesCatalog, categoria],
-  );
 
   // Tabla y reglas llegan en una sola acción: Next despacha las del cliente de una en una.
   useEffect(() => {
-    if (!selectedCompetitionId) return;
+    if (!selectedCompetitionId) {
+      setFilas([]);
+      setLeagueRules([]);
+      setIsFetching(false);
+      return;
+    }
     let cancelado = false;
     (async () => {
       setIsFetching(true);
@@ -89,7 +61,7 @@ export default function AdminLeague({ showToast, showConfirm, categoria }: Admin
 
   return (
     <div className="card full-width glass" style={{ marginBottom: '2rem' }}>
-      <BusyBanner show={isFetching} text="Cargando clasificación..." />
+      <BusyBanner show={isFetching || loadingCompeticiones} text="Cargando clasificación..." />
       <div className="input-group" style={{ marginBottom: "1rem", maxWidth: "480px" }}>
         <label>Competición</label>
         <select

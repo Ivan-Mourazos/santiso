@@ -11,8 +11,8 @@ test("el calendario PDF enseña el plan antes de escribir nada", async ({ page }
   page.on("pageerror", (error) => errores.push(error.message));
 
   await page.goto("/admin");
-  await page.getByText("Jornada", { exact: true }).first().click();
-  await page.getByRole("button", { name: "Calendario completo (PDF)" }).click();
+  await page.getByText("Importar jornada", { exact: true }).first().click();
+  await page.getByLabel("Origen de la jornada").selectOption("calendario");
 
   const competicion = page.locator("#cal-competicion");
   await expect(competicion).toBeVisible();

@@ -5,7 +5,7 @@ test("la clasificación se muestra calculada y sin editor", async ({ page }) => 
   page.on("pageerror", (error) => errores.push(error.message));
 
   await page.goto("/admin");
-  await page.getByText("Ligas", { exact: true }).first().click();
+  await page.getByText("Clasificación", { exact: true }).first().click();
 
   await expect(page.getByRole("heading", { name: "Clasificación" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Guardar Clasificación/i })).toHaveCount(0);
@@ -16,7 +16,7 @@ test("la clasificación se muestra calculada y sin editor", async ({ page }) => 
 
 test("la clasificación trae equipos de la base de datos local", async ({ page }) => {
   await page.goto("/admin");
-  await page.getByText("Ligas", { exact: true }).first().click();
+  await page.getByText("Clasificación", { exact: true }).first().click();
 
   const filas = page.locator("table.league-editor tbody tr");
   await expect(filas.first()).toBeVisible();
@@ -25,6 +25,6 @@ test("la clasificación trae equipos de la base de datos local", async ({ page }
 
 test("la pestaña de temporadas lista la temporada activa", async ({ page }) => {
   await page.goto("/admin");
-  await page.getByText("Temporadas", { exact: true }).first().click();
+  await page.getByRole("link", { name: "Temporadas", exact: true }).click();
   await expect(page.getByText("(ACTIVA)").first()).toBeVisible();
 });

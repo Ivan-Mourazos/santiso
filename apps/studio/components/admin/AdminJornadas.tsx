@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   anadirDescanso,
   borrarJornada,
@@ -15,27 +15,27 @@ import {
   quitarDescanso,
 } from "@/lib/server/acciones/calendario";
 import { cargarReglas, guardarReglas } from "@/lib/server/acciones/competiciones";
-import { activarTemporada, crearTemporada } from "@/lib/server/acciones/temporadas";
+import { crearTemporada } from "@/lib/server/acciones/temporadas";
 import BusyBanner from "./BusyBanner";
 import {
-  competitionsForCategory,
-  pickDefaultCompetitionId,
-  type CompetenciaRow,
-} from "@/lib/competition";
-import {
-  fetchCompeticiones,
   fetchMatchdaysForCompetition,
   fetchMatchesForMatchday,
-  fetchSeasons,
   fetchTeamsForCompetition,
   mergeMissingTeams,
 } from "@/lib/lecturas-cliente";
-import { useCompeticiones } from "@/lib/useCompeticiones";
+import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
+import { resolveContextId, useCompeticiones } from "@/lib/useCompeticiones";
 import AvisoError from "./AvisoError";
+import { LoadingState } from "@/components/ui/foundation/States";
 import {
   matchDateTimeLocalInput,
   matchLocalDateTimeToIso,
 } from "./cartel/matchDateTime";
+
+type EdicionPartido = { id: string; goles_local?: number | null; goles_visitante?: number | null; campo_id?: string | null; fecha?: string | null };
+function firmaEdicion(partido: EdicionPartido) {
+  return JSON.stringify([partido.goles_local, partido.goles_visitante, partido.campo_id ?? "", partido.fecha ?? ""]);
+}
 
 interface AdminJornadasProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -61,15 +61,22 @@ export default function AdminJornadas({
   const [equipos, setEquipos] = useState<any[]>([]);
   const [campos, setCampos] = useState<any[]>([]);
   const [partidos, setPartidos] = useState<any[]>([]);
-  const [temporadas, setTemporadas] = useState<any[]>([]);
-  const [temporadaActiva, setTemporadaActiva] = useState<any>(null);
+  const originales = useRef(new Map<string, string>());
+  const contextoPartidos = useRef("");
+  const partidosActuales = useRef(partidos);
+  partidosActuales.current = partidos;
+  const { params, setParams } = useStudio();
 
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [busyText, setBusyText] = useState("Cargando jornadas y partidos...");
   const [rowBusy, setRowBusy] = useState<Record<string, boolean>>({});
-  const [selectedJornada, setSelectedJornada] = useState<string | null>(null);
+  const [jornadasCompetition, setJornadasCompetition] = useState("");
   const {
+    temporadas,
+    selectedSeasonId,
+    loadCompeticiones,
+    contextoListo,
     competicionesCatalog,
     selectedCompetitionId,
     setSelectedCompetitionId,
@@ -77,7 +84,24 @@ export default function AdminJornadas({
     errorCompeticiones,
     addCompeticion,
     removeCompeticion,
-  } = useCompeticiones(categoria);
+  } = useCompeticiones(categoria, true);
+  const requestedJornada = params.get("jornada");
+  const selectedJornada = jornadasCompetition === selectedCompetitionId
+    ? resolveContextId(requestedJornada, jornadas) || null
+    : null;
+  const contextKey = `${selectedSeasonId}/${selectedCompetitionId}/${selectedJornada ?? ""}`;
+  const currentContext = useRef(contextKey);
+  currentContext.current = contextKey;
+  const currentCompetition = useRef(selectedCompetitionId);
+  currentCompetition.current = selectedCompetitionId;
+  function setSelectedJornada(id: string | null) {
+    setParams({ jornada: id });
+  }
+  useEffect(() => {
+    if (!selectedCompetitionId || jornadasCompetition !== selectedCompetitionId) return;
+    if (requestedJornada !== selectedJornada) setParams({ jornada: selectedJornada }, true);
+  }, [requestedJornada, selectedJornada, selectedCompetitionId, jornadasCompetition, setParams]);
+
 
   const [nuevaCompeticionNombre, setNuevaCompeticionNombre] = useState("");
   const [nuevoFormato, setNuevoFormato] = useState("liga");
@@ -113,6 +137,7 @@ export default function AdminJornadas({
     color: string;
   }
   const [leagueRules, setLeagueRules] = useState<LeagueRule[]>([]);
+  const [savedRules, setSavedRules] = useState<LeagueRule[]>([]);
   const [savingRules, setSavingRules] = useState(false);
   const [newRule, setNewRule] = useState<Omit<LeagueRule, "id">>({
     nombre: "",
@@ -120,6 +145,24 @@ export default function AdminJornadas({
     color: "#10b981",
   });
   const [ruleFormPuestos, setRuleFormPuestos] = useState("");
+  useUnsavedChanges(Boolean(
+    nuevaCompeticionNombre || nuevoFormato !== "liga" || numJornada || fechaInicio || nombreFase ||
+    nuevaTemporadaNombre || localId || visitanteId || fechaPartido || campoId || descansoEquipoId ||
+    bulkCount !== 30 || newRule.nombre || newRule.color !== "#10b981" || ruleFormPuestos ||
+    JSON.stringify(leagueRules) !== JSON.stringify(savedRules) ||
+    partidos.some(p => originales.current.has(p.id) && originales.current.get(p.id) !== firmaEdicion(p))
+  ));
+
+  // Un cambio aceptado por la guardia descarta borradores del contexto anterior.
+  useEffect(() => {
+    setLeagueRules(savedRules);
+    setNuevaCompeticionNombre(""); setNuevoFormato("liga");
+    setNumJornada(""); setFechaInicio(""); setNombreFase("");
+    setNuevaTemporadaNombre(""); setLocalId(""); setVisitanteId("");
+    setFechaPartido(""); setCampoId(""); setDescansoEquipoId(""); setBulkCount(30);
+    setNewRule({ nombre: "", puestos: [], color: "#10b981" }); setRuleFormPuestos("");
+  }, [selectedSeasonId, selectedCompetitionId, selectedJornada]);
+
 
   // Colores predefinidos para elegir
   const colorPalette = [
@@ -136,11 +179,16 @@ export default function AdminJornadas({
 
   // Cargar reglas de clasificación: ahora viven en la propia competición, como JSON validado.
   useEffect(() => {
+    setLeagueRules([]);
+    setSavedRules([]);
     if (!selectedCompetitionId) return;
     let cancelado = false;
     (async () => {
       const reglas = await cargarReglas(selectedCompetitionId);
-      if (!cancelado) setLeagueRules(reglas);
+      if (!cancelado) {
+        setLeagueRules(reglas);
+        setSavedRules(reglas);
+      }
     })();
     return () => {
       cancelado = true;
@@ -155,7 +203,10 @@ export default function AdminJornadas({
     setSavingRules(true);
 
     const resultado = await guardarReglas(selectedCompetitionId, leagueRules);
-    if (resultado.ok) showToast("Reglas de liga guardadas");
+    if (resultado.ok) {
+      setSavedRules(leagueRules);
+      showToast("Reglas de liga guardadas");
+    }
     else showToast(resultado.error, "error");
     setSavingRules(false);
   }
@@ -193,15 +244,10 @@ export default function AdminJornadas({
   async function fetchBaseData() {
     setIsFetching(true);
     try {
-      const [{ data: tData, active }, eData] = await Promise.all([
-        fetchSeasons(),
-        selectedCompetitionId
-          ? fetchTeamsForCompetition(categoria, selectedCompetitionId)
-          : Promise.resolve([]),
-      ]);
-
-      setTemporadas(tData || []);
-      if (active) setTemporadaActiva(active);
+      const eData = selectedCompetitionId
+        ? await fetchTeamsForCompetition(categoria, selectedCompetitionId)
+        : [];
+      if (currentCompetition.current !== selectedCompetitionId) return;
       setEquipos(eData || []);
 
       // Campos: llegan con el resto de la pantalla de calendario.
@@ -215,31 +261,21 @@ export default function AdminJornadas({
   }
 
   useEffect(() => {
-    if (temporadaActiva) {
-      fetchJornadas();
-    }
-  }, [temporadaActiva, categoria, selectedCompetitionId]);
+    void fetchJornadas();
+  }, [selectedSeasonId, categoria, selectedCompetitionId]);
 
   async function fetchJornadas() {
-    if (!temporadaActiva?.id || !selectedCompetitionId) {
+    if (!selectedSeasonId || !selectedCompetitionId) {
       setJornadas([]);
+      setJornadasCompetition("");
       setIsFetching(false);
       return;
     }
     setIsFetching(true);
-    const { data } = await fetchMatchdaysForCompetition(
-      temporadaActiva.id,
-      categoria,
-      selectedCompetitionId,
-    );
-
+    const { data } = await fetchMatchdaysForCompetition(selectedSeasonId, categoria, selectedCompetitionId);
+    if (currentCompetition.current !== selectedCompetitionId) return;
     setJornadas(data);
-    if (data.length === 0) setSelectedJornada(null);
-    else if (
-      !selectedJornada ||
-      !data.some((j: any) => j.id === selectedJornada)
-    )
-      setSelectedJornada(data[0].id);
+    setJornadasCompetition(selectedCompetitionId);
     setIsFetching(false);
   }
 
@@ -252,20 +288,7 @@ export default function AdminJornadas({
     if (resultado.ok) {
       showToast("Temporada creada");
       setNuevaTemporadaNombre("");
-      fetchBaseData();
-    } else {
-      showToast(resultado.error, "error");
-    }
-    setLoading(false);
-  }
-
-  async function toggleTemporadaActiva(id: string) {
-    setBusyText("Cambiando temporada activa...");
-    setLoading(true);
-    const resultado = await activarTemporada(id);
-    if (resultado.ok) {
-      showToast("Temporada activa cambiada");
-      fetchBaseData();
+      void loadCompeticiones();
     } else {
       showToast(resultado.error, "error");
     }
@@ -277,6 +300,7 @@ export default function AdminJornadas({
       fetchPartidos();
       fetchDescansos();
     } else {
+      setPartidos([]);
       setDescansos([]);
     }
   }, [selectedJornada, selectedCompetitionId, categoria]);
@@ -309,10 +333,10 @@ export default function AdminJornadas({
       selectedCompetitionId,
       selectedJornada,
     );
-    setDescansos(filas);
+    if (currentContext.current === contextKey) setDescansos(filas);
   }
 
-  async function fetchPartidos() {
+  async function fetchPartidos(guardadoId?: string) {
     setIsFetching(true);
     if (!selectedJornada || !selectedCompetitionId) {
       setPartidos([]);
@@ -321,7 +345,15 @@ export default function AdminJornadas({
     }
 
     const { data } = await fetchMatchesForMatchday(selectedJornada);
-    setPartidos(data);
+    if (currentContext.current !== contextKey) return;
+    const mismoContexto = contextoPartidos.current === contextKey;
+    const borradores = new Map(partidosActuales.current.filter(p =>
+      mismoContexto && p.id !== guardadoId && originales.current.has(p.id) && originales.current.get(p.id) !== firmaEdicion(p)
+    ).map(p => [p.id, p]));
+    const anteriores = originales.current;
+    originales.current = new Map(data.map(p => [p.id, borradores.has(p.id) ? (anteriores.get(p.id) ?? firmaEdicion(p)) : firmaEdicion(p)]));
+    contextoPartidos.current = contextKey;
+    setPartidos(data.map(p => borradores.get(p.id) ?? p));
     setIsFetching(false);
   }
 
@@ -341,6 +373,7 @@ export default function AdminJornadas({
       showToast("Jornada creada");
       setNumJornada("");
       setNombreFase("");
+      setFechaInicio("");
       fetchJornadas();
     } else {
       showToast(resultado.error, "error");
@@ -416,6 +449,7 @@ export default function AdminJornadas({
       setLocalId("");
       setVisitanteId("");
       setCampoId("");
+      setFechaPartido("");
       fetchPartidos();
     } else {
       showToast(resultado.error, "error");
@@ -427,32 +461,6 @@ export default function AdminJornadas({
     const resultado = await cambiarEstadoPartido(id, estado);
     if (resultado.ok) fetchPartidos();
     else showToast(resultado.error, "error");
-  }
-
-  async function cambiarFecha(id: string, fecha: string) {
-    const resultado = await cambiarFechaPartido(id, fecha);
-    if (resultado.ok) fetchPartidos();
-    else showToast(resultado.error, "error");
-  }
-
-  async function cambiarCampo(id: string, nuevoCampoId: string) {
-    const resultado = await cambiarCampoPartido(id, nuevoCampoId);
-    if (resultado.ok) fetchPartidos();
-    else showToast(resultado.error, "error");
-  }
-
-  /**
-   * Guardar marcador finaliza el partido y borrarlo lo devuelve a programado: los CHECK de la
-   * tabla no admiten un finalizado sin goles ni un marcador a medias. Por eso hay que recargar.
-   */
-  async function saveMatchScore(id: string, local: string, vis: string) {
-    const resultado = await guardarMarcador(id, local, vis);
-    if (resultado.ok) {
-      showToast("Marcador guardado");
-      fetchPartidos();
-    } else {
-      showToast(resultado.error, "error");
-    }
   }
 
   async function handleDeletePartido(id: string) {
@@ -475,7 +483,6 @@ export default function AdminJornadas({
       async () => {
         const resultado = await borrarJornada(id);
         if (resultado.ok) {
-          setSelectedJornada(null);
           fetchJornadas();
           showToast("Jornada borrada");
         } else {
@@ -503,6 +510,7 @@ export default function AdminJornadas({
           : `Generadas ${resultado.datos} jornadas faltantes`,
       );
       setShowConfigPanel(false);
+      setBulkCount(30);
       fetchJornadas();
     } finally {
       setLoading(false);
@@ -546,6 +554,8 @@ export default function AdminJornadas({
     (eq) => !unavailableTeamIds.has(eq.id) || eq.id === descansoEquipoId,
   );
 
+  if (!contextoListo && !errorCompeticiones) return <LoadingState title="Cargando contexto deportivo…" />;
+
   return (
     <div className="card glass full-width" style={{ padding: "2.5rem" }}>
       <BusyBanner
@@ -571,8 +581,8 @@ export default function AdminJornadas({
             </label>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <select
-                value={temporadaActiva?.id || ""}
-                onChange={(e) => toggleTemporadaActiva(e.target.value)}
+                value={selectedSeasonId}
+                onChange={(e) => setParams({ temporada: e.target.value, competicion: null, jornada: null })}
                 style={{ flex: 1, height: "48px", background: "rgba(0,0,0,0.4)", borderRadius: "10px", fontWeight: 600 }}
               >
                 {temporadas.map((t) => (
@@ -617,12 +627,7 @@ export default function AdminJornadas({
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <select
                 value={selectedCompetitionId}
-                onChange={(e) => {
-                  setSelectedJornada(null);
-                  setPartidos([]);
-                  setDescansos([]);
-                  setSelectedCompetitionId(e.target.value);
-                }}
+                onChange={(e) => setSelectedCompetitionId(e.target.value)}
                 disabled={loading || isFetching}
                 style={{ flex: 1, height: "48px", background: "rgba(0,0,0,0.4)", borderRadius: "10px", fontWeight: 600 }}
               >
@@ -729,7 +734,7 @@ export default function AdminJornadas({
           >
             <h3 style={{ color: "var(--primary)", marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 800 }}>Configurar Jornadas</h3>
             <p style={{ color: "#888", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
-              Se generarán jornadas vacías para <strong>{selectedCompeticionNombre}</strong> en la temporada activa.
+              Se generarán jornadas vacías para <strong>{selectedCompeticionNombre}</strong> en la temporada seleccionada.
             </p>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: "1rem", alignItems: "flex-end" }}>
@@ -1595,22 +1600,20 @@ export default function AdminJornadas({
                         disabled={!!rowBusy[p.id]}
                         onClick={async () => {
                           setRowBusy((prev) => ({ ...prev, [p.id]: true }));
-                          // Marcador, fecha y campo son acciones distintas: el marcador cambia
-                          // además el estado, y las otras dos no deben tocarlo.
-                          const marcador = await guardarMarcador(
-                            p.id,
-                            typeof p.goles_local === "number" ? String(p.goles_local) : "",
-                            typeof p.goles_visitante === "number" ? String(p.goles_visitante) : "",
-                          );
-                          if (!marcador.ok) {
-                            showToast(marcador.error, "error");
-                            setRowBusy((prev) => ({ ...prev, [p.id]: false }));
-                            return;
+                          try {
+                            const marcador = await guardarMarcador(p.id, toGoalInputValue(p.goles_local), toGoalInputValue(p.goles_visitante));
+                            if (!marcador.ok) { showToast(marcador.error, "error"); return; }
+                            const fecha = await cambiarFechaPartido(p.id, matchLocalDateTimeToIso(p.fecha) ?? "");
+                            if (!fecha.ok) { showToast(fecha.error, "error"); return; }
+                            const campo = await cambiarCampoPartido(p.id, p.campo_id ?? "");
+                            if (!campo.ok) { showToast(campo.error, "error"); return; }
+                            await fetchPartidos(p.id);
+                            showToast("Cambios guardados");
+                          } catch {
+                            showToast("No se pudieron guardar todos los cambios. Revisa el partido y vuelve a intentarlo.", "error");
+                          } finally {
+                            setRowBusy(prev => ({ ...prev, [p.id]: false }));
                           }
-                          await cambiarFecha(p.id, matchLocalDateTimeToIso(p.fecha) ?? "");
-                          await cambiarCampo(p.id, p.campo_id ?? "");
-                          showToast("Cambios guardados");
-                          setRowBusy((prev) => ({ ...prev, [p.id]: false }));
                         }}
                         style={{
                           height: "45px",
@@ -1676,7 +1679,7 @@ export default function AdminJornadas({
                 <div style={{ maxWidth: "300px" }}>
                   <h3 style={{ fontSize: "1.2rem", fontWeight: 800, color: "white", margin: "0 0 0.5rem 0" }}>Sin jornadas</h3>
                   <p style={{ margin: 0, fontSize: "0.9rem", color: "#666", lineHeight: "1.5" }}>
-                    Esta competición aún no tiene jornadas registradas en la temporada activa.
+                    Esta competición aún no tiene jornadas registradas en la temporada seleccionada.
                   </p>
                 </div>
                 <button

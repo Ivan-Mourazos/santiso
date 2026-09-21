@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import type { TemporadaDto } from "@/lib/dto";
 import { activarTemporada, cargarTemporadas, crearTemporada } from "@/lib/server/acciones/temporadas";
+import { useUnsavedChanges } from "@/components/studio/StudioContext";
 import BusyBanner from "./BusyBanner";
 
 interface AdminTemporadasProps {
@@ -15,6 +16,8 @@ export default function AdminTemporadas({ showToast, showConfirm }: AdminTempora
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [busyText, setBusyText] = useState("Cargando temporadas...");
+
+  useUnsavedChanges(nombre !== "");
 
   useEffect(() => {
     fetchTemporadas();
