@@ -30,7 +30,7 @@ Controles utilizables por teclado; foco visible; mensajes de error asociados; co
 Base entregada en `codex/base-visual`, partiendo de `77910a9`. Solo archivos nuevos. No integra todavía fuentes, tokens ni componentes en producción.
 
 - `pnpm check`: 433 pruebas correctas, 1 privada omitida; tipos, lint y formato correctos.
-- Playwright aislado: 15/15. axe sin infracciones en galería, diálogo y confirmación.
+- Playwright aislado: 16/16. axe sin infracciones en galería, diálogo y confirmación.
 - Build de producción de la galería: correcto.
 - Capturas escritorio y 360/390 px revisadas: sin desbordamiento de página; tabla con desplazamiento propio.
 - Revisión independiente: corregido soporte de ref en controles; error de tipos reproducido antes de la corrección.
@@ -38,3 +38,9 @@ Base entregada en `codex/base-visual`, partiendo de `77910a9`. Solo archivos nue
 - Fuentes WOFF2 latinas, 71.420 bytes entre ambas, con licencias OFL.
 
 Las pruebas de interacción usan Playwright ya instalado en vez de introducir un DOM simulado para Vitest: comprueban showModal, foco y CSS en navegador real. Los archivos generados por Next en la galería no son componentes del producto. No se ejecuta e2e de pantallas porque ninguna pantalla existente cambia. El siguiente bloque es 3B sobre main con 2C fusionada y capturas `antes-fase-3`.
+
+### Corrección de revisión final
+
+El atrapado de foco usa límites al principio y final del diálogo, conservando la navegación nativa dentro de campos de fecha. Regresión reproducida (Tab abandonaba el campo prematuramente) y corregida; prueba de segmentos añadida.
+
+Una ejecución general tuvo siete timeouts de inicialización en pruebas existentes de acciones. Sus 111 pruebas pasaron con un worker; la repetición completa de `pnpm check` pasó (433 correctas, 1 omitida), sin modificar configuración ni ampliar timeouts.

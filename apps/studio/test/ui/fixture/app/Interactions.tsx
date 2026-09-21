@@ -35,6 +35,7 @@ export function Interactions() {
         footer={<Button onClick={() => setOpen(false)}>Guardar partido</Button>}
       >
         <Field ref={fieldRef} label="Campo" defaultValue="Campo municipal" />
+        <Field label="Fecha del partido" type="date" defaultValue="2026-09-21" />
       </Dialog>
       <ConfirmDialog
         open={confirm}

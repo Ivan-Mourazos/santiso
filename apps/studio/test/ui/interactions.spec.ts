@@ -110,3 +110,11 @@ for (const width of [360, 390]) {
     await expect(opener).toBeFocused();
   });
 }
+
+test("diálogo conserva Tab entre segmentos nativos de fecha", async ({ page }) => {
+  await page.getByRole("button", { name: "Abrir diálogo", exact: true }).click();
+  const date = page.getByLabel("Fecha del partido", { exact: true });
+  await date.focus();
+  await page.keyboard.press("Tab");
+  await expect(date).toBeFocused();
+});

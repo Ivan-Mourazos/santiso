@@ -46,6 +46,25 @@ export function Dialog({
     };
   }, [open]);
 
+  function focusEdge(edge: "first" | "last") {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const controls = Array.from(
+      dialog.querySelectorAll<HTMLElement>(
+        "a[href], button, input, select, textarea, summary, [contenteditable], [tabindex]",
+      ),
+    ).filter(
+      (element) =>
+        element.tabIndex >= 0 &&
+        !element.hasAttribute("data-focus-guard") &&
+        !element.matches(":disabled") &&
+        !element.closest("[inert]") &&
+        element.checkVisibility({ checkVisibilityCSS: true }),
+    );
+    (edge === "first" ? controls[0] : controls[controls.length - 1])?.focus();
+    if (!controls.length) headingRef.current?.focus();
+  }
+
   return (
     <dialog
       ref={dialogRef}
@@ -53,38 +72,6 @@ export function Dialog({
       aria-labelledby={id + "-title"}
       aria-describedby={description ? id + "-description" : undefined}
       aria-busy={pending || undefined}
-      onKeyDown={(event) => {
-        if (event.key !== "Tab" || event.defaultPrevented || !event.currentTarget.open) return;
-        const dialog = event.currentTarget;
-        const candidates = Array.from(
-          dialog.querySelectorAll<HTMLElement>(
-            "a[href], area[href], button, input, select, textarea, iframe, object, embed, summary, audio[controls], video[controls], [contenteditable], [tabindex]",
-          ),
-        )
-          .filter(
-            (element) =>
-              element.tabIndex >= 0 &&
-              !element.matches(":disabled") &&
-              !element.closest("[inert]") &&
-              element.checkVisibility({ checkVisibilityCSS: true }),
-          )
-          .sort((left, right) => {
-            // El orden positivo precede a tabindex=0; sort conserva el orden DOM entre iguales.
-            const leftOrder = left.tabIndex || Number.MAX_SAFE_INTEGER;
-            const rightOrder = right.tabIndex || Number.MAX_SAFE_INTEGER;
-            return leftOrder - rightOrder;
-          });
-        event.preventDefault();
-        const index = candidates.findIndex(
-          (element) => element === dialog.ownerDocument.activeElement,
-        );
-        const nextIndex = event.shiftKey
-          ? index <= 0
-            ? candidates.length - 1
-            : index - 1
-          : (index + 1) % candidates.length;
-        (candidates[nextIndex] ?? headingRef.current)?.focus();
-      }}
       onCancel={(event) => {
         event.preventDefault();
         if (!pending) onClose();
@@ -94,6 +81,13 @@ export function Dialog({
         if (open && !dialogRef.current?.open && !pending) onClose();
       }}
     >
+      {/* Los límites conservan el Tab nativo dentro de controles compuestos, como fechas. */}
+      <span
+        tabIndex={0}
+        data-focus-guard=""
+        className={styles.focusGuard}
+        onFocus={() => focusEdge("last")}
+      />
       <div className={styles.header}>
         <h2 ref={headingRef} tabIndex={-1} id={id + "-title"} className={styles.title}>
           {title}
@@ -115,6 +109,12 @@ export function Dialog({
       ) : null}
       <div className={styles.content}>{children}</div>
       {footer ? <div className={styles.footer}>{footer}</div> : null}
+      <span
+        tabIndex={0}
+        data-focus-guard=""
+        className={styles.focusGuard}
+        onFocus={() => focusEdge("first")}
+      />
     </dialog>
   );
 }
