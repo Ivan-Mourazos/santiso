@@ -93,13 +93,13 @@ Contexto: ver «El hallazgo que cambia una tarea». El objetivo no es borrar el 
 **Ficheros:**
 - Borrar: `apps/studio/lib/data/season-2026-2027.ts`
 - Modificar: `apps/studio/lib/useCompeticiones.ts`, `apps/studio/components/admin/cartel/useCartelForm.ts`
-- Crear: `apps/studio/lib/useCompeticiones.test.ts`
+- Crear: ~~`apps/studio/lib/useCompeticiones.test.ts`~~ → en su lugar, `apps/studio/e2e/errores.spec.ts`
 
 **Interfaces:**
 - `useCompeticiones` pasa a exponer `errorCompeticiones: string | null` junto a lo que ya devuelve.
 
-- [x] **Paso 1: Escribir las pruebas que fallan** — el hook con una lectura que lanza deja el catálogo vacío y `errorCompeticiones` con mensaje; con una lectura que devuelve filas, las devuelve y `errorCompeticiones` a `null`; y **nunca** aparece un id `comp-senior-2026-2027`
-- [x] **Paso 2: Comprobar que fallan**
+- [ ] **Paso 1: Escribir las pruebas que fallan** — *no hecho como estaba escrito.* Probar el hook exigiría jsdom y una librería de pruebas de componentes, que es una decisión de la Fase 3A. La garantía se cubrió desde más arriba, con `e2e/errores.spec.ts`: ver los hallazgos
+- [ ] **Paso 2: Comprobar que fallan** — íd.
 - [x] **Paso 3: Implementar en `useCompeticiones`** — fuera el respaldo, dentro el error
 - [x] **Paso 4: Implementar en `useCartelForm`** — mismo criterio: sin competiciones no se inventan equipos ni partidos; el selector queda vacío y avisa
 - [x] **Paso 5: Borrar `lib/data/season-2026-2027.ts`** y comprobar que nadie lo importa
