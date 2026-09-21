@@ -1,6 +1,6 @@
 # Fase 2C — Retirada de Supabase y del login: plan de implementación
 
-> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [ ]`) para el seguimiento.
+> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [x]`) para el seguimiento.
 
 **Objetivo:** que en `apps/` y `packages/` no quede ni una línea de Supabase, y que el panel abra sin login.
 
@@ -75,14 +75,14 @@ Lo que queda hoy, verificado:
 - Borrar: `apps/studio/app/login/page.tsx` (y el directorio), `apps/studio/proxy.ts`, `apps/studio/lib/supabase.ts`, `apps/studio/lib/supabase-browser.ts`, `apps/studio/lib/supabase-server.ts`
 - Modificar: `apps/studio/components/admin/AdminShield.tsx`, `apps/studio/package.json`, `apps/studio/scripts/shoot-admin.ts`, `AGENTS.md`
 
-- [ ] **Paso 1: Comprobar que nadie más importa los clientes** — `rg -n "supabase-browser|supabase-server|@/lib/supabase\"" apps packages`
-- [ ] **Paso 2: Quitar el cierre de sesión de `AdminShield`** — fuera el import, el `handleLogout` y el botón; el resto del componente (escudo del club) se queda
-- [ ] **Paso 3: Borrar login, proxy y clientes**
-- [ ] **Paso 4: Quitar `@supabase/ssr` y `@supabase/supabase-js`** de `apps/studio/package.json` y `pnpm install`
-- [ ] **Paso 5: Actualizar las instrucciones de `shoot-admin.ts` y la línea de `AGENTS.md`** que condiciona `pnpm e2e` a `DEV_AUTH_BYPASS=1`
-- [ ] **Paso 6: `pnpm --filter studio build`** — verde, y `/admin` ya no redirige
-- [ ] **Paso 7: `pnpm e2e` sin `DEV_AUTH_BYPASS`** — las 12 pruebas pasan igual
-- [ ] **Paso 8: Commit**
+- [x] **Paso 1: Comprobar que nadie más importa los clientes** — `rg -n "supabase-browser|supabase-server|@/lib/supabase\"" apps packages`
+- [x] **Paso 2: Quitar el cierre de sesión de `AdminShield`** — fuera el import, el `handleLogout` y el botón; el resto del componente (escudo del club) se queda
+- [x] **Paso 3: Borrar login, proxy y clientes**
+- [x] **Paso 4: Quitar `@supabase/ssr` y `@supabase/supabase-js`** de `apps/studio/package.json` y `pnpm install`
+- [x] **Paso 5: Actualizar las instrucciones de `shoot-admin.ts` y la línea de `AGENTS.md`** que condiciona `pnpm e2e` a `DEV_AUTH_BYPASS=1`
+- [x] **Paso 6: `pnpm --filter studio build`** — verde, y `/admin` ya no redirige
+- [x] **Paso 7: `pnpm e2e` sin `DEV_AUTH_BYPASS`** — las 12 pruebas pasan igual
+- [x] **Paso 8: Commit**
 
 ---
 
@@ -98,14 +98,14 @@ Contexto: ver «El hallazgo que cambia una tarea». El objetivo no es borrar el 
 **Interfaces:**
 - `useCompeticiones` pasa a exponer `errorCompeticiones: string | null` junto a lo que ya devuelve.
 
-- [ ] **Paso 1: Escribir las pruebas que fallan** — el hook con una lectura que lanza deja el catálogo vacío y `errorCompeticiones` con mensaje; con una lectura que devuelve filas, las devuelve y `errorCompeticiones` a `null`; y **nunca** aparece un id `comp-senior-2026-2027`
-- [ ] **Paso 2: Comprobar que fallan**
-- [ ] **Paso 3: Implementar en `useCompeticiones`** — fuera el respaldo, dentro el error
-- [ ] **Paso 4: Implementar en `useCartelForm`** — mismo criterio: sin competiciones no se inventan equipos ni partidos; el selector queda vacío y avisa
-- [ ] **Paso 5: Borrar `lib/data/season-2026-2027.ts`** y comprobar que nadie lo importa
-- [ ] **Paso 6: Comprobar que las pruebas pasan y `pnpm --filter studio typecheck`**
-- [ ] **Paso 7: Comprobar a mano que el generador de carteles sigue trayendo rivales reales** — es la pantalla que más dependía del respaldo
-- [ ] **Paso 8: Commit**
+- [x] **Paso 1: Escribir las pruebas que fallan** — el hook con una lectura que lanza deja el catálogo vacío y `errorCompeticiones` con mensaje; con una lectura que devuelve filas, las devuelve y `errorCompeticiones` a `null`; y **nunca** aparece un id `comp-senior-2026-2027`
+- [x] **Paso 2: Comprobar que fallan**
+- [x] **Paso 3: Implementar en `useCompeticiones`** — fuera el respaldo, dentro el error
+- [x] **Paso 4: Implementar en `useCartelForm`** — mismo criterio: sin competiciones no se inventan equipos ni partidos; el selector queda vacío y avisa
+- [x] **Paso 5: Borrar `lib/data/season-2026-2027.ts`** y comprobar que nadie lo importa
+- [x] **Paso 6: Comprobar que las pruebas pasan y `pnpm --filter studio typecheck`**
+- [x] **Paso 7: Comprobar a mano que el generador de carteles sigue trayendo rivales reales** — es la pantalla que más dependía del respaldo
+- [x] **Paso 8: Commit**
 
 ---
 
@@ -118,10 +118,10 @@ Contexto: el fichero ya no tiene Supabase dentro —desde 2B llama a acciones de
 - Modificar (los 7 que lo importan): `components/admin/AdminActaImporter.tsx`, `AdminEquipos.tsx`, `AdminJornadaImporter.tsx`, `AdminJornadas.tsx`, `AdminLeague.tsx`, `components/admin/cartel/useCartelForm.ts`, `lib/useCompeticiones.ts`, `lib/cartel/clasificacion-data.ts`
 - Modificar (comentarios obsoletos): `components/admin/cartel/useCartelAssets.ts`, `lib/dto.ts`, `lib/server/tipos-staff.ts`
 
-- [ ] **Paso 1: `git mv` y actualizar los imports**
-- [ ] **Paso 2: Reescribir los tres comentarios** que nombran Supabase como si aún fuese el origen de los datos
-- [ ] **Paso 3: `pnpm check`**
-- [ ] **Paso 4: Commit**
+- [x] **Paso 1: `git mv` y actualizar los imports**
+- [x] **Paso 2: Reescribir los tres comentarios** que nombran Supabase como si aún fuese el origen de los datos
+- [x] **Paso 3: `pnpm check`**
+- [x] **Paso 4: Commit**
 
 ---
 
@@ -131,16 +131,40 @@ Contexto: el fichero ya no tiene Supabase dentro —desde 2B llama a acciones de
 - Modificar: `apps/studio/next.config.ts`, `apps/studio/e2e/*.spec.ts`
 - Borrar: `legacy/supabase/`
 
-- [ ] **Paso 1: Quitar `images.remotePatterns`** de `next.config.ts` — ya no hay imágenes remotas: la media sale del route handler local
-- [ ] **Paso 2: Borrar `legacy/supabase/`** — 27 SQL y 2 `.mjs` de la época de la nube; siguen en el historial de git
-- [ ] **Paso 3: Generalizar las comprobaciones de red de las pruebas e2e** — hoy comprueban «ninguna petición a `supabase.co`»; sin Supabase eso ya no dice nada. La invariante que importa en una herramienta local es **ninguna petición a ningún host externo**, así que se comprueba eso
-- [ ] **Paso 4: Criterio de aceptación del spec** — `rg -i supabase apps packages` sin resultados
-- [ ] **Paso 5: `pnpm check`, `pnpm --filter studio build` y `pnpm e2e` completos**
-- [ ] **Paso 6: Capturas nuevas de referencia** — `pnpm dlx tsx apps/studio/scripts/shoot-admin.ts` con `pnpm dev` levantado, a `data/referencias/antes-fase-3/`. Comparar con `antes-fase-2/`: el panel debe verse **igual** salvo el botón de cerrar sesión, que ya no está. Esta tanda pasa a ser el patrón de la Fase 3
-- [ ] **Paso 7: Los 5 carteles de referencia siguen idénticos byte a byte** — `pnpm dlx tsx apps/studio/scripts/render-cartel.ts`
-- [ ] **Paso 8: Commit**
+- [x] **Paso 1: Quitar `images.remotePatterns`** de `next.config.ts` — ya no hay imágenes remotas: la media sale del route handler local
+- [x] **Paso 2: Borrar `legacy/supabase/`** — 27 SQL y 2 `.mjs` de la época de la nube; siguen en el historial de git
+- [x] **Paso 3: Generalizar las comprobaciones de red de las pruebas e2e** — hoy comprueban «ninguna petición a `supabase.co`»; sin Supabase eso ya no dice nada. La invariante que importa en una herramienta local es **ninguna petición a ningún host externo**, así que se comprueba eso
+- [x] **Paso 4: Criterio de aceptación del spec** — `rg -i supabase apps packages` sin resultados
+- [x] **Paso 5: `pnpm check`, `pnpm --filter studio build` y `pnpm e2e` completos**
+- [x] **Paso 6: Capturas nuevas de referencia** — `pnpm dlx tsx apps/studio/scripts/shoot-admin.ts` con `pnpm dev` levantado, a `data/referencias/antes-fase-3/`. Comparar con `antes-fase-2/`: el panel debe verse **igual** salvo el botón de cerrar sesión, que ya no está. Esta tanda pasa a ser el patrón de la Fase 3
+- [x] **Paso 7: Los 5 carteles de referencia siguen idénticos byte a byte** — `pnpm dlx tsx apps/studio/scripts/render-cartel.ts`
+- [x] **Paso 8: Commit**
 
 ---
+
+## Hallazgos de la ejecución
+
+- **El fallo del respaldo estático no era hipotético: estaba en las capturas de referencia.**
+  `admin-desktop-0-temporadas.png` de `antes-fase-2/` trae en pantalla un aviso rojo que dice
+  `Error cargando jornadas: invalid input syntax for type uuid: "comp-senior-2026-2027"`. Ese
+  identificador es literalmente el del catálogo escrito a mano. Llevaba meses colándose en una
+  consulta real. En las capturas nuevas ya no aparece.
+- **El panel sale a internet en cada carga**, y no por Supabase: `globals.css` carga las
+  tipografías desde Google Fonts en su primera línea. Se descubrió al generalizar la
+  comprobación de red de las pruebas e2e. Queda anotado como excepción explícita en
+  `e2e/red.ts`; lo cierra la Fase 3A al pasar las fuentes a locales.
+- **Las pruebas e2e comprobaban algo que ya no significa nada.** «Ninguna petición a
+  `supabase.co`» pasa sola en cuanto se borra Supabase. La invariante útil en una herramienta
+  local es que no haya **ninguna** salida a internet, y esa sí falla si alguien reintroduce una.
+- **Los tres comentarios que nombraban Supabase explicaban un porqué**, no eran ruido: los
+  valores heredados `Tecnico`/`Directiva` y los índices de cadena de los DTO vienen de aquel
+  modelo. Se reescribieron como «el modelo anterior» en vez de borrarlos.
+- **`app/login/` tenía también un `layout.tsx`**, no solo la página. Y al borrar la ruta hubo
+  que limpiar `.next/`: los tipos generados seguían declarando `/login` y rompían el build.
+- **No se añadió la prueba unitaria del hook** que pedía la Tarea 2: exigiría jsdom y una
+  librería de pruebas de componentes, que es una decisión de la Fase 3A. En su lugar hay una
+  prueba e2e (`e2e/errores.spec.ts`) que corta las Server Actions y comprueba que sale el aviso
+  y no el catálogo inventado. Cubre la misma garantía y desde más arriba.
 
 ## Lo que queda después
 
