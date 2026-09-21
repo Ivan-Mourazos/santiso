@@ -38,6 +38,10 @@ const AdminJornadaImporter = dynamic(
   () => import("@/components/admin/AdminJornadaImporter"),
   { loading: panelLoading },
 );
+const AdminCalendarioPdf = dynamic(
+  () => import("@/components/admin/AdminCalendarioPdf"),
+  { loading: panelLoading },
+);
 const AdminTemporadas = dynamic(
   () => import("@/components/admin/AdminTemporadas"),
   { loading: panelLoading },
@@ -92,6 +96,7 @@ for (const g of NAV_GROUPS) for (const it of g.items) VIEW_META[it.id] = { label
 export default function AdminPage() {
   const [activeView, setActiveView] = useState<string>("jornadas");
   const [actasMode, setActasMode] = useState<"single" | "batch">("single");
+  const [jornadaMode, setJornadaMode] = useState<"foto" | "calendario">("foto");
   const [categoria, setCategoria] = useState("Senior");
   const [tipoCartel, setTipoCartel] = useState<string>(TEMPLATES[0].id);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
@@ -239,7 +244,19 @@ export default function AdminPage() {
                 : <AdminActaBatch showToast={showToast} />}
             </div>
           )}
-          {activeView === 'jornada-img' && <AdminJornadaImporter showToast={showToast} showConfirm={showConfirm} />}
+          {activeView === 'jornada-img' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                <div className="seg-tabs">
+                  <button className={jornadaMode === 'foto' ? 'active' : ''} onClick={() => setJornadaMode('foto')}>Una jornada (foto)</button>
+                  <button className={jornadaMode === 'calendario' ? 'active' : ''} onClick={() => setJornadaMode('calendario')}>Calendario completo (PDF)</button>
+                </div>
+              </div>
+              {jornadaMode === 'foto'
+                ? <AdminJornadaImporter showToast={showToast} showConfirm={showConfirm} />
+                : <AdminCalendarioPdf showToast={showToast} showConfirm={showConfirm} />}
+            </div>
+          )}
           {activeView === 'sponsors' && <AdminSponsors showToast={showToast} showConfirm={showConfirm} />}
         </section>
       </div>

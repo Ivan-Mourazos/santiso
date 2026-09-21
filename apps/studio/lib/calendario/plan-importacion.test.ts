@@ -245,3 +245,40 @@ describe("resumen", () => {
     expect(segundo.resumen).toMatchObject({ jornadasNuevas: 0, crucesNuevos: 0, crucesExistentes: 2 });
   });
 });
+
+describe("contra los calendarios reales del parser", () => {
+  // Los PDF originales no están en git; sí sus fragmentos anonimizados, que conservan la
+  // estructura y las coordenadas. Esto prueba la cadena entera sobre datos de verdad.
+  const cargar = async (fichero: string) => {
+    const { readFile } = await import("node:fs/promises");
+    const path = (await import("node:path")).default;
+    const { fileURLToPath } = await import("node:url");
+    const aqui = path.dirname(fileURLToPath(new URL(import.meta.url)));
+    const ruta = path.resolve(aqui, "../../../../packages/actas/src/fixtures", fichero);
+    const { parsearCalendario } = await import("@santiso/actas");
+    return parsearCalendario(JSON.parse(await readFile(ruta, "utf8")));
+  };
+
+  it("sin equipos en la base de datos, ningún cruce se puede crear y se dice cuáles faltan", async () => {
+    const cal = await cargar("calendario-senior.json");
+    const plan = planDeImportacion(cal, bd());
+
+    expect(plan.resumen.jornadasNuevas).toBe(26);
+    expect(plan.resumen.crucesNuevos).toBe(0);
+    expect(plan.resumen.crucesSinEquipo).toBe(182);
+    expect(plan.sinResolver).toHaveLength(14);
+  });
+
+  it("con los equipos dados de alta, planifica la temporada entera", async () => {
+    const cal = await cargar("calendario-veteranos.json");
+    const equipos = cal.equipos.map((e, i) => ({ id: `eq-${i}`, nombre: e.nombre }));
+    const plan = planDeImportacion(cal, bd({ equipos }));
+
+    expect(plan.resumen.jornadasNuevas).toBe(30);
+    expect(plan.resumen.crucesNuevos).toBe(240);
+    expect(plan.resumen.crucesSinEquipo).toBe(0);
+    expect(plan.sinResolver).toEqual([]);
+    // Nadie se enfrenta a sí mismo: el CHECK de la tabla lo rechazaría.
+    expect(plan.cruces.every((c) => c.localId !== c.visitanteId)).toBe(true);
+  });
+});
