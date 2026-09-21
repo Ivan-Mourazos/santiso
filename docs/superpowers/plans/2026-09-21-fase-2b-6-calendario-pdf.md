@@ -109,14 +109,14 @@ Selector de modo en la sección «Jornada», igual que «Individual / Lote» en 
 
 - [x] **Paso 1: Selector de modo**
 - [x] **Paso 2: Pantalla del plan** — elegir categoría y competición, subir el PDF, ver el resumen (cuántas jornadas, cuántos cruces nuevos, cuántos ya estaban, cuáles no se resuelven y por qué), y un botón que escribe
-- [x] **Paso 3: Comprobar a mano con un calendario real**
+- [ ] **Paso 3: Comprobar a mano con un calendario real** — *pendiente del usuario.* Los PDF originales no están en el repositorio, así que el camino feliz completo no se ha ejecutado nunca de punta a punta. Lo verificado: la pantalla carga, exige competición antes de leer, y rechaza con mensaje un PDF que no es un calendario
 - [x] **Paso 4: Commit**
 
 ---
 
 ### Tarea 4: Verificación
 
-- [x] **Paso 1: e2e** — subir el calendario de prueba, ver el plan, no escribir
+- [x] **Paso 1: e2e** — encuadre y rechazo; ver los hallazgos sobre por qué no puede ser el camino feliz
 - [x] **Paso 2: `pnpm check`, `pnpm --filter studio build`, `pnpm e2e`**
 - [x] **Paso 3: Commit y fusión**
 
