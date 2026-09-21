@@ -6,6 +6,7 @@ import { transformarCompeticiones } from "./competiciones";
 import { transformarEquipos } from "./equipos";
 import { transformarPlantilla } from "./plantilla";
 import { transformarTemporadas } from "./temporadas";
+import { repartirPorTemporada } from "./temporadas-plantilla";
 import { crearInforme, ErrorMigracion, type Informe, type ModeloNuevo } from "./tipos";
 
 export interface ResultadoTransformacion {
@@ -23,6 +24,15 @@ export function transformar(origen: Snapshot): ResultadoTransformacion {
   const plantilla = transformarPlantilla(origen, informe);
   const actas = transformarActas(origen, informe);
   const club = transformarClub(origen, informe);
+  const porTemporada = repartirPorTemporada({
+    jugadores: plantilla.jugadores,
+    staff: plantilla.staff,
+    temporadas,
+    competiciones,
+    jornadas: calendario.jornadas,
+    partidos: calendario.partidos,
+    participaciones: actas.partidoParticipaciones,
+  });
 
   const modelo: ModeloNuevo = {
     temporadas,
@@ -30,8 +40,10 @@ export function transformar(origen: Snapshot): ResultadoTransformacion {
     competicionAlias,
     equipos: equipos.equipos,
     competicionEquipos: equipos.competicionEquipos,
-    jugadores: plantilla.jugadores,
-    staff: plantilla.staff,
+    jugadores: porTemporada.jugadores,
+    jugadoresTemporada: porTemporada.jugadoresTemporada,
+    staff: porTemporada.staff,
+    staffTemporada: porTemporada.staffTemporada,
     campos: calendario.campos,
     jornadas: calendario.jornadas,
     jornadaDescansos: calendario.jornadaDescansos,

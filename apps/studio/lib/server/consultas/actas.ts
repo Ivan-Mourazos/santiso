@@ -1,7 +1,7 @@
 import "server-only";
 import { schema } from "@santiso/db";
 import { normalizarCategoria } from "@santiso/domain";
-import { aliasedTable, and, asc, desc, eq } from "drizzle-orm";
+import { aliasedTable, and, asc, desc, eq, sql } from "drizzle-orm";
 import type { PartidoActaDto } from "@/lib/dto";
 import { temporadaActivaId } from "@/lib/server/consultas/temporadas";
 import { obtenerDb } from "@/lib/server/db";
@@ -95,9 +95,42 @@ export async function eventosDePartido(partidoId: string) {
     .orderBy(asc(schema.partidoEventos.minuto));
 }
 
-/** Convocatoria de un partido con dorsal y nombre, para el once del cartel. */
+/**
+ * Convocatoria de un partido con dorsal y nombre, para el once del cartel.
+ *
+ * El dorsal es el de **la temporada y la categoría del partido**, no el de hoy: el cartel de un
+ * partido de 2025/26 tiene que salir con los números de 2025/26. Si el jugador jugó en una
+ * categoría en la que no estaba inscrito (un sénior que ayuda a los veteranos), se toma su dorsal
+ * de cualquier otra inscripción de esa misma temporada.
+ */
 export async function participacionesDePartido(partidoId: string) {
   const { db } = await obtenerDb();
+  const [contexto] = await db
+    .select({
+      temporadaId: schema.competiciones.temporadaId,
+      categoria: schema.competiciones.categoria,
+    })
+    .from(schema.partidos)
+    .innerJoin(schema.jornadas, eq(schema.jornadas.id, schema.partidos.jornadaId))
+    .innerJoin(schema.competiciones, eq(schema.competiciones.id, schema.jornadas.competicionId))
+    .where(eq(schema.partidos.id, partidoId));
+  if (!contexto) return [];
+
+  const enSuCategoria = aliasedTable(schema.jugadoresTemporada, "en_su_categoria");
+  // Subconsulta correlacionada con la fila de fuera; va sin alias y no choca con `enSuCategoria`.
+  const enOtraCategoria = db
+    .select({ dorsal: schema.jugadoresTemporada.dorsal })
+    .from(schema.jugadoresTemporada)
+    .where(
+      and(
+        eq(schema.jugadoresTemporada.jugadorId, schema.jugadores.id),
+        eq(schema.jugadoresTemporada.temporadaId, contexto.temporadaId),
+      ),
+    )
+    .orderBy(sql`${schema.jugadoresTemporada.dorsal} is null`)
+    .limit(1);
+  const dorsal = sql<number | null>`coalesce(${enSuCategoria.dorsal}, (${enOtraCategoria}))`;
+
   return db
     .select({
       titular: schema.partidoParticipaciones.titular,
@@ -105,11 +138,19 @@ export async function participacionesDePartido(partidoId: string) {
       id: schema.jugadores.id,
       nombre: schema.jugadores.nombre,
       apodo: schema.jugadores.apodo,
-      dorsal: schema.jugadores.dorsal,
-      categoria: schema.jugadores.categoria,
+      dorsal,
+      categoria: sql<string>`${contexto.categoria}`,
     })
     .from(schema.partidoParticipaciones)
     .innerJoin(schema.jugadores, eq(schema.jugadores.id, schema.partidoParticipaciones.jugadorId))
+    .leftJoin(
+      enSuCategoria,
+      and(
+        eq(enSuCategoria.jugadorId, schema.jugadores.id),
+        eq(enSuCategoria.temporadaId, contexto.temporadaId),
+        eq(enSuCategoria.categoria, contexto.categoria),
+      ),
+    )
     .where(eq(schema.partidoParticipaciones.partidoId, partidoId))
-    .orderBy(desc(schema.partidoParticipaciones.titular), asc(schema.jugadores.dorsal));
+    .orderBy(desc(schema.partidoParticipaciones.titular), sql`${dorsal} is null`, asc(dorsal));
 }

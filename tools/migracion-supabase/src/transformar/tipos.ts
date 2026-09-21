@@ -11,7 +11,18 @@ export type CompeticionAliasNuevo = InferInsertModel<typeof s.competicionAlias>;
 export type EquipoNuevo = ConId<InferInsertModel<typeof s.equipos>>;
 export type CompeticionEquipoNuevo = InferInsertModel<typeof s.competicionEquipos>;
 export type JugadorNuevo = ConId<InferInsertModel<typeof s.jugadores>>;
+export type JugadorTemporadaNuevo = ConId<InferInsertModel<typeof s.jugadoresTemporada>>;
 export type StaffNuevo = ConId<InferInsertModel<typeof s.staff>>;
+export type StaffTemporadaNuevo = ConId<InferInsertModel<typeof s.staffTemporada>>;
+
+/**
+ * Supabase no tenía temporadas en la plantilla: cada fila traía categoría, dorsal y foto
+ * sueltos. Así sale el transformador; `repartirPorTemporada` lo separa en persona e inscripción.
+ */
+export type JugadorLegado = JugadorNuevo &
+  Omit<JugadorTemporadaNuevo, "id" | "temporadaId" | "jugadorId" | "creadoEn" | "actualizadoEn">;
+export type StaffLegado = StaffNuevo &
+  Omit<StaffTemporadaNuevo, "id" | "temporadaId" | "staffId" | "creadoEn" | "actualizadoEn">;
 export type CampoNuevo = ConId<InferInsertModel<typeof s.campos>>;
 export type JornadaNueva = ConId<InferInsertModel<typeof s.jornadas>>;
 export type JornadaDescansoNuevo = InferInsertModel<typeof s.jornadaDescansos>;
@@ -29,7 +40,9 @@ export interface ModeloNuevo {
   equipos: EquipoNuevo[];
   competicionEquipos: CompeticionEquipoNuevo[];
   jugadores: JugadorNuevo[];
+  jugadoresTemporada: JugadorTemporadaNuevo[];
   staff: StaffNuevo[];
+  staffTemporada: StaffTemporadaNuevo[];
   campos: CampoNuevo[];
   jornadas: JornadaNueva[];
   jornadaDescansos: JornadaDescansoNuevo[];

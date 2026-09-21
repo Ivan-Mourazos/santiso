@@ -1,14 +1,20 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { StaffDto } from "@/lib/dto";
 import { prepararImagen } from "@/lib/imagen-cliente";
 import {
-  borrarMiembroStaff,
+  cargarCandidatosStaff,
   cargarStaff,
   guardarMiembroStaff,
+  incorporarStaff,
+  quitarMiembroStaffDeTemporada,
 } from "@/lib/server/acciones/staff";
-import { useUnsavedChanges } from "@/components/studio/StudioContext";
+import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
+import { Button } from "@/components/ui/foundation/Button";
+import { useCompeticiones } from "@/lib/useCompeticiones";
 import BusyBanner from "./BusyBanner";
+import BarraTemporada from "./plantilla/BarraTemporada";
+import IncorporarDeTemporada, { type Elegido } from "./plantilla/IncorporarDeTemporada";
 
 interface AdminStaffProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -18,7 +24,15 @@ interface AdminStaffProps {
 }
 
 export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: AdminStaffProps) {
+  const { setParams } = useStudio();
+  // La temporada que se consulta sale de la URL (`?temporada=`); sin ella, la activa.
+  const { temporadas, selectedSeasonId: temporadaId } = useCompeticiones(undefined, true);
+  const temporadaNombre = temporadas.find((t) => t.id === temporadaId)?.nombre ?? "";
   const [staff, setStaff] = useState<StaffDto[]>([]);
+  const [incorporando, setIncorporando] = useState(false);
+  const [candidatos, setCandidatos] = useState<{ origen: string; miembros: StaffDto[] } | null>(
+    null,
+  );
   const [nombre, setNombre] = useState("");
   const [cargo, setCargo] = useState("");
   const [fotoFile, setFotoFile] = useState<File | null>(null);
@@ -32,14 +46,37 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
     nombre !== "" || cargo !== "" || fotoFile !== null || Object.keys(pendingPhotos).length > 0,
   );
 
-  useEffect(() => {
-    fetchStaff();
-  }, [tipo, categoria]);
-
-  async function fetchStaff() {
+  const fetchStaff = useCallback(async () => {
+    await Promise.resolve();
+    if (!temporadaId) return;
     setIsFetching(true);
-    setStaff(await cargarStaff(tipo, categoria));
+    setStaff(await cargarStaff(tipo, categoria, temporadaId));
+    const resultado = await cargarCandidatosStaff(tipo, categoria, temporadaId);
+    setCandidatos(
+      resultado.origen ? { origen: resultado.origen.nombre, miembros: resultado.miembros } : null,
+    );
     setIsFetching(false);
+  }, [tipo, categoria, temporadaId]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      fetchStaff();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchStaff]);
+
+  async function handleIncorporar(elegidos: Elegido[]) {
+    const resultado = await incorporarStaff({
+      temporadaId,
+      inscripciones: elegidos.map((e) => e.clave),
+    });
+    if (!resultado.ok) {
+      showToast(resultado.error, "error");
+      return;
+    }
+    showToast(`${resultado.datos} añadido(s) a ${temporadaNombre}`);
+    setIncorporando(false);
+    fetchStaff();
   }
 
   async function handleAddStaff(e: React.FormEvent) {
@@ -52,6 +89,7 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
     try {
       const cuerpo = new FormData();
       cuerpo.set("id", "");
+      cuerpo.set("temporadaId", temporadaId);
       cuerpo.set("nombre", nombre);
       cuerpo.set("cargo", cargo);
       cuerpo.set("tipo", tipo);
@@ -84,12 +122,12 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
     }
   }
 
-  async function handleUpdateFoto(id: string, file: File) {
+  async function handleUpdateFoto(inscripcionId: string, file: File) {
     setBusyText("Procesando y subiendo foto...");
     setBusyProgress(5);
     setLoading(true);
-    setPendingPhotos((pending) => ({ ...pending, [id]: file }));
-    const miembro = staff.find((s) => s.id === id);
+    setPendingPhotos((pending) => ({ ...pending, [inscripcionId]: file }));
+    const miembro = staff.find((s) => s.inscripcion_id === inscripcionId);
     if (!miembro) {
       showToast("No se encontró el miembro", "error");
       setLoading(false);
@@ -97,9 +135,11 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
       return;
     }
     try {
-      // `guardarMiembroStaff` reescribe la fila entera: hay que reenviar nombre, cargo y tipo.
+      // `guardarMiembroStaff` reescribe el papel entero: hay que reenviar nombre, cargo y tipo.
       const cuerpo = new FormData();
-      cuerpo.set("id", id);
+      cuerpo.set("id", miembro.id);
+      cuerpo.set("inscripcionId", inscripcionId);
+      cuerpo.set("temporadaId", temporadaId);
       cuerpo.set("nombre", miembro.nombre);
       cuerpo.set("cargo", miembro.cargo);
       cuerpo.set("tipo", miembro.tipo);
@@ -115,7 +155,7 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
         showToast("Foto actualizada");
         setPendingPhotos((pending) => {
           const remaining = { ...pending };
-          delete remaining[id];
+          delete remaining[inscripcionId];
           return remaining;
         });
         fetchStaff();
@@ -131,22 +171,54 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
     }
   }
 
-  async function handleDeleteStaff(id: string) {
-    showConfirm(`¿Eliminar a este miembro del ${tipo === 'Tecnico' ? 'cuerpo técnico' : 'staff'}?`, async () => {
-      const resultado = await borrarMiembroStaff(id);
-      if (resultado.ok) {
-        fetchStaff();
-        showToast("Miembro eliminado");
-      } else {
-        showToast(resultado.error, "error");
-      }
-    });
+  async function handleQuitarStaff(miembro: StaffDto) {
+    showConfirm(
+      `¿Quitar a ${miembro.nombre} (${miembro.cargo}) de ${temporadaNombre}? Sus otras temporadas no se tocan.`,
+      async () => {
+        const resultado = await quitarMiembroStaffDeTemporada(miembro.inscripcion_id);
+        if (resultado.ok) {
+          fetchStaff();
+          showToast(`${miembro.nombre} ya no está en ${temporadaNombre}`);
+        } else {
+          showToast(resultado.error, "error");
+        }
+      },
+    );
   }
 
   return (
     <div className="card glass">
       <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando staff..." : busyText} progress={loading ? busyProgress : undefined} />
-      <h3>Gestionar {tipo === 'Tecnico' ? `Cuerpo Técnico (${categoria})` : 'Junta Directiva'}</h3>
+      <BarraTemporada
+        temporadas={temporadas}
+        seleccionada={temporadaId}
+        onCambiar={(id) => setParams({ temporada: id })}
+        deshabilitada={loading}
+      />
+      {candidatos && (
+        <IncorporarDeTemporada
+          open={incorporando}
+          onClose={() => setIncorporando(false)}
+          origen={candidatos.origen}
+          candidatos={candidatos.miembros.map((m) => ({
+            clave: m.inscripcion_id,
+            nombre: m.nombre,
+            detalle: m.cargo,
+            foto_url: m.foto_url,
+          }))}
+          onConfirmar={handleIncorporar}
+        />
+      )}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+        <h3>
+          {tipo === 'Tecnico' ? `Cuerpo Técnico (${categoria})` : 'Junta Directiva'}
+        </h3>
+        {candidatos && candidatos.miembros.length > 0 && (
+          <Button variant="secondary" onClick={() => setIncorporando(true)}>
+            Añadir de {candidatos.origen}
+          </Button>
+        )}
+      </div>
       
       <form onSubmit={handleAddStaff} className="admin-form" style={{ marginBottom: '2.5rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 150px auto', gap: '1rem', alignItems: 'flex-end' }}>
@@ -188,13 +260,17 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
             {staff.length === 0 ? (
               <tr>
                 <td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-                  No hay {tipo === 'Tecnico' ? 'técnicos' : 'directivos'} registrados {categoria ? `en ${categoria}` : ''}.
-                  {tipo === 'Tecnico' && <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Prueba a cambiar la categoría Senior/Femenino/Veteranos arriba.</p>}
+                  No hay {tipo === 'Tecnico' ? 'técnicos' : 'directivos'} {categoria ? `en ${categoria} ` : ''}en {temporadaNombre}.
+                  {candidatos && candidatos.miembros.length > 0 && (
+                    <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>
+                      Usa «Añadir de {candidatos.origen}» para traer a quien sigue, o da de alta a los nuevos arriba.
+                    </p>
+                  )}
                 </td>
               </tr>
             ) : (
               staff.map(s => (
-                <tr key={s.id}>
+                <tr key={s.inscripcion_id}>
                   <td>
                     <div style={{ position: 'relative', width: '40px', height: '40px' }}>
                       {s.foto_url ? (
@@ -208,7 +284,7 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
                         <span style={{ fontSize: '10px' }}>+</span>
                         <input disabled={loading} type="file" className="hidden-input" accept="image/*" onChange={(e) => {
                           const f = e.target.files?.[0];
-                          if (f) handleUpdateFoto(s.id, f);
+                          if (f) handleUpdateFoto(s.inscripcion_id, f);
                           e.currentTarget.value = "";
                         }} />
                       </label>
@@ -217,7 +293,7 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
                   <td style={{ fontWeight: 800 }}>{s.nombre}</td>
                   <td><span className="badge-posicion">{s.cargo}</span></td>
                   <td style={{ textAlign: 'right' }}>
-                    <button disabled={loading} onClick={() => handleDeleteStaff(s.id)} className="btn-delete-icon-only" title="Eliminar" style={{ opacity: loading ? 0.6 : 1 }}>
+                    <button disabled={loading} onClick={() => handleQuitarStaff(s)} className="btn-delete-icon-only" title="Quitar de la temporada" aria-label={`Quitar a ${s.nombre} de la temporada`} style={{ opacity: loading ? 0.6 : 1 }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                     </button>
                   </td>

@@ -68,7 +68,9 @@ export async function verificarImportacion({
     ["equipos", s.equipos, modelo.equipos.length],
     ["competicionEquipos", s.competicionEquipos, modelo.competicionEquipos.length],
     ["jugadores", s.jugadores, modelo.jugadores.length],
+    ["jugadoresTemporada", s.jugadoresTemporada, modelo.jugadoresTemporada.length],
     ["staff", s.staff, modelo.staff.length],
+    ["staffTemporada", s.staffTemporada, modelo.staffTemporada.length],
     ["campos", s.campos, modelo.campos.length],
     ["jornadas", s.jornadas, modelo.jornadas.length],
     ["jornadaDescansos", s.jornadaDescansos, modelo.jornadaDescansos.length],
@@ -179,9 +181,12 @@ export async function verificarImportacion({
   };
   for (const fila of await db.select({ clave: s.equipos.escudo }).from(s.equipos))
     anadir(fila.clave);
-  for (const fila of await db.select({ clave: s.jugadores.foto }).from(s.jugadores))
+  for (const fila of await db
+    .select({ clave: s.jugadoresTemporada.foto })
+    .from(s.jugadoresTemporada))
     anadir(fila.clave);
-  for (const fila of await db.select({ clave: s.staff.foto }).from(s.staff)) anadir(fila.clave);
+  for (const fila of await db.select({ clave: s.staffTemporada.foto }).from(s.staffTemporada))
+    anadir(fila.clave);
   for (const fila of await db.select({ clave: s.patrocinadores.logo }).from(s.patrocinadores)) {
     anadir(fila.clave);
   }

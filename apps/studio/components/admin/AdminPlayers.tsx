@@ -1,9 +1,22 @@
 "use client";
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { prepararImagen } from "@/lib/imagen-cliente";
-import { borrarJugador, cargarJugadores, guardarJugador } from "@/lib/server/acciones/jugadores";
-import { useUnsavedChanges } from "@/components/studio/StudioContext";
+import {
+  buscarJugadoresParecidos,
+  cargarCandidatosJugadores,
+  cargarJugadores,
+  guardarJugador,
+  incorporarJugadores,
+  quitarJugadorDeTemporada,
+} from "@/lib/server/acciones/jugadores";
+import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
+import { Button } from "@/components/ui/foundation/Button";
+import { EmptyState } from "@/components/ui/foundation/States";
+import { useCompeticiones } from "@/lib/useCompeticiones";
+import type { JugadorDto } from "@/lib/dto";
 import BusyBanner from "./BusyBanner";
+import BarraTemporada from "./plantilla/BarraTemporada";
+import IncorporarDeTemporada, { type Elegido } from "./plantilla/IncorporarDeTemporada";
 
 interface AdminPlayersProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -13,6 +26,7 @@ interface AdminPlayersProps {
 
 interface Jugador {
   id: string;
+  inscripcion_id: string;
   nombre: string;
   apodo?: string | null;
   dorsal?: number | string | null;
@@ -28,7 +42,17 @@ export default function AdminPlayers({
   showConfirm,
   categoria,
 }: AdminPlayersProps) {
+  const { setParams } = useStudio();
+  // La temporada que se consulta sale de la URL (`?temporada=`); sin ella, la activa.
+  const { temporadas, selectedSeasonId: temporadaId } = useCompeticiones(undefined, true);
+  const temporadaNombre = temporadas.find((t) => t.id === temporadaId)?.nombre ?? "";
   const [jugadores, setJugadores] = useState<Jugador[]>([]);
+  const [incorporando, setIncorporando] = useState(false);
+  const [otrasCategorias, setOtrasCategorias] = useState(false);
+  const [candidatos, setCandidatos] = useState<{ origen: string; jugadores: JugadorDto[] } | null>(
+    null,
+  );
+  const [cargandoCandidatos, setCargandoCandidatos] = useState(false);
   const [nombre, setNombre] = useState("");
   const [apodo, setApodo] = useState("");
   const [dorsal, setDorsal] = useState("");
@@ -84,10 +108,54 @@ export default function AdminPlayers({
 
   const fetchJugadores = useCallback(async () => {
     await Promise.resolve();
+    if (!temporadaId) return;
     setIsFetching(true);
-    setJugadores((await cargarJugadores(categoria)) as Jugador[]);
+    setJugadores((await cargarJugadores(categoria, temporadaId)) as Jugador[]);
     setIsFetching(false);
-  }, [categoria]);
+  }, [categoria, temporadaId]);
+
+  const fetchCandidatos = useCallback(
+    async (todasLasCategorias: boolean) => {
+      if (!temporadaId) return;
+      setCargandoCandidatos(true);
+      const resultado = await cargarCandidatosJugadores(categoria, temporadaId, !todasLasCategorias);
+      setCandidatos(
+        resultado.origen ? { origen: resultado.origen.nombre, jugadores: resultado.jugadores } : null,
+      );
+      setCargandoCandidatos(false);
+    },
+    [categoria, temporadaId],
+  );
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      fetchCandidatos(false);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchCandidatos]);
+
+  async function handleIncorporar(elegidos: Elegido[]) {
+    const porClave = new Map((candidatos?.jugadores ?? []).map((j) => [j.inscripcion_id, j]));
+    const resultado = await incorporarJugadores({
+      temporadaId,
+      categoria,
+      jugadores: elegidos.flatMap((e) => {
+        const jugador = porClave.get(e.clave);
+        return jugador
+          ? [{ jugadorId: jugador.id, desdeInscripcionId: e.clave, dorsal: e.dorsal }]
+          : [];
+      }),
+    });
+    if (!resultado.ok) {
+      showToast(resultado.error, "error");
+      return;
+    }
+    showToast(`${resultado.datos} jugador(es) añadidos a ${temporadaNombre}`);
+    setIncorporando(false);
+    setOtrasCategorias(false);
+    fetchJugadores();
+    fetchCandidatos(false);
+  }
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -98,6 +166,25 @@ export default function AdminPlayers({
 
   async function handleSubmitJugador(e: React.FormEvent) {
     e.preventDefault();
+    // Antes de dar de alta a alguien nuevo, comprobar que no existe ya: si se duplica a la
+    // misma persona, sus goles de cada año quedan partidos entre dos fichas.
+    if (!editingId) {
+      const parecidos = await buscarJugadoresParecidos(nombre);
+      if (parecidos.length > 0) {
+        const lista = parecidos
+          .map((p) => `«${p.nombre}»${p.ultimaTemporada ? ` (${p.ultimaTemporada})` : ""}`)
+          .join(", ");
+        showConfirm(
+          `Ya existe ${lista}. Si es la misma persona, cancela y tráela con «Añadir de la temporada anterior». ¿Crear una ficha nueva de todos modos?`,
+          () => guardarFormulario(),
+        );
+        return;
+      }
+    }
+    await guardarFormulario();
+  }
+
+  async function guardarFormulario() {
     setBusyText(editingId ? "Guardando cambios jugador..." : "Procesando foto y guardando jugador...");
     setBusyProgress(5);
     setLoading(true);
@@ -105,6 +192,7 @@ export default function AdminPlayers({
     try {
       const cuerpo = new FormData();
       cuerpo.set("id", editingId ?? "");
+      cuerpo.set("temporadaId", temporadaId);
       cuerpo.set("nombre", nombre);
       cuerpo.set("apodo", apodo);
       cuerpo.set("dorsal", dorsal);
@@ -155,6 +243,7 @@ export default function AdminPlayers({
       // perderían dorsal, posición, apodo, fecha de nacimiento e historial al cambiar la foto.
       const cuerpo = new FormData();
       cuerpo.set("id", id);
+      cuerpo.set("temporadaId", temporadaId);
       cuerpo.set("nombre", jugador.nombre);
       cuerpo.set("apodo", jugador.apodo ?? "");
       cuerpo.set("dorsal", jugador.dorsal?.toString() ?? "");
@@ -189,16 +278,20 @@ export default function AdminPlayers({
     }
   }
 
-  async function handleDeleteJugador(id: string) {
-    showConfirm("¿Borrar jugador?", async () => {
-      const resultado = await borrarJugador(id);
-      if (resultado.ok) {
-        fetchJugadores();
-        showToast("Jugador eliminado");
-      } else {
-        showToast(resultado.error, "error");
-      }
-    });
+  async function handleQuitarJugador(jugador: Jugador) {
+    showConfirm(
+      `¿Quitar a ${jugador.nombre} de la plantilla de ${temporadaNombre}? Sus partidos y sus otras temporadas no se tocan.`,
+      async () => {
+        const resultado = await quitarJugadorDeTemporada(jugador.inscripcion_id);
+        if (resultado.ok) {
+          fetchJugadores();
+          fetchCandidatos(false);
+          showToast(`${jugador.nombre} ya no está en ${temporadaNombre}`);
+        } else {
+          showToast(resultado.error, "error");
+        }
+      },
+    );
   }
 
   function renderJugadorForm() {
@@ -353,8 +446,46 @@ export default function AdminPlayers({
     );
   }
 
+  const vacia = !isFetching && temporadaId !== "" && jugadores.length === 0;
+
   return (
     <div className="card glass">
+      <BarraTemporada
+        temporadas={temporadas}
+        seleccionada={temporadaId}
+        onCambiar={(id) => setParams({ temporada: id })}
+        deshabilitada={loading}
+      />
+      {candidatos && (
+        <IncorporarDeTemporada
+          open={incorporando}
+          onClose={() => {
+            setIncorporando(false);
+            setOtrasCategorias(false);
+            fetchCandidatos(false);
+          }}
+          origen={candidatos.origen}
+          cargando={cargandoCandidatos}
+          conDorsal
+          otrasCategorias={{
+            activo: otrasCategorias,
+            onCambiar: (activo) => {
+              setOtrasCategorias(activo);
+              fetchCandidatos(activo);
+            },
+          }}
+          candidatos={candidatos.jugadores.map((j) => ({
+            clave: j.inscripcion_id,
+            nombre: j.nombre,
+            detalle: [j.categoria !== categoria ? j.categoria : null, j.posicion, j.apodo]
+              .filter(Boolean)
+              .join(" · "),
+            foto_url: j.foto_url,
+            dorsal: j.dorsal,
+          }))}
+          onConfirmar={handleIncorporar}
+        />
+      )}
       <BusyBanner
         show={loading || isFetching}
         text={isFetching ? "Cargando jugadores..." : busyText}
@@ -374,6 +505,11 @@ export default function AdminPlayers({
             Gestiona jugadores, motes, dorsales, posiciones y fotos.
           </p>
         </div>
+        {candidatos && candidatos.jugadores.length > 0 && jugadores.length > 0 && (
+          <Button variant="secondary" onClick={() => setIncorporando(true)}>
+            Añadir de {candidatos.origen}
+          </Button>
+        )}
         {editingId && (
           <button
             type="button"
@@ -531,7 +667,23 @@ export default function AdminPlayers({
       </form>
       )}
 
-      <div className="table-responsive">
+      {vacia && (
+        <EmptyState
+          title={`Todavía no hay jugadores en ${categoria} ${temporadaNombre}.`}
+          detail={
+            candidatos
+              ? `Trae a quien sigue de ${candidatos.origen} o da de alta a los nuevos con el formulario de arriba.`
+              : "Da de alta a los jugadores con el formulario de arriba."
+          }
+          action={
+            candidatos && candidatos.jugadores.length > 0 ? (
+              <Button onClick={() => setIncorporando(true)}>Añadir de {candidatos.origen}</Button>
+            ) : undefined
+          }
+        />
+      )}
+
+      <div className="table-responsive" hidden={vacia}>
         <table className="admin-table">
           <thead>
             <tr>
@@ -690,9 +842,10 @@ export default function AdminPlayers({
                     </button>
                     <button
                       disabled={loading}
-                      onClick={() => handleDeleteJugador(j.id)}
+                      onClick={() => handleQuitarJugador(j)}
                       className="btn-delete btn-action"
-                      title="Eliminar jugador"
+                      title="Quitar de la temporada"
+                      aria-label={`Quitar a ${j.nombre} de la temporada`}
                       style={{ padding: "0.5rem" }}
                     >
                       <svg

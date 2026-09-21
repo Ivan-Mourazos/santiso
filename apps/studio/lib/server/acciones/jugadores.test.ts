@@ -12,8 +12,27 @@ async function entorno() {
   const bd = await import("@santiso/db");
   const inicial = await bd.abrirDb(bd.urlArchivo(path.join(dir, "santiso.db")));
   await bd.migrarBd(inicial.db);
+  // Dos temporadas: la anterior para traer jugadores y la activa, que es la que se edita.
+  const temporadas = await inicial.db
+    .insert(bd.schema.temporadas)
+    .values([
+      { nombre: "2025/26", activa: false },
+      { nombre: "2026/27", activa: true },
+    ])
+    .returning({ id: bd.schema.temporadas.id, nombre: bd.schema.temporadas.nombre });
   inicial.cerrar();
-  return await import("./jugadores");
+  const idDe = (nombre: string) => {
+    const t = temporadas.find((x) => x.nombre === nombre);
+    if (!t) throw new Error(`sin temporada ${nombre}`);
+    return t.id;
+  };
+  return {
+    ...(await import("./jugadores")),
+    anterior: idDe("2025/26"),
+    activa: idDe("2026/27"),
+    bd,
+    dir,
+  };
 }
 
 const pngRojo = () =>
@@ -195,11 +214,110 @@ describe("acciones de jugadores", () => {
     expect(await cargarJugadores("Femenino")).toHaveLength(1);
   });
 
-  it("borra un jugador", async () => {
-    const { guardarJugador, borrarJugador, cargarJugadores } = await entorno();
+  it("sin decir temporada, trabaja en la activa", async () => {
+    const { guardarJugador, activa } = await entorno();
     const creado = await guardarJugador(formulario(base));
+    expect(creado).toMatchObject({ ok: true, datos: { temporada_id: activa } });
+  });
+
+  it("la misma persona tiene dorsal y foto distintos cada temporada", async () => {
+    const { guardarJugador, cargarJugadores, anterior, activa } = await entorno();
+    const antes = await guardarJugador(formulario({ ...base, temporadaId: anterior, dorsal: "9" }));
+    if (!antes.ok) throw new Error("no se creó");
+    await guardarJugador(
+      formulario({ ...base, id: antes.datos.id, temporadaId: activa, dorsal: "10" }),
+    );
+
+    expect((await cargarJugadores("Femenino", anterior))[0]).toMatchObject({ dorsal: 9 });
+    expect((await cargarJugadores("Femenino", activa))[0]).toMatchObject({
+      id: antes.datos.id,
+      dorsal: 10,
+    });
+  });
+
+  it("quitar de una temporada no toca las demás ni borra a quien tiene historia", async () => {
+    const { guardarJugador, quitarJugadorDeTemporada, cargarJugadores, anterior, activa } =
+      await entorno();
+    const antes = await guardarJugador(formulario({ ...base, temporadaId: anterior }));
+    if (!antes.ok) throw new Error("no se creó");
+    const ahora = await guardarJugador(
+      formulario({ ...base, id: antes.datos.id, temporadaId: activa }),
+    );
+    if (!ahora.ok) throw new Error("no se inscribió");
+
+    expect(await quitarJugadorDeTemporada(ahora.datos.inscripcion_id)).toEqual({
+      ok: true,
+      datos: null,
+    });
+    expect(await cargarJugadores("Femenino", activa)).toHaveLength(0);
+    expect(await cargarJugadores("Femenino", anterior)).toHaveLength(1);
+  });
+
+  it("quitar al único alta de alguien sin partidos lo borra: era un error", async () => {
+    const { guardarJugador, quitarJugadorDeTemporada, buscarJugadoresParecidos } = await entorno();
+    const creado = await guardarJugador(formulario({ ...base, nombre: "Errata Total" }));
     if (!creado.ok) throw new Error("no se creó");
-    expect(await borrarJugador(creado.datos.id)).toEqual({ ok: true, datos: null });
-    expect(await cargarJugadores("Femenino")).toHaveLength(0);
+    await quitarJugadorDeTemporada(creado.datos.inscripcion_id);
+    expect(await buscarJugadoresParecidos("Errata Total")).toEqual([]);
+  });
+
+  it("propone a los del año pasado que aún no están, y los trae con su dorsal y su foto", async () => {
+    const {
+      guardarJugador,
+      cargarCandidatosJugadores,
+      incorporarJugadores,
+      cargarJugadores,
+      anterior,
+      activa,
+    } = await entorno();
+    const foto = new File([await pngRojo()], "f.png", { type: "image/png" });
+    const sigue = await guardarJugador(
+      formulario({ ...base, nombre: "Sigue", temporadaId: anterior, dorsal: "9", posicion: "DC" }, foto),
+    );
+    const cambiaDorsal = await guardarJugador(
+      formulario({ ...base, nombre: "Cambia", temporadaId: anterior, dorsal: "4" }),
+    );
+    await guardarJugador(formulario({ ...base, nombre: "Se fue", temporadaId: anterior }));
+    if (!sigue.ok || !cambiaDorsal.ok) throw new Error("no se crearon");
+
+    const candidatos = await cargarCandidatosJugadores("Femenino", activa);
+    expect(candidatos.origen?.nombre).toBe("2025/26");
+    expect(candidatos.jugadores.map((j) => j.nombre).sort()).toEqual(["Cambia", "Se fue", "Sigue"]);
+
+    expect(
+      await incorporarJugadores({
+        temporadaId: activa,
+        categoria: "Femenino",
+        jugadores: [
+          { jugadorId: sigue.datos.id, desdeInscripcionId: sigue.datos.inscripcion_id },
+          {
+            jugadorId: cambiaDorsal.datos.id,
+            desdeInscripcionId: cambiaDorsal.datos.inscripcion_id,
+            dorsal: 14,
+          },
+        ],
+      }),
+    ).toEqual({ ok: true, datos: 2 });
+
+    const ahora = await cargarJugadores("Femenino", activa);
+    expect(ahora.find((j) => j.nombre === "Sigue")).toMatchObject({
+      dorsal: 9,
+      posicion: "DC",
+      foto_url: sigue.datos.foto_url,
+    });
+    expect(ahora.find((j) => j.nombre === "Cambia")).toMatchObject({ dorsal: 14 });
+    // Ya incorporados, dejan de proponerse.
+    expect((await cargarCandidatosJugadores("Femenino", activa)).jugadores.map((j) => j.nombre)).toEqual([
+      "Se fue",
+    ]);
+  });
+
+  it("avisa de nombres parecidos para no duplicar a la misma persona", async () => {
+    const { guardarJugador, buscarJugadoresParecidos, anterior } = await entorno();
+    await guardarJugador(formulario({ ...base, nombre: "Xan Fiel Pérez", temporadaId: anterior }));
+    expect(await buscarJugadoresParecidos("xan fiel perez")).toEqual([
+      expect.objectContaining({ nombre: "Xan Fiel Pérez", ultimaTemporada: "2025/26" }),
+    ]);
+    expect(await buscarJugadoresParecidos("Brais Rei")).toEqual([]);
   });
 });

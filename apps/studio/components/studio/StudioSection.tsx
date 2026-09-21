@@ -2,7 +2,7 @@
 import dynamic from "next/dynamic";
 import { useSyncExternalStore } from "react";
 import type { Seccion } from "@/lib/navigation/contexto";
-import { categoriaDe } from "@/lib/navigation/contexto";
+import { categoriaDe, categoriaPlantillaDe } from "@/lib/navigation/contexto";
 import { TEMPLATES } from "@/components/admin/cartel/types";
 import { LoadingState } from "@/components/ui/foundation/States";
 import { Select } from "@/components/ui/foundation/Fields";
@@ -31,20 +31,25 @@ export function StudioSection({ section }: { section: Seccion }) {
   const { params, setParams, showToast, showConfirm } = useStudio();
   const hydrated = useSyncExternalStore(subscribeHydration, clientReady, serverReady);
   const category = categoriaDe(params);
+  const squadCategory = categoriaPlantillaDe(params);
   const feedback = { showToast, showConfirm };
   const contextual =
     section === "calendario" || section === "clasificacion" || section === "equipos";
+  // Plantilla y staff son por temporada: cambiar de temporada tiene que volver a montarlos.
+  const squad = section === "jugadores" || section === "tecnicos" || section === "directiva";
   const key = contextual
     ? `${section}:${category}:${params.get("temporada") ?? ""}:${params.get("competicion") ?? ""}`
-    : `${section}:${category}`;
+    : squad
+      ? `${section}:${squadCategory}:${params.get("temporada") ?? ""}`
+      : `${section}:${category}`;
   const template = TEMPLATES.find((t) => t.id === params.get("plantilla"))?.id ?? "partido";
   if (!hydrated) return <LoadingState title="Preparando sección…" />;
   return (
     <div key={key} className={styles.panel}>
       {section === "calendario" && <Calendar {...feedback} categoria={category} />}
       {section === "clasificacion" && <League {...feedback} categoria={category} />}
-      {section === "jugadores" && <Players {...feedback} categoria={category} />}
-      {section === "tecnicos" && <Staff {...feedback} tipo="Tecnico" categoria={category} />}
+      {section === "jugadores" && <Players {...feedback} categoria={squadCategory} />}
+      {section === "tecnicos" && <Staff {...feedback} tipo="Tecnico" categoria={squadCategory} />}
       {section === "directiva" && <Staff {...feedback} tipo="Directiva" />}
       {section === "equipos" && <Teams {...feedback} categoria={category} />}
       {section === "patrocinadores" && <Sponsors {...feedback} />}
