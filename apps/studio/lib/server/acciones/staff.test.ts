@@ -11,8 +11,16 @@ async function entorno() {
   const bd = await import("@santiso/db");
   const inicial = await bd.abrirDb(bd.urlArchivo(path.join(dir, "santiso.db")));
   await bd.migrarBd(inicial.db);
+  const temporadas = await inicial.db
+    .insert(bd.schema.temporadas)
+    .values([
+      { nombre: "2025/26", activa: false },
+      { nombre: "2026/27", activa: true },
+    ])
+    .returning({ id: bd.schema.temporadas.id, nombre: bd.schema.temporadas.nombre });
   inicial.cerrar();
-  return await import("./staff");
+  const idDe = (nombre: string) => temporadas.find((t) => t.nombre === nombre)?.id ?? "";
+  return { ...(await import("./staff")), anterior: idDe("2025/26"), activa: idDe("2026/27") };
 }
 
 const formulario = (campos: Record<string, string>) => {
@@ -130,13 +138,55 @@ describe("acciones de staff", () => {
     expect((await cargarStaff("Directiva")).map((s) => s.nombre)).toEqual(["Ana"]);
   });
 
-  it("borra un miembro", async () => {
-    const { guardarMiembroStaff, borrarMiembroStaff, cargarStaff } = await entorno();
+  it("el entrenador nuevo no borra al del año pasado", async () => {
+    const { guardarMiembroStaff, cargarStaff, anterior, activa } = await entorno();
+    const tecnico = { id: "", cargo: "Entrenador", tipo: "Tecnico", categoria: "Senior" };
+    await guardarMiembroStaff(formulario({ ...tecnico, nombre: "Luis", temporadaId: anterior }));
+    await guardarMiembroStaff(formulario({ ...tecnico, nombre: "Pepe", temporadaId: activa }));
+
+    expect((await cargarStaff("Tecnico", "Senior", anterior)).map((s) => s.nombre)).toEqual(["Luis"]);
+    expect((await cargarStaff("Tecnico", "Senior", activa)).map((s) => s.nombre)).toEqual(["Pepe"]);
+  });
+
+  it("trae del año pasado a quien sigue, con su cargo y su foto", async () => {
+    const { guardarMiembroStaff, cargarCandidatosStaff, incorporarStaff, cargarStaff, anterior, activa } =
+      await entorno();
+    const presidenta = await guardarMiembroStaff(
+      formulario({ id: "", nombre: "Ana", cargo: "Presidenta", tipo: "Directiva", temporadaId: anterior }),
+    );
+    await guardarMiembroStaff(
+      formulario({ id: "", nombre: "Xosé", cargo: "Tesorero", tipo: "Directiva", temporadaId: anterior }),
+    );
+    if (!presidenta.ok) throw new Error("no se creó");
+
+    const candidatos = await cargarCandidatosStaff("Directiva", undefined, activa);
+    expect(candidatos.miembros.map((m) => m.nombre).sort()).toEqual(["Ana", "Xosé"]);
+
+    expect(await incorporarStaff({ temporadaId: activa, inscripciones: [presidenta.datos.inscripcion_id] })).toEqual({
+      ok: true,
+      datos: 1,
+    });
+    expect(await cargarStaff("Directiva", undefined, activa)).toEqual([
+      expect.objectContaining({ id: presidenta.datos.id, cargo: "Presidenta" }),
+    ]);
+    expect((await cargarCandidatosStaff("Directiva", undefined, activa)).miembros.map((m) => m.nombre)).toEqual([
+      "Xosé",
+    ]);
+  });
+
+  it("quitar un papel no borra a quien lo tiene en otra temporada", async () => {
+    const { guardarMiembroStaff, incorporarStaff, quitarMiembroStaffDeTemporada, cargarStaff, anterior, activa } =
+      await entorno();
     const creado = await guardarMiembroStaff(
-      formulario({ id: "", nombre: "Ana", cargo: "Presidenta", tipo: "Directiva" }),
+      formulario({ id: "", nombre: "Ana", cargo: "Presidenta", tipo: "Directiva", temporadaId: anterior }),
     );
     if (!creado.ok) throw new Error("no se creó");
-    expect(await borrarMiembroStaff(creado.datos.id)).toEqual({ ok: true, datos: null });
-    expect(await cargarStaff("Directiva")).toHaveLength(0);
+    await incorporarStaff({ temporadaId: activa, inscripciones: [creado.datos.inscripcion_id] });
+    const [deEsteAno] = await cargarStaff("Directiva", undefined, activa);
+    if (!deEsteAno) throw new Error("no se incorporó");
+
+    expect(await quitarMiembroStaffDeTemporada(deEsteAno.inscripcion_id)).toEqual({ ok: true, datos: null });
+    expect(await cargarStaff("Directiva", undefined, activa)).toHaveLength(0);
+    expect(await cargarStaff("Directiva", undefined, anterior)).toHaveLength(1);
   });
 });

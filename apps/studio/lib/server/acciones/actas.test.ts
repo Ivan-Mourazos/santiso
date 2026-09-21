@@ -47,11 +47,16 @@ async function entorno() {
   if (!partido) throw new Error("sin partido");
   const jugadores = await db
     .insert(bd.schema.jugadores)
-    .values([
-      { nombre: "Ana", categoria: "Senior", dorsal: 1 },
-      { nombre: "Bea", categoria: "Senior", dorsal: 2 },
-    ])
+    .values([{ nombre: "Ana" }, { nombre: "Bea" }])
     .returning({ id: bd.schema.jugadores.id, nombre: bd.schema.jugadores.nombre });
+  await db.insert(bd.schema.jugadoresTemporada).values(
+    jugadores.map((j, i) => ({
+      temporadaId: temporada.id,
+      jugadorId: j.id,
+      categoria: "Senior" as const,
+      dorsal: i + 1,
+    })),
+  );
   cerrar();
 
   const idDe = (nombre: string) => {

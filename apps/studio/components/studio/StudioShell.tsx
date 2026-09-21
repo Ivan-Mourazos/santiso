@@ -2,7 +2,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { SECCIONES, categoriaDe, rutaSeccion } from "@/lib/navigation/contexto";
+import {
+  SECCIONES,
+  SECCIONES_DE_PLANTILLA,
+  categoriaDe,
+  categoriaPlantillaDe,
+  rutaSeccion,
+} from "@/lib/navigation/contexto";
 import { TEMPLATES } from "@/components/admin/cartel/types";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
@@ -14,7 +20,9 @@ export function StudioShell({ children }: { children: ReactNode }) {
   const { params, navigate, setParams } = useStudio();
   const [menu, setMenu] = useState(false);
   const section = SECCIONES.find((item) => pathname === `/admin/${item.id}`);
-  const category = categoriaDe(params);
+  const squadSection = SECCIONES_DE_PLANTILLA.some((id) => id === section?.id);
+  const category = squadSection ? categoriaPlantillaDe(params) : categoriaDe(params);
+  const categories = squadSection ? ["Senior", "Femenino", "Veteranos"] : ["Senior", "Veteranos"];
   const showCategory = ["calendario", "clasificacion", "jugadores", "tecnicos", "equipos"].some(
     (id) => id === section?.id,
   );
@@ -82,7 +90,7 @@ export function StudioShell({ children }: { children: ReactNode }) {
           </div>
           {showCategory && (
             <div role="group" aria-label="Categoría deportiva" className={styles.categories}>
-              {["Senior", "Veteranos"].map((value) => (
+              {categories.map((value) => (
                 <Button
                   key={value}
                   variant={category === value ? "primary" : "secondary"}

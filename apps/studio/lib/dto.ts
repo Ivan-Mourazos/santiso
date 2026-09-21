@@ -52,7 +52,11 @@ export interface PantallaClasificacion {
 
 /** @deprecated Ver TemporadaDto. `foto_url` es ahora una ruta local `/media/<clave>`. */
 export interface JugadorDto {
+  /** La persona. Es estable entre temporadas: la usan convocatorias y eventos. */
   id: string;
+  /** La inscripción de esa persona en la temporada consultada. */
+  inscripcion_id: string;
+  temporada_id: string;
   nombre: string;
   apodo: string | null;
   dorsal: number | null;
@@ -65,7 +69,11 @@ export interface JugadorDto {
 
 /** @deprecated Ver TemporadaDto. `tipo` se devuelve ya en el catálogo nuevo (`tecnico`/`directiva`). */
 export interface StaffDto {
+  /** La persona. */
   id: string;
+  /** Su papel en la temporada consultada: una persona puede tener dos el mismo año. */
+  inscripcion_id: string;
+  temporada_id: string;
   nombre: string;
   cargo: string;
   tipo: string;

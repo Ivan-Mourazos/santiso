@@ -2,21 +2,45 @@
 
 import { schema } from "@santiso/db";
 import { type Categoria, normalizarCategoria } from "@santiso/domain";
-import { eq, max } from "drizzle-orm";
+import { and, eq, max } from "drizzle-orm";
 import type { StaffDto } from "@/lib/dto";
-import { urlMedia } from "@/lib/media";
 import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
-import { listarStaff } from "@/lib/server/consultas/staff";
+import {
+  candidatosStaffDeTemporadaAnterior,
+  listarStaff,
+  type CandidatosStaff,
+} from "@/lib/server/consultas/staff";
 import { obtenerDb } from "@/lib/server/db";
 import { guardarImagenOpcional } from "@/lib/server/imagen";
+import { resolverTemporada } from "@/lib/server/temporada";
 import { normalizarTipoStaff } from "@/lib/server/tipos-staff";
 
-export async function cargarStaff(tipo: string, categoria?: string): Promise<StaffDto[]> {
-  return listarStaff(tipo, categoria);
+/** Staff de una temporada; sin `temporadaId`, la activa. */
+export async function cargarStaff(
+  tipo: string,
+  categoria?: string,
+  temporadaId?: string | null,
+): Promise<StaffDto[]> {
+  return listarStaff(tipo, categoria, temporadaId);
 }
 
+export async function cargarCandidatosStaff(
+  tipo: string,
+  categoria?: string,
+  temporadaId?: string | null,
+): Promise<CandidatosStaff> {
+  return candidatosStaffDeTemporadaAnterior(tipo, categoria, temporadaId);
+}
+
+/**
+ * Alta o edición de un papel del staff **en una temporada** (la activa si no se indica otra).
+ *
+ * - `id` es la persona: vacío la crea; con valor, actualiza su nombre.
+ * - `inscripcionId` es el papel de esa temporada: vacío lo crea; con valor, lo reescribe entero.
+ */
 export async function guardarMiembroStaff(formulario: FormData): Promise<Resultado<StaffDto>> {
   const id = String(formulario.get("id") ?? "").trim();
+  const inscripcionId = String(formulario.get("inscripcionId") ?? "").trim();
   const nombre = String(formulario.get("nombre") ?? "").trim();
   const cargo = String(formulario.get("cargo") ?? "").trim();
   if (!nombre) return fallo("El nombre es obligatorio.", { nombre: "Obligatorio" });
@@ -37,62 +61,139 @@ export async function guardarMiembroStaff(formulario: FormData): Promise<Resulta
     }
   }
 
+  const temporada = await resolverTemporada(
+    String(formulario.get("temporadaId") ?? "").trim() || null,
+  );
+  if (!temporada) return fallo("No hay temporada en la que dar de alta. Crea una antes.");
+
   const imagen = await guardarImagenOpcional(formulario, "foto", "staff");
   if (!imagen.ok) return imagen;
 
-  return capturar("No se pudo guardar el miembro del staff.", async () => {
-    const { db } = await obtenerDb();
-    const columnas = {
-      id: schema.staff.id,
-      nombre: schema.staff.nombre,
-      cargo: schema.staff.cargo,
-      tipo: schema.staff.tipo,
-      categoria: schema.staff.categoria,
-      foto: schema.staff.foto,
-      orden: schema.staff.orden,
-    };
-    let fila;
-    if (id) {
-      [fila] = await db
-        .update(schema.staff)
-        .set({ nombre, cargo, tipo, categoria, ...(imagen.datos ? { foto: imagen.datos } : {}) })
-        .where(eq(schema.staff.id, id))
-        .returning(columnas);
-    } else {
-      const [ultimo] = await db
-        .select({ orden: max(schema.staff.orden) })
-        .from(schema.staff)
-        .where(eq(schema.staff.tipo, tipo));
-      [fila] = await db
-        .insert(schema.staff)
+  const { db } = await obtenerDb();
+  const guardado = await capturar("No se pudo guardar el miembro del staff.", async () =>
+    db.transaction(async (tx) => {
+      let staffId = id;
+      if (staffId) {
+        const [persona] = await tx
+          .update(schema.staff)
+          .set({ nombre })
+          .where(eq(schema.staff.id, staffId))
+          .returning({ id: schema.staff.id });
+        if (!persona) throw new Error("La persona no existe");
+      } else {
+        const [persona] = await tx
+          .insert(schema.staff)
+          .values({ nombre })
+          .returning({ id: schema.staff.id });
+        if (!persona) throw new Error("La operación no devolvió ninguna fila");
+        staffId = persona.id;
+      }
+
+      const papel = { cargo, tipo, categoria, ...(imagen.datos ? { foto: imagen.datos } : {}) };
+      if (inscripcionId) {
+        const [actualizado] = await tx
+          .update(schema.staffTemporada)
+          .set(papel)
+          .where(
+            and(
+              eq(schema.staffTemporada.id, inscripcionId),
+              eq(schema.staffTemporada.staffId, staffId),
+            ),
+          )
+          .returning({ id: schema.staffTemporada.id });
+        if (!actualizado) throw new Error("El papel de esa temporada no existe");
+        return actualizado.id;
+      }
+
+      const [ultimo] = await tx
+        .select({ orden: max(schema.staffTemporada.orden) })
+        .from(schema.staffTemporada)
+        .where(
+          and(
+            eq(schema.staffTemporada.temporadaId, temporada.id),
+            eq(schema.staffTemporada.tipo, tipo),
+          ),
+        );
+      const [creado] = await tx
+        .insert(schema.staffTemporada)
         .values({
-          nombre,
-          cargo,
-          tipo,
-          categoria,
+          temporadaId: temporada.id,
+          staffId,
           orden: (ultimo?.orden ?? 0) + 10,
-          ...(imagen.datos ? { foto: imagen.datos } : {}),
+          ...papel,
         })
-        .returning(columnas);
-    }
-    if (!fila) throw new Error("La operación no devolvió ninguna fila");
-    return {
-      id: fila.id,
-      nombre: fila.nombre,
-      cargo: fila.cargo,
-      tipo: fila.tipo,
-      categoria: fila.categoria,
-      foto_url: fila.foto ? urlMedia(fila.foto) : null,
-      orden: fila.orden,
-    };
-  });
+        .returning({ id: schema.staffTemporada.id });
+      if (!creado) throw new Error("La operación no devolvió ninguna fila");
+      return creado.id;
+    }),
+  );
+  if (!guardado.ok) return guardado;
+
+  const [fila] = (await listarStaff(tipo, categoria ?? undefined, temporada.id)).filter(
+    (miembro) => miembro.inscripcion_id === guardado.datos,
+  );
+  return fila ? exito(fila) : fallo("Se guardó pero no se pudo releer.");
 }
 
-export async function borrarMiembroStaff(id: string): Promise<Resultado<null>> {
+/** Trae a esta temporada papeles de otra, con el mismo cargo, orden y foto. */
+export async function incorporarStaff(entrada: {
+  temporadaId?: string | null;
+  inscripciones: string[];
+}): Promise<Resultado<number>> {
+  const temporada = await resolverTemporada(entrada.temporadaId);
+  if (!temporada) return fallo("No hay temporada de destino.");
+  if (entrada.inscripciones.length === 0) return exito(0);
+
   const { db } = await obtenerDb();
-  const resultado = await capturar("No se pudo borrar el miembro del staff.", async () => {
-    await db.delete(schema.staff).where(eq(schema.staff.id, id));
-    return null;
-  });
+  return capturar("No se pudo incorporar al staff.", async () =>
+    db.transaction(async (tx) => {
+      let incorporados = 0;
+      for (const inscripcionId of entrada.inscripciones) {
+        const [origen] = await tx
+          .select()
+          .from(schema.staffTemporada)
+          .where(eq(schema.staffTemporada.id, inscripcionId));
+        if (!origen) throw new Error("El papel de origen no existe");
+        if (origen.temporadaId === temporada.id) continue;
+        await tx.insert(schema.staffTemporada).values({
+          temporadaId: temporada.id,
+          staffId: origen.staffId,
+          tipo: origen.tipo,
+          categoria: origen.categoria,
+          cargo: origen.cargo,
+          orden: origen.orden,
+          foto: origen.foto,
+        });
+        incorporados += 1;
+      }
+      return incorporados;
+    }),
+  );
+}
+
+/**
+ * Quita un papel de una temporada. **No borra a la persona** si tiene papel en otra; si se queda
+ * sin ninguno, era un alta por error y se borra también (el staff no cuelga de ningún partido).
+ */
+export async function quitarMiembroStaffDeTemporada(
+  inscripcionId: string,
+): Promise<Resultado<null>> {
+  const { db } = await obtenerDb();
+  const resultado = await capturar("No se pudo quitar al miembro del staff.", async () =>
+    db.transaction(async (tx) => {
+      const [papel] = await tx
+        .delete(schema.staffTemporada)
+        .where(eq(schema.staffTemporada.id, inscripcionId))
+        .returning({ staffId: schema.staffTemporada.staffId });
+      if (!papel) return null;
+      const [otro] = await tx
+        .select({ id: schema.staffTemporada.id })
+        .from(schema.staffTemporada)
+        .where(eq(schema.staffTemporada.staffId, papel.staffId))
+        .limit(1);
+      if (!otro) await tx.delete(schema.staff).where(eq(schema.staff.id, papel.staffId));
+      return null;
+    }),
+  );
   return resultado.ok ? exito(null) : resultado;
 }

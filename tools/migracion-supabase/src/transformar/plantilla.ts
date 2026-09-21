@@ -11,14 +11,14 @@ import {
 import { claveMediaDesdeUrl } from "../snapshot/media";
 import type { Snapshot } from "../snapshot/tipos";
 import { marcasDesde, textoOpcional } from "./comunes";
-import { ErrorMigracion, type Informe, type JugadorNuevo, type StaffNuevo } from "./tipos";
+import { ErrorMigracion, type Informe, type JugadorLegado, type StaffLegado } from "./tipos";
 
 /** Jugadores y R13 (staff). */
 export function transformarPlantilla(
   origen: Snapshot,
   informe: Informe,
-): { jugadores: JugadorNuevo[]; staff: StaffNuevo[] } {
-  const jugadores = origen.jugadores.map((fila): JugadorNuevo => {
+): { jugadores: JugadorLegado[]; staff: StaffLegado[] } {
+  const jugadores = origen.jugadores.map((fila): JugadorLegado => {
     if (!fila.categoria) {
       throw new ErrorMigracion(`El jugador "${fila.nombre}" no tiene categoría.`);
     }
@@ -52,7 +52,7 @@ export function transformarPlantilla(
   const siguienteOrden = new Map<string, number>();
   const staff = [...origen.staff_club]
     .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""))
-    .map((fila): StaffNuevo => {
+    .map((fila): StaffLegado => {
       const tipo = claveNombre(fila.tipo);
       if (!esValorDe(TIPOS_STAFF, tipo)) {
         throw new ErrorMigracion(`Tipo de staff desconocido "${fila.tipo}" en "${fila.nombre}".`);

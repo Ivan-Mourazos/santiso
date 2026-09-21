@@ -25,7 +25,9 @@ export async function importarModelo(db: Db, modelo: ModeloNuevo): Promise<void>
     await insertar(tx, s.equipos, modelo.equipos);
     await insertar(tx, s.competicionEquipos, modelo.competicionEquipos);
     await insertar(tx, s.jugadores, modelo.jugadores);
+    await insertar(tx, s.jugadoresTemporada, modelo.jugadoresTemporada);
     await insertar(tx, s.staff, modelo.staff);
+    await insertar(tx, s.staffTemporada, modelo.staffTemporada);
     await insertar(tx, s.campos, modelo.campos);
     await insertar(tx, s.jornadas, modelo.jornadas);
     await insertar(tx, s.jornadaDescansos, modelo.jornadaDescansos);

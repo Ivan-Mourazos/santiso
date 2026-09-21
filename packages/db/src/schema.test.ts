@@ -36,10 +36,7 @@ async function sembrar() {
     .insert(s.jornadas)
     .values({ competicionId: competicion!.id, numero: 1 })
     .returning();
-  const [jugador] = await db
-    .insert(s.jugadores)
-    .values({ nombre: "Jugador", categoria: "Senior", dorsal: 9 })
-    .returning();
+  const [jugador] = await db.insert(s.jugadores).values({ nombre: "Jugador" }).returning();
   return {
     temporada: temporada!,
     competicion: competicion!,
@@ -196,13 +193,18 @@ describe("acta", () => {
 describe("staff, JSON y ajustes", () => {
   it("la directiva no tiene categoría y el técnico sí", async () => {
     const { db } = conexion;
+    const { temporada } = await sembrar();
+    const [persona] = await db.insert(s.staff).values({ nombre: "P" }).returning();
+    const base = { temporadaId: temporada.id, staffId: persona!.id };
     await rechaza(
       db
-        .insert(s.staff)
-        .values({ nombre: "P", cargo: "Presidente", tipo: "directiva", categoria: "Senior" }),
+        .insert(s.staffTemporada)
+        .values({ ...base, cargo: "Presidente", tipo: "directiva", categoria: "Senior" }),
     );
-    await rechaza(db.insert(s.staff).values({ nombre: "E", cargo: "Entrenador", tipo: "tecnico" }));
-    await db.insert(s.staff).values({ nombre: "P", cargo: "Presidente", tipo: "directiva" });
+    await rechaza(
+      db.insert(s.staffTemporada).values({ ...base, cargo: "Entrenador", tipo: "tecnico" }),
+    );
+    await db.insert(s.staffTemporada).values({ ...base, cargo: "Presidente", tipo: "directiva" });
   });
 
   it("guarda y lee JSON con valores por defecto", async () => {
@@ -219,5 +221,74 @@ describe("staff, JSON y ajustes", () => {
 
     await db.insert(s.ajustes).values({ id: "cartel.orden_logos", valor: "xunta_izquierda" });
     expect((await db.select().from(s.ajustes))[0]?.valor).toBe("xunta_izquierda");
+  });
+});
+
+describe("plantilla por temporada", () => {
+  async function dosTemporadas() {
+    const { db } = conexion;
+    const base = await sembrar();
+    const [anterior] = await db
+      .insert(s.temporadas)
+      .values({ nombre: "2025/26", activa: false })
+      .returning();
+    return { ...base, anterior: anterior! };
+  }
+
+  it("una persona se inscribe una vez por temporada y categoría, pero puede estar en dos", async () => {
+    const { db } = conexion;
+    const { temporada, anterior, jugador } = await dosTemporadas();
+    const fila = { jugadorId: jugador.id, categoria: "Senior" as const, dorsal: 9 };
+    await db.insert(s.jugadoresTemporada).values({ ...fila, temporadaId: temporada.id });
+    await rechaza(db.insert(s.jugadoresTemporada).values({ ...fila, temporadaId: temporada.id }));
+    // Otra temporada, u otra categoría la misma temporada: sí.
+    await db.insert(s.jugadoresTemporada).values({ ...fila, temporadaId: anterior.id, dorsal: 10 });
+    await db
+      .insert(s.jugadoresTemporada)
+      .values({ ...fila, temporadaId: temporada.id, categoria: "Veteranos" });
+    expect(await db.select().from(s.jugadoresTemporada)).toHaveLength(3);
+  });
+
+  it("el dorsal repetido se admite: es un aviso de pantalla, no una restricción", async () => {
+    const { db } = conexion;
+    const { temporada, jugador } = await dosTemporadas();
+    const [otro] = await db.insert(s.jugadores).values({ nombre: "Otro" }).returning();
+    await db.insert(s.jugadoresTemporada).values([
+      { temporadaId: temporada.id, jugadorId: jugador.id, categoria: "Senior", dorsal: 9 },
+      { temporadaId: temporada.id, jugadorId: otro!.id, categoria: "Senior", dorsal: 9 },
+    ]);
+  });
+
+  it("borrar una temporada borra sus inscripciones, nunca a las personas", async () => {
+    const { db } = conexion;
+    const { anterior, jugador } = await dosTemporadas();
+    const [persona] = await db.insert(s.staff).values({ nombre: "Entrenador" }).returning();
+    await db
+      .insert(s.jugadoresTemporada)
+      .values({ temporadaId: anterior.id, jugadorId: jugador.id, categoria: "Senior" });
+    await db.insert(s.staffTemporada).values({
+      temporadaId: anterior.id,
+      staffId: persona!.id,
+      tipo: "tecnico",
+      categoria: "Senior",
+      cargo: "Entrenador",
+    });
+
+    await db.delete(s.temporadas).where(eq(s.temporadas.id, anterior.id));
+    expect(await db.select().from(s.jugadoresTemporada)).toHaveLength(0);
+    expect(await db.select().from(s.staffTemporada)).toHaveLength(0);
+    expect(await db.select().from(s.jugadores)).toHaveLength(1);
+    expect(await db.select().from(s.staff)).toHaveLength(1);
+  });
+
+  it("borrar una persona borra sus inscripciones", async () => {
+    const { db } = conexion;
+    const { temporada } = await dosTemporadas();
+    const [suelto] = await db.insert(s.jugadores).values({ nombre: "Sin partidos" }).returning();
+    await db
+      .insert(s.jugadoresTemporada)
+      .values({ temporadaId: temporada.id, jugadorId: suelto!.id, categoria: "Senior" });
+    await db.delete(s.jugadores).where(eq(s.jugadores.id, suelto!.id));
+    expect(await db.select().from(s.jugadoresTemporada)).toHaveLength(0);
   });
 });
