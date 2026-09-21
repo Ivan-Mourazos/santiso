@@ -109,7 +109,7 @@ Selector de modo en la sección «Jornada», igual que «Individual / Lote» en 
 
 - [x] **Paso 1: Selector de modo**
 - [x] **Paso 2: Pantalla del plan** — elegir categoría y competición, subir el PDF, ver el resumen (cuántas jornadas, cuántos cruces nuevos, cuántos ya estaban, cuáles no se resuelven y por qué), y un botón que escribe
-- [ ] **Paso 3: Comprobar a mano con un calendario real** — *pendiente del usuario.* Los PDF originales no están en el repositorio, así que el camino feliz completo no se ha ejecutado nunca de punta a punta. Lo verificado: la pantalla carga, exige competición antes de leer, y rechaza con mensaje un PDF que no es un calendario
+- [x] **Paso 3: Comprobar con un calendario real** — hecho el 21/09 con los dos PDF de la temporada, contra la base de datos real y **sin escribir**. Sénior: 14 equipos, 26 jornadas, 182 partidos; 156 nuevos, 26 ya estaban, 0 sin equipo. Veteranos: 16, 30, 240; 210 nuevos, 30 ya estaban, 0 sin equipo. Los 30 nombres del PDF casan con el equipo correcto, incluidos `C.S.D ARZUA "B"` y `S.D. CRUCES` (que existe en las dos categorías y cae en la suya por la inscripción). Los partidos que ya estaban son exactamente los del Santiso, uno por jornada, y los 56 se reconocen como existentes: el sentido local/visitante del PDF coincide con el de la base de datos
 - [x] **Paso 4: Commit**
 
 ---
