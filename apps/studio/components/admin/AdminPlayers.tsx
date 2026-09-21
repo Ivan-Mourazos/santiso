@@ -500,9 +500,7 @@ export default function AdminPlayers({
         }}
       >
         <div>
-          <h3>
-            Plantilla {categoria} {temporadaNombre}
-          </h3>
+          <h3>Plantilla {categoria}</h3>
           <p style={{ color: "#a3a3a3", fontSize: "0.85rem", margin: 0 }}>
             Gestiona jugadores, motes, dorsales, posiciones y fotos.
           </p>

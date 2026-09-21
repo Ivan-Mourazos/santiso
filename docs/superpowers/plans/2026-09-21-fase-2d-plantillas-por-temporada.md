@@ -1,6 +1,6 @@
 # Fase 2D — Plantilla y staff por temporada: plan de implementación
 
-> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [ ]`) para el seguimiento.
+> **Para agentes:** SUB-SKILL OBLIGATORIA: usa superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans para ejecutar este plan tarea a tarea. Los pasos usan casillas (`- [x]`) para el seguimiento.
 
 **Objetivo:** que cada temporada tenga su propia plantilla y su propio staff, que la de 2026/27 se pueda construir desde cero, y que 2025/26 se conserve tal cual.
 
@@ -89,49 +89,77 @@ apps/studio/e2e/plantilla.spec.ts                 (nuevo)
 
 ### Tarea 1: Esquema y migración
 
-- [ ] **Paso 1:** pruebas de esquema que fallan — inscripción única por (temporada, categoría, persona); borrar persona borra sus inscripciones; borrar temporada borra inscripciones pero no personas; CHECK de categoría según tipo en `staff_temporada`
-- [ ] **Paso 2:** esquema nuevo y `pnpm db:generate --name plantillas-por-temporada`
-- [ ] **Paso 3:** traspaso de datos a mano en la migración, con las reglas de arriba
-- [ ] **Paso 4:** prueba de migración **con datos**: una BD en el esquema 0000 con jugadores que jugaron en dos temporadas, uno sin convocatorias y staff; tras migrar, cada uno en su temporada, ids distintos, nada perdido
-- [ ] **Paso 5:** ensayo sobre una **copia** de la BD real: recuentos esperados
-- [ ] **Paso 6:** commit
+- [x] **Paso 1:** pruebas de esquema que fallan — inscripción única por (temporada, categoría, persona); borrar persona borra sus inscripciones; borrar temporada borra inscripciones pero no personas; CHECK de categoría según tipo en `staff_temporada`
+- [x] **Paso 2:** esquema nuevo y `pnpm db:generate --name plantillas-por-temporada`
+- [x] **Paso 3:** traspaso de datos a mano en la migración, con las reglas de arriba
+- [x] **Paso 4:** prueba de migración **con datos**: una BD en el esquema 0000 con jugadores que jugaron en dos temporadas, uno sin convocatorias y staff; tras migrar, cada uno en su temporada, ids distintos, nada perdido
+- [x] **Paso 5:** ensayo sobre una **copia** de la BD real: recuentos esperados
+- [x] **Paso 6:** commit
 
 ### Tarea 2: Capa de servidor
 
-- [ ] **Paso 1:** `lib/server/temporada.ts` — `temporadaActiva()`, `temporadaAnterior(id)`
-- [ ] **Paso 2:** consultas por temporada (por defecto la activa), mismos DTO más `temporada_id`
-- [ ] **Paso 3:** acciones: guardar (persona + inscripción de esa temporada), **quitar de la temporada** (no borra a la persona), **incorporar** desde otra temporada (copia dorsal, posición y foto), **candidatos** del año anterior no inscritos aún, **parecidos** por nombre para el aviso de duplicado
-- [ ] **Paso 4:** pruebas sobre BD temporal: quitar de 2026/27 no toca 2025/26; incorporar copia dorsal y foto; parecidos encuentra «Xan Fiel» al escribir «xan fiel»
-- [ ] **Paso 5:** commit
+- [x] **Paso 1:** `lib/server/temporada.ts` — `temporadaActiva()`, `temporadaAnterior(id)`
+- [x] **Paso 2:** consultas por temporada (por defecto la activa), mismos DTO más `temporada_id`
+- [x] **Paso 3:** acciones: guardar (persona + inscripción de esa temporada), **quitar de la temporada** (no borra a la persona), **incorporar** desde otra temporada (copia dorsal, posición y foto), **candidatos** del año anterior no inscritos aún, **parecidos** por nombre para el aviso de duplicado
+- [x] **Paso 4:** pruebas sobre BD temporal: quitar de 2026/27 no toca 2025/26; incorporar copia dorsal y foto; parecidos encuentra «Xan Fiel» al escribir «xan fiel»
+- [x] **Paso 5:** commit
 
 ### Tarea 3: Actas y carteles
 
-- [ ] **Paso 1:** `participacionesDePartido` toma el dorsal de la **temporada del partido**, no el actual
-- [ ] **Paso 2:** prueba: un jugador con el 9 en 2025/26 y el 10 en 2026/27; la convocatoria de un partido de 2025/26 dice 9
-- [ ] **Paso 3:** el importador de actas enlaza por dorsal contra la plantilla de la temporada activa (ya lo hace a través de `listarJugadores`, ahora por temporada)
-- [ ] **Paso 4:** commit
+- [x] **Paso 1:** `participacionesDePartido` toma el dorsal de la **temporada del partido**, no el actual
+- [x] **Paso 2:** prueba: un jugador con el 9 en 2025/26 y el 10 en 2026/27; la convocatoria de un partido de 2025/26 dice 9
+- [x] **Paso 3:** el importador de actas enlaza por dorsal contra la plantilla de la temporada activa (ya lo hace a través de `listarJugadores`, ahora por temporada)
+- [x] **Paso 4:** commit
 
 ### Tarea 4: Pantalla de jugadores
 
-- [ ] **Paso 1:** selector de temporada en la pantalla (parámetro `temporada` de la URL, que el shell ya respeta); por defecto la activa
-- [ ] **Paso 2:** estado vacío con «Añadir de {anterior}» y «Nuevo jugador»
-- [ ] **Paso 3:** diálogo de incorporación con casillas, dorsal editable y «ver otras categorías»
-- [ ] **Paso 4:** aviso de posible duplicado al crear
-- [ ] **Paso 5:** «Quitar de la temporada» en lugar de «Borrar»
-- [ ] **Paso 6:** Femenino vuelve al selector de categoría en las secciones de Plantilla
-- [ ] **Paso 7:** commit
+- [x] **Paso 1:** selector de temporada en la pantalla (parámetro `temporada` de la URL, que el shell ya respeta); por defecto la activa
+- [x] **Paso 2:** estado vacío con «Añadir de {anterior}» y «Nuevo jugador»
+- [x] **Paso 3:** diálogo de incorporación con casillas, dorsal editable y «ver otras categorías»
+- [x] **Paso 4:** aviso de posible duplicado al crear
+- [x] **Paso 5:** «Quitar de la temporada» en lugar de «Borrar»
+- [x] **Paso 6:** Femenino vuelve al selector de categoría en las secciones de Plantilla
+- [x] **Paso 7:** commit
 
 ### Tarea 5: Pantalla de staff
 
-- [ ] Lo mismo para cuerpo técnico y directiva; commit
+- [x] Lo mismo para cuerpo técnico y directiva; commit
 
 ### Tarea 6: Aplicar y verificar
 
-- [ ] **Paso 1:** `pnpm check`, build
-- [ ] **Paso 2:** **con `pnpm dev` parado:** copia, migración de la BD real, recuentos
-- [ ] **Paso 3:** e2e completo más `e2e/plantilla.spec.ts` (2026/27 vacía → traer a dos de 2025/26 → aparecen con su dorsal; 2025/26 intacta)
-- [ ] **Paso 4:** carteles de referencia idénticos
-- [ ] **Paso 5:** fusión y publicación
+- [x] **Paso 1:** `pnpm check`, build
+- [x] **Paso 2:** **con `pnpm dev` parado:** copia, migración de la BD real, recuentos
+- [x] **Paso 3:** e2e completo más `e2e/plantilla.spec.ts` (2026/27 vacía → traer a dos de 2025/26 → aparecen con su dorsal; 2025/26 intacta)
+- [x] **Paso 4:** carteles de referencia idénticos
+- [x] **Paso 5:** fusión y publicación
+
+## Hallazgos de la ejecución
+
+- **La migración generada habría borrado las inscripciones recién creadas, si no fuera por
+  cómo la ejecuta libSQL.** Drizzle reconstruye `jugadores` y `staff` con `DROP TABLE` y, para
+  `staff`, lo pone **después** de `PRAGMA foreign_keys=ON`. Con las claves foráneas activas, ese
+  `DROP` hace un `DELETE` implícito que borra en cascada `staff_temporada`. No pasa porque el
+  migrador de Drizzle ejecuta todo dentro de `client.migrate` de libSQL, que desactiva las claves
+  foráneas **antes** de abrir la transacción (dentro de una transacción el `PRAGMA` no hace
+  nada). Comprobado leyendo el código de `@libsql/client` 0.18 y cubierto por
+  `packages/db/src/migraciones.test.ts`. Si algún día se cambia de cliente, esa prueba es la que
+  avisa.
+- **Aplicada sobre la base de datos real el 21/09/2026**, tras `pnpm db:backup`
+  (`data/backups/santiso-2026-09-21T18-19-01.db`). Recuentos idénticos al ensayo: 61 jugadores
+  y 11 de staff en 2025/26, 2026/27 vacía, 1213 convocatorias, 901 eventos, 57 fotos, integridad
+  y claves foráneas correctas.
+- **Femenino había desaparecido del panel** con la 3B (`categoriaDe` solo devolvía Sénior o
+  Veteranos): 18 jugadoras y 2 técnicos de 2025/26 quedaban sin poder consultarse. Se añade
+  `categoriaPlantillaDe`, que solo usan Jugadores y Cuerpo técnico; el resto de secciones no cambia.
+- **La herramienta de migración de Supabase también escribía con el modelo viejo.** Ahora reparte
+  con las mismas reglas que la migración SQL, y una prueba con el mismo caso fija que ambas
+  coinciden.
+- **Python en Windows escribe CRLF** al abrir ficheros en modo texto: de ahí los avisos de fin de
+  línea en los commits de esta sesión. Git los normaliza al guardar; no afecta al código.
+- **Dos pruebas de navegación de Codex esperaban el título exacto «Plantilla Senior».** Se había
+  añadido la temporada al título; se quitó, porque la temporada ya se ve en el selector de encima.
+- **La prueba e2e de Plantilla es de solo lectura**: las e2e corren contra la base de datos real y
+  no deben meter jugadores en la temporada de verdad. Se comprobó después que 2026/27 seguía vacía.
 
 ## Lo que este plan no hace
 

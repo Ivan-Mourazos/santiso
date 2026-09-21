@@ -211,7 +211,7 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
       )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
         <h3>
-          {tipo === 'Tecnico' ? `Cuerpo Técnico (${categoria})` : 'Junta Directiva'} {temporadaNombre}
+          {tipo === 'Tecnico' ? `Cuerpo Técnico (${categoria})` : 'Junta Directiva'}
         </h3>
         {candidatos && candidatos.miembros.length > 0 && (
           <Button variant="secondary" onClick={() => setIncorporando(true)}>
