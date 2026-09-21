@@ -1,0 +1,48 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.header > div {
+  min-width: 0;
+}
+.title {
+  font: 800 var(--ui-text-title)/1.15 var(--ui-font-title);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.eyebrow {
+  color: var(--ui-accent);
+  margin: 0 0 0.5rem;
+  font-weight: 800;
+}
+.detail {
+  color: var(--ui-muted);
+  margin: 0.5rem 0 0;
+  overflow-wrap: anywhere;
+  max-width: 65ch;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.state {
+  padding: 1rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  margin: 0;
+  background: var(--ui-surface);
+}
+.state h2 {
+  font: 700 1.125rem var(--ui-font-title);
+  margin: 0;
+}
+.state button {
+  margin-top: 1rem;
+}
+.error {
+  border-color: var(--ui-danger);
+}

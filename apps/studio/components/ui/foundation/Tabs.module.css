@@ -1,0 +1,42 @@
+.root {
+  min-width: 0;
+  font-family: var(--ui-font-body);
+  color: var(--ui-text);
+}
+.list {
+  display: flex;
+  gap: var(--ui-space-1);
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--ui-border);
+}
+.tab {
+  flex: 0 1 auto;
+  min-height: 44px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--ui-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.tab[aria-selected="true"] {
+  border-bottom-color: var(--ui-accent);
+  color: var(--ui-text);
+  background: var(--ui-raised);
+}
+.tab:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.tab:focus-visible,
+.panel:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+.panel {
+  padding-block: var(--ui-space-4);
+  overflow-wrap: anywhere;
+}

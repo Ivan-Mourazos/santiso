@@ -1,0 +1,40 @@
+body {
+  margin: 0;
+}
+main {
+  max-width: 1120px;
+  margin: auto;
+  padding: clamp(1rem, 4vw, 3rem);
+  display: grid;
+  gap: 2rem;
+}
+section {
+  min-width: 0;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  gap: 1.5rem;
+}
+.stack {
+  display: grid;
+  gap: 1rem;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+h2 {
+  font-family: var(--ui-font-title);
+}
+.section-label {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+}
+.card {
+  background: var(--ui-surface);
+  padding: 1.25rem;
+  border-radius: var(--ui-radius-lg);
+  border: 1px solid var(--ui-border);
+}
