@@ -32,9 +32,9 @@ test("cambiar de plantilla cambia el formulario y conserva el lienzo", async ({ 
   await page.goto("/admin/carteles");
   await expect(plantilla(page)).toBeVisible({ timeout: 20000 });
 
-  // Partido: rival y datos del encuentro. Las etiquetas de estos formularios todavía no
-  // están asociadas a su campo, así que aquí se localizan por texto.
-  await expect(page.getByText("Rival (escribe o selecciona)")).toBeVisible();
+  // Partido: rival y datos del encuentro, con sus etiquetas asociadas al campo.
+  await expect(page.getByLabel("Rival", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Fecha", { exact: true })).toBeVisible();
 
   await plantilla(page).selectOption("clasificacion");
   await expect(page).toHaveURL(/plantilla=clasificacion/);

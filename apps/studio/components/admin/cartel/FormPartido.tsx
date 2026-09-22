@@ -4,9 +4,12 @@
  */
 
 import React, { useState } from "react";
-import type { FormState } from "./types";
-import { CategorySelector, type SelectorMatch } from "./Common";
+import { Button } from "@/components/ui/foundation/Button";
+import { Field, Select } from "@/components/ui/foundation/Fields";
 import { competitionsForCategory, type CompetenciaRow } from "@/lib/competition";
+import { CategorySelector, type SelectorMatch } from "./Common";
+import styles from "./Formularios.module.css";
+import type { FormState } from "./types";
 
 interface Props {
   form: FormState;
@@ -38,73 +41,79 @@ export const RivalSelector = ({
   handleRivalFile: (file: File) => void;
   onNameChange?: (name: string) => void;
 }) => {
-  const filtered = equipos?.filter(eq => {
-    const isSantiso = eq.nombre?.toLowerCase().includes("santiso");
-    const matchesCat = !eq.categoria || eq.categoria === categoria;
-    return !isSantiso && matchesCat;
-  }) || [];
+  const filtered =
+    equipos?.filter((eq) => {
+      const isSantiso = eq.nombre?.toLowerCase().includes("santiso");
+      const matchesCat = !eq.categoria || eq.categoria === categoria;
+      return !isSantiso && matchesCat;
+    }) || [];
 
   return (
     <>
-      <div className="input-group" style={{ marginBottom: "0.6rem" }}>
-        <label>Rival (escribe o selecciona)</label>
-        <input
-          type="text"
+      <div className={styles.campo}>
+        <Field
+          label="Rival"
           list="equipos-rival-list"
-          placeholder="Escribe el nombre del rival..."
+          placeholder="Escribe el nombre del rival…"
           value={rivalNombre}
-          onChange={e => {
+          onChange={(e) => {
             const val = e.target.value;
             if (onNameChange) {
               onNameChange(val);
             } else {
               handleRivalSelect(val);
             }
-            const matchEq = filtered.find(eq => eq.nombre.toLowerCase() === val.toLowerCase());
+            const matchEq = filtered.find((eq) => eq.nombre.toLowerCase() === val.toLowerCase());
             if (matchEq) handleRivalSelect(matchEq.nombre);
           }}
-          style={{ marginBottom: "0.4rem" }}
         />
         <datalist id="equipos-rival-list">
-          {filtered.map(eq => <option key={eq.id} value={eq.nombre} />)}
+          {filtered.map((eq) => (
+            <option key={eq.id} value={eq.nombre} />
+          ))}
         </datalist>
         {filtered.length > 0 && (
-          <select 
-            value={filtered.some(e => e.nombre === rivalNombre) ? rivalNombre : ""} 
-            onChange={e => handleRivalSelect(e.target.value)}
-            style={{ fontSize: "0.8rem", opacity: 0.8 }}
+          <Select
+            label="O elegir de la lista de equipos"
+            value={filtered.some((e) => e.nombre === rivalNombre) ? rivalNombre : ""}
+            onChange={(e) => handleRivalSelect(e.target.value)}
           >
-            <option value="">— O seleccionar de la lista —</option>
-            {filtered.map(eq => <option key={eq.id} value={eq.nombre}>{eq.nombre}</option>)}
-          </select>
+            <option value="">Sin elegir</option>
+            {filtered.map((eq) => (
+              <option key={eq.id} value={eq.nombre}>
+                {eq.nombre}
+              </option>
+            ))}
+          </Select>
         )}
       </div>
-      <div className="input-group" style={{ marginBottom: "1rem" }}>
-        <label>Escudo del rival</label>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
-          <label className="file-input-label" style={{ flex: 1 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <div className={styles.campo}>
+        <span className={styles.etiqueta}>Escudo del rival</span>
+        <div className={styles.escudo}>
+          <label className="file-input-label">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
             </svg>
             Subir escudo
-            <input type="file" className="hidden-input" accept="image/*"
-              onChange={e => { if (e.target.files?.[0]) handleRivalFile(e.target.files[0]); }} />
+            <input
+              type="file"
+              className="hidden-input"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleRivalFile(e.target.files[0]);
+              }}
+            />
           </label>
           {rivalEscudoUrl && (
-            <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: "8px",
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden"
-            }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={rivalEscudoUrl} alt="Escudo rival" style={{ width: "80%", height: "80%", objectFit: "contain" }} />
-            </div>
+            // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
+            <img className={styles.escudoImagen} src={rivalEscudoUrl} alt="Escudo del rival" />
           )}
         </div>
       </div>
@@ -115,7 +124,18 @@ export const RivalSelector = ({
 /** Fecha del partido en milisegundos; `NaN` si no la tiene o no se entiende. */
 const tiempoDe = (m: SelectorMatch) => (m.fecha ? new Date(m.fecha).getTime() : Number.NaN);
 
-export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equipos, handleRivalSelect, handleRivalFile, dbMatches, loadMatchFromDb, campos, competiciones, tipo }) => {
+export const FormPartido: React.FC<Props & { tipo: string }> = ({
+  form,
+  set,
+  equipos,
+  handleRivalSelect,
+  handleRivalFile,
+  dbMatches,
+  loadMatchFromDb,
+  campos,
+  competiciones,
+  tipo,
+}) => {
   const [autoFillMessage, setAutoFillMessage] = useState("");
 
   function handleLoadNextMatch() {
@@ -129,7 +149,12 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
         if (match.categoria !== form.categoria) return false;
         const mid = match.competicion_id || match.jornada?.competicion_id;
         if (!form.competicion_id || mid !== form.competicion_id) return false;
-        if (["finalizado", "cancelado", "aplazado"].includes((match.estado || "").toLowerCase().trim())) return false;
+        if (
+          ["finalizado", "cancelado", "aplazado"].includes(
+            (match.estado || "").toLowerCase().trim(),
+          )
+        )
+          return false;
 
         const localName = match.equipo_local?.nombre?.toLowerCase() || "";
         const visitorName = match.equipo_visitante?.nombre?.toLowerCase() || "";
@@ -153,35 +178,11 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
   return (
     <>
       {tipo === "partido" && (
-        <div style={{ 
-          marginBottom: "1.5rem", 
-          padding: "1rem", 
-          background: "rgba(250, 204, 21, 0.05)", 
-          border: "1px dashed rgba(250, 204, 21, 0.4)", 
-          borderRadius: "12px" 
-        }}>
-          <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)", marginBottom: "0.6rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            ⚡ Autocompletar desde la liga
-          </label>
-          <button
-            type="button"
-            onClick={handleLoadNextMatch}
-            style={{
-              width: "100%",
-              background: "var(--primary)",
-              border: "none",
-              color: "#000",
-              padding: "0.6rem",
-              borderRadius: "6px",
-              fontWeight: 800,
-              cursor: "pointer",
-              transition: "all 0.2s"
-            }}
-          >
-            Cargar próximo partido
-          </button>
+        <div className={styles.desdeLiga}>
+          <h4 className={styles.seccion}>Autocompletar desde la liga</h4>
+          <Button onClick={handleLoadNextMatch}>Cargar próximo partido</Button>
           {autoFillMessage && (
-            <p style={{ margin: "0.5rem 0 0", color: "#a3a3a3", fontSize: "0.75rem", fontWeight: 700 }}>
+            <p role="status" className={styles.aviso}>
               {autoFillMessage}
             </p>
           )}
@@ -189,78 +190,80 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
       )}
 
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
-      
-      <div className="input-group" style={{ marginBottom: "1rem" }}>
-        <label>Competición (libre o catálogo)</label>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-          <input
-            type="text"
-            placeholder="Escribe la competición (ej: Liga da Costa, Amigable...)"
-            value={form.competicion}
-            onChange={(e) => set("competicion", e.target.value)}
+
+      <div className={styles.campo}>
+        <Field
+          label="Competición"
+          placeholder="Escribe la competición (Liga da Costa, Amigable…)"
+          value={form.competicion}
+          onChange={(e) => set("competicion", e.target.value)}
+        />
+        {competitionsForCategory(competiciones, form.categoria).length > 0 && (
+          <Select
+            label="O elegir del catálogo"
+            value={form.competicion_id}
+            onChange={(e) => {
+              const selId = e.target.value;
+              set("competicion_id", selId);
+              const found = competiciones.find((c) => c.id === selId);
+              if (found) set("competicion", found.nombre);
+            }}
+          >
+            <option value="">Sin elegir</option>
+            {competitionsForCategory(competiciones, form.categoria).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre}
+              </option>
+            ))}
+          </Select>
+        )}
+      </div>
+
+      <div className={styles.pareja}>
+        <Field
+          label="Fecha"
+          type="date"
+          value={form.fecha}
+          onChange={(e) => set("fecha", e.target.value)}
+        />
+        <Field
+          label="Hora"
+          type="time"
+          value={form.hora}
+          onChange={(e) => set("hora", e.target.value)}
+        />
+      </div>
+
+      <div className={styles.pareja}>
+        <Field
+          label="Nº de xornada"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={form.jornada}
+          onChange={(e) => set("jornada", e.target.value)}
+        />
+        <div>
+          <Select
+            label="Estadio o campo"
+            value={campos?.find((c) => c.nombre === form.lugar)?.id || ""}
+            onChange={(e) => {
+              const selected = campos?.find((c) => c.id === e.target.value);
+              if (selected) set("lugar", selected.nombre);
+            }}
+          >
+            <option value="">Sin elegir</option>
+            {campos?.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre} ({c.poblacion || "S/P"})
+              </option>
+            ))}
+          </Select>
+          <Field
+            label="O escribirlo a mano"
+            placeholder="Nombre del campo"
+            value={form.lugar}
+            onChange={(e) => set("lugar", e.target.value)}
           />
-          {competitionsForCategory(competiciones, form.categoria).length > 0 && (
-            <select
-              value={form.competicion_id}
-              onChange={(e) => {
-                const selId = e.target.value;
-                set("competicion_id", selId);
-                const found = competiciones.find((c) => c.id === selId);
-                if (found) set("competicion", found.nombre);
-              }}
-              style={{ fontSize: "0.8rem", opacity: 0.8 }}
-            >
-              <option value="">— O elige del catálogo oficial —</option>
-              {competitionsForCategory(competiciones, form.categoria).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-        <div className="input-group">
-          <label>Fecha</label>
-          <input type="date" value={form.fecha} onChange={e => set("fecha", e.target.value)} />
-        </div>
-        <div className="input-group">
-          <label>Hora</label>
-          <input type="time" value={form.hora} onChange={e => set("hora", e.target.value)} />
-        </div>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-        <div className="input-group">
-          <label>Nº Xornada</label>
-          <input type="text" inputMode="numeric" pattern="[0-9]*" value={form.jornada} onChange={e => set("jornada", e.target.value)} />
-        </div>
-        <div className="input-group">
-          <label>Estadio / Campo</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            <select 
-              value={campos?.find(c => c.nombre === form.lugar)?.id || ""} 
-              onChange={e => {
-                const selected = campos?.find(c => c.id === e.target.value);
-                if (selected) set("lugar", selected.nombre);
-              }}
-              style={{ fontSize: '0.82rem', padding: '0.5rem 0.8rem' }}
-            >
-              <option value="">— Seleccionar estadio —</option>
-              {campos?.map(c => (
-                <option key={c.id} value={c.id}>{c.nombre} ({c.poblacion || 'S/P'})</option>
-              ))}
-            </select>
-            <input 
-              type="text" 
-              placeholder="O escribe el nombre manualmente..." 
-              value={form.lugar} 
-              onChange={e => set("lugar", e.target.value)} 
-              style={{ padding: '0.5rem 0.8rem', height: 'auto', fontSize: '0.82rem' }}
-            />
-          </div>
         </div>
       </div>
 

@@ -4,10 +4,13 @@
  */
 
 import React from "react";
-import type { FormState } from "./types";
-import { SectionLabel, Toggle, type SelectorMatch } from "./Common";
+import { Button } from "@/components/ui/foundation/Button";
+import { Field, Select } from "@/components/ui/foundation/Fields";
 import type { NextMatch } from "@/lib/cartel-draw";
+import { SectionLabel, Toggle, type SelectorMatch } from "./Common";
+import styles from "./Formularios.module.css";
 import { matchDateInput, matchTimeInput } from "./matchDateTime";
+import type { FormState } from "./types";
 
 function normalizeText(value: string) {
   return (value || "")
@@ -47,14 +50,21 @@ interface Props {
   dbMatches: SelectorMatch[];
 }
 
-export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, handleMatchRivalFile, equipos, dbMatches }) => {
+export const FormProximos: React.FC<Props> = ({
+  form,
+  set,
+  updateMatch,
+  handleMatchRivalFile,
+  equipos,
+  dbMatches,
+}) => {
   const handleAutoFill = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     // Solo partidos del Santiso pendientes. Si no, puede coger otro partido de la liga.
     const allUpcomingSantiso = [...dbMatches]
-      .filter(m => {
+      .filter((m) => {
         if (!m.fecha || !isPendingMatch(m)) return false;
         if (!isSantisoTeam(m.equipo_local) && !isSantisoTeam(m.equipo_visitante)) return false;
         const matchDate = new Date(m.fecha);
@@ -69,22 +79,26 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, handleMa
     // autocompletamos partidos de la MISMA jornada (si un equipo descansa, no coge el de la semana que viene).
     const earliestMatchTime = getMatchTime(allUpcomingSantiso[0]);
     const maxWindowTime = earliestMatchTime + 6 * 24 * 60 * 60 * 1000;
-    
-    const currentMatchdayMatches = allUpcomingSantiso.filter(m => getMatchTime(m) <= maxWindowTime);
+
+    const currentMatchdayMatches = allUpcomingSantiso.filter(
+      (m) => getMatchTime(m) <= maxWindowTime,
+    );
 
     // Buscar el más próximo de cada categoría del club.
     const cats = ["Senior", "Veteranos"];
     const selectedMatches: SelectorMatch[] = [];
 
-    cats.forEach(cat => {
-      const match = currentMatchdayMatches.find(m => categoriaKey(m.categoria || "") === categoriaKey(cat));
+    cats.forEach((cat) => {
+      const match = currentMatchdayMatches.find(
+        (m) => categoriaKey(m.categoria || "") === categoriaKey(cat),
+      );
       if (match) selectedMatches.push(match);
     });
 
     // Si no hay 3 categorías con partido, rellena con otros próximos del Santiso de la misma jornada.
     if (selectedMatches.length < 3) {
-      currentMatchdayMatches.forEach(m => {
-        if (selectedMatches.length < 3 && !selectedMatches.find(sm => sm.id === m.id)) {
+      currentMatchdayMatches.forEach((m) => {
+        if (selectedMatches.length < 3 && !selectedMatches.find((sm) => sm.id === m.id)) {
           selectedMatches.push(m);
         }
       });
@@ -95,7 +109,13 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, handleMa
 
     // 5. Rellenar los 3 slots
     const newMatches: NextMatch[] = Array.from({ length: 3 }, () => ({
-      rival: "", rivalEscudoUrl: "", fecha: "", hora: "18:00", categoria: "Senior", lugar: "", santisoSide: "right"
+      rival: "",
+      rivalEscudoUrl: "",
+      fecha: "",
+      hora: "18:00",
+      categoria: "Senior",
+      lugar: "",
+      santisoSide: "right",
     }));
 
     selectedMatches.forEach((match, index) => {
@@ -108,7 +128,7 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, handleMa
         hora: matchTimeInput(match.fecha),
         categoria: match.categoria || "Senior",
         lugar: match.campo?.nombre || match.lugar || "",
-        santisoSide: isSantisoLocal ? "left" : "right"
+        santisoSide: isSantisoLocal ? "left" : "right",
       };
     });
 
@@ -117,71 +137,53 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, handleMa
 
   return (
     <>
-      <div style={{ 
-        marginBottom: "1.5rem", 
-        padding: "1rem", 
-        background: "rgba(250, 204, 21, 0.05)", 
-        border: "1px dashed rgba(250, 204, 21, 0.4)", 
-        borderRadius: "12px" 
-      }}>
-        <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)", marginBottom: "0.6rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-          ⚡ Autocompletar desde la liga
-        </label>
-        <button
-          type="button"
-          onClick={handleAutoFill}
-          style={{
-            width: "100%",
-            background: "var(--primary)",
-            border: "none",
-            color: "#000",
-            padding: "0.6rem",
-            borderRadius: "6px",
-            fontWeight: 800,
-            cursor: "pointer",
-            transition: "all 0.2s"
-          }}
-        >
-          Autocompletado inteligente (3 partidos)
-        </button>
+      <div className={styles.desdeLiga}>
+        <h4 className={styles.seccion}>Autocompletar desde la liga</h4>
+        <Button onClick={handleAutoFill}>Rellenar con los 3 próximos partidos</Button>
       </div>
       <SectionLabel>Configurar los 3 partidos</SectionLabel>
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {form.matches.map((m, i) => (
-          <div key={i} style={{
-            background: "rgba(255,255,255,0.02)",
-            padding: "1rem",
-            borderRadius: "0.6rem",
-            border: "1px solid var(--border)"
-          }}>
-            <p style={{ margin: "0 0 0.8rem", fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)" }}>PARTIDO {i + 1}</p>
-            
-            <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "0.8rem", marginBottom: "0.8rem" }}>
-              <div className="input-group">
-                <label>Rival (escribe o selecciona)</label>
-                <input
-                  type="text"
+          <div key={i} className={styles.tarjetaPartido}>
+            <h5 className={styles.seccion}>Partido {i + 1}</h5>
+
+            <div className={styles.parejaAncha}>
+              <div>
+                <Field
+                  label={`Rival del partido ${i + 1}`}
                   list={`rival-list-${i}`}
-                  placeholder="Nombre del rival..."
+                  placeholder="Nombre del rival…"
                   value={m.rival}
-                  onChange={e => {
+                  onChange={(e) => {
                     const val = e.target.value;
-                    const found = equipos.find(eq => eq.nombre.toLowerCase() === val.toLowerCase());
+                    const found = equipos.find(
+                      (eq) => eq.nombre.toLowerCase() === val.toLowerCase(),
+                    );
                     updateMatch(i, {
                       rival: val,
                       ...(found ? { rivalEscudoUrl: found.escudo_url } : {}),
                     });
                   }}
-                  style={{ marginBottom: "0.4rem" }}
                 />
                 <datalist id={`rival-list-${i}`}>
                   {equipos
-                    .filter(e => categoriaKey(e.categoria || "") === categoriaKey(m.categoria || ""))
-                    .map(e => <option key={e.id} value={e.nombre} />)}
+                    .filter(
+                      (e) => categoriaKey(e.categoria || "") === categoriaKey(m.categoria || ""),
+                    )
+                    .map((e) => (
+                      <option key={e.id} value={e.nombre} />
+                    ))}
                 </datalist>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <label className="file-input-label" style={{ flex: 1, padding: "0.4rem 0.6rem", fontSize: "0.72rem" }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <div className={styles.escudo}>
+                  <label className="file-input-label">
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
                     </svg>
                     Subir escudo
@@ -189,7 +191,7 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, handleMa
                       type="file"
                       className="hidden-input"
                       accept="image/*"
-                      onChange={e => {
+                      onChange={(e) => {
                         if (e.target.files?.[0] && handleMatchRivalFile) {
                           handleMatchRivalFile(i, e.target.files[0]);
                         }
@@ -197,59 +199,62 @@ export const FormProximos: React.FC<Props> = ({ form, set, updateMatch, handleMa
                     />
                   </label>
                   {m.rivalEscudoUrl && (
-                    <div style={{
-                      width: 28, height: 28, borderRadius: "6px",
-                      background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)",
-                      display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden"
-                    }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={m.rivalEscudoUrl} alt="Escudo" style={{ width: "80%", height: "80%", objectFit: "contain" }} />
-                    </div>
+                    // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
+                    <img
+                      className={styles.escudoImagen}
+                      src={m.rivalEscudoUrl}
+                      alt="Escudo del rival"
+                    />
                   )}
                 </div>
               </div>
-              <div className="input-group">
-                <label>Categoría</label>
-                <select value={m.categoria} onChange={e => updateMatch(i, { 
-                categoria: e.target.value,
-                rival: "",
-                rivalEscudoUrl: ""
-              })}>
-                  <option value="Senior">Sénior</option>
-                  <option value="Veteranos">Veteranos</option>
-                </select>
-              </div>
+              <Select
+                label="Categoría"
+                value={m.categoria}
+                onChange={(e) =>
+                  updateMatch(i, { categoria: e.target.value, rival: "", rivalEscudoUrl: "" })
+                }
+              >
+                <option value="Senior">Sénior</option>
+                <option value="Veteranos">Veteranos</option>
+              </Select>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
-              <div className="input-group">
-                <label>Fecha</label>
-                <input type="date" value={m.fecha}
-                  onChange={e => updateMatch(i, { fecha: e.target.value })} />
-              </div>
-              <div className="input-group">
-                <label>Hora</label>
-                <input type="time" value={m.hora || "18:00"}
-                  onChange={e => updateMatch(i, { hora: e.target.value })} />
-              </div>
+            <div className={styles.pareja}>
+              <Field
+                label="Fecha"
+                type="date"
+                value={m.fecha}
+                onChange={(e) => updateMatch(i, { fecha: e.target.value })}
+              />
+              <Field
+                label="Hora"
+                type="time"
+                value={m.hora || "18:00"}
+                onChange={(e) => updateMatch(i, { hora: e.target.value })}
+              />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.8rem", marginTop: "0.8rem" }}>
-              <div className="input-group">
-                <label>Campo / estadio para Instagram</label>
-                <input
-                  type="text"
-                  value={m.lugar || ""}
-                  placeholder="A Merced"
-                  onChange={e => updateMatch(i, { lugar: e.target.value })}
+            <Field
+              label="Campo o estadio"
+              value={m.lugar || ""}
+              placeholder="A Merced"
+              onChange={(e) => updateMatch(i, { lugar: e.target.value })}
+            />
+
+            <div className={styles.campo} role="group" aria-label={`Localía del partido ${i + 1}`}>
+              <span className={styles.etiqueta}>Localía</span>
+              <div className={styles.interruptores}>
+                <Toggle
+                  label="Local"
+                  active={m.santisoSide === "left"}
+                  onClick={() => updateMatch(i, { santisoSide: "left" })}
                 />
-              </div>
-              <div className="input-group">
-                <label>Localía</label>
-                <div style={{ display: "flex", gap: "0.4rem" }}>
-                  <Toggle label="LOCAL" active={m.santisoSide === "left"} onClick={() => updateMatch(i, { santisoSide: "left" })} />
-                  <Toggle label="VISIT." active={m.santisoSide === "right"} onClick={() => updateMatch(i, { santisoSide: "right" })} />
-                </div>
+                <Toggle
+                  label="Visitante"
+                  active={m.santisoSide === "right"}
+                  onClick={() => updateMatch(i, { santisoSide: "right" })}
+                />
               </div>
             </div>
           </div>

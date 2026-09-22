@@ -31,3 +31,87 @@
   flex: 1;
   min-width: 8rem;
 }
+
+.etiqueta {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: var(--ui-text-sm, 0.875rem);
+  font-weight: 700;
+}
+.escudo {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3, 0.75rem);
+}
+.escudo > :global(.file-input-label) {
+  flex: 1;
+}
+.escudoImagen {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: var(--ui-radius-sm, 0.5rem);
+  background: var(--ui-raised, #242424);
+  border: 1px solid rgb(255 255 255 / 12%);
+}
+.pareja {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: var(--ui-space-3, 0.75rem);
+  margin-bottom: var(--ui-space-4, 1rem);
+}
+.aviso {
+  margin: var(--ui-space-2, 0.5rem) 0 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+  font-weight: 700;
+}
+
+.casillaBloque {
+  margin-top: var(--ui-space-4, 1rem);
+  padding: var(--ui-space-4, 1rem);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-raised, #242424);
+}
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2, 0.5rem);
+  font-weight: 700;
+  min-height: 44px;
+  cursor: pointer;
+}
+/* `globals.css` estira todo `input`; las casillas no. */
+.check {
+  width: auto;
+  flex: none;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--ui-accent, #facc15);
+}
+
+.parejaAncha {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  align-items: start;
+  gap: var(--ui-space-3, 0.75rem);
+  margin-bottom: var(--ui-space-3, 0.75rem);
+}
+.tarjetaPartido {
+  padding: var(--ui-space-4, 1rem);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-raised, #242424);
+}
+.tarjetaPartido h5 {
+  margin-top: 0;
+}
+
+@media (max-width: 640px) {
+  .pareja,
+  .parejaAncha {
+    grid-template-columns: 1fr;
+  }
+}
