@@ -1,0 +1,33 @@
+/* Piezas compartidas de los formularios de cartel (6E). Tokens de la Fase 3A. */
+
+.seccion {
+  margin: var(--ui-space-5, 1.5rem) 0 var(--ui-space-3, 0.75rem);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-accent, #facc15);
+}
+
+.campo {
+  margin-bottom: var(--ui-space-4, 1rem);
+}
+
+/* Autocompletar desde el calendario ya guardado. */
+.desdeLiga {
+  margin-bottom: var(--ui-space-4, 1rem);
+  padding: var(--ui-space-4, 1rem);
+  border: 1px dashed rgb(250 204 21 / 40%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: rgb(250 204 21 / 5%);
+}
+
+.interruptores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2, 0.5rem);
+}
+.interruptores > * {
+  flex: 1;
+  min-width: 8rem;
+}

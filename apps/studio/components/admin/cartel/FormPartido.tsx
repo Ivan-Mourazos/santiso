@@ -5,7 +5,7 @@
 
 import React, { useState } from "react";
 import type { FormState } from "./types";
-import { CategorySelector } from "./Common";
+import { CategorySelector, type SelectorMatch } from "./Common";
 import { competitionsForCategory, type CompetenciaRow } from "@/lib/competition";
 
 interface Props {
@@ -14,8 +14,8 @@ interface Props {
   equipos: { id: string; nombre: string; escudo_url: string }[];
   handleRivalSelect: (nombre: string) => void;
   handleRivalFile: (file: File) => void;
-  dbMatches: any[];
-  loadMatchFromDb: (m: any) => void;
+  dbMatches: SelectorMatch[];
+  loadMatchFromDb: (m: SelectorMatch) => void;
   campos: { id: string; nombre: string; poblacion: string }[];
   /** Desde catálogo BD */
   competiciones: CompetenciaRow[];
@@ -112,6 +112,9 @@ export const RivalSelector = ({
   );
 };
 
+/** Fecha del partido en milisegundos; `NaN` si no la tiene o no se entiende. */
+const tiempoDe = (m: SelectorMatch) => (m.fecha ? new Date(m.fecha).getTime() : Number.NaN);
+
 export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equipos, handleRivalSelect, handleRivalFile, dbMatches, loadMatchFromDb, campos, competiciones, tipo }) => {
   const [autoFillMessage, setAutoFillMessage] = useState("");
 
@@ -132,11 +135,11 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({ form, set, equ
         const visitorName = match.equipo_visitante?.nombre?.toLowerCase() || "";
         if (!localName.includes("santiso") && !visitorName.includes("santiso")) return false;
 
-        const matchDate = new Date(match.fecha);
-        if (Number.isNaN(matchDate.getTime())) return false;
-        return matchDate.getTime() >= today.getTime();
+        const cuando = tiempoDe(match);
+        if (Number.isNaN(cuando)) return false;
+        return cuando >= today.getTime();
       })
-      .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())[0];
+      .sort((a, b) => tiempoDe(a) - tiempoDe(b))[0];
 
     if (nextMatch) {
       loadMatchFromDb(nextMatch);
