@@ -115,6 +115,95 @@ describe("acciones de patrocinadores", () => {
     });
   });
 
+  it("activar y desactivar conserva el registro, su web y su logo", async () => {
+    const { guardarPatrocinador, cargarPatrocinadores } = await entorno();
+    const logo = new File([await pngRojo()], "l.png", { type: "image/png" });
+    const creado = await guardarPatrocinador(
+      formulario({ id: "", nombre: "Autobuses", webUrl: "https://example.test" }, logo),
+    );
+    if (!creado.ok) throw new Error("no se creó");
+    expect(creado.datos.en_carteles).toBe(false);
+
+    const activado = await guardarPatrocinador(
+      formulario({
+        id: creado.datos.id,
+        nombre: "Autobuses",
+        webUrl: "https://example.test",
+        enCarteles: "true",
+      }),
+    );
+    expect(activado).toMatchObject({
+      ok: true,
+      datos: {
+        id: creado.datos.id,
+        en_carteles: true,
+        logo_url: creado.datos.logo_url,
+        web_url: "https://example.test",
+      },
+    });
+
+    const desactivado = await guardarPatrocinador(
+      formulario({
+        id: creado.datos.id,
+        nombre: "Autobuses",
+        webUrl: "https://example.test",
+        enCarteles: "false",
+      }),
+    );
+    expect(desactivado).toMatchObject({ ok: true, datos: { en_carteles: false } });
+    expect(await cargarPatrocinadores()).toHaveLength(1);
+  });
+
+  it("al activar, entra el último de la barra y no desplaza a los demás", async () => {
+    const { guardarPatrocinador, cargarLogosDeCartel } = await entorno();
+    for (const nombre of ["Primero", "Segundo"]) {
+      await guardarPatrocinador(formulario({ id: "", nombre, enCarteles: "true" }));
+    }
+    const tercero = await guardarPatrocinador(formulario({ id: "", nombre: "Tercero" }));
+    if (!tercero.ok) throw new Error("no se creó");
+    await guardarPatrocinador(
+      formulario({ id: tercero.datos.id, nombre: "Tercero", enCarteles: "true" }),
+    );
+    expect((await cargarLogosDeCartel()).map((p) => p.nombre)).toEqual([
+      "Primero",
+      "Segundo",
+      "Tercero",
+    ]);
+  });
+
+  it("subir y bajar intercambia vecinos y deja posiciones sin huecos", async () => {
+    const { guardarPatrocinador, moverPatrocinador, cargarLogosDeCartel } = await entorno();
+    const ids: string[] = [];
+    for (const nombre of ["Uno", "Dos", "Tres"]) {
+      const r = await guardarPatrocinador(formulario({ id: "", nombre, enCarteles: "true" }));
+      if (!r.ok) throw new Error("no se creó");
+      ids.push(r.datos.id);
+    }
+    expect(await moverPatrocinador(ids[2]!, -1)).toEqual({ ok: true, datos: null });
+    expect((await cargarLogosDeCartel()).map((p) => p.nombre)).toEqual(["Uno", "Tres", "Dos"]);
+    expect((await cargarLogosDeCartel()).map((p) => p.orden)).toEqual([0, 1, 2]);
+
+    // En los extremos no pasa nada y no falla.
+    expect(await moverPatrocinador(ids[0]!, -1)).toEqual({ ok: true, datos: null });
+    expect((await cargarLogosDeCartel()).map((p) => p.nombre)).toEqual(["Uno", "Tres", "Dos"]);
+  });
+
+  it("no mueve lo que no está en la barra ni acepta una dirección inventada", async () => {
+    const { guardarPatrocinador, moverPatrocinador } = await entorno();
+    const fuera = await guardarPatrocinador(formulario({ id: "", nombre: "Fuera" }));
+    if (!fuera.ok) throw new Error("no se creó");
+    expect(await moverPatrocinador(fuera.datos.id, 1)).toMatchObject({ ok: false });
+    expect(await moverPatrocinador("inventado", 1)).toMatchObject({ ok: false });
+    expect(await moverPatrocinador(fuera.datos.id, 2 as -1 | 1)).toMatchObject({ ok: false });
+  });
+
+  it("rechaza una web que no sea http o https", async () => {
+    const { guardarPatrocinador } = await entorno();
+    expect(
+      await guardarPatrocinador(formulario({ id: "", nombre: "Malo", webUrl: "javascript:x" })),
+    ).toMatchObject({ ok: false, campos: { webUrl: expect.any(String) } });
+  });
+
   it("borra un patrocinador", async () => {
     const { guardarPatrocinador, borrarPatrocinador, cargarPatrocinadores } = await entorno();
     const creado = await guardarPatrocinador(formulario({ id: "", nombre: "Efímero" }));
