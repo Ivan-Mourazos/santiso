@@ -19,6 +19,13 @@ export default function ControlesCompeticion({
   onMutado: () => void;
 }) {
   const [dialogo, setDialogo] = useState<"crear" | "borrar" | null>(null);
+  // La competición elegida vive en la URL y tarda un instante en actualizarse. Mientras tanto,
+  // `selectedCompetitionId` sigue siendo la anterior: se guarda aquí la pedida para mostrarla ya
+  // y para no dejar crear ni eliminar sobre la que se está dejando.
+  const [solicitada, setSolicitada] = useState<{ desde: string; hacia: string } | null>(null);
+  // El borrado apunta a la competición que se vio al abrir el diálogo, no a la que esté
+  // seleccionada al confirmar.
+  const [objetivo, setObjetivo] = useState<{ id: string; nombre: string } | null>(null);
   const [nombre, setNombre] = useState("");
   const [formato, setFormato] = useState("liga");
   const [error, setError] = useState<string | null>(null);
@@ -27,9 +34,15 @@ export default function ControlesCompeticion({
   const refNombre = useRef<HTMLInputElement>(null);
   const sucio = dialogo === "crear" && (nombre !== "" || formato !== "liga");
   useUnsavedChanges(sucio);
-  const actual = contexto.competicionesEnCategoria.find(
-    (c) => c.id === contexto.selectedCompetitionId,
-  );
+  // Solo cuenta como «cambiando» mientras siga seleccionada la de antes: en cuanto la selección
+  // cambia —por este desplegable o por otra vía, como crear una competición—, deja de estarlo.
+  const cambiando =
+    solicitada !== null &&
+    solicitada.hacia !== solicitada.desde &&
+    contexto.selectedCompetitionId === solicitada.desde;
+  const actual = cambiando
+    ? undefined
+    : contexto.competicionesEnCategoria.find((c) => c.id === contexto.selectedCompetitionId);
   function cerrar() {
     if (operacion.current) return;
     if (sucio && !window.confirm("Hay cambios sin guardar. ¿Descartarlos?")) return;
@@ -45,7 +58,7 @@ export default function ControlesCompeticion({
       refNombre.current?.focus();
       return;
     }
-    if (dialogo === "borrar" && !actual) return;
+    if (dialogo === "borrar" && !objetivo) return;
     operacion.current = true;
     setPendiente(true);
     setError(null);
@@ -64,7 +77,8 @@ export default function ControlesCompeticion({
         await contexto.loadCompeticiones();
         contexto.setSelectedCompetitionId(resultado.datos.id);
       } else {
-        const resultado = await contexto.removeCompeticion(contexto.selectedCompetitionId);
+        if (!objetivo) return;
+        const resultado = await contexto.removeCompeticion(objetivo.id);
         if (resultado.error) {
           setError(resultado.error.message);
           return;
@@ -86,8 +100,12 @@ export default function ControlesCompeticion({
       <div className={styles.contexto}>
         <Select
           label="Competición"
-          value={contexto.selectedCompetitionId}
-          onChange={(e) => contexto.setSelectedCompetitionId(e.target.value)}
+          value={cambiando && solicitada ? solicitada.hacia : contexto.selectedCompetitionId}
+          onChange={(e) => {
+            const desde = contexto.selectedCompetitionId;
+            const hacia = e.target.value;
+            setSolicitada(contexto.setSelectedCompetitionId(hacia) ? { desde, hacia } : null);
+          }}
           disabled={!contexto.competicionesEnCategoria.length}
         >
           {!contexto.competicionesEnCategoria.length && <option value="">Sin competiciones</option>}
@@ -101,12 +119,18 @@ export default function ControlesCompeticion({
           <Button
             variant="secondary"
             onClick={() => setDialogo("crear")}
-            disabled={contexto.historicalSeason || !contexto.selectedSeasonId}
+            disabled={cambiando || contexto.historicalSeason || !contexto.selectedSeasonId}
           >
             Crear competición
           </Button>
           {actual && contexto.competicionesEnCategoria.length > 1 && (
-            <Button variant="secondary" onClick={() => setDialogo("borrar")}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setObjetivo({ id: actual.id, nombre: actual.nombre });
+                setDialogo("borrar");
+              }}
+            >
               Eliminar competición
             </Button>
           )}
@@ -162,7 +186,7 @@ export default function ControlesCompeticion({
             </fieldset>
           ) : (
             <p>
-              ¿Eliminar {actual?.nombre}? Solo se puede eliminar si no tiene jornadas. Sus equipos
+              ¿Eliminar «{objetivo?.nombre}»? Solo se puede eliminar si no tiene jornadas. Sus equipos
               permanecerán en la biblioteca.
             </p>
           )}

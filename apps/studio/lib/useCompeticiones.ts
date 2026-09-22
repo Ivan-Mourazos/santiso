@@ -49,11 +49,14 @@ export function useCompeticiones(categoria?: string, sincronizarUrl = false) {
     competicionesEnCategoria,
     categoria ? pickDefaultCompetitionId(competicionesCatalog, categoria) : "",
   );
+  // Devuelve si el cambio se aceptó: con la URL sincronizada, la guardia de borradores puede
+  // rechazar la navegación y la selección no cambia.
   const setSelectedCompetitionId = useCallback(
-    (value: SetStateAction<string>) => {
+    (value: SetStateAction<string>): boolean => {
       const next = typeof value === "function" ? value(selectedCompetitionId) : value;
-      if (setParams) setParams({ competicion: next || null, jornada: null });
-      else setLocalSelection(next);
+      if (setParams) return setParams({ competicion: next || null, jornada: null });
+      setLocalSelection(next);
+      return true;
     },
     [selectedCompetitionId, setParams],
   );
