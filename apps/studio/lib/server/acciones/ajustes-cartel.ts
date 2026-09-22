@@ -78,14 +78,17 @@ export async function guardarOrdenLogos(orden: string): Promise<Resultado<null>>
   return resultado.ok ? exito(null) : resultado;
 }
 
-/** Alta de un logo que se pinta en los carteles: es un patrocinador con `enCarteles`. */
+/**
+ * Alta de un logo que se pinta en los carteles: es un patrocinador con `enCarteles`.
+ *
+ * **Un nombre ya usado se rechaza.** Antes se hacía `update` por clave, así que subir aquí un
+ * logo con el nombre de un patrocinador del catálogo le cambiaba la imagen y lo sacaba de su
+ * pantalla sin avisar. La comprobación va antes de guardar el fichero para no dejar media
+ * huérfana. La 6D retira esta acción al mover la gestión al catálogo único.
+ */
 export async function guardarLogoPatrocinador(formulario: FormData): Promise<Resultado<null>> {
   const nombre = String(formulario.get("nombre") ?? "").trim();
   if (!nombre) return fallo("El nombre es obligatorio.", { nombre: "Obligatorio" });
-
-  const imagen = await guardarImagenOpcional(formulario, "logo", "cartel");
-  if (!imagen.ok) return imagen;
-  if (!imagen.datos) return fallo("Selecciona una imagen.");
 
   const clave = claveNombre(nombre);
   const { db } = await obtenerDb();
@@ -93,16 +96,18 @@ export async function guardarLogoPatrocinador(formulario: FormData): Promise<Res
     .select({ id: schema.patrocinadores.id })
     .from(schema.patrocinadores)
     .where(eq(schema.patrocinadores.clave, clave));
+  if (existente) {
+    return fallo("Ya existe un patrocinador o logo con ese nombre. Edítalo desde su ficha.", {
+      nombre: "Repetido",
+    });
+  }
+
+  const imagen = await guardarImagenOpcional(formulario, "logo", "cartel");
+  if (!imagen.ok) return imagen;
+  if (!imagen.datos) return fallo("Selecciona una imagen.");
 
   const logo = imagen.datos;
   const resultado = await capturar("No se pudo guardar el logo.", async () => {
-    if (existente) {
-      await db
-        .update(schema.patrocinadores)
-        .set({ nombre, logo, enCarteles: true })
-        .where(eq(schema.patrocinadores.id, existente.id));
-      return null;
-    }
     const [ultimo] = await db
       .select({ orden: max(schema.patrocinadores.orden) })
       .from(schema.patrocinadores)

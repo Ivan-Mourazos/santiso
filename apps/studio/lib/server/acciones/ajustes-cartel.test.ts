@@ -149,6 +149,29 @@ describe("acciones de ajustes de cartel", () => {
     expect(despues.datos.patrocinadores.map((p) => p.nombre)).toEqual(["Único"]);
   });
 
+  it("subir un logo con el nombre de otro registro no lo pisa ni lo saca del catálogo", async () => {
+    const { guardarLogoPatrocinador } = await entorno();
+    const bd = await import("@santiso/db");
+    const { db } = await (await import("@/lib/server/db")).obtenerDb();
+    await db.insert(bd.schema.patrocinadores).values({
+      nombre: "Autobuses Santiso",
+      clave: "autobuses santiso",
+      logo: "sponsors/original.webp",
+      webUrl: "https://example.test",
+      enCarteles: false,
+      orden: 3,
+    });
+    const antes = await db.select().from(bd.schema.patrocinadores);
+
+    const cuerpo = new FormData();
+    cuerpo.set("nombre", "AUTOBUSES SANTISO");
+    cuerpo.set("logo", new File([await pngRojo()], "otro.png", { type: "image/png" }));
+    const resultado = await guardarLogoPatrocinador(cuerpo);
+
+    expect(resultado.ok).toBe(false);
+    expect(await db.select().from(bd.schema.patrocinadores)).toEqual(antes);
+  });
+
   it("borra un logo de patrocinador", async () => {
     const { guardarLogoPatrocinador, borrarLogoPatrocinador, cargarAjustesCartel } =
       await entorno();

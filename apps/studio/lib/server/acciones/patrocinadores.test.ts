@@ -78,17 +78,41 @@ describe("acciones de patrocinadores", () => {
     });
   });
 
-  it("no lista los logos de cartel entre los patrocinadores de web", async () => {
+  it("el catálogo es uno solo: lista también los que salen en carteles", async () => {
     const { guardarPatrocinador, cargarPatrocinadores } = await entorno();
-    await guardarPatrocinador(formulario({ id: "", nombre: "De web" }));
+    const deWeb = await guardarPatrocinador(formulario({ id: "", nombre: "De web" }));
+    if (!deWeb.ok) throw new Error("no se creó");
 
     const bd = await import("@santiso/db");
     const { db } = await (await import("@/lib/server/db")).obtenerDb();
-    await db
+    const [deCartel] = await db
       .insert(bd.schema.patrocinadores)
-      .values({ nombre: "De cartel", clave: "de cartel", enCarteles: true });
+      .values({ nombre: "De cartel", clave: "de cartel", enCarteles: true, orden: 0 })
+      .returning({ id: bd.schema.patrocinadores.id });
 
-    expect((await cargarPatrocinadores()).map((p) => p.nombre)).toEqual(["De web"]);
+    // Primero los que salen en carteles, en su orden; después el resto, por nombre.
+    expect(await cargarPatrocinadores()).toEqual([
+      expect.objectContaining({ id: deCartel!.id, nombre: "De cartel", en_carteles: true }),
+      expect.objectContaining({ id: deWeb.datos.id, nombre: "De web", en_carteles: false }),
+    ]);
+  });
+
+  it("encuentra el registro que choca por nombre, sin contar el que se está editando", async () => {
+    const { guardarPatrocinador, buscarCoincidenciaPatrocinador } = await entorno();
+    const creado = await guardarPatrocinador(formulario({ id: "", nombre: "Autobuses Santiso" }));
+    if (!creado.ok) throw new Error("no se creó");
+
+    const coincide = await buscarCoincidenciaPatrocinador("AUTOBUSES  SANTISO");
+    expect(coincide).toMatchObject({ ok: true, datos: { id: creado.datos.id } });
+    // Al editarse a sí mismo no choca consigo mismo.
+    expect(await buscarCoincidenciaPatrocinador("Autobuses Santiso", creado.datos.id)).toEqual({
+      ok: true,
+      datos: null,
+    });
+    expect(await buscarCoincidenciaPatrocinador("Otro cualquiera")).toEqual({
+      ok: true,
+      datos: null,
+    });
   });
 
   it("borra un patrocinador", async () => {

@@ -6,13 +6,44 @@ import { eq, max } from "drizzle-orm";
 import type { PatrocinadorDto } from "@/lib/dto";
 import { urlMedia } from "@/lib/media";
 import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
-import { listarPatrocinadores } from "@/lib/server/consultas/patrocinadores";
+import {
+  listarCatalogoPatrocinadores,
+  listarPatrocinadores,
+} from "@/lib/server/consultas/patrocinadores";
 import { obtenerDb } from "@/lib/server/db";
 import { guardarImagenOpcional } from "@/lib/server/imagen";
 
-/** Solo los de la web; los logos de cartel se gestionan en la pantalla del generador. */
+/** Catálogo único: patrocinadores de web y logos de cartel en la misma lista (6D). */
 export async function cargarPatrocinadores(): Promise<PatrocinadorDto[]> {
-  return listarPatrocinadores(false);
+  return listarCatalogoPatrocinadores();
+}
+
+/** Los que se pintan en la barra del cartel, en su orden. */
+export async function cargarLogosDeCartel(): Promise<PatrocinadorDto[]> {
+  return listarPatrocinadores(true);
+}
+
+/**
+ * El registro que ya usa ese nombre, si lo hay. Sirve para avisar antes de guardar en vez de
+ * pisar una ficha existente, que es lo que hacía la subida desde Carteles hasta la 6D.
+ * `excluirId` es el registro que se está editando: no choca consigo mismo.
+ */
+export async function buscarCoincidenciaPatrocinador(
+  nombre: string,
+  excluirId?: string,
+): Promise<Resultado<PatrocinadorDto | null>> {
+  const clave = claveNombre(nombre);
+  if (!clave) return exito(null);
+  return capturar("No se pudo comprobar si el nombre ya existe.", async () => {
+    const catalogo = await listarCatalogoPatrocinadores();
+    const { db } = await obtenerDb();
+    const [fila] = await db
+      .select({ id: schema.patrocinadores.id })
+      .from(schema.patrocinadores)
+      .where(eq(schema.patrocinadores.clave, clave));
+    if (!fila || fila.id === excluirId) return null;
+    return catalogo.find((p) => p.id === fila.id) ?? null;
+  });
 }
 
 export async function guardarPatrocinador(
