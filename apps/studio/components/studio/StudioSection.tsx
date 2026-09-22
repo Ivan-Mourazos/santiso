@@ -57,11 +57,7 @@ export function StudioSection({ section }: { section: Seccion }) {
       {section === "patrocinadores" && <Sponsors {...feedback} />}
       {section === "temporadas" && <Seasons {...feedback} />}
       {section === "carteles" && (
-        <Posters
-          templateId={template}
-          onTemplateChange={(value) => setParams({ plantilla: value })}
-          hideLayout
-        />
+        <Posters templateId={template} showToast={showToast} />
       )}
       {section === "actas" && (
         <>
