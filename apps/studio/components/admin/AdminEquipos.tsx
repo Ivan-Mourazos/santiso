@@ -1,711 +1,319 @@
 "use client";
-import { Fragment, useState, useEffect, useMemo } from "react";
-import { prepararImagen } from "@/lib/imagen-cliente";
-import {
-  borrarEquipo,
-  cargarPantallaEquipos,
-  guardarEquipo,
-  inscribirEquipo,
-  quitarEquipoDeCompeticion,
-} from "@/lib/server/acciones/equipos";
-import { useUnsavedChanges } from "@/components/studio/StudioContext";
-import BusyBanner from "./BusyBanner";
-import {
-  competitionsForCategory,
-  pickDefaultCompetitionId,
-  type CompetenciaRow,
-} from "@/lib/competition";
-import { fetchCompeticiones } from "@/lib/lecturas-cliente";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui/foundation/Button";
+import { Field } from "@/components/ui/foundation/Fields";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
+import { filtrarEquipos, type EquipoCatalogo } from "@/lib/equipos/modelo";
+import { cargarCatalogoEquipos } from "@/lib/server/acciones/equipos";
 import { useCompeticiones } from "@/lib/useCompeticiones";
-import AvisoError from "./AvisoError";
-import { LoadingState } from "@/components/ui/foundation/States";
+import ControlesCompeticion from "./equipos/ControlesCompeticion";
+import EditorEquipo from "./equipos/EditorEquipo";
+import IncorporarEquipo from "./equipos/IncorporarEquipo";
+import EliminarEquipo from "./equipos/EliminarEquipo";
+import styles from "./equipos/Equipos.module.css";
 
-interface AdminEquiposProps {
+interface Props {
   showToast: (msg: string, type?: "success" | "error") => void;
   showConfirm: (msg: string, onConfirm: () => void) => void;
   categoria: string;
 }
+type Dialogo =
+  | { tipo: "editor"; equipo: EquipoCatalogo | null }
+  | { tipo: "incorporar" }
+  | { tipo: "baja"; id: string; modo: "quitar" | "eliminar" };
 
-interface Equipo {
-  id: string;
-  nombre: string;
-  escudo_url: string;
-  categoria: string;
-}
-
-export default function AdminEquipos({
-  showToast,
-  showConfirm,
-  categoria,
-}: AdminEquiposProps) {
-  const [equipos, setEquipos] = useState<Equipo[]>([]);
-  const [allCategoryTeams, setAllCategoryTeams] = useState<Equipo[]>([]);
-  const {
-    contextoListo,
-    competicionesCatalog,
-    selectedCompetitionId,
-    setSelectedCompetitionId,
-    competicionesEnCategoria,
-    errorCompeticiones,
-    addCompeticion,
-    removeCompeticion,
-  } = useCompeticiones(categoria, true);
-
-  const [nuevaCompeticionNombre, setNuevaCompeticionNombre] = useState("");
-  const [nuevoFormato, setNuevoFormato] = useState("liga");
-  const [showNewCompeticion, setShowNewCompeticion] = useState(false);
-  const [selectedExistingId, setSelectedExistingId] = useState("");
-
-  const [nombreEquipo, setNombreEquipo] = useState("");
-  const [escudoEquipo, setEscudoEquipo] = useState<File | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [relationEnabled, setRelationEnabled] = useState(true);
-
-  const [pendingPhotos, setPendingPhotos] = useState<Record<string, File>>({});
-  const [loading, setLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [busyText, setBusyText] = useState("Cargando equipos...");
-  const [busyProgress, setBusyProgress] = useState<number | undefined>(
-    undefined,
+export default function AdminEquipos({ categoria, showToast }: Props) {
+  const contexto = useCompeticiones(categoria, true);
+  const [catalogo, setCatalogo] = useState<EquipoCatalogo[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [biblioteca, setBiblioteca] = useState(false);
+  const [texto, setTexto] = useState("");
+  const [sinEscudo, setSinEscudo] = useState(false);
+  const [dialogo, setDialogo] = useState<Dialogo | null>(null);
+  const generacion = useRef(0);
+  const competicion = contexto.competicionesEnCategoria.find(
+    (c) => c.id === contexto.selectedCompetitionId,
   );
-
-  const [originalEquipo, setOriginalEquipo] = useState<Equipo | null>(null);
-
-  useUnsavedChanges(
-    nombreEquipo !== (originalEquipo?.nombre ?? "") ||
-      escudoEquipo !== null ||
-      selectedExistingId !== "" ||
-      nuevaCompeticionNombre !== "" ||
-      nuevoFormato !== "liga" ||
-      Object.keys(pendingPhotos).length > 0,
-  );
-
-  const selectedCompeticionNombre = useMemo(
-    () =>
-      competicionesCatalog.find((c) => c.id === selectedCompetitionId)?.nombre ??
-      "",
-    [competicionesCatalog, selectedCompetitionId],
-  );
-
+  const verBiblioteca = biblioteca || !competicion;
+  const recargar = useCallback(async (trasGuardar = false) => {
+    const token = ++generacion.current;
+    setCargando(true);
+    try {
+      const datos = await cargarCatalogoEquipos();
+      if (token !== generacion.current) return;
+      setCatalogo(datos);
+      setError(null);
+    } catch {
+      if (token === generacion.current)
+        setError(
+          trasGuardar
+            ? "La operación terminó, pero no se pudo actualizar la vista. Recarga el catálogo."
+            : "No se pudo cargar el catálogo de equipos.",
+        );
+    } finally {
+      if (token === generacion.current) setCargando(false);
+    }
+  }, []);
   useEffect(() => {
-    if (!selectedCompetitionId) return;
-    fetchEquipos();
-  }, [categoria, selectedCompetitionId]);
-  async function fetchEquipos() {
-    setIsFetching(true);
-    const { todos, inscritos } = await cargarPantallaEquipos(categoria, selectedCompetitionId);
-    const ids = new Set(inscritos.map((e) => e.id));
-    setAllCategoryTeams(todos as Equipo[]);
-    setRelationEnabled(true);
-    setEquipos(todos.filter((t) => ids.has(t.id)) as Equipo[]);
-    setSelectedExistingId("");
-    setIsFetching(false);
-  }
-
-  const resetForm = () => {
-    setNombreEquipo("");
-    setEscudoEquipo(null);
-    setEditingId(null);
-    setOriginalEquipo(null);
-  };
-
-  const startEdit = (equipo: Equipo) => {
-    setNombreEquipo(equipo.nombre);
-    setEditingId(equipo.id);
-    setEscudoEquipo(null);
-    setOriginalEquipo(equipo);
-  };
-
-  const availableTeams = allCategoryTeams.filter(
-    (t) => !equipos.some((e) => e.id === t.id),
+    if (!contexto.contextoListo) return;
+    void recargar();
+    const solicitudes = generacion;
+    return () => {
+      solicitudes.current++;
+    };
+  }, [recargar, contexto.contextoListo]);
+  const base = useMemo(
+    () =>
+      catalogo.filter(
+        (e) =>
+          e.categoria === categoria &&
+          (verBiblioteca || e.competiciones.some((c) => c.id === competicion?.id)),
+      ),
+    [catalogo, categoria, verBiblioteca, competicion?.id],
   );
-
-  async function ensureTeamInLeague(teamId: string) {
-    if (!selectedCompetitionId) return;
-    const resultado = await inscribirEquipo(selectedCompetitionId, teamId);
-    if (!resultado.ok) throw new Error(resultado.error);
+  const visibles = useMemo(
+    () => filtrarEquipos(base, { texto, soloSinEscudo: sinEscudo }),
+    [base, texto, sinEscudo],
+  );
+  const equipoBaja =
+    dialogo?.tipo === "baja" ? catalogo.find((e) => e.id === dialogo.id) : undefined;
+  function terminado(mensaje: string) {
+    setDialogo(null);
+    showToast(mensaje);
+    void recargar(true);
   }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!nombreEquipo) return;
-    setBusyText(
-      editingId ? "Guardando cambios equipo..." : "Creando equipo...",
-    );
-    setBusyProgress(5);
-    setLoading(true);
-
-    try {
-      const cuerpo = new FormData();
-      cuerpo.set("id", editingId ?? "");
-      cuerpo.set("nombre", nombreEquipo);
-      cuerpo.set("categoria", categoria);
-      if (selectedCompetitionId) cuerpo.set("competicionId", selectedCompetitionId);
-      if (escudoEquipo) {
-        setBusyText("Preparando escudo...");
-        setBusyProgress(40);
-        cuerpo.set("escudo", await prepararImagen(escudoEquipo));
-      }
-
-      setBusyText("Guardando equipo...");
-      setBusyProgress(80);
-      const resultado = await guardarEquipo(cuerpo);
-      if (resultado.ok) {
-        showToast(editingId ? "Equipo actualizado" : "Equipo añadido");
-        resetForm();
-        fetchEquipos();
-      } else {
-        showToast(resultado.error, "error");
-      }
-    } catch (err) {
-      console.error(err);
-      showToast("Error en operación", "error");
-    } finally {
-      setLoading(false);
-      setBusyProgress(undefined);
-    }
-  }
-
-  async function handleAddExistingTeam() {
-    if (!selectedExistingId) return;
-    setBusyText("Añadiendo equipo existente...");
-    setBusyProgress(70);
-    setLoading(true);
-    try {
-      await ensureTeamInLeague(selectedExistingId);
-      showToast("Equipo añadido a liga");
-      setSelectedExistingId("");
-      fetchEquipos();
-    } catch (err) {
-      console.error(err);
-      showToast("Error añadiendo equipo", "error");
-    } finally {
-      setLoading(false);
-      setBusyProgress(undefined);
-    }
-  }
-
-  async function handleDeleteEquipo(id: string) {
-    showConfirm(
-      relationEnabled
-        ? "¿Quitar equipo de esta liga?"
-        : "¿Borrar equipo de librería?",
-      async () => {
-        const resultado = relationEnabled
-          ? await quitarEquipoDeCompeticion(selectedCompetitionId, id)
-          : await borrarEquipo(id);
-        if (resultado.ok) {
-          showToast(relationEnabled ? "Equipo quitado de liga" : "Equipo eliminado");
-          fetchEquipos();
-        } else {
-          showToast(resultado.error, "error");
-        }
-      },
-    );
-  }
-
-  async function handleUpdateEscudo(id: string, file: File) {
-    setBusyText("Procesando y subiendo escudo...");
-    setBusyProgress(5);
-    setLoading(true);
-    setPendingPhotos((pending) => ({ ...pending, [id]: file }));
-    try {
-      const cuerpo = new FormData();
-      cuerpo.set("id", id);
-      cuerpo.set("nombre", allCategoryTeams.find((e) => e.id === id)?.nombre ?? "");
-      cuerpo.set("categoria", categoria);
-      setBusyText("Preparando escudo...");
-      setBusyProgress(40);
-      cuerpo.set("escudo", await prepararImagen(file));
-
-      setBusyText("Guardando escudo...");
-      setBusyProgress(80);
-      const resultado = await guardarEquipo(cuerpo);
-      if (resultado.ok) {
-        showToast("Escudo actualizado");
-        setPendingPhotos((pending) => {
-          const remaining = { ...pending };
-          delete remaining[id];
-          return remaining;
-        });
-        fetchEquipos();
-      } else {
-        showToast(resultado.error, "error");
-      }
-    } catch (err) {
-      console.error(err);
-      showToast("Error actualizando escudo", "error");
-    } finally {
-      setLoading(false);
-      setBusyProgress(undefined);
-    }
-  }
-
-  function renderEquipoForm() {
+  if (contexto.errorCompeticiones)
     return (
-      <form
-        onSubmit={handleSubmit}
-        className="admin-form"
-        style={{
-          background: editingId ? "rgba(250, 204, 21, 0.05)" : "",
-          padding: editingId ? "1.5rem" : "",
-          borderRadius: "1rem",
-          transition: "all 0.3s",
-        }}
-      >
-        <div className="form-grid-3">
-          <div className="input-group">
-            <label>Nombre del Equipo</label>
-            <input
-              type="text"
-              placeholder="Ej: Racing de Ferrol"
-              value={nombreEquipo}
-              onChange={(e) => setNombreEquipo(e.target.value)}
-              required
-            />
-          </div>
-          <div className="input-group">
-            <label>Escudo {editingId ? "(Opcional)" : ""}</label>
-            <div className="file-input-group">
-              <label className="file-input-label">
-                {escudoEquipo
-                  ? escudoEquipo.name.substring(0, 15) + "..."
-                  : editingId
-                    ? "Cambiar Escudo"
-                    : "Elegir Escudo"}
-                <input
-                  type="file"
-                  className="hidden-input"
-                  accept="image/*"
-                  onChange={(e) => setEscudoEquipo(e.target.files?.[0] || null)}
-                />
-              </label>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-end",
-              gap: "0.8rem",
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={loading}
-              style={{ flex: "1 1 160px" }}
-            >
-              {loading
-                ? "Procesando..."
-                : editingId
-                  ? "Guardar Cambios"
-                  : "Añadir Equipo"}
-            </button>
-            {editingId && (
-              <button type="button" className="btn-secondary" onClick={resetForm}>
-                Cancelar
-              </button>
-            )}
-          </div>
-        </div>
-      </form>
-    );
-  }
-
-  if (!contextoListo && !errorCompeticiones) return <LoadingState title="Cargando contexto deportivo…" />;
-
-  return (
-    <div className="card glass">
-      <BusyBanner
-        show={loading || isFetching}
-        text={isFetching ? "Cargando equipos..." : busyText}
-        progress={loading ? busyProgress : undefined}
+      <ErrorState
+        title="No se pudo cargar el contexto"
+        detail={contexto.errorCompeticiones}
+        action={<Button onClick={() => void contexto.loadCompeticiones()}>Reintentar</Button>}
       />
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "1.5rem",
-        }}
-      >
+    );
+  if (!contexto.contextoListo) return <LoadingState title="Cargando contexto deportivo…" />;
+  return (
+    <div className={styles.panel}>
+      <header className={styles.cabecera}>
         <div>
-          <h3>Librería de Equipos ({categoria})</h3>
-          <p style={{ color: "#a3a3a3", fontSize: "0.85rem" }}>
-            Gestiona clubes por competición. Reutiliza equipos existentes sin
-            duplicar.
-          </p>
+          <h3>Equipos · {categoria}</h3>
+          <p className={styles.detalle}>Biblioteca de clubes, escudos e inscripciones.</p>
         </div>
-        {editingId && (
-          <button
-            onClick={resetForm}
-            className="btn-delete"
-            style={{ padding: "0.4rem 1rem" }}
+        <div className={styles.acciones}>
+          <Button
+            disabled={!competicion || cargando || Boolean(error)}
+            onClick={() => setDialogo({ tipo: "incorporar" })}
           >
-            Cancelar Edición
-          </button>
-        )}
-      </div>
-
-      <div className="input-group" style={{ marginBottom: "1rem" }}>
-        <label>Liga / Competición</label>
-        <AvisoError mensaje={errorCompeticiones} />
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <select
-            value={selectedCompetitionId}
-            onChange={(e) => setSelectedCompetitionId(e.target.value)}
-            disabled={loading || isFetching}
-            style={{ flex: 1 }}
+            Añadir a competición
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={cargando || Boolean(error)}
+            onClick={() => setDialogo({ tipo: "editor", equipo: null })}
           >
-            {competicionesEnCategoria.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.nombre}
-              </option>
-            ))}
-          </select>
-          {showNewCompeticion && (
-            <>
-              <input
-                type="text"
-                placeholder="Nombre..."
-                value={nuevaCompeticionNombre}
-                onChange={(e) => setNuevaCompeticionNombre(e.target.value)}
-                autoFocus
-                style={{ width: "120px" }}
-              />
-              <select
-                value={nuevoFormato}
-                onChange={(e) => setNuevoFormato(e.target.value)}
-                style={{ width: "110px", padding: "0.4rem", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white" }}
-              >
-                <option value="liga">Liga</option>
-                <option value="eliminatoria">Copa / Árbol</option>
-              </select>
-            </>
-          )}
-          <button
-            type="button"
-            onClick={async () => {
-              if (showNewCompeticion && nuevaCompeticionNombre.trim()) {
-                setLoading(true);
-                const { error } = await addCompeticion(nuevaCompeticionNombre, categoria, nuevoFormato);
-                setLoading(false);
-                if (error) showToast("Error: " + error.message, "error");
-                else {
-                  showToast("Competición añadida");
-                  setNuevaCompeticionNombre("");
-                  setNuevoFormato("liga");
-                  setShowNewCompeticion(false);
-                }
-              } else {
-                setShowNewCompeticion((v) => !v);
-              }
-            }}
-            className="btn-primary"
-            style={{ padding: "0.8rem", width: "45px", display: "flex", alignItems: "center", justifyContent: "center" }}
-          >
-            {showNewCompeticion ? "✓" : "+"}
-          </button>
-          {selectedCompetitionId && competicionesEnCategoria.length > 1 && (
-            <button
-              type="button"
-              onClick={() => {
-                const compName = competicionesEnCategoria.find(c => c.id === selectedCompetitionId)?.nombre;
-                showConfirm(`¿Eliminar la competición "${compName}" de esta categoría?`, async () => {
-                  setLoading(true);
-                  const { error } = await removeCompeticion(selectedCompetitionId);
-                  setLoading(false);
-                  if (error) showToast("Error: " + error.message, "error");
-                  else showToast("Competición eliminada");
-                });
-              }}
-              className="btn-delete"
-              title="Eliminar Competición"
-              style={{ padding: "0.8rem", width: "45px", display: "flex", alignItems: "center", justifyContent: "center" }}
-            >
-              ✕
-            </button>
-          )}
+            Crear equipo
+          </Button>
         </div>
-      </div>
-
-      {relationEnabled && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 220px",
-            gap: "0.8rem",
-            marginBottom: "1.2rem",
-          }}
-        >
-          <div className="input-group">
-            <label>Añadir desde equipos ya existentes</label>
-            <select
-              value={selectedExistingId}
-              onChange={(e) => setSelectedExistingId(e.target.value)}
-              disabled={loading}
-            >
-              <option value="">Seleccionar equipo de la base de datos...</option>
-              {availableTeams.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nombre} {t.categoria ? `(${t.categoria})` : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={{ display: "flex", alignItems: "flex-end" }}>
-            <button
-              type="button"
-              className="btn-primary"
-              style={{ width: "100%" }}
-              onClick={handleAddExistingTeam}
-              disabled={loading || !selectedExistingId}
-            >
-              Añadir a liga
-            </button>
-          </div>
-        </div>
-      )}
-
-      {!relationEnabled && (
-        <p
-          style={{ color: "#f59e0b", fontSize: "0.8rem", marginBottom: "1rem" }}
-        >
-          Tabla `equipo_competiciones` no existe. Modo clásico activo por
-          categoría.
+      </header>
+      <ControlesCompeticion
+        contexto={contexto}
+        categoria={categoria}
+        onMutado={() => {
+          showToast("Competición actualizada");
+          void recargar(true);
+        }}
+      />
+      {!competicion && (
+        <p className={styles.detalle}>
+          No hay competición seleccionada. Puedes gestionar la biblioteca; crea una competición para
+          inscribir equipos.
         </p>
       )}
-
-      {relationEnabled && !editingId && (
-        <div style={{ display: 'flex', alignItems: 'center', margin: '2rem 0' }}>
-          <hr style={{ flex: 1, borderColor: 'rgba(255,255,255,0.06)', borderStyle: 'solid', borderBottom: 'none' }} />
-          <span style={{ padding: '0 1rem', color: '#666', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 600 }}>o crear nuevo</span>
-          <hr style={{ flex: 1, borderColor: 'rgba(255,255,255,0.06)', borderStyle: 'solid', borderBottom: 'none' }} />
-        </div>
-      )}
-
-      {!editingId && (
-      <form
-        onSubmit={handleSubmit}
-        className="admin-form"
-        style={{
-          background: editingId ? "rgba(250, 204, 21, 0.05)" : "",
-          padding: editingId ? "1.5rem" : "",
-          borderRadius: "1rem",
-          transition: "all 0.3s",
-        }}
-      >
-        <div className="form-grid-3">
-          <div className="input-group">
-            <label>Nombre del Equipo</label>
-            <input
-              type="text"
-              placeholder="Ej: Racing de Ferrol"
-              value={nombreEquipo}
-              onChange={(e) => setNombreEquipo(e.target.value)}
-              required
+      <div className={styles.vistas} role="group" aria-label="Vista de equipos">
+        <Button
+          variant={verBiblioteca ? "secondary" : "primary"}
+          aria-pressed={!verBiblioteca}
+          disabled={!competicion}
+          onClick={() => setBiblioteca(false)}
+        >
+          Esta competición
+        </Button>
+        <Button
+          variant={verBiblioteca ? "primary" : "secondary"}
+          aria-pressed={verBiblioteca}
+          onClick={() => setBiblioteca(true)}
+        >
+          Biblioteca de {categoria}
+        </Button>
+      </div>
+      {error ? (
+        <ErrorState
+          title={error}
+          action={<Button onClick={() => void recargar()}>Reintentar</Button>}
+        />
+      ) : cargando ? (
+        <LoadingState title="Cargando equipos…" />
+      ) : (
+        <>
+          <div className={styles.herramientas} role="search" aria-label="Filtrar equipos">
+            <Field
+              label="Buscar equipo"
+              type="search"
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              placeholder="Nombre del equipo"
             />
+            <label className={styles.casilla}>
+              <input
+                className={styles.check}
+                type="checkbox"
+                checked={sinEscudo}
+                onChange={(e) => setSinEscudo(e.target.checked)}
+              />
+              Sin escudo
+            </label>
           </div>
-          <div className="input-group">
-            <label>Escudo {editingId ? "(Opcional)" : ""}</label>
-            <div className="file-input-group">
-              <label className="file-input-label">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-                </svg>
-                {escudoEquipo
-                  ? escudoEquipo.name.substring(0, 15) + "..."
-                  : editingId
-                    ? "Cambiar Escudo"
-                    : "Elegir Escudo"}
-                <input
-                  type="file"
-                  className="hidden-input"
-                  accept="image/*"
-                  onChange={(e) => setEscudoEquipo(e.target.files?.[0] || null)}
-                />
-              </label>
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "flex-end" }}>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={loading}
-              style={{ width: "100%" }}
-            >
-              {loading
-                ? "Procesando..."
-                : editingId
-                  ? "Guardar Cambios"
-                  : "Añadir Equipo"}
-            </button>
-          </div>
-        </div>
-      </form>
-      )}
-
-      <div style={{ marginTop: "2.5rem" }}>
-        <h4
-          style={{
-            marginBottom: "1rem",
-            fontSize: "0.9rem",
-            color: "#666",
-            textTransform: "uppercase",
-            letterSpacing: "1px",
-          }}
-        >
-          Equipos en {selectedCompeticionNombre || "..."}
-        </h4>
-        <div
-          className="equipos-list"
-          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
-        >
-          {equipos.map((e) => (
-            <Fragment key={e.id}>
-            <div
-              className="admin-item glass shadow-sm"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0.75rem 1.2rem",
-                border:
-                  editingId === e.id
-                    ? "1px solid var(--primary)"
-                    : "1px solid rgba(255,255,255,0.05)",
-                borderRadius: "12px",
-              }}
-            >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "15px" }}
-              >
-                <div
-                  style={{
-                    position: "relative",
-                    width: "36px",
-                    height: "36px",
+          <p role="status" className={styles.contador}>
+            {visibles.length} de {base.length} equipos
+          </p>
+          {base.length === 0 ? (
+            <EmptyState
+              title={
+                verBiblioteca ? "La biblioteca está vacía." : "No hay equipos en esta competición."
+              }
+              detail={
+                verBiblioteca
+                  ? "Crea el primer equipo de esta categoría."
+                  : "Añade un equipo de la biblioteca o crea uno nuevo."
+              }
+            />
+          ) : visibles.length === 0 ? (
+            <EmptyState
+              title="Ningún equipo coincide con los filtros."
+              action={
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setTexto("");
+                    setSinEscudo(false);
                   }}
                 >
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      background: "rgba(255,255,255,0.03)",
-                      borderRadius: "8px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {e.escudo_url ? (
-                      <img
-                        src={e.escudo_url}
-                        alt={e.nombre}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "contain",
-                        }}
-                      />
-                    ) : (
-                      <span style={{ fontSize: "0.5rem" }}>Logo</span>
-                    )}
-                  </div>
-                  <label
-                    style={{
-                      position: "absolute",
-                      bottom: "-6px",
-                      right: "-6px",
-                      background: "var(--primary)",
-                      color: "#000",
-                      borderRadius: "50%",
-                      width: "20px",
-                      height: "20px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: loading ? "not-allowed" : "pointer",
-                      border: "2px solid #000",
-                      opacity: loading ? 0.6 : 1,
-                    }}
-                  >
-                    <svg
-                      width="11"
-                      height="11"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                    >
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                    <input
-                      type="file"
-                      className="hidden-input"
-                      accept="image/*"
-                      disabled={loading}
-                      onChange={(ev) => {
-                        const f = ev.target.files?.[0];
-                        if (f) handleUpdateEscudo(e.id, f);
-                        ev.currentTarget.value = "";
-                      }}
-                    />
-                  </label>
-                </div>
-                <span
-                  style={{ fontSize: "1rem", fontWeight: 800, color: "white" }}
-                >
-                  {e.nombre}
-                </span>
-              </div>
-              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                <button
-                  disabled={loading}
-                  onClick={() => startEdit(e)}
-                  className="btn-edit btn-action"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                  </svg>
-                  Editar
-                </button>
-                <button
-                  disabled={loading}
-                  onClick={() => handleDeleteEquipo(e.id)}
-                  className="btn-delete btn-action"
-                >
-                  {relationEnabled ? "Quitar" : "Borrar"}
-                </button>
-              </div>
-            </div>
-            {editingId === e.id && (
-              <div style={{ margin: "0.2rem 0 1rem" }}>
-                {renderEquipoForm()}
-              </div>
-            )}
-            </Fragment>
-          ))}
-        </div>
-      </div>
+                  Quitar filtros
+                </Button>
+              }
+            />
+          ) : (
+            <table className={styles.tabla} aria-label={`Equipos ${categoria}`}>
+              <thead>
+                <tr>
+                  <th scope="col">Escudo</th>
+                  <th scope="col">Equipo y competiciones</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibles.map((equipo) => (
+                  <tr key={equipo.id}>
+                    <td>
+                      {equipo.escudo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- escudo local del catálogo
+                        <img
+                          className={styles.escudo}
+                          src={equipo.escudo_url}
+                          alt={`Escudo de ${equipo.nombre}`}
+                        />
+                      ) : (
+                        <span className={styles.escudo} role="img" aria-label="Sin escudo" />
+                      )}
+                    </td>
+                    <td>
+                      <span className={styles.nombre}>{equipo.nombre}</span>
+                      <span className={styles.detalle}>
+                        {equipo.categoria} · {equipo.numeroPartidos}{" "}
+                        {equipo.numeroPartidos === 1 ? "partido" : "partidos"}
+                      </span>
+                      <span className={styles.detalle}>
+                        {equipo.competiciones
+                          .map((c) => `${c.nombre} · ${c.temporadaNombre}`)
+                          .join("; ") || "Sin competiciones"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className={styles.acciones}>
+                        <Button
+                          variant="secondary"
+                          aria-label={`Editar a ${equipo.nombre}`}
+                          onClick={() => setDialogo({ tipo: "editor", equipo })}
+                        >
+                          Editar
+                        </Button>
+                        {competicion &&
+                          equipo.competiciones.some((c) => c.id === competicion.id) && (
+                            <Button
+                              variant="secondary"
+                              aria-label={`Quitar ${equipo.nombre} de ${competicion.nombre}`}
+                              onClick={() =>
+                                setDialogo({ tipo: "baja", id: equipo.id, modo: "quitar" })
+                              }
+                            >
+                              Quitar de competición
+                            </Button>
+                          )}
+                        <Button
+                          variant="secondary"
+                          aria-label={
+                            equipo.numeroPartidos > 0
+                              ? `Revisar baja de ${equipo.nombre}`
+                              : `Eliminar ${equipo.nombre} de biblioteca`
+                          }
+                          onClick={() =>
+                            setDialogo({ tipo: "baja", id: equipo.id, modo: "eliminar" })
+                          }
+                        >
+                          {equipo.numeroPartidos > 0
+                            ? "Baja e historial"
+                            : "Eliminar de biblioteca"}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </>
+      )}
+      {dialogo?.tipo === "editor" && (
+        <EditorEquipo
+          equipo={dialogo.equipo}
+          destino={{
+            categoria,
+            competicionId: !dialogo.equipo && !verBiblioteca ? competicion?.id : undefined,
+            competicionNombre: competicion?.nombre,
+          }}
+          onCerrar={() => setDialogo(null)}
+          onGuardado={() => terminado("Equipo guardado")}
+        />
+      )}
+      {dialogo?.tipo === "incorporar" && competicion && (
+        <IncorporarEquipo
+          catalogo={catalogo}
+          categoria={categoria}
+          competicion={competicion}
+          onCerrar={() => setDialogo(null)}
+          onGuardado={() => terminado("Equipo añadido a la competición")}
+        />
+      )}
+      {dialogo?.tipo === "baja" && equipoBaja && (
+        <EliminarEquipo
+          equipo={equipoBaja}
+          competicion={competicion}
+          modoInicial={dialogo.modo}
+          onCerrar={() => setDialogo(null)}
+          onGuardado={terminado}
+          onReleer={() => recargar()}
+        />
+      )}
     </div>
   );
 }

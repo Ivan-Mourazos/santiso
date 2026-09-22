@@ -22,31 +22,33 @@ test("ruta, categoría y Directiva conservan contexto al recargar y volver", asy
     page.getByRole("heading", { name: "Directiva", exact: true, level: 1 }),
   ).toBeVisible();
 });
-// La guardia se prueba en Equipos porque tiene el formulario en línea. Jugadores lo tuvo hasta la
-// 6B; desde entonces edita en un diálogo modal, que deja el menú inalcanzable mientras está
-// abierto (su propia prueba de descarte está en plantilla.spec.ts).
+// Calendario mantiene edición en línea. Equipos y Plantilla usan editores modales.
 test("borrador bloquea sección, categoría y atrás sin perder texto", async ({ page }) => {
   await page.goto("/admin/temporadas");
-  await page.getByRole("link", { name: "Equipos", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Librería de Equipos (Senior)", exact: true }),
-  ).toBeVisible();
-  const name = page.getByPlaceholder("Ej: Racing de Ferrol").first();
-  await name.fill("Borrador sin guardar");
-  page.on("dialog", (dialog) => dialog.dismiss());
   await page.getByRole("link", { name: "Calendario", exact: true }).click();
-  await expect(page).toHaveURL(/equipos/);
-  await expect(name).toHaveValue("Borrador sin guardar");
+  await expect(page).toHaveURL(/jornada=/);
+  const marcador = page.locator('input[type="number"]').first();
+  await expect(marcador).toBeVisible();
+  const nuevo = (await marcador.inputValue()) === "17" ? "18" : "17";
+  await marcador.fill(nuevo);
+  page.on("dialog", (dialog) => dialog.dismiss());
+  await page.getByRole("link", { name: "Jugadores", exact: true }).click();
+  await expect(page).toHaveURL(/calendario/);
+  await expect(marcador).toHaveValue(nuevo);
   await page
     .getByRole("group", { name: "Categoría deportiva" })
     .getByRole("button", { name: "Veteranos" })
     .click();
-  await expect(name).toHaveValue("Borrador sin guardar");
+  await expect(page.getByRole("button", { name: "Senior", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(marcador).toHaveValue(nuevo);
   const blocked = page.waitForEvent("dialog");
   await page.evaluate(() => window.history.back());
   await blocked;
-  await expect(page).toHaveURL(/equipos/);
-  await expect(name).toHaveValue("Borrador sin guardar");
+  await expect(page).toHaveURL(/calendario/);
+  await expect(marcador).toHaveValue(nuevo);
 });
 for (const width of [360, 390])
   test(`menú móvil accesible a ${width}px`, async ({ page }) => {
@@ -93,24 +95,23 @@ test("el marcador sin guardar bloquea cambiar de sección", async ({ page }) => 
 });
 
 test("pulsar la sección actual conserva la guardia", async ({ page }) => {
-  await page.goto("/admin/equipos");
-  await expect(
-    page.getByRole("heading", { name: "Librería de Equipos (Senior)", exact: true }),
-  ).toBeVisible();
-  const input = page.getByPlaceholder("Ej: Racing de Ferrol").first();
-  await input.fill("Borrador conservado");
+  await page.goto("/admin/calendario");
+  await expect(page).toHaveURL(/jornada=/);
+  const marcador = page.locator('input[type="number"]').first();
+  await expect(marcador).toBeVisible();
+  const nuevo = (await marcador.inputValue()) === "17" ? "18" : "17";
+  await marcador.fill(nuevo);
   let dialogs = 0;
   page.on("dialog", async (dialog) => {
     dialogs++;
     await dialog.dismiss();
   });
-  await page.getByRole("link", { name: "Equipos", exact: true }).click();
-  expect(dialogs).toBe(0);
   await page.getByRole("link", { name: "Calendario", exact: true }).click();
-  expect(dialogs).toBe(1);
-  await expect(input).toHaveValue("Borrador conservado");
+  expect(dialogs).toBe(0);
+  await page.getByRole("link", { name: "Jugadores", exact: true }).click();
+  await expect.poll(() => dialogs).toBe(1);
+  await expect(marcador).toHaveValue(nuevo);
 });
-
 test("el calendario PDF mantiene Veteranos al cargar competiciones", async ({ page }) => {
   await page.goto("/admin/importar-jornada?origen=calendario");
   const category = page.locator("#cal-categoria");
@@ -130,14 +131,22 @@ test("Equipos espera a resolver contexto antes de permitir edición", async ({ p
     if (route.request().method() === "POST") await gate;
     await route.continue();
   });
-  await page.goto("/admin/equipos");
-  await expect(page.getByText("Cargando contexto deportivo…")).toBeVisible();
-  await expect(page.locator("form input")).toHaveCount(0);
-  release();
+  try {
+    await page.goto("/admin/equipos");
+    await expect(page.getByText("Cargando contexto deportivo…")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Crear equipo", exact: true })).toHaveCount(0);
+  } finally {
+    release();
+  }
   await expect(page).toHaveURL(/competicion=/);
-  const input = page.locator("form input").first();
+  await page.getByRole("button", { name: "Crear equipo", exact: true }).click();
+  const editor = page.getByRole("dialog", { name: "Crear equipo" });
+  const input = editor.getByLabel("Nombre del equipo");
   await input.fill("Equipo pendiente");
   page.once("dialog", (dialog) => dialog.dismiss());
-  await page.getByRole("link", { name: "Jugadores", exact: true }).click();
+  await editor.getByRole("button", { name: "Cancelar" }).click();
   await expect(input).toHaveValue("Equipo pendiente");
+  page.once("dialog", (dialog) => dialog.accept());
+  await editor.getByRole("button", { name: "Cancelar" }).click();
+  await expect(editor).toBeHidden();
 });

@@ -173,10 +173,10 @@ expect(form.has('competicionId')).toBe(false);
 **Entrega:** `EditorEquipo` montado solo al abrir, con `key` por apertura, y callbacks
 `onCerrar(): void`, `onGuardado(equipo: EquipoDto): void`. Recibe equipo opcional y destino fijo.
 
-- [ ] Implementar el patrón de `plantilla/EditorStaff.tsx`: estado inicial, ref de operación,
+- [x] Implementar el patrón de `plantilla/EditorStaff.tsx`: estado inicial, ref de operación,
       error general y error de nombre. Reutilizar `plantilla/FotoFormulario` sin copiarlo.
-- [ ] Nombre obligatorio con `Field` asociado; categoría y alcance global como texto visible.
-- [ ] Preparar imagen con `prepararImagen`, llamar a `guardarEquipo`, capturar excepciones
+- [x] Nombre obligatorio con `Field` asociado; categoría y alcance global como texto visible.
+- [x] Preparar imagen con `prepararImagen`, llamar a `guardarEquipo`, capturar excepciones
       y liberar bloqueo en `finally`. No cerrar ante `Resultado.ok === false`.
 
 ```ts
@@ -197,65 +197,65 @@ try {
 }
 ```
 
-- [ ] Bloquear fieldset y cierre durante guardado. Cancelar sin cambios cierra directamente;
+- [x] Bloquear fieldset y cierre durante guardado. Cancelar sin cambios cierra directamente;
       con nombre o foto modificados pide descarte. Conservar foto tras error.
-- [ ] Verificar en T5 apertura, validación, descarte rechazado/aceptado, fallo y reintento.
-- [ ] Revisar lint explícito y typecheck; `pnpm check` antes del commit de integración T3.
+- [x] Verificar en T5 apertura, validación, descarte rechazado/aceptado, fallo y reintento.
+- [x] Revisar lint explícito y typecheck; `pnpm check` antes del commit de integración T3.
 
 ## T3 — Listado, búsqueda e incorporación
 
 **Entrega:** pantalla de Equipos con listado primero e incorporación contextual.
 
-- [ ] Sustituir estado duplicado y casts `as Equipo[]` por catálogo tipado; derivar inscritos,
+- [x] Sustituir estado duplicado y casts `as Equipo[]` por catálogo tipado; derivar inscritos,
       biblioteca y candidatos con IDs y `useMemo` cuando resulte útil.
-- [ ] Conservar `useCompeticiones(categoria, true)` y el montaje por contexto de StudioSection.
+- [x] Conservar `useCompeticiones(categoria, true)` y el montaje por contexto de StudioSection.
       Mostrar LoadingState hasta `contextoListo`; error de contexto con reintento.
-- [ ] Implementar recarga con contador de generación y descarte de respuestas tardías, incluido
+- [x] Implementar recarga con contador de generación y descarte de respuestas tardías, incluido
       desmontaje. Error de carga no se confunde con cero equipos.
-- [ ] No añadir selector de temporada. La biblioteca es global y la competición respeta
+- [x] No añadir selector de temporada. La biblioteca es global y la competición respeta
       `?temporada=` mediante el hook. Mantener creación/eliminación y sus restricciones.
-- [ ] Montar buscador, checkbox «Sin escudo», visible/total y conmutador competición/biblioteca.
+- [x] Montar buscador, checkbox «Sin escudo», visible/total y conmutador competición/biblioteca.
       Usar `EmptyState` con «Quitar filtros» cuando haya datos pero no coincidencias.
-- [ ] Tabla/tarjetas con botones «Editar a [nombre]», «Quitar [nombre] de [competición]» y
+- [x] Tabla/tarjetas con botones «Editar a [nombre]», «Quitar [nombre] de [competición]» y
       «Eliminar [nombre] de biblioteca». Escudo visible con placeholder consistente.
-- [ ] `IncorporarEquipo`: búsqueda por nombre, categoría visible y lista de competiciones con
+- [x] `IncorporarEquipo`: búsqueda por nombre, categoría visible y lista de competiciones con
       año; etiquetas «Ya inscrito», «Otra categoría», «Sin competiciones» según corresponda.
       Selección por ID y confirmación del destino. Guardado sin doble envío ni cierre ante error.
-- [ ] La tabla y el diálogo no dependen de números concretos de equipos reales.
-- [ ] No retirar creación/eliminación de competiciones por simplificar el componente. Si requiere
+- [x] La tabla y el diálogo no dependen de números concretos de equipos reales.
+- [x] No retirar creación/eliminación de competiciones por simplificar el componente. Si requiere
       extraer esos controles, hacerlo en `equipos/ControlesCompeticion.tsx` conservando contratos.
-- [ ] Comprobar nombres largos y acciones a 360/1280 px; foco devuelto al botón de apertura.
-- [ ] `pnpm check`; commit `feat(equipos): rediseñar listado y edición con contexto`.
+- [x] Comprobar nombres largos y acciones a 360/1280 px; foco devuelto al botón de apertura.
+- [x] `pnpm check`; commit `feat(equipos): rediseñar listado y edición con contexto`.
 
 ## T4 — Eliminación con alternativa explícita
 
 **Entrega:** distinción de alcance visible y comportamiento verificable con partidos existentes.
 
-- [ ] Diálogo de quitar menciona competición y conservación de equipo/partidos.
-- [ ] Diálogo de eliminar llama a `borrarEquipo` únicamente tras confirmación. Mantenerlo
+- [x] Diálogo de quitar menciona competición y conservación de equipo/partidos.
+- [x] Diálogo de eliminar llama a `borrarEquipo` únicamente tras confirmación. Mantenerlo
       abierto cuando falla, con mensaje original; no ocultar la causa en un toast efímero.
-- [ ] Antes de borrar, decidir con `numeroPartidos > 0`, nunca comparando textos de error.
+- [x] Antes de borrar, decidir con `numeroPartidos > 0`, nunca comparando textos de error.
       Explicar el bloqueo y ofrecer la alternativa solo si el catálogo indica
       inscripción en `selectedCompetitionId`. Pulsarla cambia a confirmación de desvinculación.
-- [ ] Quitar requiere segunda confirmación explícita; cancelarla no llama a ninguna mutación.
-- [ ] Bloquear doble operación y cierre mientras está pendiente. Recargar tras éxito; si la
+- [x] Quitar requiere segunda confirmación explícita; cancelarla no llama a ninguna mutación.
+- [x] Bloquear doble operación y cierre mientras está pendiente. Recargar tras éxito; si la
       recarga falla, explicar que la operación terminó pero no se pudo actualizar la vista.
-- [ ] Conservar la negativa de `borrarEquipo` como red de seguridad ante datos desactualizados.
+- [x] Conservar la negativa de `borrarEquipo` como red de seguridad ante datos desactualizados.
       Mostrar cualquier error del servidor sin interpretarlo por su texto; recargar el catálogo.
       No ampliar su alcance ni eliminar partidos para permitir borrar.
-- [ ] Tests temporales existentes de acciones permanecen verdes; ampliar T6 con la alternativa.
+- [x] Tests temporales existentes de acciones permanecen verdes; ampliar T6 con la alternativa.
 
 ## T5 — Guardias y navegador de solo lectura
 
 **Entrega:** cobertura previa conservada y nuevos editores comprobados sin mutar datos reales.
 
-- [ ] Mover `borrador bloquea sección, categoría y atrás sin perder texto` a Calendario: entrar
+- [x] Mover `borrador bloquea sección, categoría y atrás sin perder texto` a Calendario: entrar
       desde Temporadas, esperar jornada resuelta, editar primer marcador y rechazar navegación.
       Elegir un número distinto del original para garantizar borrador sucio.
-- [ ] Mover `pulsar la sección actual conserva la guardia` a Calendario: editar marcador,
+- [x] Mover `pulsar la sección actual conserva la guardia` a Calendario: editar marcador,
       pulsar Calendario sin disparar confirmación, después Jugadores y rechazarla. Contar 0/1.
-- [ ] Mantener intacta la prueba existente de fallo al guardar marcador, que intercepta POST.
-- [ ] Adaptar `Equipos espera a resolver contexto antes de permitir edición`: mientras la lectura
+- [x] Mantener intacta la prueba existente de fallo al guardar marcador, que intercepta POST.
+- [x] Adaptar `Equipos espera a resolver contexto antes de permitir edición`: mientras la lectura
       está retenida no hay botón operativo; tras resolver, abrir editor y probar su descarte.
       Liberar rutas retenidas en `finally` para no colgar el servidor si falla una aserción.
 
@@ -269,39 +269,39 @@ await expect(page).toHaveURL(/calendario/);
 await expect(marcador).toHaveValue(nuevo);
 ```
 
-- [ ] Añadir `equipos.spec.ts`: búsqueda imposible + limpiar; filtro sin escudo según catálogo
+- [x] Añadir `equipos.spec.ts`: búsqueda imposible + limpiar; filtro sin escudo según catálogo
       mostrado; abrir/cancelar edición; descartar rechazar/aceptar; carga fallida con reintento.
-- [ ] Capturas y aserciones sin desbordamiento a 360/1280; revisar captura, no solo generarla.
-- [ ] Nunca pulsar Guardar real en esta suite. Fallos simulados interceptan toda Server Action
+- [x] Capturas y aserciones sin desbordamiento a 360/1280; revisar captura, no solo generarla.
+- [x] Nunca pulsar Guardar real en esta suite. Fallos simulados interceptan toda Server Action
       antes de enviar la petición; escrituras exitosas se reservan para T6.
-- [ ] `pnpm e2e` con servidor propio cerrado antes y después.
+- [x] `pnpm e2e` con servidor propio cerrado antes y después.
 
 ## T6 — Recorridos de escritura y cierre
 
 **Entrega:** CRUD y protección del historial demostrados en el entorno existente.
 
-- [ ] Ampliar `e2e-escritura/sembrar.ts`, conservando los datos de jugadores/staff existentes:
+- [x] Ampliar `e2e-escritura/sembrar.ts`, conservando los datos de jugadores/staff existentes:
       Liga 26/27 Senior, otra competición Senior y una Veteranos; homónimos «Río Ficticio»
       de ambas categorías; un equipo Senior sin inscripción; un equipo con partido.
       Usar IDs devueltos por insert y claves normalizadas con `claveNombre`.
-- [ ] Sembrar el partido con campos exigidos por el esquema instalado; usar exclusivamente la
+- [x] Sembrar el partido con campos exigidos por el esquema instalado; usar exclusivamente la
       BD apuntada por `DIR_ESCRITURA`. No leer IDs ni filas de `data/santiso.db`.
-- [ ] Añadir `equipos-escritura.spec.ts`: crear equipo, editar nombre, comprobar ausencia de
+- [x] Añadir `equipos-escritura.spec.ts`: crear equipo, editar nombre, comprobar ausencia de
       duplicados, incorporar existente y comprobar categoría/competiciones que lo distinguen.
-- [ ] Quitar de competición y recuperar el equipo desde biblioteca; incorporarlo de nuevo sin
+- [x] Quitar de competición y recuperar el equipo desde biblioteca; incorporarlo de nuevo sin
       crear otra entidad. Eliminar equipo sin partidos y comprobar que desaparece de biblioteca.
-- [ ] Intentar eliminar equipo con partido: rechazo visible y alternativa de quitar; cancelar
+- [x] Intentar eliminar equipo con partido: rechazo visible y alternativa de quitar; cancelar
       conserva relación; confirmar quita relación, mantiene biblioteca y partido.
-- [ ] Probar error de guardado reteniendo/abortando petición: campos bloqueados durante envío,
+- [x] Probar error de guardado reteniendo/abortando petición: campos bloqueados durante envío,
       borrador conservado al fallar y botón reactivado. Reutilizar patrón de la suite 6B.
-- [ ] Ejecutar `pnpm e2e:escritura`; conservar los cuatro recorridos de Plantilla/Staff.
-- [ ] Ejecutar `pnpm check`, `pnpm build`, `pnpm e2e`, `pnpm e2e:escritura` secuencialmente
+- [x] Ejecutar `pnpm e2e:escritura`; conservar los cuatro recorridos de Plantilla/Staff.
+- [x] Ejecutar `pnpm check`, `pnpm build`, `pnpm e2e`, `pnpm e2e:escritura` secuencialmente
       para los comandos que usan Next. ESLint y formato explícitos sobre archivos modificados.
-- [ ] Revisar `git diff --check`, contratos de acciones, ámbito de borrados y ausencia de datos
+- [x] Revisar `git diff --check`, contratos de acciones, ámbito de borrados y ausencia de datos
       privados. No declarar finalizadas tareas con verificaciones pendientes.
-- [ ] Actualizar este plan con resultados reales, limitaciones y commits; integrar en main
+- [x] Actualizar este plan con resultados reales, limitaciones y commits; integrar en main
       conservando cambios ajenos. No fusionar el antiguo worktree base-visual desactualizado.
-- [ ] Commit final `test(equipos): verificar gestión y protección del historial`.
+- [x] Commit final `test(equipos): verificar gestión y protección del historial`.
 
 ## Revisión de cobertura
 
@@ -328,7 +328,43 @@ Plan commiteado antes de implementar: `0e403f5`.
 T1 completada en `codex/fase-6c-equipos`: modelo puro y catálogo en una consulta agrupada.
 Validación: 16 pruebas específicas; `pnpm check` con 495 correctas y 1 omitida existente;
 ESLint de archivos modificados sin errores. Esquema y mutaciones sin cambios.
-Pendientes T2–T6; no se han modificado pantallas todavía.
+T2–T6 completadas. Integración final por avance rápido en main.
 Primero comprobar árbol y rama; después T1 → T2/T3 → T4 → T5/T6. T2 y T3 comparten contratos:
 no asignarlas a agentes que editen simultáneamente AdminEquipos. Las mutaciones de equipos
 no se cambian por estética ni para adaptar sus nombres al nuevo componente.
+
+## Cierre de implementación — 22/09/2026
+
+- EditorEquipo, IncorporarEquipo, EliminarEquipo y ControlesCompeticion separados del listado.
+  FotoFormulario y foundation reutilizados sin alterar Plantilla.
+- Búsqueda, filtro sin escudo y vistas competición/biblioteca. Homónimos distinguidos por
+  categoría y competiciones con temporada; categorías incompatibles no se pueden incorporar.
+- `numeroPartidos` decide protección y alternativa de quitar. No hay comparación del texto de
+  errores. La negativa de borrarEquipo y todas las mutaciones originales permanecen intactas.
+- Las dos pruebas de guardia se trasladaron a Calendario. Equipos conserva pruebas propias de
+  editor modal y carga de contexto. No se añadió selector de temporada.
+- Se ampliaron la siembra y suite de escritura existentes, sin infraestructura adicional.
+- Se agrupan T2–T6 en un commit de integración: los diálogos, listado y nuevos selectores de
+  navegador forman una entrega conjunta, validada sobre el mismo árbol.
+
+Verificaciones finales:
+
+| Comprobación | Resultado |
+| --- | --- |
+| pnpm check | 65 archivos; 495 pruebas correctas, 1 omitida preexistente; tipos/lint/formato correctos |
+| pnpm build | Correcto; rutas del panel generadas |
+| pnpm e2e | 35 correctas, solo lectura |
+| pnpm e2e:escritura | 10 correctas: 6 Equipos y 4 Plantilla/Staff; base temporal |
+| ESLint explícito de archivos Studio modificados | Sin errores ni avisos |
+| Prettier explícito de archivos Studio modificados | Correcto |
+| Revisión visual | Listado/editor a 360 y 1280 px sin desbordamiento; capturas inspeccionadas |
+| git diff --check | Correcto |
+
+Revisión independiente: detectó desprotección del borrador durante creación pendiente de una
+competición. Se reprodujo con petición retenida y Atrás (prueba roja); se corrigió manteniendo
+la guardia hasta éxito y separando guardado de recarga/navegación. Prueba verde y segunda revisión
+sin hallazgos en la corrección. Sin cambios en el hook compartido ni acciones de competiciones.
+
+El esquema, las mutaciones de Equipos y los datos reales no se modificaron. Las únicas
+escrituras de pruebas se hicieron en carpetas temporales. Servidores propios de pruebas detenidos.
+Se conserva el límite Femenino y se reserva Patrocinadores para 6D. No se publicó en remoto.

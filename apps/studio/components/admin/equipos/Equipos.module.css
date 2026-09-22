@@ -1,0 +1,180 @@
+/* Catálogo deportivo: misma paleta y tipografía que Plantilla, con contexto por competición. */
+.panel {
+  padding: var(--ui-space-5, 1.5rem);
+  background: var(--ui-surface, #171717);
+  border: 1px solid var(--ui-border, #666);
+  border-radius: var(--ui-radius, 0.75rem);
+}
+.cabecera,
+.contexto,
+.acciones,
+.herramientas,
+.vistas {
+  display: flex;
+  gap: var(--ui-space-3, 0.75rem);
+  flex-wrap: wrap;
+  align-items: center;
+}
+.cabecera {
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.cabecera h3 {
+  margin: 0 0 0.3rem;
+  font-family: var(--ui-font-title);
+}
+.contexto {
+  align-items: end;
+  margin-bottom: 1rem;
+}
+.contexto > :first-child {
+  flex: 1;
+  min-width: min(100%, 12rem);
+}
+.vistas {
+  margin: 1rem 0;
+}
+.herramientas {
+  margin-bottom: 1rem;
+  align-items: end;
+}
+.herramientas > :first-child {
+  flex: 1;
+  min-width: min(100%, 14rem);
+}
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+.check {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  flex: none;
+}
+.detalle {
+  display: block;
+  margin: 0.3rem 0;
+  color: var(--ui-muted, #aaa);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.contador {
+  color: var(--ui-muted, #aaa);
+  font-variant-numeric: tabular-nums;
+}
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.tabla th {
+  text-align: left;
+  color: var(--ui-muted, #aaa);
+  font-size: 0.8rem;
+}
+.tabla th,
+.tabla td {
+  padding: 0.8rem 0.5rem;
+  border-bottom: 1px solid var(--ui-border, #666);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.tabla th:first-child {
+  width: 74px;
+}
+.tabla th:last-child {
+  width: 38%;
+}
+.escudo {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  background: var(--ui-raised, #242424);
+  border-radius: 0.5rem;
+}
+.nombre {
+  font-weight: 800;
+}
+.editor {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+.editor legend {
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+}
+.editor > * {
+  min-width: 0;
+}
+/* FotoFormulario se reutiliza sin alterar su presentación en Plantilla. */
+.editor input[type="file"] {
+  width: 100%;
+  min-width: 0;
+}
+.error {
+  color: var(--ui-danger, #f87171);
+  border-left: 3px solid currentColor;
+  padding: 0.75rem;
+}
+.candidatos {
+  border: 0;
+  margin: 1rem 0 0;
+  padding: 0;
+  min-width: 0;
+}
+.candidatos legend {
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+.candidato {
+  display: flex;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--ui-border, #666);
+  overflow-wrap: anywhere;
+}
+.candidato input {
+  margin-top: 0.3rem;
+}
+@media (max-width: 640px) {
+  .panel {
+    padding: 1rem;
+  }
+  .tabla,
+  .tabla tbody {
+    display: block;
+  }
+  .tabla thead {
+    display: none;
+  }
+  .tabla tr {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--ui-border, #666);
+  }
+  .tabla td {
+    padding: 0;
+    border: 0;
+  }
+  .tabla td:last-child {
+    grid-column: 1 / -1;
+  }
+  .tabla td:last-child button {
+    flex: 1 1 8rem;
+  }
+  .contexto {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

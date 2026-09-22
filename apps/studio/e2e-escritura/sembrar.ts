@@ -6,6 +6,7 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { abrirDb, migrarBd, schema, urlArchivo } from "@santiso/db";
+import { claveNombre } from "@santiso/domain";
 import { DIR_ESCRITURA } from "./datos";
 
 // Función y no `await` de nivel superior: `apps/studio` no es `"type": "module"` y tsx lo
@@ -23,10 +24,55 @@ async function sembrar() {
       { nombre: "2026/27", activa: true },
     ])
     .returning({ id: schema.temporadas.id });
-  await db.insert(schema.competiciones).values([
-    { temporadaId: anterior!.id, categoria: "Senior", nombre: "Liga 25/26" },
-    { temporadaId: activa!.id, categoria: "Senior", nombre: "Liga 26/27" },
+  const competiciones = await db
+    .insert(schema.competiciones)
+    .values([
+      { temporadaId: anterior!.id, categoria: "Senior", nombre: "Liga 25/26" },
+      { temporadaId: activa!.id, categoria: "Senior", nombre: "Liga 26/27" },
+    ])
+    .returning();
+
+  const actual = competiciones.find((c) => c.nombre === "Liga 26/27");
+  const anteriorLiga = competiciones.find((c) => c.nombre === "Liga 25/26");
+  if (!actual || !anteriorLiga || !activa) throw new Error("Faltan competiciones de prueba");
+  const [veteranos] = await db
+    .insert(schema.competiciones)
+    .values({ temporadaId: activa.id, categoria: "Veteranos", nombre: "Liga Veteranos" })
+    .returning();
+  const [rio, rioVeterano, protegido, rival] = await db
+    .insert(schema.equipos)
+    .values([
+      { nombre: "Río Ficticio", clave: claveNombre("Río Ficticio"), categoria: "Senior" },
+      { nombre: "Río Ficticio", clave: claveNombre("Río Ficticio"), categoria: "Veteranos" },
+      {
+        nombre: "Histórico Ficticio",
+        clave: claveNombre("Histórico Ficticio"),
+        categoria: "Senior",
+      },
+      { nombre: "Rival Ficticio", clave: claveNombre("Rival Ficticio"), categoria: "Senior" },
+    ])
+    .returning();
+  if (!rio || !rioVeterano || !protegido || !rival || !veteranos)
+    throw new Error("Faltan equipos de prueba");
+  await db.insert(schema.competicionEquipos).values([
+    { equipoId: rio.id, competicionId: anteriorLiga.id },
+    { equipoId: rioVeterano.id, competicionId: veteranos.id },
+    { equipoId: protegido.id, competicionId: actual.id },
+    { equipoId: rival.id, competicionId: actual.id },
   ]);
+  const [jornada] = await db
+    .insert(schema.jornadas)
+    .values({ competicionId: actual.id, numero: 1 })
+    .returning();
+  if (!jornada) throw new Error("Falta jornada de prueba");
+  await db
+    .insert(schema.partidos)
+    .values({ jornadaId: jornada.id, equipoLocalId: protegido.id, equipoVisitanteId: rival.id });
+  await db.insert(schema.equipos).values({
+    nombre: "Libre Ficticio",
+    clave: claveNombre("Libre Ficticio"),
+    categoria: "Senior",
+  });
 
   const personas = await db
     .insert(schema.jugadores)
