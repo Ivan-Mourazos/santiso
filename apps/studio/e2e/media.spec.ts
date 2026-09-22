@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { vigilarSalidasAInternet } from "./red";
 
-const SECCIONES_CON_IMAGEN = ["Equipos", "Jugadores", "Patrocinadores"];
+const SECCIONES_CON_IMAGEN = ["Equipos", "Jugadores", "Patrocinadores y logos"];
 
 for (const seccion of SECCIONES_CON_IMAGEN) {
   test(`${seccion} carga sin errores y sirve sus imágenes desde /media`, async ({ page }) => {

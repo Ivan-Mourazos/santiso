@@ -78,17 +78,130 @@ describe("acciones de patrocinadores", () => {
     });
   });
 
-  it("no lista los logos de cartel entre los patrocinadores de web", async () => {
+  it("el catálogo es uno solo: lista también los que salen en carteles", async () => {
     const { guardarPatrocinador, cargarPatrocinadores } = await entorno();
-    await guardarPatrocinador(formulario({ id: "", nombre: "De web" }));
+    const deWeb = await guardarPatrocinador(formulario({ id: "", nombre: "De web" }));
+    if (!deWeb.ok) throw new Error("no se creó");
 
     const bd = await import("@santiso/db");
     const { db } = await (await import("@/lib/server/db")).obtenerDb();
-    await db
+    const [deCartel] = await db
       .insert(bd.schema.patrocinadores)
-      .values({ nombre: "De cartel", clave: "de cartel", enCarteles: true });
+      .values({ nombre: "De cartel", clave: "de cartel", enCarteles: true, orden: 0 })
+      .returning({ id: bd.schema.patrocinadores.id });
 
-    expect((await cargarPatrocinadores()).map((p) => p.nombre)).toEqual(["De web"]);
+    // Primero los que salen en carteles, en su orden; después el resto, por nombre.
+    expect(await cargarPatrocinadores()).toEqual([
+      expect.objectContaining({ id: deCartel!.id, nombre: "De cartel", en_carteles: true }),
+      expect.objectContaining({ id: deWeb.datos.id, nombre: "De web", en_carteles: false }),
+    ]);
+  });
+
+  it("encuentra el registro que choca por nombre, sin contar el que se está editando", async () => {
+    const { guardarPatrocinador, buscarCoincidenciaPatrocinador } = await entorno();
+    const creado = await guardarPatrocinador(formulario({ id: "", nombre: "Autobuses Santiso" }));
+    if (!creado.ok) throw new Error("no se creó");
+
+    const coincide = await buscarCoincidenciaPatrocinador("AUTOBUSES  SANTISO");
+    expect(coincide).toMatchObject({ ok: true, datos: { id: creado.datos.id } });
+    // Al editarse a sí mismo no choca consigo mismo.
+    expect(await buscarCoincidenciaPatrocinador("Autobuses Santiso", creado.datos.id)).toEqual({
+      ok: true,
+      datos: null,
+    });
+    expect(await buscarCoincidenciaPatrocinador("Otro cualquiera")).toEqual({
+      ok: true,
+      datos: null,
+    });
+  });
+
+  it("activar y desactivar conserva el registro, su web y su logo", async () => {
+    const { guardarPatrocinador, cargarPatrocinadores } = await entorno();
+    const logo = new File([await pngRojo()], "l.png", { type: "image/png" });
+    const creado = await guardarPatrocinador(
+      formulario({ id: "", nombre: "Autobuses", webUrl: "https://example.test" }, logo),
+    );
+    if (!creado.ok) throw new Error("no se creó");
+    expect(creado.datos.en_carteles).toBe(false);
+
+    const activado = await guardarPatrocinador(
+      formulario({
+        id: creado.datos.id,
+        nombre: "Autobuses",
+        webUrl: "https://example.test",
+        enCarteles: "true",
+      }),
+    );
+    expect(activado).toMatchObject({
+      ok: true,
+      datos: {
+        id: creado.datos.id,
+        en_carteles: true,
+        logo_url: creado.datos.logo_url,
+        web_url: "https://example.test",
+      },
+    });
+
+    const desactivado = await guardarPatrocinador(
+      formulario({
+        id: creado.datos.id,
+        nombre: "Autobuses",
+        webUrl: "https://example.test",
+        enCarteles: "false",
+      }),
+    );
+    expect(desactivado).toMatchObject({ ok: true, datos: { en_carteles: false } });
+    expect(await cargarPatrocinadores()).toHaveLength(1);
+  });
+
+  it("al activar, entra el último de la barra y no desplaza a los demás", async () => {
+    const { guardarPatrocinador, cargarLogosDeCartel } = await entorno();
+    for (const nombre of ["Primero", "Segundo"]) {
+      await guardarPatrocinador(formulario({ id: "", nombre, enCarteles: "true" }));
+    }
+    const tercero = await guardarPatrocinador(formulario({ id: "", nombre: "Tercero" }));
+    if (!tercero.ok) throw new Error("no se creó");
+    await guardarPatrocinador(
+      formulario({ id: tercero.datos.id, nombre: "Tercero", enCarteles: "true" }),
+    );
+    expect((await cargarLogosDeCartel()).map((p) => p.nombre)).toEqual([
+      "Primero",
+      "Segundo",
+      "Tercero",
+    ]);
+  });
+
+  it("subir y bajar intercambia vecinos y deja posiciones sin huecos", async () => {
+    const { guardarPatrocinador, moverPatrocinador, cargarLogosDeCartel } = await entorno();
+    const ids: string[] = [];
+    for (const nombre of ["Uno", "Dos", "Tres"]) {
+      const r = await guardarPatrocinador(formulario({ id: "", nombre, enCarteles: "true" }));
+      if (!r.ok) throw new Error("no se creó");
+      ids.push(r.datos.id);
+    }
+    expect(await moverPatrocinador(ids[2]!, -1)).toEqual({ ok: true, datos: null });
+    expect((await cargarLogosDeCartel()).map((p) => p.nombre)).toEqual(["Uno", "Tres", "Dos"]);
+    expect((await cargarLogosDeCartel()).map((p) => p.orden)).toEqual([0, 1, 2]);
+
+    // En los extremos no pasa nada y no falla.
+    expect(await moverPatrocinador(ids[0]!, -1)).toEqual({ ok: true, datos: null });
+    expect((await cargarLogosDeCartel()).map((p) => p.nombre)).toEqual(["Uno", "Tres", "Dos"]);
+  });
+
+  it("no mueve lo que no está en la barra ni acepta una dirección inventada", async () => {
+    const { guardarPatrocinador, moverPatrocinador } = await entorno();
+    const fuera = await guardarPatrocinador(formulario({ id: "", nombre: "Fuera" }));
+    if (!fuera.ok) throw new Error("no se creó");
+    expect(await moverPatrocinador(fuera.datos.id, 1)).toMatchObject({ ok: false });
+    expect(await moverPatrocinador("inventado", 1)).toMatchObject({ ok: false });
+    expect(await moverPatrocinador(fuera.datos.id, 2 as -1 | 1)).toMatchObject({ ok: false });
+  });
+
+  it("rechaza una web que no sea http o https", async () => {
+    const { guardarPatrocinador } = await entorno();
+    expect(
+      await guardarPatrocinador(formulario({ id: "", nombre: "Malo", webUrl: "javascript:x" })),
+    ).toMatchObject({ ok: false, campos: { webUrl: expect.any(String) } });
   });
 
   it("borra un patrocinador", async () => {

@@ -1,0 +1,238 @@
+/* Catálogo único de patrocinadores y logos (6D). Tokens de la Fase 3A. */
+
+.panel {
+  background: var(--ui-surface, #171717);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius-lg, 1.125rem);
+  padding: var(--ui-space-6, 2rem);
+}
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ui-space-4, 1rem);
+  margin-bottom: var(--ui-space-5, 1.5rem);
+}
+.cabecera h3 {
+  margin: 0;
+  font: 800 1.35rem var(--ui-font-title, sans-serif);
+}
+.cabecera p {
+  margin: 0.25rem 0 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.herramientas {
+  display: grid;
+  grid-template-columns: minmax(12rem, 2fr) minmax(10rem, 1fr);
+  align-items: end;
+  gap: var(--ui-space-3, 0.75rem);
+  margin-bottom: var(--ui-space-3, 0.75rem);
+}
+.contador {
+  margin: 0 0 var(--ui-space-3, 0.75rem);
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tabla th {
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ui-muted, #aaa);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--ui-border, #666);
+}
+.tabla th:last-child {
+  text-align: right;
+}
+.tabla td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid rgb(255 255 255 / 6%);
+  vertical-align: middle;
+}
+.logo {
+  width: 56px;
+  height: 40px;
+  object-fit: contain;
+  display: block;
+  background: var(--ui-raised, #242424);
+  border-radius: 6px;
+}
+.nombre strong {
+  display: block;
+}
+.nombre a {
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.estado {
+  font-weight: 700;
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.dentro {
+  color: var(--ui-accent, #facc15);
+}
+.fuera {
+  color: var(--ui-muted, #aaa);
+}
+.filaAcciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ui-space-2, 0.5rem);
+}
+
+/* ─── Orden de la barra del cartel ─── */
+.orden {
+  margin-top: var(--ui-space-6, 2rem);
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  padding-top: var(--ui-space-5, 1.5rem);
+}
+.orden h4 {
+  margin: 0 0 0.25rem;
+  font: 800 1.1rem var(--ui-font-title, sans-serif);
+}
+.posiciones {
+  list-style: none;
+  margin: var(--ui-space-3, 0.75rem) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.posicion {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3, 0.75rem);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-surface, #171717);
+}
+.excedente {
+  border-color: rgb(245 158 11 / 45%);
+}
+.hueco {
+  width: 2rem;
+  font-weight: 900;
+  color: var(--ui-accent, #facc15);
+  font-variant-numeric: tabular-nums;
+}
+.posicion span:not(.hueco) {
+  flex: 1;
+}
+.flechas {
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* ─── Editor ─── */
+.editor {
+  display: grid;
+  gap: var(--ui-space-5, 1.5rem);
+}
+.grupo {
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: var(--ui-radius, 0.75rem);
+  padding: var(--ui-space-4, 1rem);
+  margin: 0;
+  display: grid;
+  gap: var(--ui-space-3, 0.75rem);
+}
+.grupo legend {
+  padding: 0 0.4rem;
+  font-weight: 800;
+}
+.alcance {
+  margin: 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.casilla {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: var(--ui-space-2, 0.5rem);
+  min-height: 44px;
+}
+/* `globals.css` da `width: 100%` y relleno a todo `input`, casillas incluidas. */
+.check {
+  display: inline-block;
+  width: auto;
+  flex: none;
+  margin: 0;
+  padding: 0;
+}
+.aviso {
+  margin: 0;
+  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
+  border-radius: var(--ui-radius, 0.75rem);
+  border: 1px solid rgb(245 158 11 / 35%);
+  background: rgb(245 158 11 / 8%);
+  color: var(--ui-warning, #f59e0b);
+}
+.error {
+  margin: 0;
+  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
+  border-radius: var(--ui-radius, 0.75rem);
+  border: 1px solid rgb(248 113 113 / 35%);
+  background: rgb(248 113 113 / 8%);
+  color: var(--ui-danger, #f87171);
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding: var(--ui-space-4, 1rem);
+  }
+  .herramientas {
+    grid-template-columns: 1fr;
+  }
+  .tabla thead {
+    display: none;
+  }
+  .tabla,
+  .tabla tbody {
+    display: block;
+  }
+  .tabla tr {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-areas:
+      "logo nombre"
+      "estado estado"
+      "acciones acciones";
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid rgb(255 255 255 / 8%);
+    border-radius: var(--ui-radius, 0.75rem);
+  }
+  .tabla td {
+    padding: 0;
+    border: 0;
+  }
+  .celdaLogo {
+    grid-area: logo;
+  }
+  .celdaNombre {
+    grid-area: nombre;
+  }
+  .celdaEstado {
+    grid-area: estado;
+  }
+  .celdaAcciones {
+    grid-area: acciones;
+  }
+  .filaAcciones {
+    justify-content: stretch;
+  }
+  .filaAcciones > * {
+    flex: 1;
+  }
+}

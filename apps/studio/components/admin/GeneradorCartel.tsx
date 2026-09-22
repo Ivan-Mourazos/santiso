@@ -70,17 +70,12 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
   };
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{ message: string, onConfirm: () => void } | null>(null);
   const [showAssets, setShowAssets] = useState(false);
   const [assetRefreshKey, setAssetRefreshKey] = useState(0);
 
   const showToastUI = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
-  };
-
-  const showConfirmUI = (message: string, onConfirm: () => void) => {
-    setConfirmDialog({ message, onConfirm });
   };
 
   const tipoForAssets: TemplateId = TEMPLATES.some(t => t.id === tipo) ? (tipo as TemplateId) : "partido";
@@ -436,22 +431,7 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
         </div>
       </div>
 
-      {/* NOTIFICACIONES Y MODALES */}
-      {confirmDialog && (
-        <div className="confirm-overlay">
-          <div className="confirm-modal glass scale-in">
-            <h3>¿Estás seguro?</h3>
-            <p>{confirmDialog.message}</p>
-            <div className="confirm-actions">
-              <button className="btn-cancel" onClick={() => setConfirmDialog(null)}>Cancelar</button>
-              <button className="btn-confirm" onClick={() => {
-                confirmDialog.onConfirm();
-                setConfirmDialog(null);
-              }}>Aceptar</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* NOTIFICACIONES */}
 
       {showAssets && (
         <div className="modal-overlay">
@@ -470,7 +450,6 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
             <p style={{ color: "#aaa", fontSize: "0.85rem", marginBottom: "2rem" }}>Estos son los recursos globales que se aplican automáticamente a todos los carteles. Aquí puedes modificar logotipos y patrocinadores.</p>
             <AdminCartelAssets
               showToast={showToastUI}
-              showConfirm={showConfirmUI}
               onAssetsChanged={() => setAssetRefreshKey((key) => key + 1)}
             />
           </div>
@@ -495,14 +474,9 @@ export default function GeneradorCartel({ templateId, onTemplateChange, hideLayo
         }
         .gen-form { padding: 2rem; }
         
-        /* Toast & Confirm (Minimal Copy) */
+        /* Toast (Minimal Copy) */
         .toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; padding: 1rem 1.5rem; border-radius: 1rem; border: 1px solid var(--primary); background: rgba(250, 204, 21, 0.1); }
         .toast-content { font-weight: 700; color: white; }
-        .confirm-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 10000; }
-        .confirm-modal { max-width: 400px; padding: 2.5rem; border-radius: 1.5rem; text-align: center; border: 1px solid rgba(250, 204, 21, 0.2); }
-        .confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
-        .btn-cancel { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; padding: 0.8rem; border-radius: 0.8rem; cursor: pointer; }
-        .btn-confirm { background: var(--primary); border: none; color: black; padding: 0.8rem; border-radius: 0.8rem; font-weight: 800; cursor: pointer; }
 
         .scale-in { animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }

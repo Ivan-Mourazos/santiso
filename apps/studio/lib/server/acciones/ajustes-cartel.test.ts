@@ -99,71 +99,19 @@ describe("acciones de ajustes de cartel", () => {
     expect(await guardarOrdenLogos("al_revés")).toMatchObject({ ok: false });
   });
 
-  it("guarda un logo de patrocinador con su orden y lo lista", async () => {
-    const { guardarLogoPatrocinador, cargarAjustesCartel } = await entorno();
-    const formulario = await conImagen("logo");
-    formulario.set("nombre", "Concello");
-    expect(await guardarLogoPatrocinador(formulario)).toEqual({ ok: true, datos: null });
+  it("lista los patrocinadores activados, en su orden", async () => {
+    const { cargarAjustesCartel } = await entorno();
+    const bd = await import("@santiso/db");
+    const { db } = await (await import("@/lib/server/db")).obtenerDb();
+    await db.insert(bd.schema.patrocinadores).values([
+      { nombre: "Segundo", clave: "segundo", logo: "cartel/b.webp", enCarteles: true, orden: 1 },
+      { nombre: "Primero", clave: "primero", logo: "cartel/a.webp", enCarteles: true, orden: 0 },
+      { nombre: "Fuera", clave: "fuera", logo: null, enCarteles: false, orden: 0 },
+    ]);
 
     const pantalla = await cargarAjustesCartel();
     if (!pantalla.ok) throw new Error("falló la carga");
-    expect(pantalla.datos.patrocinadores).toHaveLength(1);
-    expect(pantalla.datos.patrocinadores[0]).toMatchObject({
-      nombre: "Concello",
-      en_carteles: true,
-    });
-  });
-
-  it("intercambia el orden de dos logos", async () => {
-    const { guardarLogoPatrocinador, moverLogoPatrocinador, cargarAjustesCartel } = await entorno();
-    for (const nombre of ["Primero", "Segundo"]) {
-      const f = await conImagen("logo");
-      f.set("nombre", nombre);
-      await guardarLogoPatrocinador(f);
-    }
-    const antes = await cargarAjustesCartel();
-    if (!antes.ok) throw new Error("falló la carga");
-    const segundo = antes.datos.patrocinadores[1];
-    if (!segundo) throw new Error("sin segundo");
-
-    expect(await moverLogoPatrocinador(segundo.id, -1)).toEqual({ ok: true, datos: null });
-
-    const despues = await cargarAjustesCartel();
-    if (!despues.ok) throw new Error("falló la carga");
-    expect(despues.datos.patrocinadores.map((p) => p.nombre)).toEqual(["Segundo", "Primero"]);
-  });
-
-  it("mover más allá de los extremos no cambia nada ni falla", async () => {
-    const { guardarLogoPatrocinador, moverLogoPatrocinador, cargarAjustesCartel } = await entorno();
-    const f = await conImagen("logo");
-    f.set("nombre", "Único");
-    await guardarLogoPatrocinador(f);
-    const antes = await cargarAjustesCartel();
-    if (!antes.ok) throw new Error("falló la carga");
-    const unico = antes.datos.patrocinadores[0];
-    if (!unico) throw new Error("sin logo");
-
-    expect(await moverLogoPatrocinador(unico.id, -1)).toEqual({ ok: true, datos: null });
-    const despues = await cargarAjustesCartel();
-    if (!despues.ok) throw new Error("falló la carga");
-    expect(despues.datos.patrocinadores.map((p) => p.nombre)).toEqual(["Único"]);
-  });
-
-  it("borra un logo de patrocinador", async () => {
-    const { guardarLogoPatrocinador, borrarLogoPatrocinador, cargarAjustesCartel } =
-      await entorno();
-    const f = await conImagen("logo");
-    f.set("nombre", "Efímero");
-    await guardarLogoPatrocinador(f);
-    const antes = await cargarAjustesCartel();
-    if (!antes.ok) throw new Error("falló la carga");
-    const logo = antes.datos.patrocinadores[0];
-    if (!logo) throw new Error("sin logo");
-
-    expect(await borrarLogoPatrocinador(logo.id)).toEqual({ ok: true, datos: null });
-    const despues = await cargarAjustesCartel();
-    if (!despues.ok) throw new Error("falló la carga");
-    expect(despues.datos.patrocinadores).toHaveLength(0);
+    expect(pantalla.datos.patrocinadores.map((p) => p.nombre)).toEqual(["Primero", "Segundo"]);
   });
 
   it("guarda el escudo del club", async () => {

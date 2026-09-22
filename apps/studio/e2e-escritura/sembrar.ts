@@ -107,6 +107,32 @@ async function sembrar() {
     cargo: "Entrenador",
   });
 
+  // Catálogo de patrocinadores: dos activados en la barra y uno de solo web.
+  await db.insert(schema.patrocinadores).values([
+    {
+      nombre: "Concello Ficticio",
+      clave: claveNombre("Concello Ficticio"),
+      logo: "cartel/concello.webp",
+      enCarteles: true,
+      orden: 0,
+    },
+    {
+      nombre: "Deporte Ficticio",
+      clave: claveNombre("Deporte Ficticio"),
+      logo: "cartel/deporte.webp",
+      enCarteles: true,
+      orden: 1,
+    },
+    {
+      nombre: "Autobuses Ficticio",
+      clave: claveNombre("Autobuses Ficticio"),
+      logo: "cartel/autobuses.webp",
+      webUrl: "https://example.test/autobuses",
+      enCarteles: false,
+      orden: 0,
+    },
+  ]);
+
   cerrar();
   console.log(`Datos de prueba en ${DIR_ESCRITURA}`);
 }
