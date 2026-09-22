@@ -2,21 +2,19 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { AjustesCartelDto } from "@/lib/dto";
 import { prepararImagen } from "@/lib/imagen-cliente";
+import { LOGOS_EN_CARTEL } from "@/lib/patrocinadores/modelo";
 import {
-  borrarLogoPatrocinador,
   cargarAjustesCartel,
   guardarLogoAjuste,
-  guardarLogoPatrocinador,
   guardarOrdenLogos,
-  moverLogoPatrocinador,
 } from "@/lib/server/acciones/ajustes-cartel";
 import BusyBanner from "./BusyBanner";
 
 interface Props {
   showToast: (msg: string, type?: "success" | "error") => void;
-  showConfirm: (msg: string, onConfirm: () => void) => void;
   onAssetsChanged?: () => void;
 }
 
@@ -34,11 +32,7 @@ const AJUSTES_VACIOS: AjustesCartelDto = {
   patrocinadores: [],
 };
 
-export default function AdminCartelAssets({
-  showToast,
-  showConfirm,
-  onAssetsChanged,
-}: Props) {
+export default function AdminCartelAssets({ showToast, onAssetsChanged }: Props) {
   const [ajustes, setAjustes] = useState<AjustesCartelDto>(AJUSTES_VACIOS);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [isFetching, setIsFetching] = useState(true);
@@ -74,52 +68,6 @@ export default function AdminCartelAssets({
       setLoading(p => ({ ...p, [clave]: false }));
       setUploadProgress(undefined);
     }
-  }
-
-  /** Logo de la barra inferior: es un patrocinador con `en_carteles`. */
-  async function subirLogoPatrocinador(file: File, nombre: string) {
-    setLoading(p => ({ ...p, patrocinador: true }));
-    setUploadProgress(30);
-    try {
-      const cuerpo = new FormData();
-      cuerpo.set("nombre", nombre);
-      cuerpo.set("logo", await prepararImagen(file));
-      setUploadProgress(80);
-      const resultado = await guardarLogoPatrocinador(cuerpo);
-      if (resultado.ok) {
-        showToast(`${nombre} actualizado correctamente`);
-        fetchAssets();
-        onAssetsChanged?.();
-      } else {
-        showToast(resultado.error, "error");
-      }
-    } finally {
-      setLoading(p => ({ ...p, patrocinador: false }));
-      setUploadProgress(undefined);
-    }
-  }
-
-  async function deleteAsset(id: string) {
-    showConfirm("¿Borrar este activo del generador?", async () => {
-      const resultado = await borrarLogoPatrocinador(id);
-      if (resultado.ok) {
-        showToast("Activo eliminado");
-        fetchAssets();
-        onAssetsChanged?.();
-      } else {
-        showToast(resultado.error, "error");
-      }
-    });
-  }
-
-  async function moveOrder(id: string, dir: -1 | 1) {
-    const resultado = await moverLogoPatrocinador(id, dir);
-    if (!resultado.ok) {
-      showToast(resultado.error, "error");
-      return;
-    }
-    fetchAssets();
-    onAssetsChanged?.();
   }
 
   async function cambiarOrdenLogos(orden: string) {
@@ -225,68 +173,49 @@ export default function AdminCartelAssets({
       </div>
 
       {/* ── Patrocinadores ─────────────────────────────────────────────────── */}
+      {/* Solo lectura desde la 6D: altas, bajas y orden se gestionan en el catálogo único. */}
       {sectionTitle("Patrocinadores (barra inferior)")}
       <p style={{ color: "#666", fontSize: "0.8rem", marginTop: "-0.5rem", marginBottom: "1rem" }}>
-        El generador muestra los primeros 5 en orden. Usa ↑↓ para reordenar.
+        El generador pinta estos {LOGOS_EN_CARTEL} logos, en este orden. Se eligen y se ordenan en{" "}
+        <Link href="/admin/patrocinadores" style={{ color: "var(--primary)", fontWeight: 700 }}>
+          Patrocinadores y logos
+        </Link>
+        .
       </p>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
-        {sponsors.map((sp, i) => (
-          <div key={sp.id} style={{
-            display: "flex", alignItems: "center", gap: "1rem",
-            background: "rgba(255,255,255,0.03)", borderRadius: 12,
-            border: "1px solid rgba(255,255,255,0.06)", padding: "0.75rem 1rem",
-          }}>
-            <span style={{ color: "var(--primary)", fontWeight: 900, fontSize: "0.85rem", width: 20 }}>
-              {i + 1}
-            </span>
-            <Image src={sp.logo_url ?? ""} alt={sp.nombre} width={52} height={36}
-              style={{ width: 52, height: 36, objectFit: "contain",
-                       background: "rgba(255,255,255,0.04)", borderRadius: 6 }} />
-            <span style={{ flex: 1, fontWeight: 700, fontSize: "0.9rem" }}>{sp.nombre}</span>
-            <div style={{ display: "flex", gap: "0.4rem" }}>
-              <button onClick={() => moveOrder(sp.id, -1)} style={arrowBtn}>↑</button>
-              <button onClick={() => moveOrder(sp.id, 1)}  style={arrowBtn}>↓</button>
-              <button onClick={() => deleteAsset(sp.id)}
-                className="btn-delete" style={{ padding: "0.3rem 0.6rem", fontSize: "0.72rem" }}>
-                ✕
-              </button>
+      {sponsors.length === 0 ? (
+        <p style={{ color: "#666", fontSize: "0.85rem", margin: 0 }}>
+          Ningún logo activado todavía.
+        </p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
+          {sponsors.slice(0, LOGOS_EN_CARTEL).map((sp, i) => (
+            <div key={sp.id} style={{
+              display: "flex", alignItems: "center", gap: "1rem",
+              background: "rgba(255,255,255,0.03)", borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.06)", padding: "0.75rem 1rem",
+            }}>
+              <span style={{ color: "var(--primary)", fontWeight: 900, fontSize: "0.85rem", width: 20 }}>
+                {i + 1}
+              </span>
+              <Image src={sp.logo_url ?? ""} alt={sp.nombre} width={52} height={36}
+                style={{ width: 52, height: 36, objectFit: "contain",
+                         background: "rgba(255,255,255,0.04)", borderRadius: 6 }} />
+              <span style={{ flex: 1, fontWeight: 700, fontSize: "0.9rem" }}>{sp.nombre}</span>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Add new sponsor */}
-      <div style={{ marginTop: "1rem" }}>
-        <label className="file-input-label">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Añadir patrocinador
-          <input type="file" className="hidden-input" accept="image/*"
-            onChange={async e => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const nombre = prompt("Nombre del patrocinador:", file.name.replace(/\.[^.]+$/, ""));
-              if (!nombre) return;
-              await subirLogoPatrocinador(file, nombre);
-            }} />
-        </label>
-      </div>
+      {sponsors.length > LOGOS_EN_CARTEL && (
+        <p style={{ color: "var(--warning, #f59e0b)", fontSize: "0.8rem", marginTop: "0.9rem" }}>
+          Hay {sponsors.length - LOGOS_EN_CARTEL} logo(s) activados de más que no caben en el
+          cartel. Cámbialos en Patrocinadores y logos.
+        </p>
+      )}
     </div>
   );
 }
-
-const arrowBtn: React.CSSProperties = {
-  background: "rgba(255,255,255,0.05)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  color: "white",
-  width: 30, height: 30,
-  borderRadius: 6,
-  cursor: "pointer",
-  fontWeight: 800,
-  fontSize: "0.9rem",
-};
 
 const activeBtnStyle: React.CSSProperties = {
   padding: "0.5rem 1rem", borderRadius: "0.5rem", border: "none",

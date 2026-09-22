@@ -104,7 +104,7 @@ export function StudioSection({ section }: { section: Seccion }) {
       {section === "ajustes-graficos" && (
         <>
           <Shield {...feedback} />
-          <Assets {...feedback} />
+          <Assets showToast={showToast} />
         </>
       )}
     </div>
