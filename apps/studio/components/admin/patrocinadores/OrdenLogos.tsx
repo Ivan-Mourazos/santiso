@@ -68,7 +68,7 @@ export default function OrdenLogos({ catalogo, onCambiado, onError }: Props) {
         Caben {LOGOS_EN_CARTEL} logos. Se pintan en este orden, de izquierda a derecha.
       </p>
 
-      <ul className={styles.posiciones}>
+      <ul className={styles.posiciones} aria-label="Orden de los logos">
         {conLogo.map((logo, indice) => {
           const sobra = indice >= LOGOS_EN_CARTEL;
           return (
