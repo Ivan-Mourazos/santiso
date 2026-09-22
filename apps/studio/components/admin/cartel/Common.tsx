@@ -6,7 +6,7 @@
  * dicen si están activados.
  */
 
-import React from "react";
+import React, { useId } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Select } from "@/components/ui/foundation/Fields";
 import { formatLiteralMatchDate } from "@/lib/match-date-time";
@@ -39,6 +39,41 @@ export const Toggle: React.FC<{ label: string; active: boolean; onClick: () => v
     {label}
   </Button>
 );
+
+/** Deslizador con su etiqueta asociada y los extremos dichos en texto. */
+export const Deslizador: React.FC<{
+  label: string;
+  min: number;
+  max: number;
+  step?: number;
+  value: number;
+  onChange: (v: number) => void;
+  /** Texto de los extremos, para saber hacia dónde mueve. */
+  extremos?: [string, string];
+  /** Valor visible a la derecha, cuando el número dice algo por sí solo. */
+  mostrarValor?: boolean;
+}> = ({ label, min, max, step = 1, value, onChange, extremos, mostrarValor }) => {
+  const id = useId();
+  return (
+    <div className={styles.deslizador}>
+      <label htmlFor={id}>{label}</label>
+      <div className={styles.deslizadorFila}>
+        {extremos && <span>{extremos[0]}</span>}
+        <input
+          id={id}
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
+        {extremos && <span>{extremos[1]}</span>}
+        {mostrarValor && <span className={styles.deslizadorValor}>{value}</span>}
+      </div>
+    </div>
+  );
+};
 
 export interface SelectorMatch {
   id: string;
