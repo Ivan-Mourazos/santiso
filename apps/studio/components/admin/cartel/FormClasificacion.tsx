@@ -4,11 +4,13 @@
  */
 
 import React, { useEffect, useState } from "react";
-import type { FormState } from "./types";
-import { CategorySelector, SectionLabel, Toggle } from "./Common";
+import { Field, Select } from "@/components/ui/foundation/Fields";
+import { getClasificacionData } from "@/lib/cartel/clasificacion-data";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import AvisoError from "../AvisoError";
-import { getClasificacionData } from "@/lib/cartel/clasificacion-data";
+import { CategorySelector, SectionLabel, Toggle } from "./Common";
+import styles from "./Formularios.module.css";
+import type { FormState } from "./types";
 
 interface Props {
   form: FormState;
@@ -45,7 +47,7 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
     getClasificacionData(form.categoria, competicionId)
       .then((data) => {
         if (!isMounted) return;
-        const comp = competicionesEnCategoria.find(c => c.id === competicionId);
+        const comp = competicionesEnCategoria.find((c) => c.id === competicionId);
         set("clasificacionTipo", comp?.formato === "eliminatoria" ? "copa" : "liga");
         set("clasificacionNombre", comp?.nombre || "");
         set("clasificacionData", data.equipos);
@@ -58,7 +60,9 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
         if (isMounted) setLoading(false);
       });
 
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.categoria, competicionId, competicionesEnCategoria, modoManual]);
 
@@ -130,10 +134,58 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
               set("clasificacionNombre", form.clasificacionNombre || "LIGA DA COSTA");
               set("clasificacionTipo", "liga");
               set("clasificacionData", [
-                { id: "1", posicion: 1, nombre: "UD Santiso FC", puntos: 15, pj: 5, pg: 5, pe: 0, pp: 0, gf: 14, gc: 2, dif: 12 },
-                { id: "2", posicion: 2, nombre: "SD Dubra", puntos: 12, pj: 5, pg: 4, pe: 0, pp: 1, gf: 10, gc: 4, dif: 6 },
-                { id: "3", posicion: 3, nombre: "CF Dumbría", puntos: 10, pj: 5, pg: 3, pe: 1, pp: 1, gf: 8, gc: 5, dif: 3 },
-                { id: "4", posicion: 4, nombre: "Oroso CF", puntos: 9, pj: 5, pg: 3, pe: 0, pp: 2, gf: 7, gc: 6, dif: 1 },
+                {
+                  id: "1",
+                  posicion: 1,
+                  nombre: "UD Santiso FC",
+                  puntos: 15,
+                  pj: 5,
+                  pg: 5,
+                  pe: 0,
+                  pp: 0,
+                  gf: 14,
+                  gc: 2,
+                  dif: 12,
+                },
+                {
+                  id: "2",
+                  posicion: 2,
+                  nombre: "SD Dubra",
+                  puntos: 12,
+                  pj: 5,
+                  pg: 4,
+                  pe: 0,
+                  pp: 1,
+                  gf: 10,
+                  gc: 4,
+                  dif: 6,
+                },
+                {
+                  id: "3",
+                  posicion: 3,
+                  nombre: "CF Dumbría",
+                  puntos: 10,
+                  pj: 5,
+                  pg: 3,
+                  pe: 1,
+                  pp: 1,
+                  gf: 8,
+                  gc: 5,
+                  dif: 3,
+                },
+                {
+                  id: "4",
+                  posicion: 4,
+                  nombre: "Oroso CF",
+                  puntos: 9,
+                  pj: 5,
+                  pg: 3,
+                  pe: 0,
+                  pp: 2,
+                  gf: 7,
+                  gc: 6,
+                  dif: 1,
+                },
               ]);
             }
           }}
@@ -154,31 +206,49 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
 
       <SectionLabel>Visibilidad de Activos</SectionLabel>
       <div style={{ display: "flex", gap: "0.8rem", marginBottom: "1.5rem" }}>
-        <Toggle label="Logos y Patrocinadores" active={form.showAssets} onClick={() => set("showAssets", !form.showAssets)} />
+        <Toggle
+          label="Logos y Patrocinadores"
+          active={form.showAssets}
+          onClick={() => set("showAssets", !form.showAssets)}
+        />
       </div>
 
       {modoManual ? (
         <div style={{ marginBottom: "1.5rem" }}>
-          <div className="input-group" style={{ marginBottom: "1rem" }}>
-            <label>Nombre de la competición</label>
-            <input
-              type="text"
-              placeholder="Ej: LIGA DA COSTA"
+          <div className={styles.campo}>
+            <Field
+              label="Nombre de la competición"
+              placeholder="LIGA DA COSTA"
               value={form.clasificacionNombre}
               onChange={(e) => set("clasificacionNombre", e.target.value)}
             />
           </div>
 
-          <div className="input-group" style={{ marginBottom: "1rem" }}>
-            <label>Tipo</label>
-            <div style={{ display: "flex", gap: "0.6rem" }}>
-              <Toggle label="Liga" active={form.clasificacionTipo === "liga"} onClick={() => set("clasificacionTipo", "liga")} />
-              <Toggle label="Copa" active={form.clasificacionTipo === "copa"} onClick={() => set("clasificacionTipo", "copa")} />
+          <div className={styles.campo} role="group" aria-label="Tipo de competición">
+            <span className={styles.etiqueta}>Tipo</span>
+            <div className={styles.interruptores}>
+              <Toggle
+                label="Liga"
+                active={form.clasificacionTipo === "liga"}
+                onClick={() => set("clasificacionTipo", "liga")}
+              />
+              <Toggle
+                label="Copa"
+                active={form.clasificacionTipo === "copa"}
+                onClick={() => set("clasificacionTipo", "copa")}
+              />
             </div>
           </div>
 
           <SectionLabel>Equipos en la tabla</SectionLabel>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.5rem",
+              marginBottom: "1rem",
+            }}
+          >
             {(form.clasificacionData || []).map((eq: any, idx: number) => (
               <div
                 key={eq.id || idx}
@@ -192,7 +262,14 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
                   borderRadius: "8px",
                 }}
               >
-                <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)", textAlign: "center" }}>
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 800,
+                    color: "var(--primary)",
+                    textAlign: "center",
+                  }}
+                >
                   #{idx + 1}
                 </span>
                 <input
@@ -205,7 +282,9 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
                 <input
                   type="number"
                   value={eq.puntos ?? 0}
-                  onChange={(e) => handleUpdateManualTeam(idx, "puntos", parseInt(e.target.value) || 0)}
+                  onChange={(e) =>
+                    handleUpdateManualTeam(idx, "puntos", parseInt(e.target.value) || 0)
+                  }
                   placeholder="Pts"
                   title="Puntos"
                   style={{ padding: "0.3rem 0.3rem", fontSize: "0.75rem", textAlign: "center" }}
@@ -257,52 +336,62 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
         </div>
       ) : (
         <>
-          <div className="input-group" style={{ marginBottom: "1.2rem" }}>
-            <label>Competición a renderizar</label>
-            <select
+          <div className={styles.campo}>
+            <Select
+              label="Competición"
               value={competicionId}
               onChange={(e) => setCompeticionId(e.target.value)}
-              style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", background: "rgba(0,0,0,0.4)", color: "white", border: "1px solid var(--border)", outline: "none" }}
             >
               {competicionesEnCategoria.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nombre} {c.formato === "eliminatoria" ? "(Eliminatorias)" : "(Liga)"}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <SectionLabel>Previsualización de Datos</SectionLabel>
-          <div style={{ background: "rgba(255,255,255,0.03)", padding: "1rem", borderRadius: "10px", border: "1px solid var(--border)", fontSize: "0.8rem", color: "#ccc" }}>
+          <div
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              padding: "1rem",
+              borderRadius: "10px",
+              border: "1px solid var(--border)",
+              fontSize: "0.8rem",
+              color: "#ccc",
+            }}
+          >
             {loading ? (
               <p>Cargando clasificación...</p>
+            ) : form.clasificacionData && form.clasificacionData.length > 0 ? (
+              <p>
+                Se cargaron <strong>{form.clasificacionData.length}</strong>{" "}
+                {form.clasificacionTipo === "copa"
+                  ? "rondas para este cuadro."
+                  : "equipos para esta tabla."}
+              </p>
             ) : (
-              form.clasificacionData && form.clasificacionData.length > 0 ? (
-                <p>
-                  Se cargaron <strong>{form.clasificacionData.length}</strong>{" "}
-                  {form.clasificacionTipo === "copa" ? "rondas para este cuadro." : "equipos para esta tabla."}
-                </p>
-              ) : (
-                <p style={{ color: "#f87171" }}>No hay datos para esta categoría y competición. Puedes usar el modo Manual arriba.</p>
-              )
+              <p style={{ color: "#f87171" }}>
+                No hay datos para esta categoría y competición. Puedes usar el modo Manual arriba.
+              </p>
             )}
           </div>
         </>
       )}
 
-      <div className="input-group" style={{ marginBottom: "1rem", marginTop: "2rem" }}>
-        <label>Santiso en el cartel (Logos Superiores)</label>
-        <div style={{ display: "flex", gap: "0.6rem" }}>
-          <button 
+      <div className={styles.campo} role="group" aria-label="Santiso en el cartel">
+        <span className={styles.etiqueta}>Santiso en el cartel</span>
+        <div className={styles.interruptores}>
+          <Toggle
+            label="← Izquierda"
+            active={form.santisoSide === "left"}
             onClick={() => set("santisoSide", "left")}
-            style={{ flex: 1, padding: "0.6rem", background: form.santisoSide === "left" ? "var(--primary)" : "rgba(255,255,255,0.05)", color: form.santisoSide === "left" ? "#000" : "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
-            ← Izquierda
-          </button>
-          <button 
+          />
+          <Toggle
+            label="Derecha →"
+            active={form.santisoSide === "right"}
             onClick={() => set("santisoSide", "right")}
-            style={{ flex: 1, padding: "0.6rem", background: form.santisoSide === "right" ? "var(--primary)" : "rgba(255,255,255,0.05)", color: form.santisoSide === "right" ? "#000" : "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
-            Derecha →
-          </button>
+          />
         </div>
       </div>
     </>

@@ -1,0 +1,175 @@
+/* Pantalla de Carteles (6E). Tokens de la Fase 3A; el dibujo del cartel no depende de esto. */
+
+.pantalla {
+  display: grid;
+  gap: var(--ui-space-4, 1rem);
+}
+.columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  gap: var(--ui-space-5, 1.5rem);
+  align-items: start;
+}
+.formulario {
+  min-width: 0;
+  background: var(--ui-surface, #171717);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius-lg, 1.125rem);
+  padding: var(--ui-space-5, 1.5rem);
+}
+
+/* ─── Acciones ─── */
+.acciones {
+  display: grid;
+  gap: var(--ui-space-3, 0.75rem);
+  margin-top: var(--ui-space-6, 2rem);
+}
+.acciones :global(button) {
+  width: 100%;
+}
+
+/* ─── Texto para Instagram ─── */
+.instagram {
+  margin-top: var(--ui-space-5, 1.5rem);
+  padding: var(--ui-space-4, 1rem);
+  background: var(--ui-raised, #242424);
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: var(--ui-radius, 0.75rem);
+}
+.instagramCabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ui-space-3, 0.75rem);
+  margin-bottom: var(--ui-space-3, 0.75rem);
+}
+.instagramCabecera h4 {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-accent, #facc15);
+}
+.instagramCabecera p {
+  margin: 0.25rem 0 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+  line-height: 1.4;
+}
+.instagram textarea {
+  width: 100%;
+  min-height: 15rem;
+  background: transparent;
+  border: 0;
+  color: var(--ui-text, #e5e5e5);
+  font-family: var(--ui-font-mono, monospace);
+  font-size: 0.75rem;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+}
+
+/* ─── Previsualización ─── */
+.previsualizacion {
+  min-width: 0;
+}
+.marco {
+  position: sticky;
+  top: 88px;
+  background: var(--ui-surface, #171717);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius-lg, 1.125rem);
+  overflow: hidden;
+}
+.marcoCabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3, 0.75rem);
+  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
+  border-bottom: 1px solid rgb(255 255 255 / 6%);
+}
+.marcoCabecera h3 {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-accent, #facc15);
+}
+.medidas {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--ui-muted, #aaa);
+  font-variant-numeric: tabular-nums;
+}
+.lienzo {
+  padding: var(--ui-space-3, 0.75rem);
+  background: #000;
+  display: flex;
+  justify-content: center;
+}
+.lienzo canvas {
+  max-width: 100%;
+  max-height: calc(100vh - 250px);
+  width: auto;
+  height: auto;
+  display: block;
+  border-radius: var(--ui-radius, 0.75rem);
+}
+.pie {
+  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
+  border-top: 1px solid rgb(255 255 255 / 6%);
+}
+.pie p {
+  margin: 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+  text-align: center;
+}
+.pie p + p {
+  margin-top: 0.4rem;
+}
+.pie a {
+  color: var(--ui-accent, #facc15);
+  font-weight: 700;
+}
+
+/* ─── Lado del Santiso ─── */
+.lado {
+  margin-top: var(--ui-space-6, 2rem);
+}
+.lado > span {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: var(--ui-text-sm, 0.875rem);
+  font-weight: 700;
+}
+.ladoBotones {
+  display: flex;
+  gap: var(--ui-space-2, 0.5rem);
+}
+.ladoBotones > * {
+  flex: 1;
+}
+
+@media (max-width: 960px) {
+  .columnas {
+    grid-template-columns: 1fr;
+  }
+  /* En móvil manda ver el cartel: la previsualización va arriba. */
+  .previsualizacion {
+    order: -1;
+  }
+  .marco {
+    position: static;
+  }
+  .lienzo canvas {
+    max-height: 60vh;
+  }
+  .formulario {
+    padding: var(--ui-space-4, 1rem);
+  }
+}

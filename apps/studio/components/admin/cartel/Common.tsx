@@ -1,18 +1,19 @@
 /**
- * components/admin/cartel/Common.tsx
- * Shared UI pieces for the poster generator forms.
+ * Piezas compartidas por los formularios del generador de carteles.
+ *
+ * Desde la 6E usan los componentes de la Fase 3A: así cada etiqueta queda asociada a su campo
+ * —antes eran `<label>` sueltos, que el lector de pantalla no ligaba a nada— y los interruptores
+ * dicen si están activados.
  */
 
-import React from "react";
+import React, { useId } from "react";
+import { Button } from "@/components/ui/foundation/Button";
+import { Select } from "@/components/ui/foundation/Fields";
 import { formatLiteralMatchDate } from "@/lib/match-date-time";
+import styles from "./Formularios.module.css";
 
 export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p style={{
-    fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase",
-    letterSpacing: "1.5px", color: "var(--primary)", margin: "1.4rem 0 0.8rem",
-  }}>
-    {children}
-  </p>
+  <h4 className={styles.seccion}>{children}</h4>
 );
 
 export const CategorySelector: React.FC<{
@@ -20,27 +21,59 @@ export const CategorySelector: React.FC<{
   onChange: (v: string) => void;
   includeFemenino?: boolean;
 }> = ({ value, onChange, includeFemenino = false }) => (
-  <div className="input-group" style={{ marginBottom: "1.5rem" }}>
-    <label>Categoría</label>
-    <select value={value} onChange={e => onChange(e.target.value)}>
+  <div className={styles.campo}>
+    <Select label="Categoría" value={value} onChange={(e) => onChange(e.target.value)}>
       <option value="Senior">Senior</option>
       {includeFemenino && <option value="Femenino">Femenino</option>}
       <option value="Veteranos">Veteranos</option>
-    </select>
+    </Select>
   </div>
 );
 
-export const Toggle: React.FC<{ label: string; active: boolean; onClick: () => void }> = ({ label, active, onClick }) => (
-  <button onClick={onClick} style={{
-    flex: 1, padding: "0.7rem", borderRadius: "0.5rem",
-    border: active ? "none" : "1px solid var(--border)",
-    background: active ? "var(--primary)" : "rgba(255,255,255,0.03)",
-    color: active ? "#000" : "#fff",
-    fontFamily: "inherit", fontWeight: 800, fontSize: "0.82rem", cursor: "pointer",
-  }}>
+export const Toggle: React.FC<{ label: string; active: boolean; onClick: () => void }> = ({
+  label,
+  active,
+  onClick,
+}) => (
+  <Button variant={active ? "primary" : "secondary"} aria-pressed={active} onClick={onClick}>
     {label}
-  </button>
+  </Button>
 );
+
+/** Deslizador con su etiqueta asociada y los extremos dichos en texto. */
+export const Deslizador: React.FC<{
+  label: string;
+  min: number;
+  max: number;
+  step?: number;
+  value: number;
+  onChange: (v: number) => void;
+  /** Texto de los extremos, para saber hacia dónde mueve. */
+  extremos?: [string, string];
+  /** Valor visible a la derecha, cuando el número dice algo por sí solo. */
+  mostrarValor?: boolean;
+}> = ({ label, min, max, step = 1, value, onChange, extremos, mostrarValor }) => {
+  const id = useId();
+  return (
+    <div className={styles.deslizador}>
+      <label htmlFor={id}>{label}</label>
+      <div className={styles.deslizadorFila}>
+        {extremos && <span>{extremos[0]}</span>}
+        <input
+          id={id}
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
+        {extremos && <span>{extremos[1]}</span>}
+        {mostrarValor && <span className={styles.deslizadorValor}>{value}</span>}
+      </div>
+    </div>
+  );
+};
 
 export interface SelectorMatch {
   id: string;
@@ -64,8 +97,8 @@ export interface SelectorMatch {
   campo?: { nombre?: string | null } | null;
 }
 
-export const MatchSelector: React.FC<{ 
-  dbMatches: SelectorMatch[]; 
+export const MatchSelector: React.FC<{
+  dbMatches: SelectorMatch[];
   onSelect: (m: SelectorMatch) => void;
   categoria: string;
   competicionId?: string;
@@ -77,52 +110,46 @@ export const MatchSelector: React.FC<{
     const visitante = m.equipo_visitante?.nombre?.toLowerCase() || "";
     return local.includes("santiso") || visitante.includes("santiso");
   };
-  const filtered = dbMatches?.filter(m => {
-    const isCat = m.categoria === categoria;
-    if (!isCat) return false;
-    if (competicionId) {
-      const mid = m.competicion_id || m.jornada?.competicion_id;
-      if (mid && mid !== competicionId) return false;
-    }
-    if (santisoOnly && !isSantisoMatch(m)) return false;
-    
-    // Filtrar por estado según el tipo de cartel
-    if (tipo === "partido" || tipo === "proximos") {
-      return m.estado === "programado";
-    }
-    if (tipo === "resumo" || tipo === "cronoloxia" || tipo === "noso11") {
-      return m.estado === "finalizado";
-    }
-    return true;
-  }) || [];
+  const filtered =
+    dbMatches?.filter((m) => {
+      const isCat = m.categoria === categoria;
+      if (!isCat) return false;
+      if (competicionId) {
+        const mid = m.competicion_id || m.jornada?.competicion_id;
+        if (mid && mid !== competicionId) return false;
+      }
+      if (santisoOnly && !isSantisoMatch(m)) return false;
+
+      // Filtrar por estado según el tipo de cartel
+      if (tipo === "partido" || tipo === "proximos") {
+        return m.estado === "programado";
+      }
+      if (tipo === "resumo" || tipo === "cronoloxia" || tipo === "noso11") {
+        return m.estado === "finalizado";
+      }
+      return true;
+    }) || [];
 
   if (filtered.length === 0) return null;
 
   return (
-    <div style={{ 
-      marginBottom: "1.5rem", 
-      padding: "1rem", 
-      background: "rgba(250, 204, 21, 0.05)", 
-      border: "1px dashed rgba(250, 204, 21, 0.4)", 
-      borderRadius: "12px" 
-    }}>
-      <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)", marginBottom: "0.6rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-        ⚡ Autocompletar desde la liga
-      </label>
-      <select 
-        onChange={e => {
-          const m = filtered.find(x => x.id === e.target.value);
+    <div className={styles.desdeLiga}>
+      <Select
+        label="Autocompletar desde la liga"
+        defaultValue=""
+        onChange={(e) => {
+          const m = filtered.find((x) => x.id === e.target.value);
           if (m) onSelect(m);
         }}
-        style={{ width: "100%", background: "rgba(0,0,0,0.4)", color: "white", padding: "0.7rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.15)", outline: "none", fontFamily: "inherit", fontWeight: 500 }}
       >
-        <option value="">-- Seleccionar partido reciente o próximo --</option>
-        {filtered.map(m => (
+        <option value="">Seleccionar partido reciente o próximo…</option>
+        {filtered.map((m) => (
           <option key={m.id} value={m.id}>
-            J{m.jornada?.numero || '?'} - {m.equipo_local?.nombre} vs {m.equipo_visitante?.nombre} ({m.fecha ? formatLiteralMatchDate(m.fecha) : 'Sin fecha'})
+            J{m.jornada?.numero || "?"} - {m.equipo_local?.nombre} vs {m.equipo_visitante?.nombre} (
+            {m.fecha ? formatLiteralMatchDate(m.fecha) : "Sin fecha"})
           </option>
         ))}
-      </select>
+      </Select>
     </div>
   );
 };
