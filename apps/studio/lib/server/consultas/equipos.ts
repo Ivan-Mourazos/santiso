@@ -1,7 +1,8 @@
+import type { EquipoCatalogo } from "@/lib/equipos/modelo";
 import "server-only";
 import { schema } from "@santiso/db";
 import { normalizarCategoria } from "@santiso/domain";
-import { asc, eq, inArray } from "drizzle-orm";
+import { asc, desc, countDistinct, eq, inArray, or } from "drizzle-orm";
 import type { EquipoDto } from "@/lib/dto";
 import { urlMedia } from "@/lib/media";
 import { obtenerDb } from "@/lib/server/db";
@@ -61,4 +62,57 @@ export async function listarEquiposDeCategoria(categoria: string): Promise<Equip
     .where(eq(schema.equipos.categoria, normalizarCategoria(categoria)))
     .orderBy(asc(schema.equipos.nombre));
   return filas.map(aDto);
+}
+
+/** Biblioteca completa, inscripciones históricas y partidos en una sola consulta agrupada. */
+export async function catalogoEquipos(): Promise<EquipoCatalogo[]> {
+  const { db } = await obtenerDb();
+  const filas = await db
+    .select({
+      ...columnas,
+      competicionId: schema.competiciones.id,
+      competicionNombre: schema.competiciones.nombre,
+      temporadaId: schema.temporadas.id,
+      temporadaNombre: schema.temporadas.nombre,
+      numeroPartidos: countDistinct(schema.partidos.id),
+    })
+    .from(schema.equipos)
+    .leftJoin(schema.competicionEquipos, eq(schema.competicionEquipos.equipoId, schema.equipos.id))
+    .leftJoin(
+      schema.competiciones,
+      eq(schema.competiciones.id, schema.competicionEquipos.competicionId),
+    )
+    .leftJoin(schema.temporadas, eq(schema.temporadas.id, schema.competiciones.temporadaId))
+    .leftJoin(
+      schema.partidos,
+      or(
+        eq(schema.partidos.equipoLocalId, schema.equipos.id),
+        eq(schema.partidos.equipoVisitanteId, schema.equipos.id),
+      ),
+    )
+    .groupBy(schema.equipos.id, schema.competiciones.id, schema.temporadas.id)
+    .orderBy(
+      asc(schema.equipos.nombre),
+      asc(schema.equipos.categoria),
+      desc(schema.temporadas.nombre),
+      asc(schema.competiciones.nombre),
+    );
+  const equipos = new Map<string, EquipoCatalogo>();
+  for (const fila of filas) {
+    let equipo = equipos.get(fila.id);
+    if (!equipo) {
+      equipo = { ...aDto(fila), numeroPartidos: fila.numeroPartidos, competiciones: [] };
+      equipos.set(fila.id, equipo);
+    }
+    // El recuento es global para el equipo en cada grupo; no sumarlo por inscripción.
+    if (fila.competicionId && fila.competicionNombre && fila.temporadaId && fila.temporadaNombre) {
+      equipo.competiciones.push({
+        id: fila.competicionId,
+        nombre: fila.competicionNombre,
+        temporadaId: fila.temporadaId,
+        temporadaNombre: fila.temporadaNombre,
+      });
+    }
+  }
+  return [...equipos.values()];
 }

@@ -136,11 +136,11 @@ export interface BorradorEquipo { id: string; nombre: string }
 // formularioDeEquipo(borrador, destino: { categoria: string; competicionId?: string }, escudo: Blob | null): FormData
 ```
 
-- [ ] Escribir pruebas: «Águias» coincide con «aguias»; sin escudo excluye URL no vacía;
+- [x] Escribir pruebas: «Águias» coincide con «aguias»; sin escudo excluye URL no vacía;
       combinar filtros; blanco devuelve todo; entidades homónimas conservan IDs distintos.
-- [ ] Probar que FormData de edición envía ID y nombre aunque solo cambie el escudo;
+- [x] Probar que FormData de edición envía ID y nombre aunque solo cambie el escudo;
       no envía competición vacía ni borra un escudo al no seleccionar archivo.
-- [ ] Ejecutar pruebas nuevas en rojo y después implementar con `claveNombre`, sin React.
+- [x] Ejecutar pruebas nuevas en rojo y después implementar con `claveNombre`, sin React.
 
 ```ts
 expect(filtrarEquipos(equipos, { texto: 'aguias', soloSinEscudo: true })
@@ -152,21 +152,21 @@ expect(form.has('escudo')).toBe(false);
 expect(form.has('competicionId')).toBe(false);
 ```
 
-- [ ] Ampliar lectura mediante consulta agrupada: equipos + relaciones `competicionEquipos`
+- [x] Ampliar lectura mediante consulta agrupada: equipos + relaciones `competicionEquipos`
       unidas con competiciones y temporadas. Agrupar por equipoId, ordenar por temporada/nombre,
       incluir equipos sin relaciones; no cargar por fila desde el navegador.
       En la misma consulta agrupada obtener `count(distinct partidos.id)` para partidos como
       local o visitante. Evitar multiplicar el recuento al unir varias inscripciones.
-- [ ] Mantener compatibles `cargarEquiposDeCategoria`, `cargarEquiposPorIds` y
+- [x] Mantener compatibles `cargarEquiposDeCategoria`, `cargarEquiposPorIds` y
       `cargarEquiposDeCompeticion`, usados fuera de esta pantalla.
-- [ ] Preferir nueva lectura `cargarCatalogoEquipos(): Promise<EquipoCatalogo[]>` para el diálogo
+- [x] Preferir nueva lectura `cargarCatalogoEquipos(): Promise<EquipoCatalogo[]>` para el diálogo
       de homónimos; la pantalla filtra su categoría y relación seleccionadas en memoria.
       Esta adición justifica tocar el archivo de acciones, sin cambiar sus mutaciones.
-- [ ] Probar con BD temporal dos equipos del mismo nombre en categorías distintas, equipo sin
+- [x] Probar con BD temporal dos equipos del mismo nombre en categorías distintas, equipo sin
       competiciones y un equipo en dos temporadas. Verificar ninguna inscripción desaparece.
       Probar recuentos 0, local y visitante, sin duplicación por varias inscripciones.
-- [ ] Ejecutar `pnpm test -- apps/studio/lib/equipos/modelo.test.ts apps/studio/lib/server/acciones/equipos.test.ts`.
-- [ ] `pnpm check`; commit `feat(equipos): consultar catálogo con categoría y competiciones`.
+- [x] Ejecutar `pnpm test -- apps/studio/lib/equipos/modelo.test.ts apps/studio/lib/server/acciones/equipos.test.ts`.
+- [x] `pnpm check`; commit `feat(equipos): consultar catálogo con categoría y competiciones`.
 
 ## T2 — Editor y preview reutilizados
 
@@ -324,7 +324,11 @@ su gestión desde esta pantalla ni permite inscribirlo en una categoría incompa
 
 ## Estado de traspaso
 
-Plan escrito antes de implementar. Ninguna tarea de código ejecutada todavía.
+Plan commiteado antes de implementar: `0e403f5`.
+T1 completada en `codex/fase-6c-equipos`: modelo puro y catálogo en una consulta agrupada.
+Validación: 16 pruebas específicas; `pnpm check` con 495 correctas y 1 omitida existente;
+ESLint de archivos modificados sin errores. Esquema y mutaciones sin cambios.
+Pendientes T2–T6; no se han modificado pantallas todavía.
 Primero comprobar árbol y rama; después T1 → T2/T3 → T4 → T5/T6. T2 y T3 comparten contratos:
 no asignarlas a agentes que editen simultáneamente AdminEquipos. Las mutaciones de equipos
 no se cambian por estética ni para adaptar sus nombres al nuevo componente.

@@ -3,10 +3,12 @@
 import { schema } from "@santiso/db";
 import { claveNombre, esEquipoPropio, normalizarCategoria } from "@santiso/domain";
 import { and, eq, or } from "drizzle-orm";
+import type { EquipoCatalogo } from "@/lib/equipos/modelo";
 import type { EquipoDto } from "@/lib/dto";
 import { urlMedia } from "@/lib/media";
 import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
 import {
+  catalogoEquipos,
   equiposDeCompeticion,
   equiposPorIds,
   listarEquiposDeCategoria,
@@ -169,4 +171,9 @@ export async function borrarEquipo(id: string): Promise<Resultado<null>> {
     return null;
   });
   return resultado.ok ? exito(null) : resultado;
+}
+
+/** Lectura enriquecida de la biblioteca para la pantalla de Equipos. */
+export async function cargarCatalogoEquipos(): Promise<EquipoCatalogo[]> {
+  return catalogoEquipos();
 }

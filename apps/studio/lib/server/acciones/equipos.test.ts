@@ -209,3 +209,61 @@ describe("acciones de equipos", () => {
     });
   });
 });
+
+it("el catálogo distingue homónimos y cuenta partidos sin multiplicarlos por inscripciones", async () => {
+  const { acciones, competicionId } = await entorno();
+  const { schema } = await import("@santiso/db");
+  const { db } = await (await import("@/lib/server/db")).obtenerDb();
+  const [senior, veterano, rival, libre] = await db
+    .insert(schema.equipos)
+    .values([
+      { nombre: "Río", clave: "rio", categoria: "Senior" },
+      { nombre: "Río", clave: "rio", categoria: "Veteranos" },
+      { nombre: "Rival", clave: "rival", categoria: "Senior" },
+      { nombre: "Libre", clave: "libre", categoria: "Senior" },
+    ])
+    .returning();
+  if (!senior || !veterano || !rival || !libre) throw new Error("Faltan equipos");
+  const [temporada] = await db
+    .insert(schema.temporadas)
+    .values({ nombre: "2025/26", activa: false })
+    .returning();
+  if (!temporada) throw new Error("Falta temporada");
+  const [otra] = await db
+    .insert(schema.competiciones)
+    .values({ nombre: "Liga anterior", categoria: "Senior", temporadaId: temporada.id })
+    .returning();
+  if (!otra) throw new Error("Falta competición");
+  await db.insert(schema.competicionEquipos).values([
+    { equipoId: senior.id, competicionId },
+    { equipoId: senior.id, competicionId: otra.id },
+  ]);
+  const [jornada] = await db
+    .insert(schema.jornadas)
+    .values({ competicionId, numero: 1 })
+    .returning();
+  if (!jornada) throw new Error("Falta jornada");
+  await db.insert(schema.partidos).values([
+    { jornadaId: jornada.id, equipoLocalId: senior.id, equipoVisitanteId: rival.id },
+    { jornadaId: jornada.id, equipoLocalId: rival.id, equipoVisitanteId: senior.id },
+  ]);
+  const catalogo = await acciones.cargarCatalogoEquipos();
+  expect(catalogo).toHaveLength(4);
+  const ficha = catalogo.find((e) => e.id === senior.id);
+  expect(ficha?.numeroPartidos).toBe(2);
+  expect(ficha?.competiciones).toHaveLength(2);
+  expect(ficha?.competiciones.map((c) => c.temporadaNombre).sort()).toEqual(["2025/26", "2026/27"]);
+  expect(catalogo.find((e) => e.id === rival.id)).toMatchObject({
+    numeroPartidos: 2,
+    competiciones: [],
+  });
+  expect(catalogo.find((e) => e.id === veterano.id)).toMatchObject({
+    nombre: "Río",
+    categoria: "Veteranos",
+    numeroPartidos: 0,
+  });
+  expect(catalogo.find((e) => e.id === libre.id)).toMatchObject({
+    numeroPartidos: 0,
+    competiciones: [],
+  });
+});
