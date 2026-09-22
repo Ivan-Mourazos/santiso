@@ -1,0 +1,256 @@
+/* Plantilla y Staff: listado primero, editor en diálogo. Tokens de la Fase 3A. */
+
+/* Sustituye a `.card` global, que lleva 3rem de relleno a cualquier ancho. */
+.panel {
+  background: var(--ui-surface, #171717);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius-lg, 1.125rem);
+  padding: var(--ui-space-6, 2rem);
+}
+@media (max-width: 640px) {
+  .panel {
+    padding: var(--ui-space-4, 1rem);
+  }
+}
+
+/* `globals.css` da `width: 100%` y relleno a todo `input`, casillas incluidas. */
+.check {
+  display: inline-block;
+  width: auto;
+  flex: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ui-space-4, 1rem);
+  margin-bottom: var(--ui-space-5, 1.5rem);
+}
+.cabecera h2,
+.cabecera h3 {
+  margin: 0;
+  font: 800 1.35rem var(--ui-font-title, sans-serif);
+}
+.cabecera p {
+  margin: 0.25rem 0 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2, 0.5rem);
+}
+
+/* ─── Herramientas: buscador, filtros y contador ─── */
+.herramientas {
+  display: grid;
+  grid-template-columns: minmax(12rem, 2fr) minmax(10rem, 1fr) auto;
+  align-items: end;
+  gap: var(--ui-space-3, 0.75rem);
+  margin-bottom: var(--ui-space-3, 0.75rem);
+}
+.casilla {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: var(--ui-space-2, 0.5rem);
+  min-height: 44px;
+  white-space: nowrap;
+}
+.contador {
+  margin: 0 0 var(--ui-space-3, 0.75rem);
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+
+/* ─── Lista: tabla en escritorio, tarjetas en móvil. Un solo DOM. ─── */
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tabla th {
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ui-muted, #aaa);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--ui-border, #666);
+}
+.tabla td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid rgb(255 255 255 / 6%);
+  vertical-align: middle;
+}
+.tabla tr:hover td {
+  background: rgb(255 255 255 / 3%);
+}
+.foto {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+  background: var(--ui-raised, #242424);
+}
+.dorsal {
+  font: 900 1.1rem var(--ui-font-title, sans-serif);
+  color: var(--ui-accent, #facc15);
+  font-variant-numeric: tabular-nums;
+}
+.repetido {
+  color: var(--ui-warning, #f59e0b);
+}
+.nombre strong {
+  display: block;
+}
+.nombre span {
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.tabla th:last-child {
+  text-align: right;
+}
+.filaAcciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ui-space-2, 0.5rem);
+}
+
+.soloMovil {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .soloMovil {
+    display: block;
+  }
+  .herramientas {
+    grid-template-columns: 1fr;
+  }
+  .tabla thead {
+    display: none;
+  }
+  .tabla,
+  .tabla tbody {
+    display: block;
+  }
+  .tabla tr {
+    display: grid;
+    grid-template-columns: 44px 2.5rem minmax(0, 1fr);
+    grid-template-areas:
+      "foto dorsal nombre"
+      "acciones acciones acciones";
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid rgb(255 255 255 / 8%);
+    border-radius: var(--ui-radius, 0.75rem);
+    background: var(--ui-surface, #171717);
+  }
+  .tabla td {
+    padding: 0;
+    border: 0;
+  }
+  .tabla tr:hover td {
+    background: none;
+  }
+  .celdaFoto {
+    grid-area: foto;
+  }
+  .celdaDorsal {
+    grid-area: dorsal;
+  }
+  .celdaNombre {
+    grid-area: nombre;
+  }
+  .celdaPosicion {
+    display: none;
+  }
+  .celdaAcciones {
+    grid-area: acciones;
+  }
+  .filaAcciones {
+    justify-content: stretch;
+  }
+  .filaAcciones > * {
+    flex: 1;
+  }
+}
+
+/* ─── Editor ─── */
+.editor {
+  display: grid;
+  gap: var(--ui-space-5, 1.5rem);
+}
+.grupo {
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: var(--ui-radius, 0.75rem);
+  padding: var(--ui-space-4, 1rem);
+  margin: 0;
+  display: grid;
+  gap: var(--ui-space-3, 0.75rem);
+}
+.grupo legend {
+  padding: 0 0.4rem;
+  font-weight: 800;
+}
+.alcance {
+  margin: 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.dosColumnas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-3, 0.75rem);
+}
+@media (max-width: 480px) {
+  .dosColumnas {
+    grid-template-columns: 1fr;
+  }
+}
+.aviso {
+  margin: 0;
+  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
+  border-radius: var(--ui-radius, 0.75rem);
+  border: 1px solid rgb(245 158 11 / 35%);
+  background: rgb(245 158 11 / 8%);
+  color: var(--ui-warning, #f59e0b);
+}
+.error {
+  margin: 0;
+  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
+  border-radius: var(--ui-radius, 0.75rem);
+  border: 1px solid rgb(248 113 113 / 35%);
+  background: rgb(248 113 113 / 8%);
+  color: var(--ui-danger, #f87171);
+}
+
+/* ─── Foto dentro del editor ─── */
+.fotoEditor {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-4, 1rem);
+}
+.fotoGrande {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--ui-raised, #242424);
+  flex-shrink: 0;
+}
+.fotoControles {
+  display: grid;
+  gap: var(--ui-space-2, 0.5rem);
+}
+.fotoControles input[type="file"] {
+  max-width: 100%;
+}

@@ -1,21 +1,23 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useStudio } from "@/components/studio/StudioContext";
+import { Button } from "@/components/ui/foundation/Button";
+import { Field } from "@/components/ui/foundation/Fields";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import type { StaffDto } from "@/lib/dto";
-import { prepararImagen } from "@/lib/imagen-cliente";
+import { filtrarStaff } from "@/lib/plantilla/modelo";
 import {
   cargarCandidatosStaff,
   cargarStaff,
-  guardarMiembroStaff,
   incorporarStaff,
   quitarMiembroStaffDeTemporada,
 } from "@/lib/server/acciones/staff";
-import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
-import { Button } from "@/components/ui/foundation/Button";
-import { ErrorState } from "@/components/ui/foundation/States";
 import { useCompeticiones } from "@/lib/useCompeticiones";
-import BusyBanner from "./BusyBanner";
 import BarraTemporada from "./plantilla/BarraTemporada";
+import EditorStaff from "./plantilla/EditorStaff";
 import IncorporarDeTemporada, { type Elegido } from "./plantilla/IncorporarDeTemporada";
+import styles from "./plantilla/Plantilla.module.css";
 
 interface AdminStaffProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -24,57 +26,83 @@ interface AdminStaffProps {
   categoria?: string;
 }
 
+/** Qué tiene abierto el editor. `clave` cambia en cada apertura para montarlo de cero. */
+type EstadoEditor = { clave: number; miembro: StaffDto | null } | null;
+
 export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: AdminStaffProps) {
   const { setParams } = useStudio();
   // La temporada que se consulta sale de la URL (`?temporada=`); sin ella, la activa.
-  const { temporadas, selectedSeasonId: temporadaId } = useCompeticiones(undefined, true);
+  const {
+    temporadas,
+    selectedSeasonId: temporadaId,
+    loadingCompeticiones,
+    errorCompeticiones,
+    loadCompeticiones,
+  } = useCompeticiones(undefined, true);
   const temporadaNombre = temporadas.find((t) => t.id === temporadaId)?.nombre ?? "";
+  // La directiva no tiene categoría deportiva: nunca se le pasa, aunque la URL traiga una.
+  const categoriaDestino = tipo === "Tecnico" ? categoria : undefined;
+  const titulo = tipo === "Tecnico" ? `Cuerpo Técnico (${categoria})` : "Junta Directiva";
+  const plural = tipo === "Tecnico" ? "técnicos" : "directivos";
+
   const [staff, setStaff] = useState<StaffDto[]>([]);
-  const [incorporando, setIncorporando] = useState(false);
+  const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [candidatos, setCandidatos] = useState<{ origen: string; miembros: StaffDto[] } | null>(
     null,
   );
-  const [editingInscripcionId, setEditingInscripcionId] = useState<string | null>(null);
-  const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
-  const [nombre, setNombre] = useState("");
-  const [cargo, setCargo] = useState("");
-  const [errorCarga, setErrorCarga] = useState<string | null>(null);
-  const [fotoFile, setFotoFile] = useState<File | null>(null);
-  const [pendingPhotos, setPendingPhotos] = useState<Record<string, File>>({});
-  const [loading, setLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [busyText, setBusyText] = useState("Cargando staff...");
-  const [busyProgress, setBusyProgress] = useState<number | undefined>(undefined);
-
-  useUnsavedChanges(
-    nombre !== "" || cargo !== "" || fotoFile !== null || Object.keys(pendingPhotos).length > 0,
-  );
+  const [incorporando, setIncorporando] = useState(false);
+  const [texto, setTexto] = useState("");
+  const [editor, setEditor] = useState<EstadoEditor>(null);
+  const generacion = useRef(0);
 
   const fetchStaff = useCallback(async () => {
-    await Promise.resolve();
     if (!temporadaId) return;
-    setIsFetching(true);
+    const esta = ++generacion.current;
+    setCargando(true);
     try {
-      setStaff(await cargarStaff(tipo, categoria, temporadaId));
-      const resultado = await cargarCandidatosStaff(tipo, categoria, temporadaId);
-      setCandidatos(
-        resultado.origen ? { origen: resultado.origen.nombre, miembros: resultado.miembros } : null,
-      );
+      const lista = await cargarStaff(tipo, categoriaDestino, temporadaId);
+      if (esta !== generacion.current) return;
+      setStaff(lista);
       setErrorCarga(null);
     } catch (err) {
       console.error(err);
-      setErrorCarga("No se pudo cargar el staff. Comprueba la conexión e inténtalo de nuevo.");
+      if (esta === generacion.current) {
+        setErrorCarga("No se pudo cargar el staff. Comprueba la conexión e inténtalo de nuevo.");
+      }
     } finally {
-      setIsFetching(false);
+      if (esta === generacion.current) setCargando(false);
     }
-  }, [tipo, categoria, temporadaId]);
+    try {
+      const r = await cargarCandidatosStaff(tipo, categoriaDestino, temporadaId);
+      if (esta === generacion.current) {
+        setCandidatos(r.origen ? { origen: r.origen.nombre, miembros: r.miembros } : null);
+      }
+    } catch (err) {
+      // Sin candidatos solo desaparece el botón de incorporar; la pantalla sigue.
+      console.error(err);
+      if (esta === generacion.current) setCandidatos(null);
+    }
+  }, [tipo, categoriaDestino, temporadaId]);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      fetchStaff();
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
+    const id = window.setTimeout(() => void fetchStaff(), 0);
+    return () => window.clearTimeout(id);
   }, [fetchStaff]);
+
+  const visibles = useMemo(() => filtrarStaff(staff, texto), [staff, texto]);
+  const candidatosDialogo = useMemo(
+    () =>
+      (candidatos?.miembros ?? []).map((m) => ({
+        clave: m.inscripcion_id,
+        nombre: m.nombre,
+        detalle: m.cargo,
+        foto_url: m.foto_url,
+      })),
+    [candidatos],
+  );
+  const hayCandidatos = (candidatos?.miembros.length ?? 0) > 0;
+  const abrirEditor = (miembro: StaffDto | null) => setEditor({ clave: Date.now(), miembro });
 
   async function handleIncorporar(elegidos: Elegido[]) {
     const resultado = await incorporarStaff({
@@ -87,272 +115,204 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
     }
     showToast(`${resultado.datos} añadido(s) a ${temporadaNombre}`);
     setIncorporando(false);
-    fetchStaff();
+    void fetchStaff();
   }
 
-  function startEdit(miembro: StaffDto) {
-    setEditingInscripcionId(miembro.inscripcion_id);
-    setEditingStaffId(miembro.id);
-    setNombre(miembro.nombre);
-    setCargo(miembro.cargo);
-    setFotoFile(null);
-  }
-
-  function cancelEdit() {
-    setEditingInscripcionId(null);
-    setEditingStaffId(null);
-    setNombre("");
-    setCargo("");
-    setFotoFile(null);
-  }
-
-  async function handleAddStaff(e: React.FormEvent) {
-    e.preventDefault();
-    if (!nombre || !cargo) return;
-    const editando = editingInscripcionId !== null;
-    setBusyText(editando ? "Guardando cambios..." : "Procesando foto y guardando staff...");
-    setBusyProgress(5);
-    setLoading(true);
-
-    try {
-      const cuerpo = new FormData();
-      cuerpo.set("id", editingStaffId ?? "");
-      cuerpo.set("inscripcionId", editingInscripcionId ?? "");
-      cuerpo.set("temporadaId", temporadaId);
-      cuerpo.set("nombre", nombre);
-      cuerpo.set("cargo", cargo);
-      cuerpo.set("tipo", tipo);
-      cuerpo.set("categoria", categoria ?? "");
-      if (fotoFile) {
-        setBusyText("Preparando foto...");
-        setBusyProgress(40);
-        cuerpo.set("foto", await prepararImagen(fotoFile));
-      }
-
-      setBusyText("Guardando staff...");
-      setBusyProgress(80);
-      const resultado = await guardarMiembroStaff(cuerpo);
-
-      if (resultado.ok) {
-        cancelEdit();
-        fetchStaff();
-        showToast(
-          editando
-            ? "Cambios guardados"
-            : `${tipo === 'Tecnico' ? 'Técnico' : 'Directivo'} añadido correctamente`,
-        );
-      } else {
-        showToast(resultado.error, "error");
-      }
-    } catch (err) {
-      console.error(err);
-      showToast("Error al guardar miembro", "error");
-    } finally {
-      setLoading(false);
-      setBusyProgress(undefined);
-    }
-  }
-
-  async function handleUpdateFoto(inscripcionId: string, file: File) {
-    setBusyText("Procesando y subiendo foto...");
-    setBusyProgress(5);
-    setLoading(true);
-    setPendingPhotos((pending) => ({ ...pending, [inscripcionId]: file }));
-    const miembro = staff.find((s) => s.inscripcion_id === inscripcionId);
-    if (!miembro) {
-      showToast("No se encontró el miembro", "error");
-      setLoading(false);
-      setBusyProgress(undefined);
-      return;
-    }
-    try {
-      // `guardarMiembroStaff` reescribe el papel entero: hay que reenviar nombre, cargo y tipo.
-      const cuerpo = new FormData();
-      cuerpo.set("id", miembro.id);
-      cuerpo.set("inscripcionId", inscripcionId);
-      cuerpo.set("temporadaId", temporadaId);
-      cuerpo.set("nombre", miembro.nombre);
-      cuerpo.set("cargo", miembro.cargo);
-      cuerpo.set("tipo", miembro.tipo);
-      cuerpo.set("categoria", miembro.categoria ?? "");
-      setBusyText("Preparando foto...");
-      setBusyProgress(40);
-      cuerpo.set("foto", await prepararImagen(file));
-
-      setBusyText("Guardando foto...");
-      setBusyProgress(80);
-      const resultado = await guardarMiembroStaff(cuerpo);
-      if (resultado.ok) {
-        showToast("Foto actualizada");
-        setPendingPhotos((pending) => {
-          const remaining = { ...pending };
-          delete remaining[inscripcionId];
-          return remaining;
-        });
-        fetchStaff();
-      } else {
-        showToast(resultado.error, "error");
-      }
-    } catch (err) {
-      console.error(err);
-      showToast("Error actualizando foto", "error");
-    } finally {
-      setLoading(false);
-      setBusyProgress(undefined);
-    }
-  }
-
-  async function handleQuitarStaff(miembro: StaffDto) {
+  function handleQuitar(miembro: StaffDto) {
     showConfirm(
       `¿Quitar a ${miembro.nombre} (${miembro.cargo}) de ${temporadaNombre}? Sus otras temporadas no se tocan.`,
       async () => {
         const resultado = await quitarMiembroStaffDeTemporada(miembro.inscripcion_id);
-        if (resultado.ok) {
-          fetchStaff();
-          showToast(`${miembro.nombre} ya no está en ${temporadaNombre}`);
-        } else {
+        if (!resultado.ok) {
           showToast(resultado.error, "error");
+          return;
         }
+        showToast(`${miembro.nombre} ya no está en ${temporadaNombre}`);
+        void fetchStaff();
       },
     );
   }
 
+  let contenido: React.ReactNode;
+  if (errorCompeticiones) {
+    contenido = (
+      <ErrorState
+        title="No se pudieron cargar las temporadas"
+        detail={errorCompeticiones}
+        action={<Button onClick={() => void loadCompeticiones()}>Reintentar</Button>}
+      />
+    );
+  } else if (!loadingCompeticiones && temporadas.length === 0) {
+    contenido = (
+      <EmptyState
+        title="Todavía no hay ninguna temporada."
+        detail="Crea la temporada en Ajustes › Temporadas y vuelve aquí."
+      />
+    );
+  } else if (errorCarga) {
+    contenido = (
+      <ErrorState
+        title="No se pudo cargar el staff"
+        detail={errorCarga}
+        action={<Button onClick={() => void fetchStaff()}>Reintentar</Button>}
+      />
+    );
+  } else if (!temporadaId || (cargando && staff.length === 0)) {
+    contenido = <LoadingState title="Cargando…" />;
+  } else if (staff.length === 0) {
+    contenido = (
+      <EmptyState
+        title={`No hay ${plural}${categoriaDestino ? ` en ${categoriaDestino}` : ""} en ${temporadaNombre}.`}
+        detail={
+          hayCandidatos
+            ? `Trae a quien sigue de ${candidatos?.origen} o da de alta a los nuevos.`
+            : "Da de alta a los de esta temporada."
+        }
+        action={
+          <div className={styles.acciones}>
+            {hayCandidatos && (
+              <Button onClick={() => setIncorporando(true)}>Añadir de {candidatos?.origen}</Button>
+            )}
+            <Button variant="secondary" onClick={() => abrirEditor(null)}>
+              Añadir
+            </Button>
+          </div>
+        }
+      />
+    );
+  } else {
+    contenido = (
+      <>
+        <div className={styles.herramientas} role="search" aria-label={`Filtrar ${plural}`}>
+          <Field
+            label="Buscar"
+            type="search"
+            placeholder="Nombre o cargo"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+          />
+        </div>
+        <p className={styles.contador} role="status">
+          {visibles.length === staff.length
+            ? `${staff.length} ${plural}`
+            : `${visibles.length} de ${staff.length} ${plural}`}
+        </p>
+        {visibles.length === 0 ? (
+          <EmptyState
+            title="Nadie coincide con la búsqueda."
+            action={
+              <Button variant="secondary" onClick={() => setTexto("")}>
+                Quitar búsqueda
+              </Button>
+            }
+          />
+        ) : (
+          <table className={styles.tabla} aria-label={`${titulo} ${temporadaNombre}`}>
+            <thead>
+              <tr>
+                <th scope="col">Foto</th>
+                <th scope="col">Nombre</th>
+                <th scope="col">Cargo</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibles.map((m) => (
+                <tr key={m.inscripcion_id}>
+                  <td className={styles.celdaFoto}>
+                    {m.foto_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
+                      <img className={styles.foto} src={m.foto_url} alt="" />
+                    ) : (
+                      <span className={styles.foto} aria-hidden="true" />
+                    )}
+                  </td>
+                  <td className={`${styles.nombre} ${styles.celdaNombre}`}>
+                    <strong>{m.nombre}</strong>
+                    {/* En móvil la columna de cargo se oculta: se ve aquí, bajo el nombre. */}
+                    <span className={styles.soloMovil}>{m.cargo}</span>
+                  </td>
+                  <td className={styles.celdaPosicion}>{m.cargo}</td>
+                  <td className={styles.celdaAcciones}>
+                    <div className={styles.filaAcciones}>
+                      <Button
+                        variant="secondary"
+                        onClick={() => abrirEditor(m)}
+                        aria-label={`Editar a ${m.nombre} (${m.cargo})`}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => handleQuitar(m)}
+                        aria-label={`Quitar a ${m.nombre} de ${temporadaNombre}`}
+                      >
+                        Quitar
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </>
+    );
+  }
+
+  const listo = Boolean(temporadaId) && !errorCompeticiones && !errorCarga;
+
   return (
-    <div className="card glass">
-      <BusyBanner show={loading || isFetching} text={isFetching ? "Cargando staff..." : busyText} progress={loading ? busyProgress : undefined} />
+    <div className={styles.panel}>
       <BarraTemporada
         temporadas={temporadas}
         seleccionada={temporadaId}
         onCambiar={(id) => setParams({ temporada: id })}
-        deshabilitada={loading}
       />
+
+      <div className={styles.cabecera}>
+        <div>
+          <h3>{titulo}</h3>
+          <p>Nombres, cargos y fotos de la temporada elegida.</p>
+        </div>
+        {listo && staff.length > 0 && (
+          <div className={styles.acciones}>
+            {hayCandidatos && (
+              <Button variant="secondary" onClick={() => setIncorporando(true)}>
+                Añadir de {candidatos?.origen}
+              </Button>
+            )}
+            <Button onClick={() => abrirEditor(null)}>Añadir</Button>
+          </div>
+        )}
+      </div>
+
+      {contenido}
+
       {candidatos && (
         <IncorporarDeTemporada
           open={incorporando}
           onClose={() => setIncorporando(false)}
           origen={candidatos.origen}
-          candidatos={candidatos.miembros.map((m) => ({
-            clave: m.inscripcion_id,
-            nombre: m.nombre,
-            detalle: m.cargo,
-            foto_url: m.foto_url,
-          }))}
+          candidatos={candidatosDialogo}
           onConfirmar={handleIncorporar}
         />
       )}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
-        <h3>
-          {tipo === 'Tecnico' ? `Cuerpo Técnico (${categoria})` : 'Junta Directiva'}
-        </h3>
-        {candidatos && candidatos.miembros.length > 0 && (
-          <Button variant="secondary" onClick={() => setIncorporando(true)}>
-            Añadir de {candidatos.origen}
-          </Button>
-        )}
-      </div>
 
-      {errorCarga ? (
-        <ErrorState
-          title="No se pudo cargar el staff"
-          detail={errorCarga}
-          action={<Button onClick={fetchStaff}>Reintentar</Button>}
+      {editor && (
+        <EditorStaff
+          key={editor.clave}
+          miembro={editor.miembro}
+          destino={{ temporadaId, temporadaNombre, tipo, categoria: categoriaDestino }}
+          onCerrar={() => setEditor(null)}
+          onGuardado={(guardado, alta) => {
+            setEditor(null);
+            showToast(
+              alta ? `${guardado.nombre} añadido a ${temporadaNombre}` : "Cambios guardados",
+            );
+            void fetchStaff();
+          }}
         />
-      ) : (
-        <>
-      <form onSubmit={handleAddStaff} className="admin-form" style={{ marginBottom: '2.5rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 150px auto', gap: '1rem', alignItems: 'flex-end' }}>
-          <div className="input-group">
-            <label>Nombre Completo</label>
-            <input type="text" placeholder="Ej: Alberto López" value={nombre} onChange={(e) => setNombre(e.target.value)} required style={{ height: '50px' }} />
-          </div>
-          <div className="input-group">
-            <label>Cargo / Función</label>
-            <input type="text" placeholder={tipo === 'Tecnico' ? "Ej: Entrenador" : "Ej: Presidente"} value={cargo} onChange={(e) => setCargo(e.target.value)} required style={{ height: '50px' }} />
-          </div>
-          <div className="input-group">
-            <label>Foto</label>
-            <div className="file-input-group">
-              <label className="file-input-label" style={{ height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', cursor: 'pointer', fontSize: '0.8rem' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                {fotoFile ? "OK" : "Subir"}
-                <input type="file" className="hidden-input" accept="image/*" onChange={(e) => setFotoFile(e.target.files?.[0] || null)} />
-              </label>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button type="submit" className="btn-primary" disabled={loading} style={{ height: '50px', padding: '0 1.5rem', borderRadius: '10px' }}>
-              {loading ? "..." : editingInscripcionId ? "Guardar" : "+"}
-            </button>
-            {editingInscripcionId && (
-              <button type="button" className="btn-delete" disabled={loading} onClick={cancelEdit} style={{ height: '50px', padding: '0 1rem', borderRadius: '10px' }}>
-                Cancelar
-              </button>
-            )}
-          </div>
-        </div>
-      </form>
-
-      <div className="table-responsive">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th style={{ width: 60 }}>Foto</th>
-              <th>Nombre</th>
-              <th>Cargo</th>
-              <th style={{ textAlign: 'right' }}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {staff.length === 0 ? (
-              <tr>
-                <td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-                  No hay {tipo === 'Tecnico' ? 'técnicos' : 'directivos'} {categoria ? `en ${categoria} ` : ''}en {temporadaNombre}.
-                  {candidatos && candidatos.miembros.length > 0 && (
-                    <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                      Usa «Añadir de {candidatos.origen}» para traer a quien sigue, o da de alta a los nuevos arriba.
-                    </p>
-                  )}
-                </td>
-              </tr>
-            ) : (
-              staff.map(s => (
-                <tr key={s.inscripcion_id}>
-                  <td>
-                    <div style={{ position: 'relative', width: '40px', height: '40px' }}>
-                      {s.foto_url ? (
-                        <img src={s.foto_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </div>
-                      )}
-                      <label style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: 'var(--primary)', color: 'black', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: loading ? 'not-allowed' : 'pointer', border: '1px solid #000', opacity: loading ? 0.6 : 1 }}>
-                        <span style={{ fontSize: '10px' }}>+</span>
-                        <input disabled={loading} type="file" className="hidden-input" accept="image/*" onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (f) handleUpdateFoto(s.inscripcion_id, f);
-                          e.currentTarget.value = "";
-                        }} />
-                      </label>
-                    </div>
-                  </td>
-                  <td style={{ fontWeight: 800 }}>{s.nombre}</td>
-                  <td><span className="badge-posicion">{s.cargo}</span></td>
-                  <td style={{ textAlign: 'right', display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
-                    <button disabled={loading} onClick={() => startEdit(s)} className="btn-edit-icon-only" title="Editar nombre y cargo" aria-label={`Editar a ${s.nombre}`} style={{ opacity: loading ? 0.6 : 1 }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-                    </button>
-                    <button disabled={loading} onClick={() => handleQuitarStaff(s)} className="btn-delete-icon-only" title="Quitar de la temporada" aria-label={`Quitar a ${s.nombre} de la temporada`} style={{ opacity: loading ? 0.6 : 1 }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-        </>
       )}
     </div>
   );

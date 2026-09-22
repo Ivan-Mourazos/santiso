@@ -39,10 +39,34 @@ comprobaciones. Plantilla gana su propia prueba: cerrar el editor con cambios pi
 
 ## Tareas
 
-- [ ] T1 Modelo puro (`plantilla/modelo.ts`): filtrado, borradores, `FormData`, comparación. Pruebas.
-- [ ] T2 Piezas: `FotoFormulario`, `EditorJugador`, `EditorStaff`, `Plantilla.module.css`.
-- [ ] T3 `AdminPlayers` como orquestador: barra de temporada, herramientas, lista, editor.
-- [ ] T4 `AdminStaff` igual.
-- [ ] T5 e2e: selectores semánticos en `plantilla.spec.ts`, guardia mudada a Equipos, una e2e de
+- [x] T1 Modelo puro (`plantilla/modelo.ts`): filtrado, borradores, `FormData`, comparación. Pruebas.
+- [x] T2 Piezas: `FotoFormulario`, `EditorJugador`, `EditorStaff`, `Plantilla.module.css`.
+- [x] T3 `AdminPlayers` como orquestador: barra de temporada, herramientas, lista, editor.
+- [x] T4 `AdminStaff` igual.
+- [x] T5 e2e: selectores semánticos en `plantilla.spec.ts`, guardia mudada a Equipos, una e2e de
       escritura (alta + edición anual + quitar) sobre carpeta de datos temporal.
-- [ ] T6 `pnpm check`, build, e2e, ESLint sin subir la línea base, fusión.
+- [x] T6 `pnpm check`, build, e2e, ESLint sin subir la línea base, fusión.
+
+## Cierre — 22/09/2026
+
+Implementación de Claude revisada y completada por Codex en el checkout principal.
+No se cambiaron el esquema ni las acciones de servidor de la Fase 2D.
+
+Correcciones de cierre:
+- Bloqueo síncrono de guardado y campos deshabilitados durante el envío en ambos editores.
+- Vista previa de foto sincronizada con el elemento de imagen, sin estado derivado en efectos;
+  se libera cada URL temporal al sustituirla o cerrar el editor.
+- Cada ejecución de escritura usa una carpeta temporal única, sin borrar directorios previos.
+- Pruebas de anchura a 360/1280 px y de conservación de borrador tras fallo de guardado.
+
+Validación final:
+- `pnpm check`: 64 archivos, 491 pruebas correctas y 1 omitida previamente existente.
+- `pnpm build`: correcto, incluidas las rutas del panel.
+- `pnpm e2e`: 31 correctas; solo lectura sobre datos locales.
+- `pnpm e2e:escritura`: 4 correctas sobre datos ficticios aislados.
+- ESLint de todos los módulos nuevos/modificados de Plantilla y Staff: sin errores ni avisos.
+- Formato comprobado explícitamente en los archivos de Studio, excluidos del formato raíz.
+
+Los servidores de pruebas se detuvieron. Las carpetas temporales quedan disponibles para
+inspección. La rama fase-6b del checkout principal se integra en main por avance rápido;
+no hace falta fusionar el antiguo worktree codex/base-visual ni su plan desactualizado.

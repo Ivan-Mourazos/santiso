@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
+import styles from "./Plantilla.module.css";
 
 export interface Candidato {
   /** Identifica la fila: la inscripción de origen. */
@@ -64,9 +65,7 @@ export default function IncorporarDeTemporada({
     if (firmaAnterior.current === firma) return;
     firmaAnterior.current = firma;
     setMarcados({});
-    setDorsales(
-      Object.fromEntries(candidatos.map((c) => [c.clave, c.dorsal?.toString() ?? ""])),
-    );
+    setDorsales(Object.fromEntries(candidatos.map((c) => [c.clave, c.dorsal?.toString() ?? ""])));
     // Solo la firma decide si toca reiniciar; `candidatos` cambia de identidad cada render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firma]);
@@ -117,9 +116,12 @@ export default function IncorporarDeTemporada({
       }
     >
       {otrasCategorias && (
-        <label style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.75rem" }}>
+        <label
+          style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.75rem" }}
+        >
           <input
             type="checkbox"
+            className={styles.check}
             checked={otrasCategorias.activo}
             onChange={(e) => otrasCategorias.onCambiar(e.target.checked)}
           />
@@ -133,19 +135,28 @@ export default function IncorporarDeTemporada({
         <p>No queda nadie de {origen} por añadir.</p>
       ) : (
         <>
-          <label style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem" }}>
+          <label
+            style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem" }}
+          >
             <input
               type="checkbox"
+              className={styles.check}
               checked={todos}
               onChange={(e) =>
-                setMarcados(
-                  Object.fromEntries(candidatos.map((c) => [c.clave, e.target.checked])),
-                )
+                setMarcados(Object.fromEntries(candidatos.map((c) => [c.clave, e.target.checked])))
               }
             />
             Marcar todos
           </label>
-          <ul style={{ listStyle: "none", margin: 0, padding: 0, maxHeight: "50vh", overflowY: "auto" }}>
+          <ul
+            style={{
+              listStyle: "none",
+              margin: 0,
+              padding: 0,
+              maxHeight: "50vh",
+              overflowY: "auto",
+            }}
+          >
             {candidatos.map((c) => {
               const idCasilla = `incorporar-${c.clave}`;
               return (
@@ -162,6 +173,7 @@ export default function IncorporarDeTemporada({
                   <input
                     id={idCasilla}
                     type="checkbox"
+                    className={styles.check}
                     checked={Boolean(marcados[c.clave])}
                     onChange={(e) => setMarcados((m) => ({ ...m, [c.clave]: e.target.checked }))}
                   />
@@ -175,7 +187,10 @@ export default function IncorporarDeTemporada({
                       style={{ borderRadius: "6px", objectFit: "cover" }}
                     />
                   ) : (
-                    <span aria-hidden style={{ width: 36, height: 36, borderRadius: 6, background: "#1a1a1a" }} />
+                    <span
+                      aria-hidden
+                      style={{ width: 36, height: 36, borderRadius: 6, background: "#1a1a1a" }}
+                    />
                   )}
                   <label htmlFor={idCasilla} style={{ flex: 1, cursor: "pointer" }}>
                     <strong>{c.nombre}</strong>

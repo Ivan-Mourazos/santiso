@@ -8,7 +8,8 @@
     "start": "next start -H 127.0.0.1",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:escritura": "playwright test -c playwright.escritura.config.ts"
   },
   "dependencies": {
     "@santiso/actas": "workspace:*",

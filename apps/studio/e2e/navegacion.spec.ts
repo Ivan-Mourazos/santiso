@@ -22,15 +22,20 @@ test("ruta, categoría y Directiva conservan contexto al recargar y volver", asy
     page.getByRole("heading", { name: "Directiva", exact: true, level: 1 }),
   ).toBeVisible();
 });
+// La guardia se prueba en Equipos porque tiene el formulario en línea. Jugadores lo tuvo hasta la
+// 6B; desde entonces edita en un diálogo modal, que deja el menú inalcanzable mientras está
+// abierto (su propia prueba de descarte está en plantilla.spec.ts).
 test("borrador bloquea sección, categoría y atrás sin perder texto", async ({ page }) => {
   await page.goto("/admin/temporadas");
-  await page.getByRole("link", { name: "Jugadores", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Plantilla Senior", exact: true })).toBeVisible();
-  const name = page.locator("form").first().locator("input").first();
+  await page.getByRole("link", { name: "Equipos", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Librería de Equipos (Senior)", exact: true }),
+  ).toBeVisible();
+  const name = page.getByPlaceholder("Ej: Racing de Ferrol").first();
   await name.fill("Borrador sin guardar");
   page.on("dialog", (dialog) => dialog.dismiss());
   await page.getByRole("link", { name: "Calendario", exact: true }).click();
-  await expect(page).toHaveURL(/jugadores/);
+  await expect(page).toHaveURL(/equipos/);
   await expect(name).toHaveValue("Borrador sin guardar");
   await page
     .getByRole("group", { name: "Categoría deportiva" })
@@ -40,7 +45,7 @@ test("borrador bloquea sección, categoría y atrás sin perder texto", async ({
   const blocked = page.waitForEvent("dialog");
   await page.evaluate(() => window.history.back());
   await blocked;
-  await expect(page).toHaveURL(/jugadores/);
+  await expect(page).toHaveURL(/equipos/);
   await expect(name).toHaveValue("Borrador sin guardar");
 });
 for (const width of [360, 390])
@@ -88,16 +93,18 @@ test("el marcador sin guardar bloquea cambiar de sección", async ({ page }) => 
 });
 
 test("pulsar la sección actual conserva la guardia", async ({ page }) => {
-  await page.goto("/admin/jugadores");
-  await expect(page.getByRole("heading", { name: "Plantilla Senior", exact: true })).toBeVisible();
-  const input = page.locator("form input").first();
+  await page.goto("/admin/equipos");
+  await expect(
+    page.getByRole("heading", { name: "Librería de Equipos (Senior)", exact: true }),
+  ).toBeVisible();
+  const input = page.getByPlaceholder("Ej: Racing de Ferrol").first();
   await input.fill("Borrador conservado");
   let dialogs = 0;
   page.on("dialog", async (dialog) => {
     dialogs++;
     await dialog.dismiss();
   });
-  await page.getByRole("link", { name: "Jugadores", exact: true }).click();
+  await page.getByRole("link", { name: "Equipos", exact: true }).click();
   expect(dialogs).toBe(0);
   await page.getByRole("link", { name: "Calendario", exact: true }).click();
   expect(dialogs).toBe(1);

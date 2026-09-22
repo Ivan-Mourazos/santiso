@@ -24,7 +24,8 @@
     "migracion:exportar": "pnpm --filter @santiso/migracion-supabase exportar",
     "migracion:importar": "pnpm --filter @santiso/migracion-supabase importar",
     "migracion:verificar": "pnpm --filter @santiso/migracion-supabase verificar",
-    "e2e": "pnpm --filter @santiso/studio e2e"
+    "e2e": "pnpm --filter @santiso/studio e2e",
+    "e2e:escritura": "pnpm --filter @santiso/studio e2e:escritura"
   },
   "devDependencies": {
     "@types/node": "catalog:",
