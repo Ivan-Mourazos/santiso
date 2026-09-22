@@ -8,7 +8,7 @@ export const SECCIONES = [
   { id: "actas", label: "Actas", grupo: "Producción" },
   { id: "importar-jornada", label: "Importar jornada", grupo: "Producción" },
   { id: "equipos", label: "Equipos", grupo: "Catálogos" },
-  { id: "patrocinadores", label: "Patrocinadores", grupo: "Catálogos" },
+  { id: "patrocinadores", label: "Patrocinadores y logos", grupo: "Catálogos" },
   { id: "temporadas", label: "Temporadas", grupo: "Ajustes" },
   { id: "ajustes-graficos", label: "Ajustes gráficos", grupo: "Ajustes" },
 ] as const;

@@ -5,7 +5,7 @@ const SECCIONES = [
   "Clasificación",
   "Equipos",
   "Jugadores",
-  "Patrocinadores",
+  "Patrocinadores y logos",
   "Calendario",
   "Carteles",
   "Actas",
