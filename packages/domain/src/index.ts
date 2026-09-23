@@ -6,3 +6,4 @@ export * from "./competiciones";
 export * from "./fechas";
 export * from "./nombres";
 export * from "./temporadas";
+export * from "./estadisticas-jugadores";
