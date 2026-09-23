@@ -9,5 +9,5 @@ export default async function AdminPage({
   for (const [key, value] of Object.entries(params)) {
     if (typeof value === "string") query.set(key, value);
   }
-  redirect(`/admin/calendario${query.size ? `?${query}` : ""}`);
+  redirect(`/admin/jornada${query.size ? `?${query}` : ""}`);
 }

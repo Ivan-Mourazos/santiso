@@ -183,7 +183,7 @@ describe("pantallaJornada", () => {
 
   it("da la posición del Santiso en la liga", async () => {
     const [p] = (await pantallaJornada("2026-09-23")).categorias[0]!.partidos;
-    expect(p!.clasificacion).toEqual({ posicion: 1, puntos: 3, equipos: 3 });
+    expect(p!.clasificacion).toEqual({ posicion: 1, puntos: 3, jugados: 1, equipos: 3 });
   });
 
   it("otra semana, otros partidos; una semana sin partido deja la categoría vacía", async () => {

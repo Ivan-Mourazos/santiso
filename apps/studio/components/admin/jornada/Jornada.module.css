@@ -1,0 +1,202 @@
+/* Jornada (9A): el trabajo de la semana en una pantalla. Tokens de la Fase 3A. */
+
+.pantalla {
+  display: grid;
+  gap: var(--ui-space-5, 1.5rem);
+}
+.semana {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3, 0.75rem);
+  padding: var(--ui-space-4, 1rem) var(--ui-space-5, 1.5rem);
+  background: var(--ui-surface, #171717);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius-lg, 1.125rem);
+}
+.semana h3 {
+  margin: 0;
+  font: 800 1.2rem var(--ui-font-title, sans-serif);
+}
+.semana p {
+  margin: 0.15rem 0 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2, 0.5rem);
+  align-items: center;
+}
+.botones a {
+  text-decoration: none;
+}
+
+/* ─── Categorías ─── */
+.categorias {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  gap: var(--ui-space-4, 1rem);
+  align-items: start;
+}
+.categoria {
+  display: grid;
+  gap: var(--ui-space-3, 0.75rem);
+}
+.categoria > h3 {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-accent, #facc15);
+}
+.vacia {
+  margin: 0;
+  padding: var(--ui-space-4, 1rem);
+  border: 1px dashed rgb(255 255 255 / 15%);
+  border-radius: var(--ui-radius, 0.75rem);
+  color: var(--ui-muted, #aaa);
+}
+
+/* ─── Tarjeta de partido ─── */
+.tarjeta {
+  display: grid;
+  gap: var(--ui-space-4, 1rem);
+  padding: var(--ui-space-5, 1.5rem);
+  background: var(--ui-surface, #171717);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius-lg, 1.125rem);
+}
+.contexto {
+  margin: 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.cruce {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ui-space-3, 0.75rem);
+}
+.equipo {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2, 0.5rem);
+  min-width: 0;
+  font-weight: 800;
+  overflow-wrap: break-word;
+}
+.equipo:first-child {
+  justify-content: flex-end;
+  text-align: right;
+}
+.equipo img,
+.escudoVacio {
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: contain;
+  flex: none;
+}
+.escudoVacio {
+  border-radius: 999px;
+  background: var(--ui-raised, #242424);
+}
+.propio {
+  color: var(--ui-accent, #facc15);
+}
+.centro {
+  text-align: center;
+}
+.marcador {
+  font: 900 1.6rem var(--ui-font-title, sans-serif);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hora {
+  display: block;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.dia {
+  display: block;
+  color: var(--ui-muted, #aaa);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+/* ─── Pasos ─── */
+.pasos {
+  display: grid;
+  gap: var(--ui-space-3, 0.75rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.paso {
+  display: grid;
+  gap: var(--ui-space-2, 0.5rem);
+  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-raised, #242424);
+}
+.pasoCabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ui-space-2, 0.5rem);
+}
+.pasoCabecera h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+.estado {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.estado[data-tono="hecho"] {
+  color: var(--ui-success, #10b981);
+}
+.estado[data-tono="pendiente"] {
+  color: var(--ui-warning, #f59e0b);
+}
+.estado[data-tono="espera"] {
+  color: var(--ui-muted, #aaa);
+}
+.detalle {
+  margin: 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+
+@media (max-width: 640px) {
+  .categorias {
+    grid-template-columns: 1fr;
+  }
+  .tarjeta {
+    padding: var(--ui-space-4, 1rem);
+  }
+  /* En estrecho los nombres largos se partían a mitad de palabra: el cruce se apila. */
+  .cruce {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+  .equipo,
+  .equipo:first-child {
+    justify-content: center;
+    text-align: center;
+    overflow-wrap: break-word;
+  }
+}
+
+/* Los enlaces con aspecto de botón. */
+.botones a {
+  display: inline-flex;
+  align-items: center;
+}

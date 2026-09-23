@@ -27,6 +27,7 @@ export interface PartidoDeLaSemana {
   estado: string;
   santisoLocal: boolean;
   santiso: string;
+  santisoEscudoUrl: string | null;
   rival: { nombre: string; escudoUrl: string | null };
   golesSantiso: number | null;
   golesRival: number | null;
@@ -34,7 +35,7 @@ export interface PartidoDeLaSemana {
   /** `null` = todavía sin acta guardada. */
   acta: ActaDeLaSemana | null;
   /** Solo en competiciones de liga y si el Santiso está en la tabla. */
-  clasificacion: { posicion: number; puntos: number; equipos: number } | null;
+  clasificacion: { posicion: number; puntos: number; jugados: number; equipos: number } | null;
 }
 
 export interface PantallaJornada {
@@ -193,6 +194,10 @@ export async function pantallaJornada(dia: string): Promise<PantallaJornada> {
       estado: f.estado,
       santisoLocal,
       santiso: santisoLocal ? f.localNombre : f.visitanteNombre,
+      santisoEscudoUrl: (() => {
+        const clave = santisoLocal ? f.localEscudo : f.visitanteEscudo;
+        return clave ? urlMedia(clave) : null;
+      })(),
       rival: {
         nombre: santisoLocal ? f.visitanteNombre : f.localNombre,
         escudoUrl: (() => {
@@ -206,7 +211,12 @@ export async function pantallaJornada(dia: string): Promise<PantallaJornada> {
       acta: actaDe(f.id),
       clasificacion:
         tabla && filaSantiso
-          ? { posicion: indice + 1, puntos: filaSantiso.puntos, equipos: tabla.length }
+          ? {
+              posicion: indice + 1,
+              puntos: filaSantiso.puntos,
+              jugados: filaSantiso.jugados,
+              equipos: tabla.length,
+            }
           : null,
     };
     return { categoria: f.categoria, partido };
