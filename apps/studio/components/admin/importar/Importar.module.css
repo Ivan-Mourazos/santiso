@@ -1,0 +1,247 @@
+/* Importar jornada: foto (Gemini) y calendario PDF (6H). Tokens de la Fase 3A. */
+
+.panel {
+  display: grid;
+  gap: var(--ui-space-5, 1.5rem);
+  background: var(--ui-surface, #171717);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius-lg, 1.125rem);
+  padding: var(--ui-space-6, 2rem);
+}
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--ui-space-3, 0.75rem);
+}
+.cabecera h3 {
+  margin: 0;
+  font: 800 1.35rem var(--ui-font-title, sans-serif);
+}
+.cabecera p {
+  margin: 0.25rem 0 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.modelo {
+  align-self: flex-start;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgb(250 204 21 / 10%);
+  color: var(--ui-accent, #facc15);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.titulo {
+  margin: 0 0 var(--ui-space-3, 0.75rem);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-accent, #facc15);
+}
+.nota {
+  margin: 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--ui-space-3, 0.75rem);
+  align-items: end;
+}
+.accion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2, 0.5rem);
+  align-items: center;
+}
+
+/* ─── Archivo ─── */
+.dropzone {
+  display: grid;
+  gap: var(--ui-space-2, 0.5rem);
+  padding: var(--ui-space-4, 1rem);
+  border: 1px dashed rgb(255 255 255 / 20%);
+  border-radius: var(--ui-radius, 0.75rem);
+}
+.dropzone:focus-within,
+.dropzone[data-con-archivo="true"] {
+  border-color: var(--ui-accent, #facc15);
+}
+.dropzone input[type="file"]::file-selector-button {
+  margin-right: var(--ui-space-3, 0.75rem);
+  padding: 0.5rem 1rem;
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-raised, #242424);
+  color: var(--ui-text, #fff);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.vistaPrevia {
+  max-height: 26rem;
+  overflow: auto;
+  border-radius: var(--ui-radius, 0.75rem);
+  background: #000;
+}
+.vistaPrevia img {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+}
+.vistaPrevia iframe {
+  width: 100%;
+  height: 26rem;
+  border: 0;
+}
+
+/* ─── Revisión ─── */
+.avisos {
+  margin: 0;
+  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
+  list-style: none;
+  border-radius: var(--ui-radius, 0.75rem);
+  border: 1px solid rgb(245 158 11 / 35%);
+  background: rgb(245 158 11 / 8%);
+  color: var(--ui-warning, #f59e0b);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.tarjetas {
+  display: grid;
+  gap: var(--ui-space-3, 0.75rem);
+}
+.tarjeta {
+  display: grid;
+  gap: var(--ui-space-3, 0.75rem);
+  padding: var(--ui-space-4, 1rem);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-raised, #242424);
+}
+.tarjeta[data-seleccionada="false"] {
+  opacity: 0.6;
+}
+.tarjeta[data-descansa="true"] {
+  border-style: dashed;
+}
+.tarjetaCabecera {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ui-space-2, 0.5rem);
+}
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2, 0.5rem);
+  min-height: 44px;
+  font-weight: 700;
+  cursor: pointer;
+}
+/* `globals.css` estira todo `input`; las casillas no. */
+.casilla input {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--ui-accent, #facc15);
+}
+.leido {
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.confianza {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.confianza[data-nivel="alta"] {
+  background: rgb(16 185 129 / 15%);
+  color: var(--ui-success, #10b981);
+}
+.confianza[data-nivel="media"] {
+  background: rgb(245 158 11 / 15%);
+  color: var(--ui-warning, #f59e0b);
+}
+.confianza[data-nivel="baja"] {
+  background: rgb(248 113 113 / 15%);
+  color: var(--ui-danger, #f87171);
+}
+.cruce {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: var(--ui-space-3, 0.75rem);
+  align-items: end;
+}
+.goles {
+  display: flex;
+  gap: var(--ui-space-2, 0.5rem);
+  align-items: end;
+}
+.goles input {
+  width: 3.5rem;
+  text-align: center;
+  font-weight: 900;
+}
+.descansa {
+  font-weight: 800;
+  color: var(--ui-muted, #aaa);
+}
+
+/* ─── Plan del calendario PDF ─── */
+.resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-5, 1.5rem);
+}
+.dato strong {
+  display: block;
+  font: 900 1.6rem var(--ui-font-title, sans-serif);
+  line-height: 1;
+  color: var(--ui-accent, #facc15);
+}
+.dato[data-tono="bien"] strong {
+  color: var(--ui-success, #4ade80);
+}
+.dato[data-tono="neutro"] strong {
+  color: var(--ui-muted, #888);
+}
+.dato[data-tono="mal"] strong {
+  color: var(--ui-danger, #f87171);
+}
+.dato span {
+  color: var(--ui-muted, #aaa);
+  font-size: 0.75rem;
+}
+.jornadas {
+  max-height: 22rem;
+  overflow-y: auto;
+  display: grid;
+  gap: var(--ui-space-3, 0.75rem);
+}
+.jornadas ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.jornadas li[data-estado="existe"] {
+  color: var(--ui-muted, #888);
+}
+.jornadas li[data-estado="sin-equipo"] {
+  color: var(--ui-danger, #f87171);
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding: var(--ui-space-4, 1rem);
+  }
+  .cruce {
+    grid-template-columns: 1fr;
+  }
+}

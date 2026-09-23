@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { claveNombre, esEquipoPropio, similitudTokens } from "./nombres";
+import { claveEquipo, claveNombre, esEquipoPropio, similitudTokens } from "./nombres";
 
 describe("claveNombre", () => {
   it("ignora mayúsculas, puntuación y espacios sobrantes", () => {
@@ -40,5 +40,22 @@ describe("esEquipoPropio", () => {
   it("no confunde palabras que solo contienen el texto", () => {
     expect(esEquipoPropio("Santisoil C.F.")).toBe(false);
     expect(esEquipoPropio("C.D. San Mamed")).toBe(false);
+  });
+});
+
+describe("claveEquipo", () => {
+  it("une las siglas escritas con puntos", () => {
+    expect(claveEquipo("U.D. SANTISO F.C.")).toBe("ud santiso fc");
+    expect(claveEquipo("UD Santiso FC")).toBe("ud santiso fc");
+    expect(claveEquipo("S.D. Bandeira")).toBe("sd bandeira");
+  });
+
+  it("respeta la letra sola de un filial", () => {
+    expect(claveEquipo('C.S.D ARZUA "B"')).toBe("csd arzua b");
+    expect(claveEquipo("Atlético Eter B")).toBe("atletico eter b");
+  });
+
+  it("no toca los números", () => {
+    expect(claveEquipo("Tercera Futgal - Gr. 3")).toBe("tercera futgal gr 3");
   });
 });
