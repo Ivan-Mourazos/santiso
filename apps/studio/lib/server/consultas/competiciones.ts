@@ -1,7 +1,11 @@
 import "server-only";
 import { schema } from "@santiso/db";
-import { type ReglaClasificacion, reglasClasificacionSchema } from "@santiso/domain";
-import { asc, eq } from "drizzle-orm";
+import {
+  type Categoria,
+  type ReglaClasificacion,
+  reglasClasificacionSchema,
+} from "@santiso/domain";
+import { and, asc, eq } from "drizzle-orm";
 import type { CompeticionDto } from "@/lib/dto";
 import { temporadaActivaId } from "@/lib/server/consultas/temporadas";
 import { obtenerDb } from "@/lib/server/db";
@@ -37,4 +41,32 @@ export async function reglasDeCompeticion(competicionId: string): Promise<ReglaC
     .where(eq(schema.competiciones.id, competicionId));
   const analizado = reglasClasificacionSchema.safeParse(fila?.reglas ?? []);
   return analizado.success ? analizado.data : [];
+}
+
+/**
+ * Competiciones de una temporada y categoría concretas. `listarCompeticiones` solo trae las de
+ * la temporada activa; las estadísticas se consultan también de temporadas pasadas.
+ */
+export async function listarCompeticionesDeTemporada(
+  temporadaId: string,
+  categoria: Categoria,
+): Promise<CompeticionDto[]> {
+  const { db } = await obtenerDb();
+  const filas = await db
+    .select({
+      id: schema.competiciones.id,
+      categoria: schema.competiciones.categoria,
+      nombre: schema.competiciones.nombre,
+      orden: schema.competiciones.orden,
+      formato: schema.competiciones.formato,
+    })
+    .from(schema.competiciones)
+    .where(
+      and(
+        eq(schema.competiciones.temporadaId, temporadaId),
+        eq(schema.competiciones.categoria, categoria),
+      ),
+    )
+    .orderBy(asc(schema.competiciones.orden), asc(schema.competiciones.nombre));
+  return filas.map((f) => ({ ...f, activa: true }));
 }
