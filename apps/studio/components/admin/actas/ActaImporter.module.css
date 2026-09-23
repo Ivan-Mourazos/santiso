@@ -1,0 +1,209 @@
+.importer {
+  display: grid;
+  gap: var(--ui-space-5);
+  min-width: 0;
+  color: var(--ui-text);
+  font-family: var(--ui-font-body);
+  overflow-wrap: anywhere;
+}
+.section,
+.fullSection,
+.warnings {
+  min-width: 0;
+  padding: var(--ui-space-5);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+}
+.section,
+.fullSection {
+  display: grid;
+  align-content: start;
+  gap: var(--ui-space-4);
+}
+.section h2,
+.fullSection h2 {
+  margin: 0;
+  font-family: var(--ui-font-title);
+  font-size: var(--ui-text-base);
+}
+.review,
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-4);
+  min-width: 0;
+}
+.full,
+.fullSection {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.fieldSlot,
+.eventBody {
+  min-width: 0;
+}
+.column,
+.rows {
+  display: grid;
+  align-content: start;
+  gap: var(--ui-space-4);
+  min-width: 0;
+}
+.sectionHeader,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-3);
+  min-width: 0;
+}
+.sectionHeader {
+  justify-content: space-between;
+}
+.importer button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.dropzone {
+  display: grid;
+  gap: var(--ui-space-3);
+  min-width: 0;
+  padding: var(--ui-space-5);
+  border: 2px dashed var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg);
+}
+.dropzone[data-selected="true"],
+.dropzone:focus-within {
+  border-color: var(--ui-accent);
+}
+.dropzone input {
+  max-width: 100%;
+}
+.dropzone > span {
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.detection {
+  color: var(--ui-warning);
+}
+.detection[data-matched="true"] {
+  color: var(--ui-success);
+}
+.lineupRow,
+.event {
+  display: grid;
+  gap: var(--ui-space-3);
+  min-width: 0;
+  padding: var(--ui-space-4);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg);
+}
+.lineupRow {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+.lineupRow > div {
+  grid-column: 1 / -1;
+}
+.lineupRow > button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.playerStatus {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: var(--ui-space-1);
+  border: 1px solid currentColor;
+  border-radius: var(--ui-radius);
+  color: var(--ui-warning);
+  font-weight: 800;
+}
+.playerStatus[data-linked="true"] {
+  color: var(--ui-success);
+}
+.playerName {
+  min-width: 0;
+  color: var(--ui-muted);
+}
+.eventHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--ui-space-4);
+  padding-bottom: var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border);
+}
+.eventActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--ui-space-3);
+  min-width: 0;
+}
+.warnings {
+  border-inline-start: 4px solid var(--ui-warning);
+}
+.warnings p {
+  margin: var(--ui-space-2) 0;
+}
+.progress {
+  display: grid;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-4);
+  border: 1px solid var(--ui-accent);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+}
+.progress p {
+  margin: 0;
+}
+.progress progress {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--ui-accent);
+}
+@media (max-width: 780px) {
+  .review,
+  .fields,
+  .eventHeader {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .section,
+  .fullSection,
+  .warnings,
+  .dropzone,
+  .event,
+  .lineupRow {
+    padding: var(--ui-space-3);
+  }
+  .eventActions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .eventActions > button {
+    justify-self: start;
+  }
+}
+
+/* El botón nativo de «elegir archivo» con los colores del panel, en vez del gris del sistema. */
+.dropzone input[type="file"]::file-selector-button {
+  margin-right: var(--ui-space-3, 0.75rem);
+  padding: 0.5rem 1rem;
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-raised, #242424);
+  color: var(--ui-text, #fff);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dropzone input[type="file"]::file-selector-button:hover {
+  border-color: var(--ui-accent, #facc15);
+  color: var(--ui-accent, #facc15);
+}
