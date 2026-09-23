@@ -29,6 +29,8 @@ import type {
 interface AdminActaImporterProps {
   showToast: (msg: string, type?: "success" | "error") => void;
   showConfirm: (msg: string, onConfirm: () => void) => void;
+  /** Partido ya elegido al abrir, desde la pantalla «Jornada». Solo cuenta al montar. */
+  inicial?: { categoria?: string | null; competicionId?: string | null; partidoId?: string | null };
 }
 
 const CATEGORIES: ActaCategoria[] = ["Senior", "Femenino", "Veteranos"];
@@ -241,14 +243,20 @@ function readableGeminiError(payload: { error?: string; detail?: unknown }) {
   return `${payload.error || "Gemini no pudo analizar el acta."}: ${detail.slice(0, 700)}`;
 }
 
-export default function AdminActaImporter({ showToast, showConfirm }: AdminActaImporterProps) {
-  const [categoria, setCategoria] = useState<ActaCategoria>("Veteranos");
+export default function AdminActaImporter({
+  showToast,
+  showConfirm,
+  inicial,
+}: AdminActaImporterProps) {
+  const [categoria, setCategoria] = useState<ActaCategoria>(
+    () => CATEGORIES.find((c) => c === inicial?.categoria) ?? "Veteranos",
+  );
   const [competicionesCatalog, setCompeticionesCatalog] = useState<CompetenciaRow[]>([]);
-  const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState(inicial?.competicionId ?? "");
   const [matches, setMatches] = useState<ActaMatchDb[]>([]);
   const [jugadores, setJugadores] = useState<ActaPlayerDb[]>([]);
   const [campos, setCampos] = useState<ActaCampoDb[]>([]);
-  const [selectedMatchId, setSelectedMatchId] = useState("");
+  const [selectedMatchId, setSelectedMatchId] = useState(inicial?.partidoId ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [ocrText, setOcrText] = useState("");
   const [acta, setActa] = useState<ParsedActa>(() => emptyActa());

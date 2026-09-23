@@ -65,7 +65,13 @@ export function StudioSection({ section }: { section: Seccion }) {
       {section === "equipos" && <Teams {...feedback} categoria={category} />}
       {section === "patrocinadores" && <Sponsors {...feedback} />}
       {section === "temporadas" && <Seasons {...feedback} />}
-      {section === "carteles" && <Posters templateId={template} showToast={showToast} />}
+      {section === "carteles" && (
+        <Posters
+          templateId={template}
+          partidoInicial={params.get("partido")}
+          showToast={showToast}
+        />
+      )}
       {section === "actas" && (
         <>
           <div className={styles.modes}>
@@ -81,7 +87,14 @@ export function StudioSection({ section }: { section: Seccion }) {
           {params.get("modoActas") === "lote" ? (
             <Batch showToast={showToast} />
           ) : (
-            <Acta {...feedback} />
+            <Acta
+              {...feedback}
+              inicial={{
+                categoria: params.get("categoria"),
+                competicionId: params.get("competicion"),
+                partidoId: params.get("partido"),
+              }}
+            />
           )}
         </>
       )}
@@ -100,7 +113,14 @@ export function StudioSection({ section }: { section: Seccion }) {
           {params.get("origen") === "calendario" ? (
             <CalendarPdf {...feedback} />
           ) : (
-            <Matchday {...feedback} />
+            <Matchday
+              {...feedback}
+              inicial={{
+                categoria: params.get("categoria"),
+                competicionId: params.get("competicion"),
+                jornadaId: params.get("jornada"),
+              }}
+            />
           )}
         </>
       )}
