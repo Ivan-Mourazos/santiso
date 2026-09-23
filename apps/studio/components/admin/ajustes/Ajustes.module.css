@@ -1,0 +1,173 @@
+/* Ajustes gráficos (6F). Tokens de la Fase 3A. */
+
+.panel {
+  background: var(--ui-surface, #171717);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius-lg, 1.125rem);
+  padding: var(--ui-space-6, 2rem);
+}
+.cabecera h3 {
+  margin: 0;
+  font: 800 1.35rem var(--ui-font-title, sans-serif);
+}
+.cabecera p {
+  margin: 0.25rem 0 var(--ui-space-5, 1.5rem);
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.bloque + .bloque {
+  margin-top: var(--ui-space-6, 2rem);
+  padding-top: var(--ui-space-5, 1.5rem);
+  border-top: 1px solid rgb(255 255 255 / 8%);
+}
+.titulo {
+  margin: 0 0 var(--ui-space-3, 0.75rem);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-accent, #facc15);
+}
+.pareja {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--ui-space-3, 0.75rem);
+}
+
+/* ─── Una imagen ─── */
+.imagen {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-space-4, 1rem);
+  padding: var(--ui-space-4, 1rem);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-raised, #242424);
+}
+.miniatura {
+  width: 5rem;
+  height: 5rem;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ui-radius, 0.75rem);
+  background: rgb(0 0 0 / 35%);
+  color: var(--ui-muted, #aaa);
+  font-size: 0.7rem;
+  text-align: center;
+}
+.miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 0.35rem;
+}
+.imagenTexto {
+  min-width: 0;
+  flex: 1;
+}
+.imagenTexto h4 {
+  margin: 0;
+  font-weight: 800;
+}
+.imagenTexto > p {
+  margin: 0.2rem 0 var(--ui-space-3, 0.75rem);
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-2, 0.5rem);
+}
+.previa {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--ui-warning, #f59e0b);
+  font-size: var(--ui-text-sm, 0.875rem);
+  font-weight: 700;
+}
+
+/* ─── Orden de la cabecera ─── */
+.orden {
+  margin-top: var(--ui-space-4, 1rem);
+}
+.etiqueta {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: var(--ui-text-sm, 0.875rem);
+  font-weight: 700;
+}
+.interruptores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2, 0.5rem);
+}
+
+/* ─── Barra de patrocinadores ─── */
+.nota {
+  margin: 0 0 var(--ui-space-3, 0.75rem);
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.nota a {
+  color: var(--ui-accent, #facc15);
+  font-weight: 700;
+}
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2, 0.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: puesto;
+}
+.barra li {
+  counter-increment: puesto;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2, 0.5rem);
+  padding: 0.4rem 0.75rem 0.4rem 0.5rem;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-raised, #242424);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.barra li::before {
+  content: counter(puesto);
+  font-weight: 900;
+  color: var(--ui-accent, #facc15);
+}
+.barra img {
+  width: 3rem;
+  height: 2rem;
+  object-fit: contain;
+}
+.aviso {
+  margin: var(--ui-space-3, 0.75rem) 0 0;
+  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
+  border-radius: var(--ui-radius, 0.75rem);
+  border: 1px solid rgb(245 158 11 / 35%);
+  background: rgb(245 158 11 / 8%);
+  color: var(--ui-warning, #f59e0b);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding: var(--ui-space-4, 1rem);
+  }
+  .imagen {
+    flex-direction: column;
+  }
+}
+
+/* `globals.css` estira la etiqueta de subida a todo el ancho; aquí basta con su texto. */
+.imagenTexto :global(.file-input-label) {
+  width: auto;
+  display: inline-flex;
+  padding: 0 1rem;
+}

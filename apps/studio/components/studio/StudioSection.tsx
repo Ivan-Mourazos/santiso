@@ -10,7 +10,9 @@ import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
 const loading = () => <LoadingState title="Cargando sección…" />;
 const Calendar = dynamic(() => import("@/components/admin/AdminJornadas"), { loading });
-const League = dynamic(() => import("@/components/admin/AdminLeague"), { loading });
+const League = dynamic(() => import("@/components/admin/clasificacion/AdminClasificacion"), {
+  loading,
+});
 const Players = dynamic(() => import("@/components/admin/AdminPlayers"), { loading });
 const Staff = dynamic(() => import("@/components/admin/AdminStaff"), { loading });
 const Teams = dynamic(() => import("@/components/admin/AdminEquipos"), { loading });
@@ -21,11 +23,10 @@ const Acta = dynamic(() => import("@/components/admin/AdminActaImporter"), { loa
 const Batch = dynamic(() => import("@/components/admin/AdminActaBatch"), { loading });
 const Matchday = dynamic(() => import("@/components/admin/AdminJornadaImporter"), { loading });
 const CalendarPdf = dynamic(() => import("@/components/admin/AdminCalendarioPdf"), { loading });
-const Assets = dynamic(() => import("@/components/admin/AdminCartelAssets"), { loading });
+const Graphics = dynamic(() => import("@/components/admin/ajustes/AjustesGraficos"), { loading });
 const Stats = dynamic(() => import("@/components/admin/estadisticas/AdminEstadisticas"), {
   loading,
 });
-const Shield = dynamic(() => import("@/components/admin/AdminShield"), { loading });
 const subscribeHydration = () => () => {};
 const clientReady = () => true;
 const serverReady = () => false;
@@ -52,7 +53,7 @@ export function StudioSection({ section }: { section: Seccion }) {
   return (
     <div key={key} className={styles.panel}>
       {section === "calendario" && <Calendar {...feedback} categoria={category} />}
-      {section === "clasificacion" && <League {...feedback} categoria={category} />}
+      {section === "clasificacion" && <League categoria={category} />}
       {section === "estadisticas" && <Stats showToast={showToast} categoria={squadCategory} />}
       {section === "jugadores" && <Players {...feedback} categoria={squadCategory} />}
       {section === "tecnicos" && <Staff {...feedback} tipo="Tecnico" categoria={squadCategory} />}
@@ -99,12 +100,7 @@ export function StudioSection({ section }: { section: Seccion }) {
           )}
         </>
       )}
-      {section === "ajustes-graficos" && (
-        <>
-          <Shield {...feedback} />
-          <Assets showToast={showToast} />
-        </>
-      )}
+      {section === "ajustes-graficos" && <Graphics showToast={showToast} />}
     </div>
   );
 }
