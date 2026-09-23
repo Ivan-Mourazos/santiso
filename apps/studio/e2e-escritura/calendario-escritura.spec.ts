@@ -61,7 +61,7 @@ test("añadir partido no ofrece equipos que ya juegan y guarda el nuevo", async 
   // Elegido el local, no se ofrece como visitante: un equipo no juega contra sí mismo.
   expect((await opciones(page, "Visitante")).join()).not.toContain("Leste Calendario");
   await alta.getByLabel("Visitante", { exact: true }).selectOption({ label: "Oeste Calendario" });
-  await alta.getByLabel("Campo", { exact: true }).selectOption({ label: /Campo Calendario/ });
+  await alta.getByLabel("Campo", { exact: true }).selectOption({ label: "Campo Calendario" });
   await alta.getByRole("button", { name: "Añadir partido" }).click();
   await expect(partido(page, "Leste Calendario", "Oeste Calendario")).toBeVisible();
 
