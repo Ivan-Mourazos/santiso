@@ -23,11 +23,10 @@ const Acta = dynamic(() => import("@/components/admin/AdminActaImporter"), { loa
 const Batch = dynamic(() => import("@/components/admin/AdminActaBatch"), { loading });
 const Matchday = dynamic(() => import("@/components/admin/AdminJornadaImporter"), { loading });
 const CalendarPdf = dynamic(() => import("@/components/admin/AdminCalendarioPdf"), { loading });
-const Assets = dynamic(() => import("@/components/admin/AdminCartelAssets"), { loading });
+const Graphics = dynamic(() => import("@/components/admin/ajustes/AjustesGraficos"), { loading });
 const Stats = dynamic(() => import("@/components/admin/estadisticas/AdminEstadisticas"), {
   loading,
 });
-const Shield = dynamic(() => import("@/components/admin/AdminShield"), { loading });
 const subscribeHydration = () => () => {};
 const clientReady = () => true;
 const serverReady = () => false;
@@ -101,12 +100,7 @@ export function StudioSection({ section }: { section: Seccion }) {
           )}
         </>
       )}
-      {section === "ajustes-graficos" && (
-        <>
-          <Shield {...feedback} />
-          <Assets showToast={showToast} />
-        </>
-      )}
+      {section === "ajustes-graficos" && <Graphics showToast={showToast} />}
     </div>
   );
 }
