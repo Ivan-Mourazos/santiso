@@ -7,55 +7,55 @@ import type { CronEvent, Player, NextMatch } from "@/lib/cartel-draw";
 import type { DatosClasificacion } from "@/lib/cartel/templates/clasificacion";
 
 export const TEMPLATES = [
-  { id: "partido",    label: "Cartel de Partido",  emoji: "⚽" },
-  { id: "resumo",     label: "Resumo da Xornada",  emoji: "📊" },
-  { id: "cronoloxia", label: "Cronoloxía",          emoji: "📋" },
-  { id: "proximos",   label: "Próximos Encontros",  emoji: "📅" },
-  { id: "noso11",     label: "O Noso 11",           emoji: "👕" },
-  { id: "multiusos",  label: "Multiusos / Anuncio", emoji: "📢" },
+  { id: "partido", label: "Cartel de Partido", emoji: "⚽" },
+  { id: "resumo", label: "Resumo da Xornada", emoji: "📊" },
+  { id: "cronoloxia", label: "Cronoloxía", emoji: "📋" },
+  { id: "proximos", label: "Próximos Encontros", emoji: "📅" },
+  { id: "noso11", label: "O Noso 11", emoji: "👕" },
+  { id: "multiusos", label: "Multiusos / Anuncio", emoji: "📢" },
   { id: "clasificacion", label: "Clasificación / Copa", emoji: "📈" },
 ] as const;
 
-export type TemplateId = typeof TEMPLATES[number]["id"];
+export type TemplateId = (typeof TEMPLATES)[number]["id"];
 
 export type MultiusosTema = "celebracion" | "medico" | "fichaje" | "despedida" | "formal";
 
 export interface FormState {
   // Shared
-  categoria:      string;
+  categoria: string;
   jugadorXOffset: number;
   jugadorYOffset: number;
-  jugadorZoom:    number;
+  jugadorZoom: number;
   showCarouselIndicator: boolean;
   // Partido / Resumo / Cronoloxia
   competicion_id: string;
   /** Nombre visible (sincronizado con catálogo o partido cargado). */
-  competicion:    string;
-  jornada:        string;
-  rivalNombre:    string;
+  competicion: string;
+  jornada: string;
+  rivalNombre: string;
   rivalEscudoUrl: string;
-  fecha:          string;
-  hora:           string;
-  lugar:          string;
-  santisoSide:    "left" | "right";
+  fecha: string;
+  hora: string;
+  lugar: string;
+  santisoSide: "left" | "right";
   // Resumo / Cronoloxia
-  golesLocal:     string;
-  golesRival:     string;
+  golesLocal: string;
+  golesRival: string;
   // Cronoloxia extra
-  estadio:        string;
-  localSponsor:   string;
-  rivalSponsor:   string;
-  events:         CronEvent[];
+  estadio: string;
+  localSponsor: string;
+  rivalSponsor: string;
+  events: CronEvent[];
   // Próximos
   categoriasText: string;
-  matches:        NextMatch[];
+  matches: NextMatch[];
   // O Noso 11
   jugadorFotoUrl: string;
-  noso11Flip:     boolean;
-  titulares:      Player[];
-  suplentes:      Player[];
+  noso11Flip: boolean;
+  titulares: Player[];
+  suplentes: Player[];
   // Multiusos
-  multiusosTema:  MultiusosTema;
+  multiusosTema: MultiusosTema;
   multiusosTitulo: string;
   multiusosTexto: string;
   multiusosImg1Url: string;
@@ -70,9 +70,9 @@ export interface FormState {
 }
 
 export interface AssetUrls {
-  xunta:    string;
-  rfgf:     string;
+  xunta: string;
+  rfgf: string;
   xuntaIsLeft: boolean;
-  santiso:  string;
+  santiso: string;
   sponsors: string[];
 }

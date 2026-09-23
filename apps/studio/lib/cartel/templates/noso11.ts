@@ -9,16 +9,16 @@ import type { Player, CartelAssets } from "../types";
 import { drawWatermark } from "../shared";
 
 export interface Noso11Form {
-  categoria:  string;
-  fecha:      string;
-  estadio:    string;
-  titulares:      Player[];
-  suplentes:      Player[];
+  categoria: string;
+  fecha: string;
+  estadio: string;
+  titulares: Player[];
+  suplentes: Player[];
   jugadorFotoUrl: string;
   jugadorXOffset: number;
   jugadorYOffset: number;
-  jugadorZoom:    number;
-  noso11Flip?:    boolean;
+  jugadorZoom: number;
+  noso11Flip?: boolean;
 }
 
 export function drawNoso11(
@@ -26,7 +26,8 @@ export function drawNoso11(
   f: Noso11Form,
   imgJugador: HTMLImageElement | null,
   assets: CartelAssets,
-  xuntaIsLeft: boolean
+  // Se conserva por firma: la cabecera con los logos la pinta ya el generador.
+  _xuntaIsLeft: boolean,
 ) {
   const { categoria, fecha, estadio, titulares, suplentes } = f;
   const accent = catAccent(categoria);
@@ -43,13 +44,13 @@ export function drawNoso11(
   ctx.fillRect(0, 0, W, H);
 
   // ── Layout Proportions ──────────────────────────────────────────────────
-  const GAP      = 16;
-  const PHOTO_W  = CX - BAR_W - GAP;  // 464
+  const GAP = 16;
+  const PHOTO_W = CX - BAR_W - GAP; // 464
   const LIST_X_BASE = CX + GAP;
-  const LIST_W   = W - BAR_W - LIST_X_BASE; // 464
+  const LIST_W = W - BAR_W - LIST_X_BASE; // 464
 
   const PHOTO_X = f.noso11Flip ? LIST_X_BASE : BAR_W;
-  const LIST_X  = f.noso11Flip ? BAR_W : LIST_X_BASE;
+  const LIST_X = f.noso11Flip ? BAR_W : LIST_X_BASE;
 
   drawWatermark(ctx, assets.santiso);
 
@@ -58,30 +59,30 @@ export function drawNoso11(
     const iAR = imgJugador.naturalWidth / imgJugador.naturalHeight;
     const PHOTO_START_Y = 180;
     const tAR = PHOTO_W / (H - PHOTO_START_Y);
-    
+
     let sw_base, sh_base;
-    if (iAR > tAR) { 
-      sh_base = imgJugador.naturalHeight; 
-      sw_base = sh_base * tAR; 
-    } else { 
-      sw_base = imgJugador.naturalWidth; 
-      sh_base = sw_base / tAR; 
+    if (iAR > tAR) {
+      sh_base = imgJugador.naturalHeight;
+      sw_base = sh_base * tAR;
+    } else {
+      sw_base = imgJugador.naturalWidth;
+      sh_base = sw_base / tAR;
     }
 
     const sw = sw_base / zoom;
     const sh = sh_base / zoom;
-    
+
     const xOff = 1 - (f.jugadorXOffset ?? 0.5);
     const yOff = f.jugadorYOffset ?? 0.5;
 
     const sx = (imgJugador.naturalWidth - sw) * xOff;
     const sy = (imgJugador.naturalHeight - sh) * yOff;
-    
+
     // STRICT CLIPPING
     const CLIP_W = PHOTO_W;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(PHOTO_X, 0, CLIP_W, H); 
+    ctx.rect(PHOTO_X, 0, CLIP_W, H);
     ctx.clip();
     ctx.drawImage(imgJugador, sx, sy, sw, sh, PHOTO_X, PHOTO_START_Y, PHOTO_W, H - PHOTO_START_Y);
     ctx.restore();
@@ -93,12 +94,12 @@ export function drawNoso11(
 
   // Unified Header: Stadium · Date
   ctx.save();
-  ctx.textAlign    = "center";
+  ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   const venuePart = estadio ? `${estadio.toUpperCase()}` : "ESTADIO A DEFINIR";
   const dateStr = fmtDate(fecha, true);
   const headerTxt = `${venuePart}  ·  ${dateStr}`;
-  
+
   ctx.fillStyle = "#94a3b8";
   ctx.font = `800 17px ${FONT_DISPLAY}`;
   fitFont(ctx, headerTxt, W - 140, 17, 13, "800", FONT_DISPLAY);
@@ -110,15 +111,15 @@ export function drawNoso11(
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#ffffff";
-  ctx.font      = `900 52px ${FONT_DISPLAY}`;
+  ctx.font = `900 52px ${FONT_DISPLAY}`;
   ctx.fillText("O NOSO", titleX, 240);
   ctx.fillStyle = accent;
-  ctx.font      = `900 78px ${FONT_DISPLAY}`;
+  ctx.font = `900 78px ${FONT_DISPLAY}`;
   ctx.fillText("11", titleX + 210, 240);
 
   // Titulares
   const START_Y = 270;
-  const ROW_H   = Math.min(56, (850 - START_Y) / Math.max(titulares.length, 1));
+  const ROW_H = Math.min(56, (850 - START_Y) / Math.max(titulares.length, 1));
 
   titulares.forEach((p, i) => {
     const y = START_Y + i * ROW_H;
@@ -131,9 +132,9 @@ export function drawNoso11(
     }
 
     // Dorsal
-    ctx.fillStyle    = accent;
-    ctx.font         = `900 22px ${FONT_DISPLAY}`;
-    ctx.textAlign    = "left";
+    ctx.fillStyle = accent;
+    ctx.font = `900 22px ${FONT_DISPLAY}`;
+    ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(p.dorsal.padStart(2, " "), LIST_X + 4, midY);
 
@@ -145,9 +146,9 @@ export function drawNoso11(
       ctx.arc(nameX - 12, midY, 9, 0, Math.PI * 2);
       ctx.fillStyle = "#38bdf8";
       ctx.fill();
-      ctx.fillStyle    = "#000";
-      ctx.font         = `900 11px ${FONT_DISPLAY}`;
-      ctx.textAlign    = "center";
+      ctx.fillStyle = "#000";
+      ctx.font = `900 11px ${FONT_DISPLAY}`;
+      ctx.textAlign = "center";
       ctx.fillText("C", nameX - 12, midY + 4);
       ctx.restore();
     }
@@ -155,10 +156,10 @@ export function drawNoso11(
     // Name
     ctx.save();
     ctx.shadowColor = "rgba(0,0,0,0.8)";
-    ctx.shadowBlur  = 6;
-    ctx.fillStyle    = "#ffffff";
-    ctx.font         = `800 20px ${FONT_DISPLAY}`;
-    ctx.textAlign    = "left";
+    ctx.shadowBlur = 6;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `800 20px ${FONT_DISPLAY}`;
+    ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     fitFont(ctx, p.nome.toUpperCase(), LIST_W - 70, 20, 13, "800", FONT_DISPLAY);
     ctx.fillText(p.nome.toUpperCase(), nameX, midY);
@@ -168,7 +169,7 @@ export function drawNoso11(
   // "NO BANCO" (Suplentes)
   const BANCO_Y = Math.max(START_Y + titulares.length * ROW_H + 16, 885);
   ctx.fillStyle = accent;
-  ctx.font      = `900 16px ${FONT_DISPLAY}`;
+  ctx.font = `900 16px ${FONT_DISPLAY}`;
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   ctx.fillText("NO BANCO  (SUPLENTES)", LIST_X + 4, BANCO_Y);
@@ -180,23 +181,23 @@ export function drawNoso11(
   ctx.lineTo(LIST_X + LIST_W - 20, BANCO_Y + 6);
   ctx.stroke();
 
-  const SUP_MAX_Y  = 1140;
-  const SUP_START  = BANCO_Y + 18;
-  const SUP_AVAIL  = Math.max(SUP_MAX_Y - SUP_START, 40);
-  const SUP_ROW_H  = Math.min(44, SUP_AVAIL / Math.max(suplentes.length, 1));
+  const SUP_MAX_Y = 1140;
+  const SUP_START = BANCO_Y + 18;
+  const SUP_AVAIL = Math.max(SUP_MAX_Y - SUP_START, 40);
+  const SUP_ROW_H = Math.min(44, SUP_AVAIL / Math.max(suplentes.length, 1));
 
   suplentes.forEach((p, i) => {
     const y = SUP_START + i * SUP_ROW_H;
     const midY = y + SUP_ROW_H / 2;
 
-    ctx.fillStyle    = hexToRgba(accent, 0.85);
-    ctx.font         = `900 18px ${FONT_DISPLAY}`;
-    ctx.textAlign    = "left";
+    ctx.fillStyle = hexToRgba(accent, 0.85);
+    ctx.font = `900 18px ${FONT_DISPLAY}`;
+    ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(p.dorsal.padStart(2, " "), LIST_X + 4, midY);
 
-    ctx.fillStyle    = "#cbd5e1";
-    ctx.font         = `700 18px ${FONT_DISPLAY}`;
+    ctx.fillStyle = "#cbd5e1";
+    ctx.font = `700 18px ${FONT_DISPLAY}`;
     fitFont(ctx, p.nome.toUpperCase(), LIST_W - 60, 18, 12, "700", FONT_DISPLAY);
     ctx.fillText(p.nome.toUpperCase(), LIST_X + 48, midY);
   });

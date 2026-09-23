@@ -38,9 +38,7 @@ interface CartelField {
   poblacion: string;
 }
 
-function normalizePlayerRelation(
-  player: CartelPlayer | CartelPlayer[] | null,
-) {
+function normalizePlayerRelation(player: CartelPlayer | CartelPlayer[] | null) {
   return Array.isArray(player) ? (player[0] ?? null) : player;
 }
 
@@ -146,9 +144,7 @@ export function useCartelForm() {
   const [dbMatches, setDbMatches] = useState<SelectorMatch[]>([]);
   const [errorDatos, setErrorDatos] = useState<string | null>(null);
   const [campos, setCampos] = useState<CartelField[]>([]);
-  const [competicionesCatalog, setCompeticionesCatalog] = useState<
-    CompetenciaRow[]
-  >([]);
+  const [competicionesCatalog, setCompeticionesCatalog] = useState<CompetenciaRow[]>([]);
   const catalogRef = useRef<CompetenciaRow[]>([]);
   const [jugFileName, setJugFileName] = useState("");
   const fileUrlRef = useRef<string>("");
@@ -165,6 +161,16 @@ export function useCartelForm() {
       try {
         const comps = await fetchCompeticiones();
         setCompeticionesCatalog(comps);
+        // Competición por defecto en cuanto se conoce el catálogo, si no hay una elegida ya.
+        // Antes lo hacía un efecto aparte que cambiaba el estado al ejecutarse.
+        if (comps.length > 0) {
+          setForm((prev) => {
+            if (prev.competicion_id) return prev;
+            const id = pickDefaultCompetitionId(comps, prev.categoria);
+            const row = comps.find((c) => c.id === id);
+            return { ...prev, competicion_id: id, competicion: row?.nombre ?? "" };
+          });
+        }
 
         // Una sola acción trae partidos, plantilla y campos de la temporada activa; sin
         // categoría, porque el generador trabaja con las tres.
@@ -195,26 +201,12 @@ export function useCartelForm() {
   }, []);
 
   useEffect(() => {
-    if (competicionesCatalog.length === 0) return;
-    setForm((prev) => {
-      if (prev.competicion_id) return prev;
-      const id = pickDefaultCompetitionId(
-        competicionesCatalog,
-        prev.categoria,
-      );
-      const row = competicionesCatalog.find((c) => c.id === id);
-      return {
-        ...prev,
-        competicion_id: id,
-        competicion: row?.nombre ?? "",
-      };
-    });
-  }, [competicionesCatalog]);
-
-  useEffect(() => {
+    // El registro de escudos por partido se modifica en el sitio, nunca se reasigna: capturarlo
+    // aquí apunta al mismo objeto que habrá al desmontar.
+    const escudosPartidos = matchFileUrlsRef.current;
     return () => {
       if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
-      Object.values(matchFileUrlsRef.current).forEach((url) => {
+      Object.values(escudosPartidos).forEach((url) => {
         if (url) URL.revokeObjectURL(url);
       });
       if (multiImg1Ref.current) URL.revokeObjectURL(multiImg1Ref.current);
@@ -292,11 +284,7 @@ export function useCartelForm() {
     setForm((p) => ({ ...p, jugadorFotoUrl: url }));
   }
 
-  function updatePlayer(
-    list: "titulares" | "suplentes",
-    i: number,
-    patch: Partial<Player>,
-  ) {
+  function updatePlayer(list: "titulares" | "suplentes", i: number, patch: Partial<Player>) {
     setForm((p) => {
       const arr = [...p[list]];
       arr[i] = { ...arr[i], ...patch };
@@ -352,16 +340,11 @@ export function useCartelForm() {
   }
 
   function loadMatchFromDb(match: SelectorMatch) {
-    const isSantisoLocal = match.equipo_local?.nombre
-      ?.toLowerCase()
-      .includes("santiso");
+    const isSantisoLocal = match.equipo_local?.nombre?.toLowerCase().includes("santiso");
     const rival = isSantisoLocal ? match.equipo_visitante : match.equipo_local;
     const campoNombre = match.campo?.nombre || match.lugar || "";
 
-    const compNombre =
-      match.competiciones?.nombre ??
-      match.competicion ??
-      "";
+    const compNombre = match.competiciones?.nombre ?? match.competicion ?? "";
     const compId = match.competicion_id ?? "";
 
     setForm((p) => ({
@@ -396,10 +379,7 @@ export function useCartelForm() {
           minuto: fila.minuto !== null ? String(fila.minuto) : "",
           tipo,
           equipo: esRival ? "rival" : "local",
-          jugador:
-            tipo === "cambio"
-              ? nombreSale
-              : nombreJugador || fila.nombreRival?.trim() || "",
+          jugador: tipo === "cambio" ? nombreSale : nombreJugador || fila.nombreRival?.trim() || "",
           jugadorEntra: tipo === "cambio" ? nombreJugador : undefined,
         };
       });
@@ -420,7 +400,10 @@ export function useCartelForm() {
           categoria: fila.categoria,
         });
 
-      const titulares = filas.filter((f) => f.titular).map(aJugador).slice(0, 11);
+      const titulares = filas
+        .filter((f) => f.titular)
+        .map(aJugador)
+        .slice(0, 11);
       const suplentes = filas.filter((f) => !f.titular).map(aJugador);
       if (titulares.length === 0 && suplentes.length === 0) return;
 

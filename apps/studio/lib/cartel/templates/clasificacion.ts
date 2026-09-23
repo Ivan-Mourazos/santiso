@@ -54,7 +54,7 @@ export async function drawClasificacion(
   f: ClasificacionForm,
   assets: CartelAssets,
   xuntaIsLeft: boolean,
-  loadImg: (url: string) => Promise<HTMLImageElement | null>
+  loadImg: (url: string) => Promise<HTMLImageElement | null>,
 ) {
   const { categoria, clasificacionTipo, clasificacionData } = f;
 
@@ -123,7 +123,7 @@ export async function drawClasificacion(
     const statSize = Math.max(14, Math.min(22, Math.floor(rowH * 0.34)));
     const ptsSize = Math.max(17, Math.min(26, Math.floor(rowH * 0.42)));
     const shieldSize = Math.max(24, Math.min(36, Math.floor(rowH * 0.58)));
-    
+
     // Cargar escudos de forma síncrona aquí si es necesario, o asíncrona pero bloqueando (el GeneradorCartel ya lo envuelve en un efecto asíncrono)
     // Para simplificar, pintamos la tabla. Los escudos requieren await loadImg().
     // Lo haremos iterando:
@@ -138,7 +138,7 @@ export async function drawClasificacion(
       pe: CR - 220,
       pp: CR - 150,
       gf: CR - 80, // o DG
-      pts: CR - 20
+      pts: CR - 20,
     };
 
     // Header
@@ -147,7 +147,7 @@ export async function drawClasificacion(
     ctx.fillStyle = "rgba(255,255,255,0.4)";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    
+
     const headerY = tableTop - Math.max(16, Math.floor(rowH * 0.42));
     ctx.fillText("POS", cols.pos, headerY);
     ctx.textAlign = "left";
@@ -169,7 +169,11 @@ export async function drawClasificacion(
 
       ctx.save();
       // Fondo fila alterno
-      ctx.fillStyle = isSantiso ? "rgba(250, 204, 21, 0.15)" : (i % 2 === 0 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.0)");
+      ctx.fillStyle = isSantiso
+        ? "rgba(250, 204, 21, 0.15)"
+        : i % 2 === 0
+          ? "rgba(255,255,255,0.03)"
+          : "rgba(255,255,255,0.0)";
       rr(ctx, CL, rowY, CW, rowH, Math.min(8, rowH / 4));
       ctx.fill();
 
@@ -243,16 +247,16 @@ export async function drawClasificacion(
 
     // Calculamos las coordenadas (x, y) de cada partido para dibujar las líneas
     // Estructura para guardar el punto de salida (derecha) de cada caja
-    const outPoints: { [roundIdx: number]: { [matchIdx: number]: { x: number, y: number } } } = {};
+    const outPoints: { [roundIdx: number]: { [matchIdx: number]: { x: number; y: number } } } = {};
 
     ctx.save();
     for (let r = 0; r < numRounds; r++) {
       const round = rounds[r];
       const matches = round.partidos || [];
       const numMatches = matches.length || 1; // para que no divida por 0
-      
+
       const xCenter = startX + r * colWidth + colWidth / 2;
-      
+
       outPoints[r] = {};
 
       // Etiqueta de la ronda
@@ -266,13 +270,13 @@ export async function drawClasificacion(
       // Para un bracket ideal, la Y del partido debe estar exactamente entre sus dos "hijos" de la ronda anterior
       // Pero por simplicidad, hacemos distribución uniforme
       for (let m = 0; m < numMatches; m++) {
-        // En una distribución clásica de bracket, la distancia se dobla cada ronda, 
+        // En una distribución clásica de bracket, la distancia se dobla cada ronda,
         // pero para no liarla con IDs raros, distribución equitativa es safe si está bien estructurado.
-        // Mejor: calcular la posición ideal si conocemos los cruces. 
-        // Vamos a usar distribución geométrica estándar: 
+        // Mejor: calcular la posición ideal si conocemos los cruces.
+        // Vamos a usar distribución geométrica estándar:
         // La ronda 'r' tiene `2^(numRounds - 1 - r)` partidos (idealmente).
         // Así que usamos `matches.length` para la separación.
-        
+
         const spacingY = workH / numMatches;
         const cy = startY + spacingY * m + spacingY / 2;
         const cx = xCenter;
@@ -315,9 +319,10 @@ export async function drawClasificacion(
         if (!p) continue; // Por si hay "byes"
 
         // Fondo caja
-        const isSantiso = (p.equipo_local?.nombre || "").toLowerCase().includes("santiso") || 
-                          (p.equipo_visitante?.nombre || "").toLowerCase().includes("santiso");
-        
+        const isSantiso =
+          (p.equipo_local?.nombre || "").toLowerCase().includes("santiso") ||
+          (p.equipo_visitante?.nombre || "").toLowerCase().includes("santiso");
+
         ctx.fillStyle = isSantiso ? "rgba(250, 204, 21, 0.15)" : "rgba(255,255,255,0.05)";
         rr(ctx, bx, by, boxW, boxH, 8);
         ctx.fill();
@@ -355,14 +360,14 @@ export async function drawClasificacion(
         if (p.estado === "finalizado") {
           ctx.textAlign = "right";
           ctx.font = "800 14px 'Nunito', sans-serif";
-          
+
           const gl = p.goles_local ?? 0;
           const gv = p.goles_visitante ?? 0;
-          
-          ctx.fillStyle = gl > gv ? GOLD : (gl === gv ? "#aaa" : "#fff");
+
+          ctx.fillStyle = gl > gv ? GOLD : gl === gv ? "#aaa" : "#fff";
           ctx.fillText(gl.toString(), bx + boxW - 10, by + boxH / 4);
 
-          ctx.fillStyle = gv > gl ? GOLD : (gl === gv ? "#aaa" : "#fff");
+          ctx.fillStyle = gv > gl ? GOLD : gl === gv ? "#aaa" : "#fff";
           ctx.fillText(gv.toString(), bx + boxW - 10, by + boxH * 0.75);
         }
       }

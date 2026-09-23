@@ -6,7 +6,7 @@
     "dev": "next dev -H 127.0.0.1",
     "build": "next build",
     "start": "next start -H 127.0.0.1",
-    "lint": "eslint",
+    "lint": "eslint --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",
     "e2e:escritura": "playwright test -c playwright.escritura.config.ts"
