@@ -33,7 +33,8 @@ test("la ficha PDF rellena el acta sin salir del ordenador", async ({ page }) =>
 
   // El bloque de revisión solo aparece cuando el acta trae datos.
   await expect(page.getByText("Datos del partido")).toBeVisible({ timeout: 20000 });
-  const golesLocal = page.locator("label", { hasText: "Goles local" }).locator("input");
+  // La etiqueta ya no envuelve al campo: se asocia por `for`, así que se busca por su nombre.
+  const golesLocal = page.getByLabel("Goles local", { exact: true });
   await expect(golesLocal).toHaveValue(/^\d+$/);
 
   // Y el texto en crudo es la ficha leída, no una plantilla vacía ni la respuesta de la IA:

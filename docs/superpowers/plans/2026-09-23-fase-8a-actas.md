@@ -59,4 +59,12 @@ No tocar packages/actas/**, lib/actas/**, acciones de servidor de actas, lib/car
 
 ## Registro
 
-Plan previo a implementación. T1–T3 pendientes. Base 8a62181. No cambiar requisitos de negocio a partir del rediseño.
+Plan previo a implementación. Base 8a62181. No cambiar requisitos de negocio a partir del rediseño.
+
+**Cierre (Claude, 23/09/2026).** Codex dejó T1 y T2 implementados sin commit en su worktree y la e2e del lote fallando. Se traen a la rama `fase-8a` sobre `main` y se cierra:
+
+- Revisión del diff de lógica de las dos pantallas: solo reformateo, salvo el foco que vuelve a «Revisar» al cerrar el diálogo. `canSave`, gol en propia, `processAll` y guardado sin cambios.
+- La e2e del lote esperaba el campo de archivo, que al cambiar de modo aún era el de la importación individual; bloqueaba los POST antes de que el lote terminara de cargar y «Procesar» no se habilitaba. Ahora espera al lote y a su carga.
+- Defecto real: si la carga del lote fallaba, la pantalla se quedaba en «Cargando…» para siempre. Ahora hay error con reintentar, con e2e.
+- `LineupContext` sustituido por una prop `seccion`: un contexto solo para nombrar etiquetas sobraba.
+- Etiquetas de eventos acortadas («Evento 1 · Jugador») y opción vacía neutra; botón de archivo con los colores del panel.

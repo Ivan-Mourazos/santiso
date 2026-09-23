@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { cargarPantallaActa, guardarActa } from "@/lib/server/acciones/actas";
-import BusyBanner from "./BusyBanner";
+import { Button } from "@/components/ui/foundation/Button";
+import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
+import { PageHeader } from "@/components/ui/foundation/PageHeader";
+import { EmptyState, LoadingState } from "@/components/ui/foundation/States";
+import styles from "./actas/ActaImporter.module.css";
 import {
   competitionsForCategory,
   pickDefaultCompetitionId,
@@ -140,7 +144,10 @@ function resolveCampo(acta: ParsedActa, campos: ActaCampoDb[]) {
       campo,
       score: Math.max(
         tokenScore(acta.campoNombre, campo.nombre),
-        tokenScore(`${acta.campoNombre} ${acta.campoPoblacion}`, `${campo.nombre} ${campo.poblacion || ""}`),
+        tokenScore(
+          `${acta.campoNombre} ${acta.campoPoblacion}`,
+          `${campo.nombre} ${campo.poblacion || ""}`,
+        ),
       ),
     }))
     .sort((a, b) => b.score - a.score)[0];
@@ -234,14 +241,9 @@ function readableGeminiError(payload: { error?: string; detail?: unknown }) {
   return `${payload.error || "Gemini no pudo analizar el acta."}: ${detail.slice(0, 700)}`;
 }
 
-export default function AdminActaImporter({
-  showToast,
-  showConfirm,
-}: AdminActaImporterProps) {
+export default function AdminActaImporter({ showToast, showConfirm }: AdminActaImporterProps) {
   const [categoria, setCategoria] = useState<ActaCategoria>("Veteranos");
-  const [competicionesCatalog, setCompeticionesCatalog] = useState<
-    CompetenciaRow[]
-  >([]);
+  const [competicionesCatalog, setCompeticionesCatalog] = useState<CompetenciaRow[]>([]);
   const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
   const [matches, setMatches] = useState<ActaMatchDb[]>([]);
   const [jugadores, setJugadores] = useState<ActaPlayerDb[]>([]);
@@ -294,9 +296,7 @@ export default function AdminActaImporter({
 
   useEffect(() => {
     if (!detectedMeta || !matches.length) return;
-    const found = matches.find(
-      (m) => String(m.jornada?.numero) === String(detectedMeta.jornada),
-    );
+    const found = matches.find((m) => String(m.jornada?.numero) === String(detectedMeta.jornada));
     if (found) setSelectedMatchId(found.id);
   }, [matches, detectedMeta]);
 
@@ -509,11 +509,7 @@ export default function AdminActaImporter({
     }));
   }
 
-  function setPlayerFromDb(
-    section: "titulares" | "suplentes",
-    index: number,
-    playerId: string,
-  ) {
+  function setPlayerFromDb(section: "titulares" | "suplentes", index: number, playerId: string) {
     const dbPlayer = jugadores.find((player) => player.id === playerId);
     if (!dbPlayer) return;
 
@@ -544,10 +540,7 @@ export default function AdminActaImporter({
   function addLineupPlayer(section: "titulares" | "suplentes") {
     setActa((current) => ({
       ...current,
-      [section]: [
-        ...current[section],
-        { id: crypto.randomUUID(), dorsal: "", rawName: "" },
-      ],
+      [section]: [...current[section], { id: crypto.randomUUID(), dorsal: "", rawName: "" }],
     }));
   }
 
@@ -581,7 +574,8 @@ export default function AdminActaImporter({
     }
     return !event.jugador?.jugadorId;
   });
-  const canSave = Boolean(selectedMatchId) && unresolvedLineup.length === 0 && unresolvedEvents.length === 0;
+  const canSave =
+    Boolean(selectedMatchId) && unresolvedLineup.length === 0 && unresolvedEvents.length === 0;
 
   async function saveActa() {
     if (!selectedMatchId || !canSave) return;
@@ -602,89 +596,98 @@ export default function AdminActaImporter({
   }
 
   return (
-    <div className="card glass">
-      <BusyBanner show={busy} text={busyText} progress={progress} />
-
-      <div className="acta-header">
-        <div>
-          <h3>Importar acta con OCR</h3>
-          <p>
-            Sube una captura, revisa datos detectados y confirma. No modifica
-            nombres ni motes de jugadores.
-          </p>
+    <div className={styles.importer}>
+      {busy && (
+        <div className={styles.progress} role="status">
+          <p>{busyText}</p>
+          <progress max={100} value={progress} aria-label={busyText || "Procesando acta"} />
+          {typeof progress === "number" && (
+            <span>{Math.max(0, Math.min(100, Math.round(progress)))}%</span>
+          )}
         </div>
-      </div>
+      )}
 
-      <div className="acta-grid">
-        <div className="input-group">
-          <label>Categoría</label>
-          <select value={categoria} onChange={(e) => setCategoria(e.target.value as ActaCategoria)}>
+      <PageHeader
+        title="Importar acta con OCR"
+        eyebrow="Acta individual"
+        description="Sube una ficha PDF o una captura, revisa los datos y confirma. No modifica nombres ni motes de jugadores."
+      />
+      <div className={styles.fields}>
+        <div className={styles.fieldSlot}>
+          <Select
+            label="Categoría"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value as ActaCategoria)}
+          >
             {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
-          </select>
+          </Select>
         </div>
 
-        <div className="input-group">
-          <label>Competición</label>
-          <select value={selectedCompetitionId} onChange={(e) => setSelectedCompetitionId(e.target.value)}>
+        <div className={styles.fieldSlot}>
+          <Select
+            label="Competición"
+            value={selectedCompetitionId}
+            onChange={(e) => setSelectedCompetitionId(e.target.value)}
+          >
             {competitionsInCategory.map((item) => (
-              <option key={item.id} value={item.id}>{item.nombre}</option>
+              <option key={item.id} value={item.id}>
+                {item.nombre}
+              </option>
             ))}
-          </select>
+          </Select>
         </div>
 
-        <div className="input-group wide">
-          <label>Partido</label>
-          <select value={selectedMatchId} onChange={(e) => setSelectedMatchId(e.target.value)}>
+        <div className={styles.full}>
+          <Select
+            label="Partido"
+            value={selectedMatchId}
+            onChange={(e) => setSelectedMatchId(e.target.value)}
+          >
             <option value="">Selecciona partido...</option>
             {matches.map((match) => (
               <option key={match.id} value={match.id}>
                 {matchLabel(match)}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
-        <div className="input-group wide">
-          <label>Captura del acta</label>
-          <label
-            htmlFor="acta-file-input"
+        <div className={styles.full}>
+          <div
+            className={styles.dropzone}
+            data-selected={Boolean(file)}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
               const f = e.dataTransfer.files?.[0];
-              if (f) { setFile(f); detectMatch(f); }
-            }}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              padding: "1.5rem",
-              border: file ? "2px solid rgba(250,204,21,0.4)" : "2px dashed rgba(255,255,255,0.12)",
-              borderRadius: "12px",
-              background: file ? "rgba(250,204,21,0.04)" : "rgba(255,255,255,0.02)",
-              cursor: "pointer",
-              transition: "all 0.2s",
-              textAlign: "center",
+              if (f) {
+                setFile(f);
+                detectMatch(f);
+              }
             }}
           >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5 }}>
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
+            <svg
+              aria-hidden="true"
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
-            <span style={{ fontSize: "0.85rem", color: file ? "#facc15" : "#666", fontWeight: 600 }}>
-              {file ? file.name : "Arrastra la ficha PDF o la captura aquí, o haz clic"}
-            </span>
-            {file && (
-              <span style={{ fontSize: "0.72rem", color: "#555" }}>
-                {(file.size / 1024).toFixed(0)} KB
-              </span>
-            )}
-            <input
+            <span>{file ? file.name : "Arrastra la ficha PDF o la captura aquí"}</span>
+            {file && <span>{(file.size / 1024).toFixed(0)} KB</span>}
+            <Field
+              label="Captura del acta"
+              hint="Selecciona una ficha PDF o una imagen. También puedes arrastrarla aquí."
               id="acta-file-input"
               type="file"
               accept="image/*,application/pdf"
@@ -694,20 +697,11 @@ export default function AdminActaImporter({
                 if (f) detectMatch(f);
                 else setDetectedMeta(null);
               }}
-              style={{ display: "none" }}
             />
-          </label>
-          {isDetecting && (
-            <p style={{ fontSize: "0.78rem", color: "#888", margin: "0.4rem 0 0" }}>
-              Detectando partido...
-            </p>
-          )}
+          </div>
+          {isDetecting && <LoadingState title="Detectando partido..." />}
           {!isDetecting && detectedMeta && (
-            <p style={{
-              fontSize: "0.78rem",
-              margin: "0.4rem 0 0",
-              color: selectedMatchId ? "#4ade80" : "#f59e0b",
-            }}>
+            <p role="status" className={styles.detection} data-matched={Boolean(selectedMatchId)}>
               {selectedMatchId
                 ? `✓ J${detectedMeta.jornada} · ${detectedMeta.localTeam} vs ${detectedMeta.visitorTeam}`
                 : `⚠ J${detectedMeta.jornada} detectada — selecciona partido manualmente`}
@@ -716,133 +710,129 @@ export default function AdminActaImporter({
         </div>
       </div>
 
-      <div className="analyze-actions">
+      <div className={styles.actions}>
         {/* Con un PDF el lector local es mejor que la nube: es exacto y no sale del ordenador. */}
-        <button
-          className="btn-primary analyze-btn"
+        <Button
           onClick={esFicha ? analizarFichaPdf : analyzeImage}
           disabled={busy || !file || !selectedMatchId}
         >
           {esFicha ? "Leer ficha PDF (sin IA)" : "Analizar con Gemini"}
-        </button>
+        </Button>
       </div>
-      <div style={{ textAlign: "center", marginTop: "0.5rem", display: "flex", justifyContent: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+      <div className={styles.actions}>
         {/* Con un PDF el respaldo es Gemini; con una imagen, el OCR del navegador. */}
-        <button
+        <Button
+          variant="secondary"
           onClick={esFicha ? analyzeImage : analyzeWithLocalOcr}
           disabled={busy || !file || !selectedMatchId}
-          style={{
-            background: "none",
-            border: "none",
-            color: busy || !file || !selectedMatchId ? "#333" : "#555",
-            fontSize: "0.78rem",
-            cursor: busy || !file || !selectedMatchId ? "not-allowed" : "pointer",
-            textDecoration: "underline",
-            padding: "0.3rem 0.5rem",
-          }}
         >
           {esFicha ? "Probar con Gemini (fallback)" : "Usar OCR local (fallback)"}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="secondary"
           onClick={() => {
             if (!selectedMatchId) return;
             setActa({ ...emptyActa(), rawText: "__manual__" });
           }}
           disabled={busy || !selectedMatchId}
-          style={{
-            background: "none",
-            border: "none",
-            color: busy || !selectedMatchId ? "#333" : "#facc15",
-            fontSize: "0.78rem",
-            cursor: busy || !selectedMatchId ? "not-allowed" : "pointer",
-            textDecoration: "underline",
-            padding: "0.3rem 0.5rem",
-            fontWeight: 700,
-          }}
         >
           ✏️ Rellenar manualmente (sin acta)
-        </button>
+        </Button>
       </div>
 
-      {(acta.rawText) && (
-        <div className="review-wrapper">
-          <div className="review-col">
-            <section className="review-card">
-              <h4>Datos del partido</h4>
-              <div className="mini-grid">
-                <label>
-                  Goles local
-                  <input
-                    value={acta.marcadorLocal}
-                    onChange={(e) => setActa((current) => ({ ...current, marcadorLocal: e.target.value }))}
-                  />
-                </label>
-                <label>
-                  Goles visitante
-                  <input
-                    value={acta.marcadorVisitante}
-                    onChange={(e) => setActa((current) => ({ ...current, marcadorVisitante: e.target.value }))}
-                  />
-                </label>
-                <label>
-                  Campo
-                  <select
+      {acta.rawText && (
+        <div className={styles.review}>
+          <div className={styles.column}>
+            <section className={styles.section}>
+              <h2>Datos del partido</h2>
+              <div className={styles.fields}>
+                <Field
+                  label="Goles local"
+                  value={acta.marcadorLocal}
+                  onChange={(e) =>
+                    setActa((current) => ({ ...current, marcadorLocal: e.target.value }))
+                  }
+                />
+
+                <Field
+                  label="Goles visitante"
+                  value={acta.marcadorVisitante}
+                  onChange={(e) =>
+                    setActa((current) => ({ ...current, marcadorVisitante: e.target.value }))
+                  }
+                />
+
+                <div className={styles.full}>
+                  <Select
+                    label="Campo"
                     value={acta.campoId || ""}
                     onChange={(e) => selectCampo(e.target.value)}
                   >
                     <option value="">Crear nuevo / texto detectado</option>
                     {campos.map((campo) => (
                       <option key={campo.id} value={campo.id}>
-                        {campo.nombre}{campo.poblacion ? ` (${campo.poblacion})` : ""}
+                        {campo.nombre}
+                        {campo.poblacion ? ` (${campo.poblacion})` : ""}
                       </option>
                     ))}
-                  </select>
-                  <input
-                    value={acta.campoNombre}
-                    disabled={Boolean(acta.campoId)}
-                    onChange={(e) => setActa((current) => ({ ...current, campoNombre: e.target.value }))}
-                  />
-                </label>
-                <label>
-                  Población
-                  <input
-                    value={acta.campoPoblacion}
-                    disabled={Boolean(acta.campoId)}
-                    onChange={(e) => setActa((current) => ({ ...current, campoPoblacion: e.target.value }))}
-                  />
-                </label>
+                  </Select>
+                </div>
+                <Field
+                  label="Nombre del campo"
+                  value={acta.campoNombre}
+                  disabled={Boolean(acta.campoId)}
+                  onChange={(e) =>
+                    setActa((current) => ({ ...current, campoNombre: e.target.value }))
+                  }
+                />
+                <Field
+                  label="Población"
+                  value={acta.campoPoblacion}
+                  disabled={Boolean(acta.campoId)}
+                  onChange={(e) =>
+                    setActa((current) => ({ ...current, campoPoblacion: e.target.value }))
+                  }
+                />
               </div>
             </section>
 
-            <section className="review-card">
-              <h4>Suplentes</h4>
+            <section className={styles.section}>
+              <h2>Suplentes</h2>
               <LineupEditor
+                labelPrefix="Suplente"
                 players={acta.suplentes}
                 jugadores={jugadores}
                 onChange={(index, playerId) => setPlayerFromDb("suplentes", index, playerId)}
                 onRemove={(index) => removeLineupPlayer("suplentes", index)}
               />
-              <button className="btn-secondary" onClick={() => addLineupPlayer("suplentes")}>Añadir suplente</button>
+              <Button variant="secondary" onClick={() => addLineupPlayer("suplentes")}>
+                Añadir suplente
+              </Button>
             </section>
           </div>
 
-          <div className="review-col">
-            <section className="review-card">
-              <h4>Titulares</h4>
+          <div className={styles.column}>
+            <section className={styles.section}>
+              <h2>Titulares</h2>
               <LineupEditor
+                labelPrefix="Titular"
                 players={acta.titulares}
                 jugadores={jugadores}
                 onChange={(index, playerId) => setPlayerFromDb("titulares", index, playerId)}
                 onRemove={(index) => removeLineupPlayer("titulares", index)}
               />
-              <button className="btn-secondary" onClick={() => addLineupPlayer("titulares")}>Añadir titular</button>
+              <Button variant="secondary" onClick={() => addLineupPlayer("titulares")}>
+                Añadir titular
+              </Button>
             </section>
           </div>
 
-          <section className="review-card wide-review">
-            <div className="card-title-row">
-              <h4>Eventos</h4>
-              <button className="btn-secondary" onClick={addEvent}>Añadir evento</button>
+          <section className={styles.fullSection}>
+            <div className={styles.sectionHeader}>
+              <h2>Eventos</h2>
+              <Button variant="secondary" onClick={addEvent}>
+                Añadir evento
+              </Button>
             </div>
             <EventEditor
               eventos={acta.eventos}
@@ -854,305 +844,107 @@ export default function AdminActaImporter({
           </section>
 
           {acta.rawText !== "__manual__" && (
-          <section className="review-card wide-review">
-            <div className="card-title-row">
-              <h4>Texto OCR</h4>
-              <button className="btn-secondary" onClick={reparseText}>Reprocesar texto</button>
-            </div>
-            <textarea value={ocrText} onChange={(e) => setOcrText(e.target.value)} rows={8} />
-          </section>
+            <section className={styles.fullSection}>
+              <div className={styles.sectionHeader}>
+                <h2>Texto OCR</h2>
+                <Button variant="secondary" onClick={reparseText}>
+                  Reprocesar texto
+                </Button>
+              </div>
+              <Textarea
+                label="Texto OCR para reprocesar"
+                value={ocrText}
+                onChange={(e) => setOcrText(e.target.value)}
+                rows={8}
+              />
+            </section>
           )}
         </div>
       )}
 
       {(acta.warnings.length > 0 || unresolvedLineup.length > 0 || unresolvedEvents.length > 0) && (
-        <div className="warnings">
-          {[...acta.warnings, `${unresolvedLineup.length} jugadores sin enlazar`, `${unresolvedEvents.length} eventos sin resolver`]
+        <aside className={styles.warnings} role="status" aria-label="Avisos de revisión">
+          {[
+            ...acta.warnings,
+            `${unresolvedLineup.length} jugadores sin enlazar`,
+            `${unresolvedEvents.length} eventos sin resolver`,
+          ]
             .filter((warning) => !warning.startsWith("0 "))
-            .map((warning, idx) => <p key={`${warning}-${idx}`}>{warning}</p>)}
-        </div>
+            .map((warning, idx) => (
+              <p key={`${warning}-${idx}`}>{warning}</p>
+            ))}
+        </aside>
       )}
 
       {acta.rawText && (
-        <button
-          className="btn-primary save-btn"
+        <Button
           disabled={!canSave || busy}
-          onClick={() => showConfirm("Se borrarán e insertarán de nuevo los datos de este partido. ¿Continuar?", saveActa)}
+          onClick={() =>
+            showConfirm(
+              "Se borrarán e insertarán de nuevo los datos de este partido. ¿Continuar?",
+              saveActa,
+            )
+          }
         >
           Confirmar e insertar en BD
-        </button>
+        </Button>
       )}
-
-      <style jsx>{`
-        .acta-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1.5rem;
-          padding-bottom: 1rem;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .acta-header h3 {
-          margin: 0;
-          font-size: 1.25rem;
-          font-weight: 600;
-          color: #facc15;
-        }
-        .acta-header p {
-          color: #a1a1aa;
-          margin: 0.5rem 0 0;
-          font-size: 0.85rem;
-        }
-        .acta-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 1.25rem;
-        }
-        .wide {
-          grid-column: span 2;
-        }
-        .input-group label {
-          display: block;
-          font-size: 0.75rem;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: #a1a1aa;
-          margin-bottom: 0.5rem;
-        }
-        .input-group select, .input-group input {
-          width: 100%;
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          padding: 0.75rem;
-          color: #fff;
-          font-size: 0.9rem;
-          transition: border-color 0.2s;
-        }
-        .input-group select:focus, .input-group input:focus {
-          outline: none;
-          border-color: rgba(250, 204, 21, 0.5);
-        }
-        .analyze-actions {
-          margin-top: 1.5rem;
-        }
-        .review-wrapper {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 1.25rem;
-          margin-top: 2.5rem;
-          align-items: start;
-        }
-        .review-col {
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-        }
-        .review-card {
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 12px;
-          padding: 1.25rem;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
-        .review-card h4 {
-          margin: 0 0 1rem 0;
-          font-size: 0.9rem;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: #facc15;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          padding-bottom: 0.5rem;
-        }
-        .wide-review {
-          grid-column: span 2;
-        }
-        .mini-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 1rem;
-        }
-        .mini-grid label {
-          display: flex;
-          flex-direction: column;
-          gap: 0.4rem;
-          color: #a1a1aa;
-          font-size: 0.75rem;
-          font-weight: 600;
-          text-transform: uppercase;
-        }
-        .mini-grid input, .mini-grid select {
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 6px;
-          padding: 0.6rem;
-          color: #fff;
-          font-size: 0.85rem;
-          transition: border-color 0.2s;
-        }
-        .mini-grid input:focus, .mini-grid select:focus {
-          outline: none;
-          border-color: rgba(250, 204, 21, 0.4);
-        }
-        .card-title-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          padding-bottom: 0.5rem;
-        }
-        .card-title-row h4 {
-          border-bottom: none;
-          margin: 0;
-          padding: 0;
-        }
-        textarea {
-          width: 100%;
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          color: #d4d4d8;
-          padding: 1rem;
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-          font-size: 0.8rem;
-          resize: vertical;
-          line-height: 1.5;
-        }
-        textarea:focus {
-          outline: none;
-          border-color: rgba(250, 204, 21, 0.4);
-        }
-        .warnings {
-          margin-top: 1.5rem;
-          padding: 1rem;
-          border-radius: 8px;
-          border-left: 4px solid #facc15;
-          background: rgba(250, 204, 21, 0.1);
-          color: #fef08a;
-          font-size: 0.85rem;
-        }
-        .warnings p {
-          margin: 0.3rem 0;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        .warnings p::before {
-          content: "•";
-        }
-        @media (max-width: 780px) {
-          .acta-grid, .review-wrapper, .mini-grid { grid-template-columns: 1fr; }
-          .wide, .wide-review { grid-column: auto; }
-        }
-      `}</style>
     </div>
   );
 }
 
 function LineupEditor({
+  labelPrefix,
   players,
   jugadores,
   onChange,
   onRemove,
 }: {
+  labelPrefix: "Titular" | "Suplente";
   players: ActaPlayerRef[];
   jugadores: ActaPlayerDb[];
   onChange: (index: number, playerId: string) => void;
   onRemove: (index: number) => void;
 }) {
   return (
-    <div className="rows">
+    <div className={styles.rows}>
+      {players.length === 0 && (
+        <EmptyState
+          title={`Sin ${labelPrefix === "Titular" ? "titulares" : "suplentes"}`}
+          detail="Añade jugadores para completar la alineación."
+        />
+      )}
       {players.map((player, index) => (
-        <div key={player.id} className="editor-row">
-          <span className={player.jugadorId ? "status ok" : "status"}>{player.dorsal || "?"}</span>
-          <span className="ocr-name">{player.rawName || "Sin texto OCR"}</span>
-          <select value={player.jugadorId || ""} onChange={(e) => onChange(index, e.target.value)}>
+        <div key={player.id} className={styles.lineupRow}>
+          <span
+            className={styles.playerStatus}
+            data-linked={Boolean(player.jugadorId)}
+            aria-label={player.jugadorId ? "Jugador enlazado" : "Jugador sin enlazar"}
+          >
+            {player.dorsal || "?"}
+          </span>
+          <span className={styles.playerName}>{player.rawName || "Sin texto OCR"}</span>
+          <Select
+            label={`${labelPrefix} ${index + 1} · Jugador`}
+            value={player.jugadorId || ""}
+            onChange={(e) => onChange(index, e.target.value)}
+          >
             <option value="">Sin enlazar...</option>
             {jugadores.map((dbPlayer) => (
               <option key={dbPlayer.id} value={dbPlayer.id}>
                 {dbPlayer.dorsal ?? "?"} - {displayPlayer(dbPlayer)}
               </option>
             ))}
-          </select>
-          <button className="row-delete" onClick={() => onRemove(index)}>Quitar</button>
+          </Select>
+          <Button
+            variant="danger"
+            aria-label={`Quitar ${labelPrefix.toLowerCase()} ${index + 1}: ${player.displayName || player.rawName || "sin enlazar"}`}
+            onClick={() => onRemove(index)}
+          >
+            Quitar
+          </Button>
         </div>
       ))}
-      <style jsx>{`
-        .rows {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-          margin-bottom: 1rem;
-        }
-        .editor-row {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 0.5rem;
-          background: rgba(0, 0, 0, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 8px;
-          transition: background 0.2s;
-        }
-        .editor-row:hover {
-          background: rgba(255, 255, 255, 0.03);
-        }
-        .ocr-name {
-          flex: 1;
-          color: #d4d4d8;
-          font-size: 0.8rem;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-        .editor-row select {
-          flex: 1.2;
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 6px;
-          color: #fff;
-          font-size: 0.8rem;
-          padding: 0.4rem;
-        }
-        .editor-row select:focus {
-          outline: none;
-          border-color: rgba(250, 204, 21, 0.4);
-        }
-        .status {
-          width: 30px;
-          height: 30px;
-          border-radius: 6px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(239, 68, 68, 0.1);
-          color: #ef4444;
-          font-weight: 700;
-          font-size: 0.8rem;
-        }
-        .status.ok {
-          background: rgba(34, 197, 94, 0.15);
-          color: #4ade80;
-        }
-        .row-delete {
-          background: transparent;
-          color: #a1a1aa;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 6px;
-          padding: 0.4rem 0.6rem;
-          font-size: 0.75rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .row-delete:hover {
-          color: #ef4444;
-          border-color: rgba(239, 68, 68, 0.3);
-          background: rgba(239, 68, 68, 0.05);
-        }
-      `}</style>
     </div>
   );
 }
@@ -1174,89 +966,115 @@ function EventEditor({
   ) => void;
   onRemove: (index: number) => void;
 }) {
-  const typeOptions: ActaEventType[] = [
-    "gol",
-    "tarjeta_amarilla",
-    "tarjeta_roja",
-    "cambio",
-  ];
+  const typeOptions: ActaEventType[] = ["gol", "tarjeta_amarilla", "tarjeta_roja", "cambio"];
 
   return (
-    <div className="event-list">
+    <div className={styles.rows}>
+      {eventos.length === 0 && (
+        <EmptyState title="Sin eventos" detail="Añade goles, tarjetas o cambios del partido." />
+      )}
       {eventos.map((event, index) => (
-        <div key={event.id} className="event-card">
-          <div className="event-card-header">
-            <div className="event-meta">
-              <input
+        <div key={event.id} className={styles.event}>
+          <div className={styles.eventHeader}>
+            <div className={styles.fields}>
+              <Field
+                label={`Evento ${index + 1} · Minuto`}
                 value={event.minuto}
                 onChange={(e) => onUpdate(index, { minuto: e.target.value })}
                 placeholder="Min."
-                className="minuto-input"
               />
-              <select 
-                value={event.tipo} 
+              <Select
+                label={`Evento ${index + 1} · Tipo`}
+                value={event.tipo}
                 onChange={(e) => onUpdate(index, { tipo: e.target.value as ActaEventType })}
-                className="tipo-select"
               >
-                {typeOptions.map((type) => <option key={type} value={type}>{type}</option>)}
-              </select>
+                {typeOptions.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </Select>
             </div>
-            
-            <div className="event-actions">
-              <select
-                value={event.isRival ? (event.esPropiaSantiso ? "propia_santiso" : "rival") : event.esPropia ? "propia_rival" : "santiso"}
+
+            <div className={styles.eventActions}>
+              <Select
+                label={`Evento ${index + 1} · Equipo`}
+                value={
+                  event.isRival
+                    ? event.esPropiaSantiso
+                      ? "propia_santiso"
+                      : "rival"
+                    : event.esPropia
+                      ? "propia_rival"
+                      : "santiso"
+                }
                 onChange={(e) => {
                   const v = e.target.value;
-                  if (v === "rival") onUpdate(index, { isRival: true, esPropia: false, esPropiaSantiso: false });
-                  else if (v === "propia_rival") onUpdate(index, { isRival: false, esPropia: true, esPropiaSantiso: false, jugador: undefined });
-                  else if (v === "propia_santiso") onUpdate(index, { isRival: true, esPropia: false, esPropiaSantiso: true });
+                  if (v === "rival")
+                    onUpdate(index, { isRival: true, esPropia: false, esPropiaSantiso: false });
+                  else if (v === "propia_rival")
+                    onUpdate(index, {
+                      isRival: false,
+                      esPropia: true,
+                      esPropiaSantiso: false,
+                      jugador: undefined,
+                    });
+                  else if (v === "propia_santiso")
+                    onUpdate(index, { isRival: true, esPropia: false, esPropiaSantiso: true });
                   else onUpdate(index, { isRival: false, esPropia: false, esPropiaSantiso: false });
                 }}
-                className="equipo-select"
               >
                 <option value="santiso">Santiso</option>
                 <option value="rival">Rival</option>
                 {event.tipo === "gol" && <option value="propia_rival">En propia (rival)</option>}
-                {event.tipo === "gol" && <option value="propia_santiso">En propia (Santiso)</option>}
-              </select>
-              <button className="row-delete" onClick={() => onRemove(index)}>Quitar</button>
+                {event.tipo === "gol" && (
+                  <option value="propia_santiso">En propia (Santiso)</option>
+                )}
+              </Select>
+              <Button
+                variant="danger"
+                aria-label={`Quitar evento ${index + 1}`}
+                onClick={() => onRemove(index)}
+              >
+                Quitar
+              </Button>
             </div>
           </div>
 
-          <div className="event-card-body">
+          <div className={styles.eventBody}>
             {event.esPropiaSantiso ? (
               <PlayerSelect
                 jugadores={jugadores}
                 value={event.jugador?.jugadorId || ""}
-                label="Jugador Santiso que marcó en propia..."
+                label={`Evento ${index + 1} · Jugador Santiso que marcó en propia...`}
                 onChange={(playerId) => onSetPlayer(index, "jugador", playerId)}
               />
             ) : event.isRival ? (
-              <input
+              <Field
+                label={`Evento ${index + 1} · Jugador rival`}
                 value={event.nombreRival || ""}
                 onChange={(e) => onUpdate(index, { nombreRival: e.target.value })}
                 placeholder="Nombre jugador rival"
-                className="rival-input"
               />
             ) : event.esPropia ? (
-              <input
+              <Field
+                label={`Evento ${index + 1} · Jugador rival`}
                 value={event.nombreRival || ""}
                 onChange={(e) => onUpdate(index, { nombreRival: e.target.value })}
                 placeholder="Nombre del jugador rival (opcional)"
-                className="rival-input"
               />
             ) : event.tipo === "cambio" ? (
-              <div className="cambio-grid">
+              <div className={styles.fields}>
                 <PlayerSelect
                   jugadores={jugadores}
                   value={event.jugadorSale?.jugadorId || ""}
-                  label="Sale del campo..."
+                  label={`Evento ${index + 1} · Sale`}
                   onChange={(playerId) => onSetPlayer(index, "jugadorSale", playerId)}
                 />
                 <PlayerSelect
                   jugadores={jugadores}
                   value={event.jugadorEntra?.jugadorId || ""}
-                  label="Entra al campo..."
+                  label={`Evento ${index + 1} · Entra`}
                   onChange={(playerId) => onSetPlayer(index, "jugadorEntra", playerId)}
                 />
               </div>
@@ -1264,102 +1082,13 @@ function EventEditor({
               <PlayerSelect
                 jugadores={jugadores}
                 value={event.jugador?.jugadorId || ""}
-                label="Selecciona jugador implicado..."
+                label={`Evento ${index + 1} · Jugador`}
                 onChange={(playerId) => onSetPlayer(index, "jugador", playerId)}
               />
             )}
           </div>
         </div>
       ))}
-      <style jsx>{`
-        .event-list {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-        }
-        .event-card {
-          background: rgba(0, 0, 0, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 8px;
-          padding: 1rem;
-          transition: background 0.2s;
-        }
-        .event-card:hover {
-          background: rgba(255, 255, 255, 0.03);
-        }
-        .event-card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.75rem;
-          padding-bottom: 0.75rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          gap: 1rem;
-        }
-        .event-meta, .event-actions {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        .event-card select, .event-card input {
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 6px;
-          color: #fff;
-          font-size: 0.8rem;
-          padding: 0.4rem;
-        }
-        .event-card select:focus, .event-card input:focus {
-          outline: none;
-          border-color: rgba(250, 204, 21, 0.4);
-        }
-        .minuto-input {
-          width: 50px;
-          text-align: center;
-          font-weight: 700;
-        }
-        .tipo-select {
-          min-width: 130px;
-        }
-        .equipo-select {
-          min-width: 110px;
-        }
-        .cambio-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 0.75rem;
-        }
-        .rival-input {
-          width: 100%;
-        }
-        .row-delete {
-          background: transparent;
-          color: #a1a1aa;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 6px;
-          padding: 0.4rem 0.6rem;
-          font-size: 0.75rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .row-delete:hover {
-          color: #ef4444;
-          border-color: rgba(239, 68, 68, 0.3);
-          background: rgba(239, 68, 68, 0.05);
-        }
-        @media (max-width: 640px) {
-          .event-card-header {
-            flex-direction: column;
-            align-items: stretch;
-          }
-          .event-meta, .event-actions {
-            justify-content: space-between;
-          }
-          .cambio-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
     </div>
   );
 }
@@ -1376,13 +1105,13 @@ function PlayerSelect({
   onChange: (playerId: string) => void;
 }) {
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)}>
-      <option value="">{label}</option>
+    <Select label={label} value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="">Sin elegir</option>
       {jugadores.map((player) => (
         <option key={player.id} value={player.id}>
           {player.dorsal ?? "?"} - {displayPlayer(player)}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }
