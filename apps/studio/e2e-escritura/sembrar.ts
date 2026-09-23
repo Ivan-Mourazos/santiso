@@ -107,6 +107,47 @@ async function sembrar() {
     cargo: "Entrenador",
   });
 
+  // Calendario (6G): una competición propia en Veteranos, con orden alto para que la primera
+  // siga siendo «Liga Veteranos» (la que ven las pruebas de Equipos). Cuatro equipos que no usa
+  // ninguna otra prueba, una jornada con un partido y un campo.
+  const [copa] = await db
+    .insert(schema.competiciones)
+    .values({
+      temporadaId: activa.id,
+      categoria: "Veteranos",
+      nombre: "Copa Calendario",
+      orden: 5,
+    })
+    .returning();
+  const equiposCopa = await db
+    .insert(schema.equipos)
+    .values(
+      ["Norte", "Sur", "Leste", "Oeste"].map((punto) => ({
+        nombre: `${punto} Calendario`,
+        clave: claveNombre(`${punto} Calendario`),
+        categoria: "Veteranos" as const,
+      })),
+    )
+    .returning();
+  if (!copa || equiposCopa.length !== 4) throw new Error("Falta la copa de calendario");
+  await db
+    .insert(schema.competicionEquipos)
+    .values(equiposCopa.map((e) => ({ equipoId: e.id, competicionId: copa.id })));
+  const [jornadaCopa] = await db
+    .insert(schema.jornadas)
+    .values({ competicionId: copa.id, numero: 1 })
+    .returning();
+  await db.insert(schema.campos).values({
+    nombre: "Campo Calendario",
+    clave: claveNombre("Campo Calendario"),
+    poblacion: "Santiso",
+  });
+  await db.insert(schema.partidos).values({
+    jornadaId: jornadaCopa!.id,
+    equipoLocalId: equiposCopa[0]!.id,
+    equipoVisitanteId: equiposCopa[1]!.id,
+  });
+
   // Catálogo de patrocinadores: dos activados en la barra y uno de solo web.
   await db.insert(schema.patrocinadores).values([
     {
