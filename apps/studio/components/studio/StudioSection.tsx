@@ -22,6 +22,9 @@ const Batch = dynamic(() => import("@/components/admin/AdminActaBatch"), { loadi
 const Matchday = dynamic(() => import("@/components/admin/AdminJornadaImporter"), { loading });
 const CalendarPdf = dynamic(() => import("@/components/admin/AdminCalendarioPdf"), { loading });
 const Assets = dynamic(() => import("@/components/admin/AdminCartelAssets"), { loading });
+const Stats = dynamic(() => import("@/components/admin/estadisticas/AdminEstadisticas"), {
+  loading,
+});
 const Shield = dynamic(() => import("@/components/admin/AdminShield"), { loading });
 const subscribeHydration = () => () => {};
 const clientReady = () => true;
@@ -50,15 +53,14 @@ export function StudioSection({ section }: { section: Seccion }) {
     <div key={key} className={styles.panel}>
       {section === "calendario" && <Calendar {...feedback} categoria={category} />}
       {section === "clasificacion" && <League {...feedback} categoria={category} />}
+      {section === "estadisticas" && <Stats showToast={showToast} categoria={squadCategory} />}
       {section === "jugadores" && <Players {...feedback} categoria={squadCategory} />}
       {section === "tecnicos" && <Staff {...feedback} tipo="Tecnico" categoria={squadCategory} />}
       {section === "directiva" && <Staff {...feedback} tipo="Directiva" />}
       {section === "equipos" && <Teams {...feedback} categoria={category} />}
       {section === "patrocinadores" && <Sponsors {...feedback} />}
       {section === "temporadas" && <Seasons {...feedback} />}
-      {section === "carteles" && (
-        <Posters templateId={template} showToast={showToast} />
-      )}
+      {section === "carteles" && <Posters templateId={template} showToast={showToast} />}
       {section === "actas" && (
         <>
           <div className={styles.modes}>

@@ -23,9 +23,14 @@ export function StudioShell({ children }: { children: ReactNode }) {
   const squadSection = SECCIONES_DE_PLANTILLA.some((id) => id === section?.id);
   const category = squadSection ? categoriaPlantillaDe(params) : categoriaDe(params);
   const categories = squadSection ? ["Senior", "Femenino", "Veteranos"] : ["Senior", "Veteranos"];
-  const showCategory = ["calendario", "clasificacion", "jugadores", "tecnicos", "equipos"].some(
-    (id) => id === section?.id,
-  );
+  const showCategory = [
+    "calendario",
+    "clasificacion",
+    "estadisticas",
+    "jugadores",
+    "tecnicos",
+    "equipos",
+  ].some((id) => id === section?.id);
   function navigation() {
     return (
       <nav aria-label="Navegación principal" className={styles.nav}>

@@ -1,6 +1,7 @@
 export const SECCIONES = [
   { id: "calendario", label: "Calendario", grupo: "Competición" },
   { id: "clasificacion", label: "Clasificación", grupo: "Competición" },
+  { id: "estadisticas", label: "Estadísticas", grupo: "Competición" },
   { id: "jugadores", label: "Jugadores", grupo: "Plantilla" },
   { id: "tecnicos", label: "Cuerpo técnico", grupo: "Plantilla" },
   { id: "directiva", label: "Directiva", grupo: "Plantilla" },
@@ -20,8 +21,11 @@ export function categoriaDe(params: URLSearchParams): "Senior" | "Veteranos" {
   return params.get("categoria") === "Veteranos" ? "Veteranos" : "Senior";
 }
 export type CategoriaPlantilla = "Senior" | "Femenino" | "Veteranos";
-/** Secciones cuya categoría admite también Femenino. */
-export const SECCIONES_DE_PLANTILLA: readonly Seccion[] = ["jugadores", "tecnicos"];
+/**
+ * Secciones cuya categoría admite también Femenino. Estadísticas entra aquí: sus datos salen de
+ * la plantilla y de las actas, y el Femenino tiene ambos aunque este año no compita.
+ */
+export const SECCIONES_DE_PLANTILLA: readonly Seccion[] = ["jugadores", "tecnicos", "estadisticas"];
 /**
  * En Plantilla la categoría incluye Femenino: aunque este año no compita, su plantilla y su
  * cuerpo técnico de temporadas anteriores siguen existiendo y tienen que poder consultarse.

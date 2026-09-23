@@ -1,0 +1,175 @@
+/* Pantalla de estadísticas (7B). Tokens de la Fase 3A. */
+
+.panel {
+  background: var(--ui-surface, #171717);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius-lg, 1.125rem);
+  padding: var(--ui-space-6, 2rem);
+}
+.cabecera h3 {
+  margin: 0;
+  font: 800 1.35rem var(--ui-font-title, sans-serif);
+}
+.cabecera p {
+  margin: 0.25rem 0 var(--ui-space-5, 1.5rem);
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.herramientas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  align-items: end;
+  gap: var(--ui-space-3, 0.75rem);
+  margin-bottom: var(--ui-space-4, 1rem);
+}
+
+.resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3, 0.75rem);
+  margin-bottom: var(--ui-space-4, 1rem);
+}
+.dato {
+  flex: 1;
+  min-width: 7rem;
+  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-raised, #242424);
+}
+.dato strong {
+  display: block;
+  font: 900 1.5rem var(--ui-font-title, sans-serif);
+  color: var(--ui-accent, #facc15);
+  font-variant-numeric: tabular-nums;
+}
+.dato span {
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+
+.contador {
+  margin: 0 0 var(--ui-space-3, 0.75rem);
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+
+.tablaEnvoltorio {
+  overflow-x: auto;
+}
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tabla th {
+  text-align: right;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ui-muted, #aaa);
+  border-bottom: 1px solid var(--ui-border, #666);
+  padding: 0;
+  white-space: nowrap;
+}
+.tabla th:first-child,
+.tabla th:nth-child(2) {
+  text-align: left;
+}
+.ordenar {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.ordenar:hover {
+  color: var(--ui-accent, #facc15);
+}
+.tabla th[aria-sort] .ordenar {
+  color: var(--ui-accent, #facc15);
+}
+.tabla td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid rgb(255 255 255 / 6%);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tabla td:first-child,
+.tabla td:nth-child(2) {
+  text-align: left;
+}
+.dorsal {
+  font-weight: 800;
+  color: var(--ui-accent, #facc15);
+}
+.jugador strong {
+  display: block;
+}
+.jugador small {
+  color: var(--ui-muted, #aaa);
+}
+.aviso {
+  margin: var(--ui-space-4, 1rem) 0 0;
+  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
+  border-radius: var(--ui-radius, 0.75rem);
+  border: 1px solid rgb(245 158 11 / 35%);
+  background: rgb(245 158 11 / 8%);
+  color: var(--ui-warning, #f59e0b);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.nota {
+  margin: var(--ui-space-4, 1rem) 0 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding: var(--ui-space-4, 1rem);
+  }
+  .herramientas {
+    grid-template-columns: 1fr;
+  }
+  /* La tabla pasa a fichas: doce columnas no caben en un móvil. */
+  .tablaEnvoltorio,
+  .tabla,
+  .tabla tbody,
+  .tabla tr,
+  .tabla td {
+    display: block;
+    overflow: visible;
+  }
+  .tabla thead {
+    display: none;
+  }
+  .tabla tr {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid rgb(255 255 255 / 8%);
+    border-radius: var(--ui-radius, 0.75rem);
+  }
+  .tabla td {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--ui-space-3, 0.75rem);
+    padding: 0.2rem 0;
+    border: 0;
+    text-align: right;
+  }
+  .tabla td::before {
+    content: attr(data-etiqueta);
+    color: var(--ui-muted, #aaa);
+    font-size: var(--ui-text-sm, 0.875rem);
+    text-align: left;
+  }
+  .tabla td:first-child,
+  .tabla td:nth-child(2) {
+    text-align: left;
+  }
+  .tabla td:nth-child(2)::before {
+    content: none;
+  }
+}
