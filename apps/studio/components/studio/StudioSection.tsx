@@ -9,7 +9,9 @@ import { Select } from "@/components/ui/foundation/Fields";
 import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
 const loading = () => <LoadingState title="Cargando sección…" />;
-const Calendar = dynamic(() => import("@/components/admin/AdminJornadas"), { loading });
+const Calendar = dynamic(() => import("@/components/admin/calendario/AdminCalendario"), {
+  loading,
+});
 const League = dynamic(() => import("@/components/admin/clasificacion/AdminClasificacion"), {
   loading,
 });

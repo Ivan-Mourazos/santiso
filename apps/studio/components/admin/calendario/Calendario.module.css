@@ -1,0 +1,242 @@
+/* Calendario (6G). Tokens de la Fase 3A. */
+
+.panel {
+  display: grid;
+  gap: var(--ui-space-5, 1.5rem);
+}
+.bloque {
+  background: var(--ui-surface, #171717);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius-lg, 1.125rem);
+  padding: var(--ui-space-5, 1.5rem);
+}
+.titulo {
+  margin: 0 0 var(--ui-space-3, 0.75rem);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-accent, #facc15);
+}
+.nota {
+  margin: 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.nota a {
+  color: var(--ui-accent, #facc15);
+  font-weight: 700;
+}
+
+/* ─── Cabecera: selección y accesos ─── */
+.selectores {
+  display: grid;
+  grid-template-columns: minmax(9rem, 12rem) minmax(0, 1.6fr) minmax(9rem, 1fr);
+  gap: var(--ui-space-3, 0.75rem);
+  align-items: end;
+}
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-2, 0.5rem);
+  margin-top: var(--ui-space-4, 1rem);
+}
+.acciones .nota {
+  margin-left: auto;
+}
+
+/* ─── Formularios en fila ─── */
+.fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--ui-space-3, 0.75rem);
+  align-items: end;
+}
+.fila > button {
+  justify-self: start;
+}
+
+/* ─── Descansos ─── */
+.descansos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2, 0.5rem);
+  margin: var(--ui-space-3, 0.75rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.descansos li {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2, 0.5rem);
+  padding: 0.3rem 0.3rem 0.3rem 0.75rem;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-raised, #242424);
+  font-weight: 700;
+}
+
+/* ─── Partidos ─── */
+.partidos {
+  display: grid;
+  gap: var(--ui-space-3, 0.75rem);
+}
+.partido {
+  display: grid;
+  gap: var(--ui-space-3, 0.75rem);
+  padding: var(--ui-space-4, 1rem);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-raised, #242424);
+}
+.partido[data-cambios="true"] {
+  border-color: rgb(245 158 11 / 55%);
+}
+.marcador {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ui-space-3, 0.75rem);
+}
+.equipo {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2, 0.5rem);
+  min-width: 0;
+  font-weight: 800;
+}
+.equipo:first-child {
+  justify-content: flex-end;
+  text-align: right;
+}
+.equipo span {
+  overflow-wrap: anywhere;
+}
+.equipo img {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+  flex: none;
+}
+.goles {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2, 0.5rem);
+}
+.goles input {
+  width: 3.5rem;
+  text-align: center;
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+/* La etiqueta de cada marcador existe para el lector de pantalla; a la vista la dan los nombres. */
+.goles label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.goles > div {
+  margin: 0;
+}
+.detalle {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--ui-space-3, 0.75rem);
+  align-items: end;
+}
+.pieFila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2, 0.5rem);
+  justify-content: flex-end;
+  align-items: center;
+}
+.pieFila .nota {
+  margin-right: auto;
+  color: var(--ui-warning, #f59e0b);
+}
+
+/* ─── Zonas ─── */
+.zonas {
+  display: grid;
+  gap: var(--ui-space-2, 0.5rem);
+  margin: var(--ui-space-3, 0.75rem) 0;
+  padding: 0;
+  list-style: none;
+}
+.zonas li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 8rem) auto;
+  gap: var(--ui-space-2, 0.5rem);
+  align-items: end;
+  padding: var(--ui-space-2, 0.5rem) var(--ui-space-3, 0.75rem);
+  border-left: 3px solid var(--color-regla);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-raised, #242424);
+}
+.muestra {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 4px;
+  background: var(--color-regla);
+  align-self: center;
+}
+.paleta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.paleta legend {
+  margin-bottom: 0.35rem;
+  font-size: var(--ui-text-sm, 0.875rem);
+  font-weight: 700;
+}
+.color {
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--color-regla);
+  cursor: pointer;
+}
+.color[aria-pressed="true"] {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--color-regla);
+}
+.separador {
+  margin: var(--ui-space-4, 1rem) 0;
+  border: 0;
+  border-top: 1px solid rgb(255 255 255 / 8%);
+}
+
+@media (max-width: 760px) {
+  .selectores {
+    grid-template-columns: 1fr;
+  }
+  .acciones .nota {
+    margin-left: 0;
+  }
+  .marcador {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .equipo,
+  .equipo:first-child {
+    justify-content: center;
+    text-align: center;
+  }
+  .zonas li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+}
+.vacio {
+  margin-top: var(--ui-space-3, 0.75rem);
+}
