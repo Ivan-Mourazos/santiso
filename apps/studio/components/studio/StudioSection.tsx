@@ -23,8 +23,10 @@ const Seasons = dynamic(() => import("@/components/admin/AdminTemporadas"), { lo
 const Posters = dynamic(() => import("@/components/admin/GeneradorCartel"), { loading });
 const Acta = dynamic(() => import("@/components/admin/AdminActaImporter"), { loading });
 const Batch = dynamic(() => import("@/components/admin/AdminActaBatch"), { loading });
-const Matchday = dynamic(() => import("@/components/admin/AdminJornadaImporter"), { loading });
-const CalendarPdf = dynamic(() => import("@/components/admin/AdminCalendarioPdf"), { loading });
+const Matchday = dynamic(() => import("@/components/admin/importar/ImportarFoto"), { loading });
+const CalendarPdf = dynamic(() => import("@/components/admin/importar/ImportarCalendarioPdf"), {
+  loading,
+});
 const Graphics = dynamic(() => import("@/components/admin/ajustes/AjustesGraficos"), { loading });
 const Stats = dynamic(() => import("@/components/admin/estadisticas/AdminEstadisticas"), {
   loading,

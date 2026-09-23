@@ -96,7 +96,13 @@ test("guardar lo revisado lo deja en el calendario", async ({ page }) => {
 
   await page.goto("/admin/calendario?categoria=Veteranos");
   await page.getByLabel("Competición", { exact: true }).selectOption({ label: "Copa Calendario" });
-  await page.getByLabel("Jornada", { exact: true }).selectOption({ label: "Jornada 7" });
+  // Cambiar de competición vuelve a montar la sección: esperar a su lista de jornadas.
+  const jornada = page.getByLabel("Jornada", { exact: true });
+  await expect(jornada.locator("option", { hasText: "Jornada 7" })).toHaveCount(1, {
+    timeout: 30000,
+  });
+  await jornada.selectOption({ label: "Jornada 7" });
+  await expect(page).toHaveURL(/jornada=/);
   const partido = page.getByRole("region", { name: "Norte Calendario - Leste Calendario" });
   await expect(partido.getByLabel("Goles de Norte Calendario")).toHaveValue("3", {
     timeout: 30000,
