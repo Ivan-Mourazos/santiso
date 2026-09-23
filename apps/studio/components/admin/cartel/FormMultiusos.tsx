@@ -40,7 +40,7 @@ export const FormMultiusos: React.FC<Props> = ({
   jugFileName,
   handleJugadorFile,
 }) => {
-  const getDisplayName = (j: any) => {
+  const getDisplayName = (j: Props["jugadores"][number]) => {
     if (!j) return "";
     if (j.apodo) return j.apodo;
     if (!j.nombre) return "";
@@ -244,6 +244,7 @@ export const FormMultiusos: React.FC<Props> = ({
             )}
           </div>
           {form.multiusosImg1Url && (
+            // eslint-disable-next-line @next/next/no-img-element -- vista previa en memoria
             <img
               src={form.multiusosImg1Url}
               alt=""
@@ -318,6 +319,7 @@ export const FormMultiusos: React.FC<Props> = ({
             )}
           </div>
           {form.multiusosImg2Url && (
+            // eslint-disable-next-line @next/next/no-img-element -- vista previa en memoria
             <img
               src={form.multiusosImg2Url}
               alt=""

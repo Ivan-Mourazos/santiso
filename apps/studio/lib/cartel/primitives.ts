@@ -16,7 +16,7 @@ export function loadImg(src: string): Promise<HTMLImageElement | null> {
     if (src.startsWith("http://") || src.startsWith("https://")) {
       img.crossOrigin = "anonymous";
     }
-    img.onload  = () => resolve(img);
+    img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
     img.src = src;
   });
@@ -32,8 +32,12 @@ export function loadImg(src: string): Promise<HTMLImageElement | null> {
  */
 export function drawPhotoEnvironment(
   ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number,
-  opts: { innerSide: "left" | "right"; tint?: string } = { innerSide: "right" }
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  // Se conserva por firma; el entorno ya no depende del lado ni del tinte.
+  _opts: { innerSide: "left" | "right"; tint?: string } = { innerSide: "right" },
 ) {
   ctx.save();
   ctx.beginPath();
@@ -49,7 +53,6 @@ export function drawPhotoEnvironment(
   ctx.fillRect(x, y, w, h);
 
   ctx.restore();
-
 }
 
 // ─── Color helpers ────────────────────────────────────────────────────────────
@@ -57,7 +60,13 @@ export function drawPhotoEnvironment(
 /** Convierte un hex (#rgb o #rrggbb) a rgba(...) con alpha. */
 export function hexToRgba(hex: string, a: number): string {
   const h = hex.replace("#", "");
-  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const full =
+    h.length === 3
+      ? h
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : h;
   const n = parseInt(full, 16);
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 }
@@ -67,24 +76,30 @@ export function hexToRgba(hex: string, a: number): string {
 /** Draw rounded-rect path (no fill/stroke — caller does that). */
 export function rr(
   ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
 ) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y,     x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x,     y + h, r);
-  ctx.arcTo(x,     y + h, x,     y,     r);
-  ctx.arcTo(x,     y,     x + w, y,     r);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
 }
 
 /** Reduce font size until text fits maxW (modifies ctx.font). */
 export function fitFont(
   ctx: CanvasRenderingContext2D,
-  text: string, maxW: number,
-  startSize: number, minSize: number,
+  text: string,
+  maxW: number,
+  startSize: number,
+  minSize: number,
   weight: string,
-  fontFamily: string = FONT_DISPLAY
+  fontFamily: string = FONT_DISPLAY,
 ): number {
   let sz = startSize;
   ctx.font = `${weight} ${sz}px ${fontFamily}`;
@@ -100,9 +115,12 @@ export function fitFont(
 /** Draw a modern floating glass card with subtle gradient border and inner glow */
 export function drawGlassCard(
   ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
   r = 32,
-  options?: { borderAccent?: string; fillAlpha?: number }
+  options?: { borderAccent?: string; fillAlpha?: number },
 ) {
   ctx.save();
   ctx.fillStyle = `rgba(255,255,255,${options?.fillAlpha ?? 0.035})`;
@@ -128,8 +146,21 @@ export function drawGlassCard(
 
 // ─── Date formatting ──────────────────────────────────────────────────────────
 
-const MESES = ["","XANEIRO","FEBREIRO","MARZO","ABRIL","MAIO","XUÑO",
-               "XULLO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DECEMBRO"];
+const MESES = [
+  "",
+  "XANEIRO",
+  "FEBREIRO",
+  "MARZO",
+  "ABRIL",
+  "MAIO",
+  "XUÑO",
+  "XULLO",
+  "AGOSTO",
+  "SETEMBRO",
+  "OUTUBRO",
+  "NOVEMBRO",
+  "DECEMBRO",
+];
 
 /** Format YYYY-MM-DD → DD / MM / YYYY (or long Galician form). */
 export function fmtDate(s: string, long = false): string {
@@ -145,20 +176,22 @@ export function fmtDate(s: string, long = false): string {
 export function drawShield(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
-  cx: number, cy: number, size: number,
+  cx: number,
+  cy: number,
+  size: number,
   glowGold = false,
-  auraColor?: string
+  auraColor?: string,
 ) {
   ctx.save();
   if (auraColor) {
     ctx.shadowColor = hexToRgba(auraColor, 0.48);
-    ctx.shadowBlur  = 36;
+    ctx.shadowBlur = 36;
   } else if (glowGold) {
     ctx.shadowColor = "rgba(250,204,21,0.48)";
-    ctx.shadowBlur  = 34;
+    ctx.shadowBlur = 34;
   } else {
-    ctx.shadowColor   = "rgba(0,0,0,0.8)";
-    ctx.shadowBlur    = 24;
+    ctx.shadowColor = "rgba(0,0,0,0.8)";
+    ctx.shadowBlur = 24;
     ctx.shadowOffsetY = 8;
   }
   ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size);
@@ -167,11 +200,14 @@ export function drawShield(
 
 /** Dashed circle placeholder for missing shields. */
 export function shieldPlaceholder(
-  ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
 ) {
   ctx.save();
   ctx.strokeStyle = "rgba(255,255,255,0.18)";
-  ctx.lineWidth   = 2;
+  ctx.lineWidth = 2;
   ctx.setLineDash([8, 6]);
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -184,18 +220,19 @@ export function shieldPlaceholder(
 
 /** Draw an impactful, modern athletic VS badge. */
 export function drawVsBadge(ctx: CanvasRenderingContext2D, cx: number, cy: number, accent = GOLD) {
-  const vsW = 96, vsH = 64;
+  const vsW = 96,
+    vsH = 64;
   ctx.save();
   ctx.shadowColor = hexToRgba(accent, 0.45);
-  ctx.shadowBlur  = 20;
-  ctx.fillStyle   = accent;
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = accent;
   rr(ctx, cx - vsW / 2, cy - vsH / 2, vsW, vsH, 20);
   ctx.fill();
   ctx.restore();
 
-  ctx.fillStyle    = "#000000";
-  ctx.font         = `900 36px ${FONT_DISPLAY}`;
-  ctx.textAlign    = "center";
+  ctx.fillStyle = "#000000";
+  ctx.font = `900 36px ${FONT_DISPLAY}`;
+  ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("VS", cx, cy + 1);
 }
@@ -204,18 +241,21 @@ export function drawVsBadge(ctx: CanvasRenderingContext2D, cx: number, cy: numbe
 
 export function drawTeamName(
   ctx: CanvasRenderingContext2D,
-  name: string, x: number, y: number,
-  maxW: number, isSantiso: boolean,
-  accent = GOLD
+  name: string,
+  x: number,
+  y: number,
+  maxW: number,
+  isSantiso: boolean,
+  accent = GOLD,
 ) {
   fitFont(ctx, name, maxW, 26, 14, "800", FONT_DISPLAY);
   if (isSantiso) {
     ctx.save();
     ctx.shadowColor = hexToRgba(accent, 0.6);
-    ctx.shadowBlur  = 16;
+    ctx.shadowBlur = 16;
   }
-  ctx.fillStyle    = "#ffffff";
-  ctx.textAlign    = "center";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   ctx.fillText(name, x, y);
   if (isSantiso) ctx.restore();
@@ -227,8 +267,9 @@ export function drawTeamName(
 export function drawEventIcon(
   ctx: CanvasRenderingContext2D,
   tipo: CronEvent["tipo"],
-  cx: number, cy: number,
-  size = 28
+  cx: number,
+  cy: number,
+  size = 28,
 ) {
   ctx.save();
   const r = size / 2;
@@ -273,17 +314,20 @@ export function drawEventIcon(
     }
   } else if (tipo === "amarela") {
     ctx.fillStyle = "#FFD700";
-    const cw = size * 0.72, ch = size * 0.92;
+    const cw = size * 0.72,
+      ch = size * 0.92;
     rr(ctx, cx - cw / 2, cy - ch / 2, cw, ch, 4);
     ctx.fill();
   } else if (tipo === "vermella") {
     ctx.fillStyle = "#e53535";
-    const cw = size * 0.72, ch = size * 0.92;
+    const cw = size * 0.72,
+      ch = size * 0.92;
     rr(ctx, cx - cw / 2, cy - ch / 2, cw, ch, 4);
     ctx.fill();
   } else if (tipo === "doble_amarela") {
     // Dos amarillas solapadas
-    const cw = size * 0.6, ch = size * 0.8;
+    const cw = size * 0.6,
+      ch = size * 0.8;
     ctx.fillStyle = "#FFD700";
     // Primera (atras)
     rr(ctx, cx - cw / 2 + 3, cy - ch / 2 - 3, cw, ch, 4);
@@ -305,25 +349,28 @@ export function drawCategoryBadge(
   ctx: CanvasRenderingContext2D,
   categoria: string,
   y: number,
-  accent: string = GOLD
+  accent: string = GOLD,
 ): number {
-  const label = categoria === "Femenino"  ? "EQUIPO FEMININO"
-              : categoria === "Veteranos" ? "EQUIPO VETERANO"
-              : "EQUIPO SÉNIORS";
+  const label =
+    categoria === "Femenino"
+      ? "EQUIPO FEMININO"
+      : categoria === "Veteranos"
+        ? "EQUIPO VETERANO"
+        : "EQUIPO SÉNIORS";
   ctx.font = "800 27px 'Nunito', sans-serif";
   const BW = ctx.measureText(label).width + 70;
   const BH = 55;
   const BX = CX - BW / 2;
 
-  ctx.fillStyle   = "rgba(0,0,0,0.55)";
+  ctx.fillStyle = "rgba(0,0,0,0.55)";
   rr(ctx, BX, y, BW, BH, 28);
   ctx.fill();
   ctx.strokeStyle = hexToRgba(accent, 0.55);
-  ctx.lineWidth   = 1.5;
+  ctx.lineWidth = 1.5;
   rr(ctx, BX, y, BW, BH, 28);
   ctx.stroke();
-  ctx.fillStyle    = "#ffffff";
-  ctx.textAlign    = "center";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(label, CX, y + BH / 2);
   return y + BH;

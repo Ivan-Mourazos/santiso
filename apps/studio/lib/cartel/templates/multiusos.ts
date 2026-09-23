@@ -5,7 +5,7 @@
 
 import { CX, CW, CL, CR, GOLD, H } from "../constants";
 import { rr, fitFont } from "../primitives";
-import { drawWatermark, drawCategoryTint, drawTopLogos, drawSponsorBar } from "../shared";
+import { drawWatermark, drawCategoryTint } from "../shared";
 import type { CartelAssets } from "../types";
 
 export interface MultiusosForm {
@@ -19,12 +19,45 @@ export interface MultiusosForm {
   showAssets?: boolean;
 }
 
-const THEME_STYLES: Record<string, { accent: string; titleColor: string; bgGlow: string; icon: string; labelText: string }> = {
-  celebracion: { accent: GOLD, titleColor: GOLD, bgGlow: "rgba(250, 204, 21, 0.08)", icon: "🏆", labelText: "CELEBRACIÓN OFICIAL" },
-  medico: { accent: "#ef4444", titleColor: "#ef4444", bgGlow: "rgba(239, 68, 68, 0.08)", icon: "🏥", labelText: "PARTE MÉDICO" },
-  fichaje: { accent: "#3b82f6", titleColor: "#60a5fa", bgGlow: "rgba(59, 130, 246, 0.08)", icon: "✍️", labelText: "NOVA INCORPORACIÓN" },
-  despedida: { accent: "#a1a1aa", titleColor: "#ffffff", bgGlow: "rgba(161, 161, 170, 0.08)", icon: "👋", labelText: "COMUNICADO OFICIAL" },
-  formal: { accent: GOLD, titleColor: "#ffffff", bgGlow: "rgba(255, 255, 255, 0.05)", icon: "📢", labelText: "COMUNICADO OFICIAL" },
+const THEME_STYLES: Record<
+  string,
+  { accent: string; titleColor: string; bgGlow: string; icon: string; labelText: string }
+> = {
+  celebracion: {
+    accent: GOLD,
+    titleColor: GOLD,
+    bgGlow: "rgba(250, 204, 21, 0.08)",
+    icon: "🏆",
+    labelText: "CELEBRACIÓN OFICIAL",
+  },
+  medico: {
+    accent: "#ef4444",
+    titleColor: "#ef4444",
+    bgGlow: "rgba(239, 68, 68, 0.08)",
+    icon: "🏥",
+    labelText: "PARTE MÉDICO",
+  },
+  fichaje: {
+    accent: "#3b82f6",
+    titleColor: "#60a5fa",
+    bgGlow: "rgba(59, 130, 246, 0.08)",
+    icon: "✍️",
+    labelText: "NOVA INCORPORACIÓN",
+  },
+  despedida: {
+    accent: "#a1a1aa",
+    titleColor: "#ffffff",
+    bgGlow: "rgba(161, 161, 170, 0.08)",
+    icon: "👋",
+    labelText: "COMUNICADO OFICIAL",
+  },
+  formal: {
+    accent: GOLD,
+    titleColor: "#ffffff",
+    bgGlow: "rgba(255, 255, 255, 0.05)",
+    icon: "📢",
+    labelText: "COMUNICADO OFICIAL",
+  },
 };
 
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
@@ -61,10 +94,18 @@ function wrapMultilineText(ctx: CanvasRenderingContext2D, text: string, maxW: nu
   return result;
 }
 
-function drawContainedImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
+function drawContainedImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+) {
   const r = img.naturalWidth / img.naturalHeight;
   const boxR = w / h;
-  let iw = w, ih = h;
+  let iw = w,
+    ih = h;
   if (r > boxR) {
     ih = w / r;
   } else {
@@ -75,7 +116,14 @@ function drawContainedImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement
   ctx.drawImage(img, ix, iy, iw, ih);
 }
 
-function drawImageFrame(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
+function drawImageFrame(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+) {
   ctx.save();
   // Outer Premium Glass Shadow
   ctx.shadowColor = "rgba(0,0,0,0.85)";
@@ -91,7 +139,7 @@ function drawImageFrame(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x:
   ctx.save();
   rr(ctx, x, y, w, h, 20);
   ctx.clip();
-  
+
   // Draw contained image centered
   drawContainedImage(ctx, img, x, y, w, h);
   ctx.restore();
@@ -111,7 +159,8 @@ export function drawMultiusos(
   img1: HTMLImageElement | null,
   img2: HTMLImageElement | null,
   imgJugador: HTMLImageElement | null = null,
-  xuntaIsLeft: boolean = true
+  // Se conserva por firma: la cabecera con los logos la pinta ya el generador.
+  _xuntaIsLeft: boolean = true,
 ) {
   const { categoria, multiusosTema, multiusosTitulo, multiusosTexto, showAssets = true } = f;
   const theme = THEME_STYLES[multiusosTema] || THEME_STYLES.formal;
@@ -175,7 +224,7 @@ export function drawMultiusos(
     const PHOTO_W = CW * 0.45;
     const PHOTO_X = CL;
     const PHOTO_START_Y = 320;
-    
+
     // Sombra trasera para que destaque
     ctx.fillStyle = "rgba(0,0,0,0.55)";
     ctx.fillRect(PHOTO_X, PHOTO_START_Y - 20, PHOTO_W, H - PHOTO_START_Y + 20);
@@ -183,14 +232,14 @@ export function drawMultiusos(
     const zoom = f.jugadorZoom || 1.0;
     const iAR = imgJugador.naturalWidth / imgJugador.naturalHeight;
     const tAR = PHOTO_W / (H - PHOTO_START_Y);
-    
+
     let sw_base, sh_base;
-    if (iAR > tAR) { 
-      sh_base = imgJugador.naturalHeight; 
-      sw_base = sh_base * tAR; 
-    } else { 
-      sw_base = imgJugador.naturalWidth; 
-      sh_base = sw_base / tAR; 
+    if (iAR > tAR) {
+      sh_base = imgJugador.naturalHeight;
+      sw_base = sh_base * tAR;
+    } else {
+      sw_base = imgJugador.naturalWidth;
+      sh_base = sw_base / tAR;
     }
 
     const sw = sw_base / zoom;
@@ -199,18 +248,18 @@ export function drawMultiusos(
     const yOff = f.jugadorYOffset ?? 0.5;
     const sx = (imgJugador.naturalWidth - sw) * xOff;
     const sy = (imgJugador.naturalHeight - sh) * yOff;
-    
+
     ctx.save();
     ctx.beginPath();
-    ctx.rect(PHOTO_X, PHOTO_START_Y, PHOTO_W, H - PHOTO_START_Y); 
+    ctx.rect(PHOTO_X, PHOTO_START_Y, PHOTO_W, H - PHOTO_START_Y);
     ctx.clip();
-    ctx.drawImage(imgJugador, sx, sy, sw, sh, PHOTO_X, PHOTO_START_Y, PHOTO_W, H - PHOTO_START_Y); 
+    ctx.drawImage(imgJugador, sx, sy, sw, sh, PHOTO_X, PHOTO_START_Y, PHOTO_W, H - PHOTO_START_Y);
     ctx.restore();
 
     // Dibujar texto a la derecha
     const textStartX = PHOTO_X + PHOTO_W + 30;
     const maxTextW = CW - PHOTO_W - 30;
-    
+
     ctx.save();
     ctx.font = `600 28px 'Nunito', sans-serif`;
     ctx.fillStyle = "#f4f4f5";
@@ -222,8 +271,8 @@ export function drawMultiusos(
     const lines = wrapMultilineText(ctx, multiusosTexto || "", maxTextW);
     const lineHeight = 28 * 1.35;
     const totalTextH = lines.length * lineHeight;
-    
-    const textStartY = PHOTO_START_Y + ((H - PHOTO_START_Y) - totalTextH) / 2;
+
+    const textStartY = PHOTO_START_Y + (H - PHOTO_START_Y - totalTextH) / 2;
     lines.forEach((line, idx) => {
       ctx.fillText(line, textStartX + maxTextW / 2, textStartY + idx * lineHeight);
     });
@@ -233,7 +282,7 @@ export function drawMultiusos(
 
   // Si no hay jugador, layout normal centrado
   const maxTextW = CW * 0.92;
-  
+
   // Set text configuration
   ctx.save();
   const fontSize = hasImages ? 30 : 36;
@@ -267,7 +316,7 @@ export function drawMultiusos(
       const frameW = (CW - 40) / 2;
       const frameH = Math.min(imgAreaH, 540);
       const startY = imgAreaTop + (imgAreaH - frameH) / 2;
-      
+
       drawImageFrame(ctx, img1, CL, startY, frameW, frameH);
       drawImageFrame(ctx, img2, CR - frameW, startY, frameW, frameH);
     } else {

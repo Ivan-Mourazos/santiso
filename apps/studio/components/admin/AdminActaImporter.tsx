@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { cargarPantallaActa, guardarActa } from "@/lib/server/acciones/actas";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
@@ -290,43 +290,49 @@ export default function AdminActaImporter({ showToast, showConfirm }: AdminActaI
   }, [categoria, competicionesCatalog]);
 
   useEffect(() => {
-    if (!selectedCompetitionId) return;
-    fetchBaseData();
-  }, [categoria, selectedCompetitionId]);
-
-  useEffect(() => {
     if (!detectedMeta || !matches.length) return;
     const found = matches.find((m) => String(m.jornada?.numero) === String(detectedMeta.jornada));
     if (found) setSelectedMatchId(found.id);
   }, [matches, detectedMeta]);
 
-  async function fetchBaseData() {
+  // Si la carga falla, se dice y se suelta la pantalla: antes se quedaba en «Cargando…».
+  const fetchBaseData = useCallback(async () => {
     setBusy(true);
     setBusyText("Cargando partidos y plantilla...");
+    try {
+      // Una sola acción: Next despacha las del cliente en serie, así que tres serían tres viajes.
+      // La temporada activa ya la filtra la consulta.
+      const { partidos, jugadores: plantilla, campos: sedes } = await cargarPantallaActa(categoria);
+      setJugadores(plantilla as unknown as ActaPlayerDb[]);
+      setCampos(sedes as ActaCampoDb[]);
 
-    // Una sola acción: Next despacha las del cliente en serie, así que tres serían tres viajes.
-    // La temporada activa ya la filtra la consulta.
-    const { partidos, jugadores: plantilla, campos: sedes } = await cargarPantallaActa(categoria);
-    setJugadores(plantilla as unknown as ActaPlayerDb[]);
-    setCampos(sedes as ActaCampoDb[]);
+      const data = (partidos as unknown as ActaMatchDb[]).filter((match) => {
+        const local = match.equipo_local?.nombre?.toLowerCase() || "";
+        const visitante = match.equipo_visitante?.nombre?.toLowerCase() || "";
+        const isSantiso = local.includes("santiso") || visitante.includes("santiso");
+        const sameCompetition =
+          !selectedCompetitionId ||
+          match.competicion_id === selectedCompetitionId ||
+          match.jornada?.competicion_id === selectedCompetitionId;
+        return isSantiso && sameCompetition;
+      });
+      setMatches(data);
+      setSelectedMatchId((current) =>
+        data.some((match) => match.id === current) ? current : data[0]?.id || "",
+      );
+    } catch (error) {
+      console.error(error);
+      showToast("No se pudieron cargar partidos y plantilla. Comprueba la conexión.", "error");
+    } finally {
+      setBusy(false);
+    }
+  }, [categoria, selectedCompetitionId, showToast]);
 
-    const data = (partidos as unknown as ActaMatchDb[]).filter((match) => {
-      const local = match.equipo_local?.nombre?.toLowerCase() || "";
-      const visitante = match.equipo_visitante?.nombre?.toLowerCase() || "";
-      const isSantiso = local.includes("santiso") || visitante.includes("santiso");
-      const sameCompetition =
-        !selectedCompetitionId ||
-        match.competicion_id === selectedCompetitionId ||
-        match.jornada?.competicion_id === selectedCompetitionId;
-      return isSantiso && sameCompetition;
-    });
-    setMatches(data);
-    setSelectedMatchId((current) =>
-      data.some((match) => match.id === current) ? current : data[0]?.id || "",
-    );
-
-    setBusy(false);
-  }
+  useEffect(() => {
+    if (!selectedCompetitionId) return;
+    const id = window.setTimeout(() => void fetchBaseData(), 0);
+    return () => window.clearTimeout(id);
+  }, [selectedCompetitionId, fetchBaseData]);
 
   /**
    * La ficha en PDF ya trae jornada, equipos y competición: se lee en local y no hace falta

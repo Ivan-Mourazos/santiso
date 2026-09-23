@@ -59,3 +59,18 @@ for (const ancho of [360, 1280]) {
     expect(desborda).toBe(false);
   });
 }
+
+test("la clasificación en modo manual se dibuja sin errores", async ({ page }) => {
+  const errores: string[] = [];
+  page.on("pageerror", (error) => errores.push(error.message));
+  page.on("console", (mensaje) => {
+    if (mensaje.type() === "error") errores.push(mensaje.text());
+  });
+  await page.goto("/admin/carteles?plantilla=clasificacion");
+  await expect(lienzo(page)).toBeVisible({ timeout: 20000 });
+  // Hasta el arreglo, las filas manuales guardaban «puntos» y la plantilla leía «pts»: el
+  // dibujo reventaba con cada fila.
+  await page.getByRole("button", { name: /Manual/ }).click();
+  await page.waitForTimeout(2000);
+  expect(errores).toEqual([]);
+});

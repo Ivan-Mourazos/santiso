@@ -25,6 +25,9 @@ test("activar temporada exige confirmación y conserva la activa ante fallo", as
 test("crear temporada conserva nombre si falla y cabe en móvil", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/admin/temporadas");
+  // La lista también se carga con un POST: si se corta antes de que termine, la pantalla entra
+  // en error y deshabilita «Crear». Se espera a la lista primero.
+  await expect(page.getByText("Activa", { exact: true })).toBeVisible({ timeout: 30000 });
   const input = page.getByRole("textbox", { name: "Nombre de temporada" });
   await input.fill("2098/99");
   await page.route("**/admin/temporadas**", (route) =>
