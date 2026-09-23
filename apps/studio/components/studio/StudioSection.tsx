@@ -10,7 +10,9 @@ import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
 const loading = () => <LoadingState title="Cargando sección…" />;
 const Calendar = dynamic(() => import("@/components/admin/AdminJornadas"), { loading });
-const League = dynamic(() => import("@/components/admin/AdminLeague"), { loading });
+const League = dynamic(() => import("@/components/admin/clasificacion/AdminClasificacion"), {
+  loading,
+});
 const Players = dynamic(() => import("@/components/admin/AdminPlayers"), { loading });
 const Staff = dynamic(() => import("@/components/admin/AdminStaff"), { loading });
 const Teams = dynamic(() => import("@/components/admin/AdminEquipos"), { loading });
@@ -52,7 +54,7 @@ export function StudioSection({ section }: { section: Seccion }) {
   return (
     <div key={key} className={styles.panel}>
       {section === "calendario" && <Calendar {...feedback} categoria={category} />}
-      {section === "clasificacion" && <League {...feedback} categoria={category} />}
+      {section === "clasificacion" && <League categoria={category} />}
       {section === "estadisticas" && <Stats showToast={showToast} categoria={squadCategory} />}
       {section === "jugadores" && <Players {...feedback} categoria={squadCategory} />}
       {section === "tecnicos" && <Staff {...feedback} tipo="Tecnico" categoria={squadCategory} />}
