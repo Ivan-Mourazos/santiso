@@ -1,4 +1,5 @@
 export const SECCIONES = [
+  { id: "jornada", label: "Jornada", grupo: "Competición" },
   { id: "calendario", label: "Calendario", grupo: "Competición" },
   { id: "clasificacion", label: "Clasificación", grupo: "Competición" },
   { id: "estadisticas", label: "Estadísticas", grupo: "Competición" },

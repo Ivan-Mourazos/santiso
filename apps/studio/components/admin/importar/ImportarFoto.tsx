@@ -34,6 +34,8 @@ import styles from "./Importar.module.css";
 interface Props {
   showToast: (msg: string, type?: "success" | "error") => void;
   showConfirm: (msg: string, onConfirm: () => void) => void;
+  /** Destino ya elegido al abrir, desde la pantalla «Jornada». Solo cuenta al montar. */
+  inicial?: { categoria?: string | null; competicionId?: string | null; jornadaId?: string | null };
 }
 
 interface JornadaCatalogo {
@@ -74,16 +76,18 @@ function construirFilas(
  * enlaza equipos y campos con el catálogo y se revisa antes de guardar. La lógica viene tal
  * cual de `AdminJornadaImporter` (hasta la 6H); el destino se ve ya antes de analizar.
  */
-export default function ImportarFoto({ showToast, showConfirm }: Props) {
-  const [categoria, setCategoria] = useState("Senior");
+export default function ImportarFoto({ showToast, showConfirm, inicial }: Props) {
+  const [categoria, setCategoria] = useState(
+    () => CATEGORIAS.find((c) => c === inicial?.categoria) ?? "Senior",
+  );
   const [catalogo, setCatalogo] = useState<CompetenciaRow[]>([]);
-  const [elegida, setElegida] = useState("");
+  const [elegida, setElegida] = useState(inicial?.competicionId ?? "");
   const [archivo, setArchivo] = useState<File | null>(null);
   const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
   const [equipos, setEquipos] = useState<ConNombre[]>([]);
   const [jornadas, setJornadas] = useState<JornadaCatalogo[]>([]);
   const [campos, setCampos] = useState<CampoCatalogo[]>([]);
-  const [jornadaId, setJornadaId] = useState("");
+  const [jornadaId, setJornadaId] = useState(inicial?.jornadaId ?? "");
   const [ocupada, setOcupada] = useState<string | null>("Cargando competiciones…");
   const [leido, setLeido] = useState<JornadaGeminiResponse | null>(null);
   const [filas, setFilas] = useState<FilaRevision[]>([]);

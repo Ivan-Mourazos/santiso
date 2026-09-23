@@ -68,10 +68,10 @@ export function StudioShell({ children }: { children: ReactNode }) {
       <aside className={styles.sidebar}>
         <Link
           className={styles.brand}
-          href={rutaSeccion("calendario", params)}
+          href={rutaSeccion("jornada", params)}
           onNavigate={(e) => {
             e.preventDefault();
-            if (section?.id !== "calendario") navigate(rutaSeccion("calendario", params));
+            if (section?.id !== "jornada") navigate(rutaSeccion("jornada", params));
           }}
         >
           <span>UD SANTISO</span>

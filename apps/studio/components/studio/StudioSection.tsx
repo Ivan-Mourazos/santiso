@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/foundation/Fields";
 import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
 const loading = () => <LoadingState title="Cargando sección…" />;
+const Week = dynamic(() => import("@/components/admin/jornada/AdminJornada"), { loading });
 const Calendar = dynamic(() => import("@/components/admin/calendario/AdminCalendario"), {
   loading,
 });
@@ -56,6 +57,7 @@ export function StudioSection({ section }: { section: Seccion }) {
   if (!hydrated) return <LoadingState title="Preparando sección…" />;
   return (
     <div key={key} className={styles.panel}>
+      {section === "jornada" && <Week />}
       {section === "calendario" && <Calendar {...feedback} categoria={category} />}
       {section === "clasificacion" && <League categoria={category} />}
       {section === "estadisticas" && <Stats showToast={showToast} categoria={squadCategory} />}
@@ -65,7 +67,13 @@ export function StudioSection({ section }: { section: Seccion }) {
       {section === "equipos" && <Teams {...feedback} categoria={category} />}
       {section === "patrocinadores" && <Sponsors {...feedback} />}
       {section === "temporadas" && <Seasons {...feedback} />}
-      {section === "carteles" && <Posters templateId={template} showToast={showToast} />}
+      {section === "carteles" && (
+        <Posters
+          templateId={template}
+          partidoInicial={params.get("partido")}
+          showToast={showToast}
+        />
+      )}
       {section === "actas" && (
         <>
           <div className={styles.modes}>
@@ -81,7 +89,14 @@ export function StudioSection({ section }: { section: Seccion }) {
           {params.get("modoActas") === "lote" ? (
             <Batch showToast={showToast} />
           ) : (
-            <Acta {...feedback} />
+            <Acta
+              {...feedback}
+              inicial={{
+                categoria: params.get("categoria"),
+                competicionId: params.get("competicion"),
+                partidoId: params.get("partido"),
+              }}
+            />
           )}
         </>
       )}
@@ -100,7 +115,14 @@ export function StudioSection({ section }: { section: Seccion }) {
           {params.get("origen") === "calendario" ? (
             <CalendarPdf {...feedback} />
           ) : (
-            <Matchday {...feedback} />
+            <Matchday
+              {...feedback}
+              inicial={{
+                categoria: params.get("categoria"),
+                competicionId: params.get("competicion"),
+                jornadaId: params.get("jornada"),
+              }}
+            />
           )}
         </>
       )}

@@ -137,8 +137,13 @@ const DEFAULT_FORM: FormState = {
   showAssets: true,
 };
 
-export function useCartelForm() {
+/**
+ * @param partidoInicial Partido que cargar al abrir (enlace desde «Jornada»). Solo se usa al
+ * montar: cambiarlo después no vuelve a cargar nada.
+ */
+export function useCartelForm(partidoInicial?: string | null) {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
+  const partidoInicialRef = useRef(partidoInicial);
   const [equipos, setEquipos] = useState<CartelTeam[]>([]);
   const [jugadores, setJugadores] = useState<CartelPlayer[]>([]);
   const [dbMatches, setDbMatches] = useState<SelectorMatch[]>([]);
@@ -413,6 +418,22 @@ export function useCartelForm() {
       setForm((p) => ({ ...p, titulares, suplentes }));
     });
   }
+
+  // Abierto desde «Jornada» con un partido: se carga como si se hubiera elegido a mano, en
+  // cuanto llega la lista y una sola vez.
+  useEffect(() => {
+    const id = partidoInicialRef.current;
+    if (!id) return;
+    const partido = dbMatches.find((m) => m.id === id);
+    if (!partido) return;
+    // La ref se vacía al cargar, no antes: en desarrollo React ejecuta el efecto dos veces y
+    // la primera pasada se cancela.
+    const temporizador = window.setTimeout(() => {
+      partidoInicialRef.current = null;
+      loadMatchFromDb(partido);
+    }, 0);
+    return () => window.clearTimeout(temporizador);
+  }, [dbMatches]);
 
   function handleMultiusosFile(num: 1 | 2, file: File | null) {
     const ref = num === 1 ? multiImg1Ref : multiImg2Ref;
