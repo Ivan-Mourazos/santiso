@@ -4,6 +4,7 @@
  */
 
 import type { CronEvent, Player, NextMatch } from "@/lib/cartel-draw";
+import type { DatosClasificacion } from "@/lib/cartel/templates/clasificacion";
 
 export const TEMPLATES = [
   { id: "partido",    label: "Cartel de Partido",  emoji: "⚽" },
@@ -63,7 +64,7 @@ export interface FormState {
   // Clasificación
   clasificacionTipo: "liga" | "copa";
   clasificacionNombre: string;
-  clasificacionData: any;
+  clasificacionData: DatosClasificacion;
 
   showAssets: boolean;
 }

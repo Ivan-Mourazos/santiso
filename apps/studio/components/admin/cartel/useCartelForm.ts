@@ -135,7 +135,7 @@ const DEFAULT_FORM: FormState = {
   multiusosImg2Url: "",
   clasificacionTipo: "liga",
   clasificacionNombre: "",
-  clasificacionData: null,
+  clasificacionData: [],
   showAssets: true,
 };
 

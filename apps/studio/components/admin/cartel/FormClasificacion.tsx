@@ -10,6 +10,7 @@ import { useCompeticiones } from "@/lib/useCompeticiones";
 import AvisoError from "../AvisoError";
 import { CategorySelector, SectionLabel, Toggle } from "./Common";
 import styles from "./Formularios.module.css";
+import type { FilaCartelClasificacion } from "@/lib/cartel/templates/clasificacion";
 import type { FormState } from "./types";
 
 interface Props {
@@ -66,35 +67,44 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.categoria, competicionId, competicionesEnCategoria, modoManual]);
 
+  /** En modo manual los datos son filas de tabla (en copa serían rondas). */
+  const filasManuales = (): FilaCartelClasificacion[] =>
+    Array.isArray(form.clasificacionData)
+      ? [...(form.clasificacionData as FilaCartelClasificacion[])]
+      : [];
+
   const handleAddManualTeam = () => {
-    const current = Array.isArray(form.clasificacionData) ? [...form.clasificacionData] : [];
+    const current = filasManuales();
     const nextPos = current.length + 1;
     current.push({
       id: `manual-${Date.now()}`,
       posicion: nextPos,
       nombre: nextPos === 1 ? "UD Santiso FC" : `Equipo ${nextPos}`,
       escudo_url: "",
-      puntos: 0,
+      pts: 0,
       pj: 0,
       pg: 0,
       pe: 0,
       pp: 0,
       gf: 0,
       gc: 0,
-      dif: 0,
     });
     set("clasificacionData", current);
   };
 
-  const handleUpdateManualTeam = (index: number, field: string, val: any) => {
-    const current = Array.isArray(form.clasificacionData) ? [...form.clasificacionData] : [];
+  const handleUpdateManualTeam = (
+    index: number,
+    field: "nombre" | "pts" | "pj",
+    val: string | number,
+  ) => {
+    const current = filasManuales();
     if (!current[index]) return;
     current[index] = { ...current[index], [field]: val };
     set("clasificacionData", current);
   };
 
   const handleRemoveManualTeam = (index: number) => {
-    const current = Array.isArray(form.clasificacionData) ? [...form.clasificacionData] : [];
+    const current = filasManuales();
     current.splice(index, 1);
     // Reindexar posiciones
     const reindexed = current.map((item, idx) => ({ ...item, posicion: idx + 1 }));
@@ -138,53 +148,49 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
                   id: "1",
                   posicion: 1,
                   nombre: "UD Santiso FC",
-                  puntos: 15,
+                  pts: 15,
                   pj: 5,
                   pg: 5,
                   pe: 0,
                   pp: 0,
                   gf: 14,
                   gc: 2,
-                  dif: 12,
                 },
                 {
                   id: "2",
                   posicion: 2,
                   nombre: "SD Dubra",
-                  puntos: 12,
+                  pts: 12,
                   pj: 5,
                   pg: 4,
                   pe: 0,
                   pp: 1,
                   gf: 10,
                   gc: 4,
-                  dif: 6,
                 },
                 {
                   id: "3",
                   posicion: 3,
                   nombre: "CF Dumbría",
-                  puntos: 10,
+                  pts: 10,
                   pj: 5,
                   pg: 3,
                   pe: 1,
                   pp: 1,
                   gf: 8,
                   gc: 5,
-                  dif: 3,
                 },
                 {
                   id: "4",
                   posicion: 4,
                   nombre: "Oroso CF",
-                  puntos: 9,
+                  pts: 9,
                   pj: 5,
                   pg: 3,
                   pe: 0,
                   pp: 2,
                   gf: 7,
                   gc: 6,
-                  dif: 1,
                 },
               ]);
             }
@@ -249,7 +255,7 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
               marginBottom: "1rem",
             }}
           >
-            {(form.clasificacionData || []).map((eq: any, idx: number) => (
+            {filasManuales().map((eq, idx) => (
               <div
                 key={eq.id || idx}
                 style={{
@@ -276,15 +282,17 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
                   type="text"
                   value={eq.nombre || ""}
                   onChange={(e) => handleUpdateManualTeam(idx, "nombre", e.target.value)}
+                  aria-label={`Nombre del equipo ${idx + 1}`}
                   placeholder="Nombre equipo"
                   style={{ padding: "0.3rem 0.5rem", fontSize: "0.75rem" }}
                 />
                 <input
                   type="number"
-                  value={eq.puntos ?? 0}
+                  value={eq.pts ?? 0}
                   onChange={(e) =>
-                    handleUpdateManualTeam(idx, "puntos", parseInt(e.target.value) || 0)
+                    handleUpdateManualTeam(idx, "pts", parseInt(e.target.value) || 0)
                   }
+                  aria-label={`Puntos del equipo ${idx + 1}`}
                   placeholder="Pts"
                   title="Puntos"
                   style={{ padding: "0.3rem 0.3rem", fontSize: "0.75rem", textAlign: "center" }}
@@ -293,6 +301,7 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
                   type="number"
                   value={eq.pj ?? 0}
                   onChange={(e) => handleUpdateManualTeam(idx, "pj", parseInt(e.target.value) || 0)}
+                  aria-label={`Partidos jugados del equipo ${idx + 1}`}
                   placeholder="PJ"
                   title="Partidos Jugados"
                   style={{ padding: "0.3rem 0.3rem", fontSize: "0.75rem", textAlign: "center" }}

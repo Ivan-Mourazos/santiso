@@ -3,16 +3,49 @@
  * Template: Clasificación Nativa
  */
 
-import { W, H, CX, CW, BAR_W, GOLD, CL, CR } from "../constants";
+import { W, H, CX, CW, GOLD, CL, CR } from "../constants";
 import { rr, fitFont } from "../primitives";
 import type { CartelAssets } from "../types";
-import { drawWatermark, drawTopLogos, drawSponsorBar, drawCategoryTint } from "../shared";
+import { drawWatermark, drawCategoryTint } from "../shared";
+
+/** Una fila de la tabla, venga de la base de datos o escrita a mano. */
+export interface FilaCartelClasificacion {
+  id?: string;
+  equipo_id?: string;
+  posicion?: number;
+  nombre: string;
+  escudo_url?: string | null;
+  pj: number;
+  pg: number;
+  pe: number;
+  pp: number;
+  gf: number;
+  gc: number;
+  pts: number;
+}
+
+/** Una ronda del cuadro de copa, con los datos que pinta la plantilla de cada partido. */
+export interface RondaCartel {
+  id: string;
+  numero: number;
+  nombre: string;
+  partidos: {
+    equipo_local?: { nombre?: string | null } | null;
+    equipo_visitante?: { nombre?: string | null } | null;
+    goles_local?: number | null;
+    goles_visitante?: number | null;
+    estado?: string | null;
+  }[];
+}
+
+/** Liga: filas de la tabla. Copa: rondas del cuadro. */
+export type DatosClasificacion = FilaCartelClasificacion[] | RondaCartel[];
 
 export interface ClasificacionForm {
   categoria: string;
   clasificacionTipo: "liga" | "copa";
   clasificacionNombre: string;
-  clasificacionData: any; // El array de equipos ordenado
+  clasificacionData: DatosClasificacion;
   showAssets?: boolean;
 }
 
@@ -94,7 +127,7 @@ export async function drawClasificacion(
     // Cargar escudos de forma síncrona aquí si es necesario, o asíncrona pero bloqueando (el GeneradorCartel ya lo envuelve en un efecto asíncrono)
     // Para simplificar, pintamos la tabla. Los escudos requieren await loadImg().
     // Lo haremos iterando:
-    const teamsToDraw = clasificacionData;
+    const teamsToDraw = clasificacionData as FilaCartelClasificacion[];
 
     const cols = {
       pos: CL + 20,
@@ -194,7 +227,7 @@ export async function drawClasificacion(
     }
   } else {
     // COPA: DIBUJAR BRACKET
-    const rounds = clasificacionData; // Asumimos que es el array de rondas
+    const rounds = clasificacionData as RondaCartel[];
     if (!rounds || rounds.length === 0) return;
 
     const numRounds = rounds.length;
