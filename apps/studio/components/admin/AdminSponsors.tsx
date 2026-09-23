@@ -11,10 +11,7 @@ import {
   borradorDePatrocinador,
   type FiltroPatrocinadores,
 } from "@/lib/patrocinadores/modelo";
-import {
-  cargarPatrocinadores,
-  guardarPatrocinador,
-} from "@/lib/server/acciones/patrocinadores";
+import { cargarPatrocinadores, guardarPatrocinador } from "@/lib/server/acciones/patrocinadores";
 import EditorPatrocinador from "./patrocinadores/EditorPatrocinador";
 import EliminarPatrocinador from "./patrocinadores/EliminarPatrocinador";
 import OrdenLogos from "./patrocinadores/OrdenLogos";
@@ -206,6 +203,7 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
                       <Button
                         variant="secondary"
                         onClick={() => abrirEditor(p)}
+                        size="sm"
                         aria-label={`Editar ${p.nombre}`}
                       >
                         Editar
@@ -213,6 +211,7 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
                       <Button
                         variant="secondary"
                         onClick={() => setDialogo({ tipo: "borrar", registro: p })}
+                        size="sm"
                         aria-label={`Eliminar ${p.nombre}`}
                       >
                         Eliminar

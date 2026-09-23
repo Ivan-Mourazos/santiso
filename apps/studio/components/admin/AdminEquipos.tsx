@@ -131,6 +131,7 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
       )}
       <div className={styles.vistas} role="group" aria-label="Vista de equipos">
         <Button
+          size="sm"
           variant={verBiblioteca ? "secondary" : "primary"}
           aria-pressed={!verBiblioteca}
           disabled={!competicion}
@@ -139,6 +140,7 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
           Esta competición
         </Button>
         <Button
+          size="sm"
           variant={verBiblioteca ? "primary" : "secondary"}
           aria-pressed={verBiblioteca}
           onClick={() => setBiblioteca(true)}
@@ -232,7 +234,14 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
                         {equipo.categoria} · {equipo.numeroPartidos}{" "}
                         {equipo.numeroPartidos === 1 ? "partido" : "partidos"}
                       </span>
-                      <span className={styles.detalle}>
+                      {/* Una línea: con varias competiciones la fila crecía sin control. Completo al
+                          pasar el ratón. */}
+                      <span
+                        className={`${styles.detalle} ${styles.unaLinea}`}
+                        title={equipo.competiciones
+                          .map((c) => `${c.nombre} · ${c.temporadaNombre}`)
+                          .join("; ")}
+                      >
                         {equipo.competiciones
                           .map((c) => `${c.nombre} · ${c.temporadaNombre}`)
                           .join("; ") || "Sin competiciones"}
@@ -242,6 +251,7 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
                       <div className={styles.acciones}>
                         <Button
                           variant="secondary"
+                          size="sm"
                           aria-label={`Editar a ${equipo.nombre}`}
                           onClick={() => setDialogo({ tipo: "editor", equipo })}
                         >
@@ -251,16 +261,18 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
                           equipo.competiciones.some((c) => c.id === competicion.id) && (
                             <Button
                               variant="secondary"
+                              size="sm"
                               aria-label={`Quitar ${equipo.nombre} de ${competicion.nombre}`}
                               onClick={() =>
                                 setDialogo({ tipo: "baja", id: equipo.id, modo: "quitar" })
                               }
                             >
-                              Quitar de competición
+                              Quitar
                             </Button>
                           )}
                         <Button
                           variant="secondary"
+                          size="sm"
                           aria-label={
                             equipo.numeroPartidos > 0
                               ? `Revisar baja de ${equipo.nombre}`
@@ -270,9 +282,7 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
                             setDialogo({ tipo: "baja", id: equipo.id, modo: "eliminar" })
                           }
                         >
-                          {equipo.numeroPartidos > 0
-                            ? "Baja e historial"
-                            : "Eliminar de biblioteca"}
+                          {equipo.numeroPartidos > 0 ? "Baja" : "Eliminar"}
                         </Button>
                       </div>
                     </td>

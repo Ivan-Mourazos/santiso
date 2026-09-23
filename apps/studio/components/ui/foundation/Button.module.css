@@ -10,6 +10,18 @@
   overflow-wrap: anywhere;
   transition: background-color var(--ui-duration) var(--ui-ease);
 }
+/* Acciones de fila: más bajas para que quepan más filas por pantalla. */
+.sm {
+  min-height: 36px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.875rem;
+}
+/* Con dedo, el objetivo vuelve a 44 px. */
+@media (pointer: coarse) {
+  .sm {
+    min-height: 44px;
+  }
+}
 .primary {
   background: var(--ui-accent);
   color: var(--ui-on-accent);
