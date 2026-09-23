@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef, type FormEvent } from "react";
+import { siguienteTemporada } from "@santiso/domain";
 import type { TemporadaDto } from "@/lib/dto";
 import {
   activarTemporada,
@@ -93,6 +94,9 @@ export default function AdminTemporadas({ showToast, showConfirm }: AdminTempora
     }
   }
 
+  // El ejemplo propone la que toca crear, no una que ya existe.
+  const propuesta = siguienteTemporada(temporadas.map((t) => t.nombre));
+
   return (
     <div className={styles.layout}>
       <section className={styles.list} aria-labelledby="temporadas-listado">
@@ -156,8 +160,8 @@ export default function AdminTemporadas({ showToast, showConfirm }: AdminTempora
         <form onSubmit={create} className={styles.form}>
           <Field
             label="Nombre de temporada"
-            hint="Formato: 2026/27"
-            placeholder="2026/27"
+            hint={`Formato: ${propuesta}`}
+            placeholder={propuesta}
             value={nombre}
             onChange={(event) => {
               setNombre(event.target.value);

@@ -238,6 +238,7 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
                       <Button
                         variant="secondary"
                         onClick={() => abrirEditor(m)}
+                        size="sm"
                         aria-label={`Editar a ${m.nombre} (${m.cargo})`}
                       >
                         Editar
@@ -245,6 +246,7 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
                       <Button
                         variant="secondary"
                         onClick={() => handleQuitar(m)}
+                        size="sm"
                         aria-label={`Quitar a ${m.nombre} de ${temporadaNombre}`}
                       >
                         Quitar

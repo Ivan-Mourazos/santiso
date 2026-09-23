@@ -311,6 +311,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
                       <Button
                         variant="secondary"
                         onClick={() => abrirEditor(j)}
+                        size="sm"
                         aria-label={`Editar a ${j.nombre}`}
                       >
                         Editar
@@ -318,6 +319,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
                       <Button
                         variant="secondary"
                         onClick={() => handleQuitar(j)}
+                        size="sm"
                         aria-label={`Quitar a ${j.nombre} de ${temporadaNombre}`}
                       >
                         Quitar
