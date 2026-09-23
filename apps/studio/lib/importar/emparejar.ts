@@ -1,8 +1,8 @@
 /**
  * Emparejado de lo que lee Gemini en una captura de jornada con el catálogo: equipos, campos y
- * fechas. Puro, sin React ni base de datos. Movido tal cual desde `AdminJornadaImporter` en la
- * 6H para poder probarlo.
+ * fechas. Puro, sin React ni base de datos. Sale de `AdminJornadaImporter` en la 6H.
  */
+import { claveEquipo, similitudTokens } from "@santiso/domain";
 
 export interface ConNombre {
   id: string;
@@ -12,24 +12,13 @@ export interface CampoCatalogo extends ConNombre {
   poblacion: string | null;
 }
 
-/** Sin tildes, en minúsculas y con solo letras y números separados por un espacio. */
-export function normalizarNombre(nombre: string) {
-  return nombre
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-/** Parecido entre 0 y 1: palabras en común sobre las del nombre más largo. */
+/**
+ * Parecido entre 0 y 1: palabras en común sobre las del nombre más largo, con las siglas unidas
+ * (`claveEquipo`). Antes se partían en letras sueltas y «UD Santiso FC» no casaba con
+ * «U.D. SANTISO F.C.», que es como lo escribe la federación.
+ */
 export function parecido(a: string, b: string) {
-  const ta = new Set(normalizarNombre(a).split(" ").filter(Boolean));
-  const tb = new Set(normalizarNombre(b).split(" ").filter(Boolean));
-  if (!ta.size || !tb.size) return 0;
-  let aciertos = 0;
-  for (const t of ta) if (tb.has(t)) aciertos++;
-  return aciertos / Math.max(ta.size, tb.size);
+  return similitudTokens(claveEquipo(a), claveEquipo(b));
 }
 
 /** El equipo del catálogo que mejor casa, si pasa de 0,4; si no, "". */

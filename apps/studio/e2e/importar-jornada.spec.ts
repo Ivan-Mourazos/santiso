@@ -106,9 +106,9 @@ for (const ancho of [360, 1280]) {
     await expect(descansa.getByRole("checkbox")).toHaveCount(0);
 
     await etiquetasAsociadas(page.getByRole("main"));
-    expect(
-      await page.evaluate(() => document.documentElement.scrollWidth),
-    ).toBeLessThanOrEqual(ancho);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      ancho,
+    );
     expect(acciones).toBe(0);
     expect(errores).toEqual([]);
     expect(externas).toEqual([]);

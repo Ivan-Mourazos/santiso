@@ -10,6 +10,8 @@ const equipos = [
 describe("parecido", () => {
   it("no distingue tildes, mayúsculas ni puntuación", () => {
     expect(parecido("U.D. SANTISO F.C.", "U.D. Santiso F.C.")).toBe(1);
+    // Las siglas casan escritas con puntos o sin ellos.
+    expect(parecido("ud santiso fc", "U.D. Santiso F.C.")).toBe(1);
     expect(parecido("Arzúa", "ARZUA")).toBe(1);
   });
   it("vacío no se parece a nada", () => {
@@ -20,6 +22,8 @@ describe("parecido", () => {
 describe("mejorEquipo", () => {
   it("enlaza el nombre leído con el del catálogo", () => {
     expect(mejorEquipo("U.D. SANTISO F.C.", equipos)).toBe("santiso");
+    expect(mejorEquipo("UD Santiso FC", equipos)).toBe("santiso");
+    expect(mejorEquipo("SD BANDEIRA", equipos)).toBe("bandeira");
     expect(mejorEquipo("S.D. BANDEIRA", equipos)).toBe("bandeira");
   });
   it("sin parecido suficiente no inventa: devuelve vacío", () => {

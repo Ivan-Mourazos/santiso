@@ -1,5 +1,5 @@
 import type { Calendario } from "@santiso/actas";
-import { claveNombre, similitudTokens } from "@santiso/domain";
+import { claveEquipo, similitudTokens } from "@santiso/domain";
 
 /**
  * El calendario federativo trae la temporada entera con los nombres tal y como los publica la
@@ -65,35 +65,6 @@ export interface PlanImportacion {
 /** Por debajo de esto no se considera el mismo equipo. */
 const PARECIDO_MINIMO = 0.6;
 
-/**
- * La federación escribe las siglas separadas (`U.D. SANTISO F.C.`) y el catálogo del club las
- * escribe juntas (`UD Santiso FC`). `claveNombre` deja `u d santiso f c` frente a
- * `ud santiso fc`, que no casan ni por igualdad ni por parecido. Aquí se unen las tiradas de
- * dos o más letras sueltas, que es justo lo que es una sigla; una letra sola se respeta,
- * porque distingue a un filial (`Atlético Eter B`).
- *
- * No sustituye a `claveNombre`: la columna `equipos.clave` se sigue calculando con aquella.
- * Esto es solo para emparejar.
- */
-function claveEquipo(nombre: string): string {
-  const partes = claveNombre(nombre).split(" ").filter(Boolean);
-  const salida: string[] = [];
-  let siglas: string[] = [];
-  const volcarSiglas = () => {
-    if (siglas.length >= 2) salida.push(siglas.join(""));
-    else salida.push(...siglas);
-    siglas = [];
-  };
-  for (const parte of partes) {
-    if (parte.length === 1) siglas.push(parte);
-    else {
-      volcarSiglas();
-      salida.push(parte);
-    }
-  }
-  volcarSiglas();
-  return salida.join(" ");
-}
 
 /**
  * Empareja un nombre del PDF con un equipo. Primero por clave idéntica, que es lo que ya usa

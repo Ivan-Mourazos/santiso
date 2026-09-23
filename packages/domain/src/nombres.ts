@@ -8,6 +8,35 @@ export function claveNombre(valor: string): string {
     .trim();
 }
 
+/**
+ * Clave para **emparejar** nombres de equipo. La federación escribe las siglas separadas
+ * (`U.D. SANTISO F.C.`) y el catálogo del club las escribe juntas (`UD Santiso FC`):
+ * `claveNombre` deja `u d santiso f c` frente a `ud santiso fc`, que no casan ni por igualdad
+ * ni por parecido. Aquí se unen las tiradas de dos o más letras sueltas, que es justo lo que es
+ * una sigla; una letra sola se respeta, porque distingue a un filial (`Atlético Eter B`).
+ *
+ * No sustituye a `claveNombre`: la columna `equipos.clave` se sigue calculando con aquella.
+ */
+export function claveEquipo(nombre: string): string {
+  const partes = claveNombre(nombre).split(" ").filter(Boolean);
+  const salida: string[] = [];
+  let siglas: string[] = [];
+  const volcarSiglas = () => {
+    if (siglas.length >= 2) salida.push(siglas.join(""));
+    else salida.push(...siglas);
+    siglas = [];
+  };
+  for (const parte of partes) {
+    if (parte.length === 1) siglas.push(parte);
+    else {
+      volcarSiglas();
+      salida.push(parte);
+    }
+  }
+  volcarSiglas();
+  return salida.join(" ");
+}
+
 /** Proporción (0..1) de tokens compartidos respecto al nombre con más tokens. */
 export function similitudTokens(a: string, b: string): number {
   const tokensA = new Set(claveNombre(a).split(" ").filter(Boolean));
