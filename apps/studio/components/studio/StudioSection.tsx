@@ -71,6 +71,7 @@ export function StudioSection({ section }: { section: Seccion }) {
         <Posters
           templateId={template}
           partidoInicial={params.get("partido")}
+          rellenarProximos={params.get("rellenar") === "1"}
           showToast={showToast}
         />
       )}

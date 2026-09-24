@@ -95,7 +95,7 @@ export default function AdminJornada() {
           Siguiente →
         </Button>
         <Link
-          href="/admin/carteles?plantilla=proximos"
+          href="/admin/carteles?plantilla=proximos&rellenar=1"
           className={`${boton.button} ${boton.primary} ${boton.sm}`}
         >
           Próximos encuentros

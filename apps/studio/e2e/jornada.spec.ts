@@ -29,6 +29,8 @@ test("las semanas se recorren y quedan en la URL", async ({ page }) => {
   await expect(titulo).toHaveText("Semana del 28 de septiembre al 4 de octubre");
   await expect(page).toHaveURL(/semana=2026-09-28/);
   await page.getByRole("button", { name: "← Anterior" }).click();
+  // Cada clic calcula desde la semana de la URL: esperar a que cambie antes del siguiente.
+  await expect(titulo).toHaveText("Semana del 21 al 27 de septiembre");
   await page.getByRole("button", { name: "← Anterior" }).click();
   await expect(titulo).toHaveText("Semana del 14 al 20 de septiembre");
 });

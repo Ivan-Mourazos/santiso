@@ -17,6 +17,7 @@ import type { Player, CronEvent, NextMatch } from "@/lib/cartel-draw";
 import { fetchCompeticiones, type CompetenciaRow } from "@/lib/lecturas-cliente";
 import { pickDefaultCompetitionId } from "@/lib/competition";
 import { matchDateInput, matchTimeInput } from "./matchDateTime";
+import { CATEGORIAS_PROXIMOS, huecoProximo } from "@/lib/jornada/proximos";
 interface CartelPlayer {
   id: string;
   nombre: string;
@@ -78,18 +79,6 @@ function mkEvent(): CronEvent {
     jugador: "",
   };
 }
-function mkMatch(): NextMatch {
-  return {
-    rival: "",
-    rivalEscudoUrl: "",
-    fecha: "",
-    hora: "18:00",
-    categoria: "Senior",
-    lugar: "",
-    santisoSide: "right",
-  };
-}
-
 function toCartelPlayer(player: CartelPlayer): Player {
   return {
     id: uuidv4(),
@@ -117,7 +106,7 @@ const DEFAULT_FORM: FormState = {
   rivalSponsor: "",
   events: [],
   categoriasText: "SENIOR – VETERANOS",
-  matches: Array.from({ length: 3 }, mkMatch),
+  matches: CATEGORIAS_PROXIMOS.map(huecoProximo),
   jugadorFotoUrl: "",
   jugadorXOffset: 0.5,
   jugadorYOffset: 0.5,

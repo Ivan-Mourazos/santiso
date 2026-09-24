@@ -74,3 +74,28 @@ test("la clasificación en modo manual se dibuja sin errores", async ({ page }) 
   await page.waitForTimeout(2000);
   expect(errores).toEqual([]);
 });
+
+test("«Próximos encuentros» tiene dos huecos y desde Jornada se rellena solo", async ({ page }) => {
+  await page.goto("/admin/carteles?plantilla=proximos");
+  await expect(page.getByLabel("Rival del partido 2", { exact: true })).toBeVisible({
+    timeout: 20000,
+  });
+  await expect(page.getByLabel("Rival del partido 3", { exact: true })).toHaveCount(0);
+
+  await page.goto("/admin/jornada");
+  await page.getByRole("link", { name: "Próximos encuentros" }).click();
+  await expect(page).toHaveURL(/plantilla=proximos&rellenar=1/);
+  // Con partidos pendientes, el primer hueco trae rival; si no, avisa de por qué.
+  const rival = page.getByLabel("Rival del partido 1", { exact: true });
+  await expect
+    .poll(
+      async () =>
+        (await rival.inputValue()) !== "" ||
+        (await page
+          .getByRole("status")
+          .filter({ hasText: /partidos pendientes/ })
+          .count()) > 0,
+      { timeout: 30000 },
+    )
+    .toBe(true);
+});

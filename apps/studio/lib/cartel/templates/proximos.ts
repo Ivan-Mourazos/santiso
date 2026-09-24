@@ -39,14 +39,18 @@ export function drawProximos(
   ctx.fillText("PRÓXIMOS ENCONTROS", CX, 296);
 
   // ── Filas (tiles) con centrado dinámico ─────────────────────────────────────
-  // Mostramos los slots configurados (hasta 3)
-  const activeMatches = matches.slice(0, 3);
+  // Hasta 2 partidos (sénior y veteranos). Un hueco sin rival es una categoría que descansa y
+  // no se dibuja; si ninguno tiene rival, se ven los huecos vacíos mientras se rellena.
+  const conRival = matches.filter((m) => (m.rival || "").trim());
+  const activeMatches = (conRival.length ? conRival : matches).slice(0, 2);
   const n = Math.max(activeMatches.length, 1);
+  // Con menos partidos, tiles más grandes para ocupar el espacio.
+  const s = n <= 2 ? 1.3 : 1;
 
   const headerEnd = 340;
   const footerStart = 1150;
   const availableH = footerStart - headerEnd;
-  const rowH = Math.min(255, availableH / n);
+  const rowH = Math.min(255 * s, availableH / n);
   const blockH = n * rowH;
   const startY = headerEnd + (availableH - blockH) / 2;
 
@@ -71,16 +75,16 @@ export function drawProximos(
     const timePart = (m.hora || "").trim();
     const meta = [catLabel, datePart, timePart ? `${timePart}H` : ""].filter(Boolean).join("   ·   ");
     ctx.fillStyle = accent;
-    ctx.font = `800 17px ${FONT_DISPLAY}`;
+    ctx.font = `800 ${Math.round(17 * s)}px ${FONT_DISPLAY}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
-    ctx.fillText(meta, CX, cardY + 34);
+    ctx.fillText(meta, CX, cardY + 34 * s);
 
     // Escudos
-    const ssX = m.santisoSide === "left" ? CX - 180 : CX + 180;
-    const rivX = m.santisoSide === "left" ? CX + 180 : CX - 180;
-    const sSize = 98;
-    const shieldY = midY + 16;
+    const ssX = m.santisoSide === "left" ? CX - 180 * s : CX + 180 * s;
+    const rivX = m.santisoSide === "left" ? CX + 180 * s : CX - 180 * s;
+    const sSize = Math.round(98 * s);
+    const shieldY = midY + 16 * s;
 
     if (imgSantiso) drawShield(ctx, imgSantiso, ssX, shieldY, sSize, false, accent);
     else shieldPlaceholder(ctx, ssX, shieldY, sSize / 2);
@@ -89,25 +93,26 @@ export function drawProximos(
     else shieldPlaceholder(ctx, rivX, shieldY, sSize / 2);
 
     // VS en cápsula moderna
-    const vsW = 68, vsH = 46;
+    const vsW = 68 * s, vsH = 46 * s;
     ctx.fillStyle = accent;
-    rr(ctx, CX - vsW / 2, shieldY - vsH / 2, vsW, vsH, 16); ctx.fill();
+    rr(ctx, CX - vsW / 2, shieldY - vsH / 2, vsW, vsH, 16 * s); ctx.fill();
     ctx.fillStyle = "#000";
-    ctx.font = `900 22px ${FONT_DISPLAY}`;
+    ctx.font = `900 ${Math.round(22 * s)}px ${FONT_DISPLAY}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("VS", CX, shieldY + 1);
 
     // Nombres
     ctx.textBaseline = "alphabetic";
-    ctx.font = `800 16px ${FONT_DISPLAY}`;
+    const nameSize = Math.round(16 * s);
+    ctx.font = `800 ${nameSize}px ${FONT_DISPLAY}`;
     ctx.fillStyle = "#fff";
     const sName = getSantisoName(m.categoria || "").toUpperCase();
     const rName = (m.rival || "RIVAL").toUpperCase();
-    fitFont(ctx, sName, 190, 16, 12, "800", FONT_DISPLAY);
-    ctx.fillText(sName, ssX, shieldY + sSize / 2 + 24);
-    fitFont(ctx, rName, 190, 16, 12, "800", FONT_DISPLAY);
-    ctx.fillText(rName, rivX, shieldY + sSize / 2 + 24);
+    fitFont(ctx, sName, 190 * s, nameSize, 12, "800", FONT_DISPLAY);
+    ctx.fillText(sName, ssX, shieldY + sSize / 2 + 24 * s);
+    fitFont(ctx, rName, 190 * s, nameSize, 12, "800", FONT_DISPLAY);
+    ctx.fillText(rName, rivX, shieldY + sSize / 2 + 24 * s);
   });
 
   drawSponsorBar(ctx, assets.sponsors);

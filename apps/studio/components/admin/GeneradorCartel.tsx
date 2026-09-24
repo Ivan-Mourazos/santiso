@@ -48,10 +48,17 @@ interface Props {
   templateId?: string;
   /** Partido que cargar al abrir, desde la pantalla «Jornada». */
   partidoInicial?: string | null;
+  /** «Próximos encuentros» abierto desde «Jornada»: se rellena solo. */
+  rellenarProximos?: boolean;
   showToast: (msg: string, type?: "success" | "error") => void;
 }
 
-export default function GeneradorCartel({ templateId, partidoInicial, showToast }: Props) {
+export default function GeneradorCartel({
+  templateId,
+  partidoInicial,
+  rellenarProximos = false,
+  showToast,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawVersionRef = useRef(0);
 
@@ -386,6 +393,7 @@ export default function GeneradorCartel({ templateId, partidoInicial, showToast 
               handleMatchRivalFile={handleMatchRivalFile}
               equipos={equipos}
               dbMatches={dbMatches}
+              rellenarAlAbrir={rellenarProximos}
             />
           )}
           {tipo === "noso11" && (

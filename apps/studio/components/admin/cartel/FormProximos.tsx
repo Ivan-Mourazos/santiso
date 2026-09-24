@@ -3,13 +3,13 @@
  * Form panel for the "Próximos Encontros" template.
  */
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select } from "@/components/ui/foundation/Fields";
 import type { NextMatch } from "@/lib/cartel-draw";
+import { elegirProximos } from "@/lib/jornada/proximos";
 import { SectionLabel, Toggle, type SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
-import { matchDateInput, matchTimeInput } from "./matchDateTime";
 import type { FormState } from "./types";
 
 function normalizeText(value: string) {
@@ -28,19 +28,6 @@ function categoriaKey(value: string) {
   return normalized.slice(0, 3);
 }
 
-function isSantisoTeam(team?: { nombre?: string | null } | null) {
-  return normalizeText(team?.nombre || "").includes("santiso");
-}
-
-function isPendingMatch(match: SelectorMatch) {
-  const estado = normalizeText(match.estado || "programado");
-  return !["finalizado", "cancelado", "aplazado"].includes(estado);
-}
-
-function getMatchTime(match: SelectorMatch) {
-  return match.fecha ? new Date(match.fecha).getTime() : Number.POSITIVE_INFINITY;
-}
-
 interface Props {
   form: FormState;
   set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
@@ -48,6 +35,8 @@ interface Props {
   handleMatchRivalFile?: (i: number, file: File | null) => void;
   equipos: { id: string; nombre: string; escudo_url: string; categoria?: string }[];
   dbMatches: SelectorMatch[];
+  /** Abierto desde «Jornada»: rellena solo en cuanto llega la lista, una vez. */
+  rellenarAlAbrir?: boolean;
 }
 
 export const FormProximos: React.FC<Props> = ({
@@ -57,91 +46,52 @@ export const FormProximos: React.FC<Props> = ({
   handleMatchRivalFile,
   equipos,
   dbMatches,
+  rellenarAlAbrir = false,
 }) => {
+  const [aviso, setAviso] = useState("");
+  const pendienteRef = useRef(rellenarAlAbrir);
+
   const handleAutoFill = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Solo partidos del Santiso pendientes. Si no, puede coger otro partido de la liga.
-    const allUpcomingSantiso = [...dbMatches]
-      .filter((m) => {
-        if (!m.fecha || !isPendingMatch(m)) return false;
-        if (!isSantisoTeam(m.equipo_local) && !isSantisoTeam(m.equipo_visitante)) return false;
-        const matchDate = new Date(m.fecha);
-        if (Number.isNaN(matchDate.getTime())) return false;
-        return matchDate.getTime() >= today.getTime();
-      })
-      .sort((a, b) => getMatchTime(a) - getMatchTime(b));
-
-    if (allUpcomingSantiso.length === 0) return;
-
-    // Ventana máxima de 6 días desde el primer partido para asegurar que solo
-    // autocompletamos partidos de la MISMA jornada (si un equipo descansa, no coge el de la semana que viene).
-    const earliestMatchTime = getMatchTime(allUpcomingSantiso[0]);
-    const maxWindowTime = earliestMatchTime + 6 * 24 * 60 * 60 * 1000;
-
-    const currentMatchdayMatches = allUpcomingSantiso.filter(
-      (m) => getMatchTime(m) <= maxWindowTime,
-    );
-
-    // Buscar el más próximo de cada categoría del club.
-    const cats = ["Senior", "Veteranos"];
-    const selectedMatches: SelectorMatch[] = [];
-
-    cats.forEach((cat) => {
-      const match = currentMatchdayMatches.find(
-        (m) => categoriaKey(m.categoria || "") === categoriaKey(cat),
-      );
-      if (match) selectedMatches.push(match);
-    });
-
-    // Si no hay 3 categorías con partido, rellena con otros próximos del Santiso de la misma jornada.
-    if (selectedMatches.length < 3) {
-      currentMatchdayMatches.forEach((m) => {
-        if (selectedMatches.length < 3 && !selectedMatches.find((sm) => sm.id === m.id)) {
-          selectedMatches.push(m);
-        }
-      });
+    const elegidos = elegirProximos(dbMatches, new Date());
+    const conRival = elegidos.filter((m) => m.rival).length;
+    if (conRival === 0) {
+      setAviso("No hay partidos pendientes del Santiso con fecha. Revisa las horas en Calendario.");
+      return;
     }
-
-    // 4. Ordenar los elegidos por fecha para que el cartel sea cronológico
-    selectedMatches.sort((a, b) => getMatchTime(a) - getMatchTime(b));
-
-    // 5. Rellenar los 3 slots
-    const newMatches: NextMatch[] = Array.from({ length: 3 }, () => ({
-      rival: "",
-      rivalEscudoUrl: "",
-      fecha: "",
-      hora: "18:00",
-      categoria: "Senior",
-      lugar: "",
-      santisoSide: "right",
-    }));
-
-    selectedMatches.forEach((match, index) => {
-      const isSantisoLocal = isSantisoTeam(match.equipo_local);
-      const rival = isSantisoLocal ? match.equipo_visitante : match.equipo_local;
-      newMatches[index] = {
-        rival: rival?.nombre || "",
-        rivalEscudoUrl: rival?.escudo_url || "",
-        fecha: matchDateInput(match.fecha),
-        hora: matchTimeInput(match.fecha),
-        categoria: match.categoria || "Senior",
-        lugar: match.campo?.nombre || match.lugar || "",
-        santisoSide: isSantisoLocal ? "left" : "right",
-      };
-    });
-
-    set("matches", newMatches);
+    setAviso(
+      conRival < elegidos.length
+        ? "Solo juega una categoría esta jornada: el otro hueco queda vacío y no sale en el cartel."
+        : "",
+    );
+    set("matches", elegidos);
   };
+
+  // La ref se vacía al rellenar, no antes: en desarrollo React ejecuta el efecto dos veces.
+  useEffect(() => {
+    if (!pendienteRef.current || dbMatches.length === 0) return;
+    const temporizador = window.setTimeout(() => {
+      pendienteRef.current = false;
+      handleAutoFill();
+    }, 0);
+    return () => window.clearTimeout(temporizador);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al llegar la lista
+  }, [dbMatches]);
 
   return (
     <>
       <div className={styles.desdeLiga}>
         <h4 className={styles.seccion}>Autocompletar desde la liga</h4>
-        <Button onClick={handleAutoFill}>Rellenar con los 3 próximos partidos</Button>
+        <Button onClick={handleAutoFill}>Rellenar con los partidos de esta jornada</Button>
+        {aviso && (
+          <p role="status" className={styles.nota}>
+            {aviso}
+          </p>
+        )}
       </div>
-      <SectionLabel>Configurar los 3 partidos</SectionLabel>
+      <SectionLabel>Sénior y veteranos</SectionLabel>
+      <p className={styles.nota}>
+        Un partido sin rival no sale en el cartel: déjalo vacío si esa categoría descansa.
+      </p>
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {form.matches.map((m, i) => (
           <div key={i} className={styles.tarjetaPartido}>
