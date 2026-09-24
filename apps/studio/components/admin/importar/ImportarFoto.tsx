@@ -1,5 +1,6 @@
 "use client";
 
+import { fechaHoraDePartido } from "@santiso/domain";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   JornadaGeminiResponse,
@@ -54,6 +55,13 @@ function construirFilas(
     const campoId = mejorCampo(p.campoNombre || "", p.campoPoblacion || "", campos);
     let fecha = normalizarFecha(p.fecha || "");
     if (fecha && p.hora) fecha = `${fecha}T${p.hora}`;
+    // «7:00» o «19.00h» tal como los lee la foto pasan a «07:00» y «19:00». Si no se entiende,
+    // se deja el texto para corregirlo a mano: al guardar se rechaza, nunca se cambia la hora.
+    try {
+      fecha = fechaHoraDePartido(fecha) ?? "";
+    } catch {
+      /* se queda como vino */
+    }
     return {
       key: `fila-${i}`,
       extracted: p,

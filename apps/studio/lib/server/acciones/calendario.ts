@@ -1,7 +1,7 @@
 "use server";
 
 import { schema } from "@santiso/db";
-import { ESTADOS_PARTIDO, esValorDe } from "@santiso/domain";
+import { ESTADOS_PARTIDO, esValorDe, fechaHoraDePartido } from "@santiso/domain";
 import { and, eq, or } from "drizzle-orm";
 import type { JornadaDto, PantallaCalendario, PartidoDto } from "@/lib/dto";
 import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
@@ -18,6 +18,15 @@ import {
 import { listarCampos } from "@/lib/server/consultas/campos";
 import { equiposDeCompeticion } from "@/lib/server/consultas/equipos";
 import { obtenerDb } from "@/lib/server/db";
+
+/** Toda fecha de partido entra por aquí: hora de pared sin zona, o un error que se enseña. */
+function leerFecha(valor: string): Resultado<string | null> {
+  try {
+    return exito(fechaHoraDePartido(valor));
+  } catch (error) {
+    return fallo(error instanceof Error ? error.message : "Fecha u hora no válida.");
+  }
+}
 
 /** Partidos de una jornada suelta, para los consumidores que no cargan la pantalla entera. */
 export async function cargarPartidosDeJornada(jornadaId: string): Promise<PartidoDto[]> {
@@ -129,6 +138,8 @@ export async function crearPartido(entrada: {
   if (equipoLocalId === equipoVisitanteId) {
     return fallo("Un equipo no puede jugar contra sí mismo.");
   }
+  const fecha = leerFecha(entrada.fecha);
+  if (!fecha.ok) return fecha;
 
   const { db } = await obtenerDb();
   const enJornada = await db
@@ -150,7 +161,7 @@ export async function crearPartido(entrada: {
         jornadaId,
         equipoLocalId,
         equipoVisitanteId,
-        fecha: entrada.fecha.trim() || null,
+        fecha: fecha.datos,
         campoId: entrada.campoId.trim() || null,
       })
       .returning(COLUMNAS_PARTIDO);
@@ -199,6 +210,9 @@ export async function guardarPartidoDeJornada(entrada: {
     }
   }
 
+  const fecha = leerFecha(entrada.fecha);
+  if (!fecha.ok) return fecha;
+
   let campoId = entrada.campoId.trim() || null;
   if (!campoId && entrada.campoNombre.trim()) {
     const campo = await asegurarCampo(entrada.campoNombre, entrada.campoPoblacion);
@@ -223,7 +237,7 @@ export async function guardarPartidoDeJornada(entrada: {
       golesLocal,
       golesVisitante,
       estado: golesLocal === null ? ("programado" as const) : ("finalizado" as const),
-      fecha: entrada.fecha.trim() || null,
+      fecha: fecha.datos,
       ...(campoId ? { campoId } : {}),
     };
 
@@ -304,12 +318,11 @@ export async function cambiarEstadoPartido(id: string, estado: string): Promise<
 }
 
 export async function cambiarFechaPartido(id: string, fecha: string): Promise<Resultado<null>> {
+  const leida = leerFecha(fecha);
+  if (!leida.ok) return leida;
   const { db } = await obtenerDb();
   const resultado = await capturar("No se pudo cambiar la fecha del partido.", async () => {
-    await db
-      .update(schema.partidos)
-      .set({ fecha: fecha.trim() || null })
-      .where(eq(schema.partidos.id, id));
+    await db.update(schema.partidos).set({ fecha: leida.datos }).where(eq(schema.partidos.id, id));
     return null;
   });
   return resultado.ok ? exito(null) : resultado;
