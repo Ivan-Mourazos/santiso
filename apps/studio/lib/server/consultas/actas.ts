@@ -3,6 +3,7 @@ import { schema } from "@santiso/db";
 import { normalizarCategoria } from "@santiso/domain";
 import { aliasedTable, and, asc, desc, eq, sql } from "drizzle-orm";
 import type { PartidoActaDto } from "@/lib/dto";
+import { urlMedia } from "@/lib/media";
 import { temporadaActivaId } from "@/lib/server/consultas/temporadas";
 import { obtenerDb } from "@/lib/server/db";
 
@@ -37,6 +38,8 @@ export async function partidosParaActa(categoria?: string): Promise<PartidoActaD
       campoId: schema.partidos.campoId,
       nombreLocal: local.nombre,
       nombreVisitante: visitante.nombre,
+      escudoLocal: local.escudo,
+      escudoVisitante: visitante.escudo,
       jornadaNumero: schema.jornadas.numero,
       campoNombre: schema.campos.nombre,
       campoPoblacion: schema.campos.poblacion,
@@ -62,8 +65,15 @@ export async function partidosParaActa(categoria?: string): Promise<PartidoActaD
     estado: f.estado,
     fecha: f.fecha,
     campo_id: f.campoId,
-    equipo_local: { nombre: f.nombreLocal },
-    equipo_visitante: { nombre: f.nombreVisitante },
+    // Con escudo: los carteles («Próximos encuentros», «Partido») lo toman de aquí.
+    equipo_local: {
+      nombre: f.nombreLocal,
+      escudo_url: f.escudoLocal ? urlMedia(f.escudoLocal) : null,
+    },
+    equipo_visitante: {
+      nombre: f.nombreVisitante,
+      escudo_url: f.escudoVisitante ? urlMedia(f.escudoVisitante) : null,
+    },
     jornada: { numero: f.jornadaNumero, competicion_id: f.competicionId },
     campo: f.campoNombre ? { nombre: f.campoNombre, poblacion: f.campoPoblacion } : null,
   }));
