@@ -178,27 +178,32 @@ test("los accesos a temporadas y competiciones llevan a su pantalla", async ({ p
   );
 });
 
-test("«Partidos del Santiso» lista la temporada entera y guarda la hora", async ({ page }) => {
-  await abrir(page);
-  await page.getByRole("button", { name: "Partidos del Santiso" }).click();
-  await expect(page).toHaveURL(/vista=santiso/);
-  const lista = page.getByRole("region", { name: "Partidos del Santiso" });
-  const fila = lista.getByRole("region", { name: "Norte Calendario - Sur Calendario" });
-  await expect(fila).toBeVisible({ timeout: 30000 });
-  await expect(fila.getByText("Jornada 1", { exact: true })).toBeVisible();
-  // Solo los del club: el partido de Leste y Oeste no sale.
-  await expect(lista.getByRole("region", { name: /Leste Calendario/ })).toHaveCount(0);
+test.describe("con la hora de Madrid", () => {
+  // La prueba corre en la zona del club y guarda una hora de invierno (tras el 25/10) para
+  // comprobar que el cambio de hora no la mueve.
+  test.use({ timezoneId: "Europe/Madrid" });
+  test("«Partidos del Santiso» lista la temporada entera y guarda la hora", async ({ page }) => {
+    await abrir(page);
+    await page.getByRole("button", { name: "Partidos del Santiso" }).click();
+    await expect(page).toHaveURL(/vista=santiso/);
+    const lista = page.getByRole("region", { name: "Partidos del Santiso" });
+    const fila = lista.getByRole("region", { name: "Norte Calendario - Sur Calendario" });
+    await expect(fila).toBeVisible({ timeout: 30000 });
+    await expect(fila.getByText("Jornada 1", { exact: true })).toBeVisible();
+    // Solo los del club: el partido de Leste y Oeste no sale.
+    await expect(lista.getByRole("region", { name: /Leste Calendario/ })).toHaveCount(0);
 
-  await fila.getByLabel("Fecha y hora", { exact: true }).fill("2026-10-04T12:30");
-  await fila.getByRole("button", { name: "Guardar", exact: true }).click();
-  await expect(page.getByText("Cambios guardados")).toBeVisible();
+    await fila.getByLabel("Fecha y hora", { exact: true }).fill("2026-11-15T19:00");
+    await fila.getByRole("button", { name: "Guardar", exact: true }).click();
+    await expect(page.getByText("Cambios guardados")).toBeVisible();
 
-  await page.reload();
-  const recargada = page
-    .getByRole("region", { name: "Partidos del Santiso" })
-    .getByRole("region", { name: "Norte Calendario - Sur Calendario" });
-  await expect(recargada.getByLabel("Fecha y hora", { exact: true })).toHaveValue(
-    "2026-10-04T12:30",
-    { timeout: 30000 },
-  );
+    await page.reload();
+    const recargada = page
+      .getByRole("region", { name: "Partidos del Santiso" })
+      .getByRole("region", { name: "Norte Calendario - Sur Calendario" });
+    await expect(recargada.getByLabel("Fecha y hora", { exact: true })).toHaveValue(
+      "2026-11-15T19:00",
+      { timeout: 30000 },
+    );
+  });
 });

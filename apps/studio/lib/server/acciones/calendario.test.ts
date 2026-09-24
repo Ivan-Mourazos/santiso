@@ -357,4 +357,34 @@ describe("acciones de calendario", () => {
     });
     expect(pantalla.campos.map((c) => c.nombre)).toEqual(["A Carballeira"]);
   });
+
+  it("la hora que se guarda es la que se lee, antes y después del cambio de hora", async () => {
+    const { acciones, competicionId, idDe } = await entorno();
+    const jornadaId = await conJornada(acciones, competicionId);
+    const partido = await acciones.crearPartido({
+      jornadaId,
+      equipoLocalId: idDe("Alfa"),
+      equipoVisitanteId: idDe("Beta"),
+      fecha: "2026-09-26T19:00",
+      campoId: "",
+    });
+    if (!partido.ok) throw new Error("sin partido");
+    const leida = async () =>
+      (await acciones.cargarPantallaCalendario(competicionId, jornadaId)).partidos[0]?.fecha;
+    expect(await leida()).toBe("2026-09-26T19:00");
+
+    // Tras el 25/10 (horario de invierno) y en la hora que se repite ese día.
+    for (const valor of ["2026-11-15T19:00", "2026-10-25T02:30"]) {
+      await acciones.cambiarFechaPartido(partido.datos.id, valor);
+      expect(await leida()).toBe(valor);
+    }
+    // Escrita a mano, se normaliza sin moverla.
+    await acciones.cambiarFechaPartido(partido.datos.id, "2026-11-15T7:00");
+    expect(await leida()).toBe("2026-11-15T07:00");
+
+    // Con zona no entra: no se guarda nada y la de antes sigue igual.
+    const conZona = await acciones.cambiarFechaPartido(partido.datos.id, "2026-11-15T19:00Z");
+    expect(conZona.ok).toBe(false);
+    expect(await leida()).toBe("2026-11-15T07:00");
+  });
 });
