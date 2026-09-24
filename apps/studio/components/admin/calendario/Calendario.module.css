@@ -240,3 +240,12 @@
 .vacio {
   margin-top: var(--ui-space-3, 0.75rem);
 }
+
+.contextoFila {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-accent, #facc15);
+}

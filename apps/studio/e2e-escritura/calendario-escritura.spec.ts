@@ -108,9 +108,12 @@ test("crear una jornada y marcar y quitar un descanso", async ({ page }) => {
   await confirmar(page);
   await expect(page.getByText("Descanso eliminado")).toBeVisible();
   await abrir(page, "Jornada 2");
+  // Vuelve a ofrecerse en el desplegable, pero ya no figura como descanso.
   await expect(
-    page.getByRole("region", { name: "Descansos" }).getByText("Norte Calendario"),
-  ).toHaveCount(0);
+    page
+      .getByRole("region", { name: "Descansos" })
+      .getByText("Ningún equipo descansa en esta jornada."),
+  ).toBeVisible();
 });
 
 test("crear en lote las jornadas que faltan", async ({ page }) => {
@@ -172,5 +175,30 @@ test("los accesos a temporadas y competiciones llevan a su pantalla", async ({ p
   await expect(page.getByRole("link", { name: "Gestionar competiciones" })).toHaveAttribute(
     "href",
     /\/admin\/equipos/,
+  );
+});
+
+test("«Partidos del Santiso» lista la temporada entera y guarda la hora", async ({ page }) => {
+  await abrir(page);
+  await page.getByRole("button", { name: "Partidos del Santiso" }).click();
+  await expect(page).toHaveURL(/vista=santiso/);
+  const lista = page.getByRole("region", { name: "Partidos del Santiso" });
+  const fila = lista.getByRole("region", { name: "Norte Calendario - Sur Calendario" });
+  await expect(fila).toBeVisible({ timeout: 30000 });
+  await expect(fila.getByText("Jornada 1", { exact: true })).toBeVisible();
+  // Solo los del club: el partido de Leste y Oeste no sale.
+  await expect(lista.getByRole("region", { name: /Leste Calendario/ })).toHaveCount(0);
+
+  await fila.getByLabel("Fecha y hora", { exact: true }).fill("2026-10-04T12:30");
+  await fila.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(page.getByText("Cambios guardados")).toBeVisible();
+
+  await page.reload();
+  const recargada = page
+    .getByRole("region", { name: "Partidos del Santiso" })
+    .getByRole("region", { name: "Norte Calendario - Sur Calendario" });
+  await expect(recargada.getByLabel("Fecha y hora", { exact: true })).toHaveValue(
+    "2026-10-04T12:30",
+    { timeout: 30000 },
   );
 });

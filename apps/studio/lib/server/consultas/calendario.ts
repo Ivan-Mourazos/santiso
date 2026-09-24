@@ -1,6 +1,6 @@
 import "server-only";
 import { schema } from "@santiso/db";
-import { asc, eq } from "drizzle-orm";
+import { aliasedTable, and, asc, eq, or } from "drizzle-orm";
 import type { DescansoDto, JornadaDto, PartidoDto } from "@/lib/dto";
 import { obtenerDb } from "@/lib/server/db";
 
@@ -83,6 +83,32 @@ export async function listarPartidos(jornadaId: string): Promise<PartidoDto[]> {
     .from(schema.partidos)
     .where(eq(schema.partidos.jornadaId, jornadaId))
     .orderBy(asc(schema.partidos.fecha));
+  return filas.map(aPartidoDto);
+}
+
+/**
+ * Los partidos del club en una competición, de toda la temporada, por jornada y fecha: la vista
+ * «Partidos del Santiso» del calendario, para corregir horas y campos sin ir jornada a jornada.
+ */
+export async function listarPartidosPropiosDeCompeticion(
+  competicionId: string,
+): Promise<PartidoDto[]> {
+  const local = aliasedTable(schema.equipos, "local");
+  const visitante = aliasedTable(schema.equipos, "visitante");
+  const { db } = await obtenerDb();
+  const filas = await db
+    .select(COLUMNAS_PARTIDO)
+    .from(schema.partidos)
+    .innerJoin(schema.jornadas, eq(schema.jornadas.id, schema.partidos.jornadaId))
+    .innerJoin(local, eq(local.id, schema.partidos.equipoLocalId))
+    .innerJoin(visitante, eq(visitante.id, schema.partidos.equipoVisitanteId))
+    .where(
+      and(
+        eq(schema.jornadas.competicionId, competicionId),
+        or(eq(local.esPropio, true), eq(visitante.esPropio, true)),
+      ),
+    )
+    .orderBy(asc(schema.jornadas.numero), asc(schema.partidos.fecha));
   return filas.map(aPartidoDto);
 }
 

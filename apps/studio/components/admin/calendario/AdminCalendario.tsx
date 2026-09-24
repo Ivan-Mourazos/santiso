@@ -96,19 +96,41 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
               </option>
             ))}
           </Select>
-          <Select
-            label="Jornada"
-            value={c.selectedJornada ?? ""}
-            onChange={(e) => c.setSelectedJornada(e.target.value || null)}
-            disabled={c.jornadas.length === 0}
+          {c.vista === "jornada" && (
+            <Select
+              label="Jornada"
+              value={c.selectedJornada ?? ""}
+              onChange={(e) => c.setSelectedJornada(e.target.value || null)}
+              disabled={c.jornadas.length === 0}
+            >
+              {c.jornadas.length === 0 && <option value="">Sin jornadas</option>}
+              {c.jornadas.map((j) => (
+                <option key={j.id} value={j.id}>
+                  {nombreJornada(j)}
+                </option>
+              ))}
+            </Select>
+          )}
+        </div>
+
+        {/* Para corregir horas y campos de toda la temporada sin ir jornada a jornada. */}
+        <div className={styles.acciones} role="group" aria-label="Qué partidos">
+          <Button
+            size="sm"
+            variant={c.vista === "jornada" ? "primary" : "secondary"}
+            aria-pressed={c.vista === "jornada"}
+            onClick={() => c.setVista("jornada")}
           >
-            {c.jornadas.length === 0 && <option value="">Sin jornadas</option>}
-            {c.jornadas.map((j) => (
-              <option key={j.id} value={j.id}>
-                {nombreJornada(j)}
-              </option>
-            ))}
-          </Select>
+            Por jornada
+          </Button>
+          <Button
+            size="sm"
+            variant={c.vista === "santiso" ? "primary" : "secondary"}
+            aria-pressed={c.vista === "santiso"}
+            onClick={() => c.setVista("santiso")}
+          >
+            Partidos del Santiso
+          </Button>
         </div>
 
         <div className={styles.acciones}>
@@ -126,7 +148,7 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
           >
             Zonas de la clasificación
           </Button>
-          {jornada && (
+          {jornada && c.vista === "jornada" && (
             <Button variant="danger" onClick={borrarLaJornada}>
               Borrar jornada
             </Button>
@@ -147,6 +169,41 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
         />
       ) : c.cargando && c.jornadas.length === 0 ? (
         <LoadingState title="Cargando jornadas…" />
+      ) : c.vista === "santiso" ? (
+        <section className={styles.bloque} aria-label="Partidos del Santiso">
+          <h3 className={styles.titulo}>Partidos del Santiso · toda la temporada</h3>
+          <p className={`${styles.nota} ${styles.vacio}`}>
+            Corrige aquí fecha, hora y campo de cada partido; cada fila se guarda con su botón.
+          </p>
+          {c.partidos.length === 0 ? (
+            <p className={`${styles.nota} ${styles.vacio}`}>
+              El Santiso no tiene partidos en esta competición.
+            </p>
+          ) : (
+            <div className={`${styles.partidos} ${styles.vacio}`}>
+              {c.partidos.map((p) => {
+                const suJornada = c.jornadas.find((j) => j.id === p.jornada_id);
+                return (
+                  <FilaPartido
+                    key={p.id}
+                    contexto={suJornada ? nombreJornada(suJornada) : undefined}
+                    partido={p}
+                    local={c.nombreEquipo(p.equipo_local_id)}
+                    visitante={c.nombreEquipo(p.equipo_visitante_id)}
+                    escudoLocal={c.escudoEquipo(p.equipo_local_id)}
+                    escudoVisitante={c.escudoEquipo(p.equipo_visitante_id)}
+                    campos={c.campos}
+                    conCambios={c.conCambios(p)}
+                    onEditar={(cambio) => c.editarPartido(p.id, cambio)}
+                    onRecargar={c.cargarPartidos}
+                    showToast={showToast}
+                    showConfirm={showConfirm}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </section>
       ) : !jornada ? (
         <EmptyState
           title="Esta competición todavía no tiene jornadas."
