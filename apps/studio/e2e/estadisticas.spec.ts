@@ -68,7 +68,19 @@ test("filtrar por competición reduce los totales y «Todas» los recupera", asy
 test("el buscador filtra por nombre sin tocar nada", async ({ page }) => {
   await abrir(page);
   const filas = tabla(page).locator("tbody tr");
-  const total = await filas.count();
+  // Contar cuando la tabla ya no cambia: al elegir temporada se ve un momento la anterior.
+  let total = -1;
+  await expect
+    .poll(
+      async () => {
+        const n = await filas.count();
+        const estable = n > 0 && n === total;
+        total = n;
+        return estable;
+      },
+      { intervals: [700], timeout: 30000 },
+    )
+    .toBe(true);
   await page.getByLabel("Buscar", { exact: true }).fill("zzz-nadie");
   await expect(page.getByText("Ningún jugador coincide con la búsqueda.")).toBeVisible();
   await page.getByRole("button", { name: "Quitar la búsqueda" }).click();

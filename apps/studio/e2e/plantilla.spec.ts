@@ -57,6 +57,8 @@ test("cerrar el editor con cambios pide descartarlos", async ({ page }) => {
   const temporada = page.getByLabel("Temporada", { exact: true });
   await expect(temporada).toBeVisible({ timeout: 20000 });
   await temporada.selectOption({ label: "2025/26" });
+  // Esperar a la lista de 2025/26: la de la temporada activa ya no está vacía.
+  await expect(page.getByRole("button", { name: /de 2025\/26$/ }).first()).toBeVisible();
   await page
     .getByRole("button", { name: /^Editar a / })
     .first()
@@ -84,6 +86,9 @@ for (const ancho of [360, 1280]) {
     await page.setViewportSize({ width: ancho, height: 900 });
     await page.goto("/admin/jugadores?categoria=Senior");
     await page.getByLabel("Temporada", { exact: true }).selectOption({ label: "2025/26" });
+    await expect(page.getByRole("button", { name: /de 2025\/26$/ }).first()).toBeVisible({
+      timeout: 20000,
+    });
     await expect(page.getByRole("table")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       ancho,
