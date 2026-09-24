@@ -126,6 +126,8 @@ async function sembrar() {
         nombre: `${punto} Calendario`,
         clave: claveNombre(`${punto} Calendario`),
         categoria: "Veteranos" as const,
+        // «Norte» hace de equipo del club: la vista «Partidos del Santiso» lo filtra por esto.
+        esPropio: punto === "Norte",
       })),
     )
     .returning();

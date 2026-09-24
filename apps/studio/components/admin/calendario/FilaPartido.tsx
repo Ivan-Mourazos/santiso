@@ -16,6 +16,8 @@ import { matchDateTimeLocalInput, matchLocalDateTimeToIso } from "../cartel/matc
 import styles from "./Calendario.module.css";
 
 interface Props {
+  /** Qué jornada es, cuando la lista mezcla varias (vista «Partidos del Santiso»). */
+  contexto?: string;
   partido: LeagueMatch;
   local: string;
   visitante: string;
@@ -46,6 +48,7 @@ const golesDelCampo = (texto: string): number | null => {
 
 /** Un partido de la jornada: marcador, campo, fecha y estado, con su «Guardar». */
 export default function FilaPartido({
+  contexto,
   partido: p,
   local,
   visitante,
@@ -121,6 +124,7 @@ export default function FilaPartido({
 
   return (
     <section className={styles.partido} aria-label={nombre} data-cambios={conCambios}>
+      {contexto && <p className={styles.contextoFila}>{contexto}</p>}
       <div className={styles.marcador}>
         <div className={styles.equipo}>
           <span>{local}</span>

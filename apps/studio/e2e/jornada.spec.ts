@@ -38,6 +38,11 @@ test("cada partido enlaza sus pantallas con el partido ya elegido", async ({ pag
   const senior = page.getByRole("region", { name: "Senior", exact: true });
   const partido = senior.getByRole("article").first();
   await expect(partido).toBeVisible({ timeout: 30000 });
+  // La hora se corrige en Calendario, con la jornada del partido ya elegida.
+  await expect(partido.getByRole("link", { name: "Cambiar fecha, hora o campo" })).toHaveAttribute(
+    "href",
+    /\/admin\/calendario\?categoria=Senior&competicion=[\w-]+&jornada=[\w-]+/,
+  );
   const cartel = partido.getByRole("link", { name: "Cartel de partido" });
   const href = (await cartel.getAttribute("href")) ?? "";
   expect(href).toMatch(/\/admin\/carteles\?plantilla=partido&partido=[\w-]+/);

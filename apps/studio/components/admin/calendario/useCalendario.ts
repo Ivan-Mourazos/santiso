@@ -13,6 +13,7 @@ import {
   type Team,
 } from "@/lib/lecturas-cliente";
 import { cargarPantallaCalendario } from "@/lib/server/acciones/calendario";
+import { cargarPartidosPropiosDeCompeticion } from "@/lib/server/acciones/clasificacion";
 import { resolveContextId, useCompeticiones } from "@/lib/useCompeticiones";
 
 /** Lo que se edita de un partido en su fila. */
@@ -59,12 +60,14 @@ export function useCalendario(categoria: string) {
     partidosActuales.current = partidos;
   }, [partidos]);
 
+  /** «jornada»: los partidos de una jornada. «santiso»: los del club en toda la competición. */
+  const vista: "jornada" | "santiso" = params.get("vista") === "santiso" ? "santiso" : "jornada";
   const requestedJornada = params.get("jornada");
   const selectedJornada =
     jornadasCompetition === selectedCompetitionId
       ? resolveContextId(requestedJornada, jornadas) || null
       : null;
-  const contextKey = `${selectedSeasonId}/${selectedCompetitionId}/${selectedJornada ?? ""}`;
+  const contextKey = `${vista}/${selectedSeasonId}/${selectedCompetitionId}/${vista === "santiso" ? "" : (selectedJornada ?? "")}`;
   const currentContext = useRef(contextKey);
   const currentCompetition = useRef(selectedCompetitionId);
   useEffect(() => {
@@ -129,12 +132,17 @@ export function useCalendario(categoria: string) {
   /** `guardadoId`: la fila que se acaba de guardar deja de ser borrador aunque siga cambiada. */
   const cargarPartidos = useCallback(
     async (guardadoId?: string) => {
-      if (!selectedJornada || !selectedCompetitionId) {
+      if (!selectedCompetitionId || (vista === "jornada" && !selectedJornada)) {
         setPartidos([]);
         return;
       }
       const clave = contextKey;
-      const { data } = await fetchMatchesForMatchday(selectedJornada);
+      const data =
+        vista === "santiso"
+          ? ((await cargarPartidosPropiosDeCompeticion(
+              selectedCompetitionId,
+            )) as unknown as LeagueMatch[])
+          : (await fetchMatchesForMatchday(selectedJornada!)).data;
       if (currentContext.current !== clave) return;
       const mismoContexto = contextoPartidos.current === clave;
       const borradores = new Map(
@@ -159,7 +167,7 @@ export function useCalendario(categoria: string) {
       setFirmas(originales.current);
       setPartidos(data.map((p) => borradores.get(p.id) ?? p));
     },
-    [selectedJornada, selectedCompetitionId, contextKey],
+    [selectedJornada, selectedCompetitionId, contextKey, vista],
   );
 
   // Las cargas se lanzan fuera del cuerpo del efecto: así el estado no cambia a mitad de render.
@@ -173,7 +181,10 @@ export function useCalendario(categoria: string) {
   }, [cargarJornadas]);
   useEffect(() => {
     const id = window.setTimeout(() => {
-      if (selectedJornada) {
+      if (vista === "santiso") {
+        void cargarPartidos();
+        setDescansos([]);
+      } else if (selectedJornada) {
         void cargarPartidos();
         void cargarDescansos();
       } else {
@@ -182,7 +193,7 @@ export function useCalendario(categoria: string) {
       }
     }, 0);
     return () => window.clearTimeout(id);
-  }, [selectedJornada, cargarPartidos, cargarDescansos]);
+  }, [vista, selectedJornada, cargarPartidos, cargarDescansos]);
 
   // Un partido puede enfrentar a un equipo que no está inscrito en la competición (amistosos,
   // cruces de copa): se completan para poder enseñar su nombre y escudo.
@@ -237,8 +248,15 @@ export function useCalendario(categoria: string) {
     return ids;
   }, [descansos, partidos]);
 
+  const setVista = useCallback(
+    (nueva: "jornada" | "santiso") => setParams({ vista: nueva === "santiso" ? "santiso" : null }),
+    [setParams],
+  );
+
   return {
     ...competiciones,
+    vista,
+    setVista,
     jornadas,
     equipos,
     campos,
