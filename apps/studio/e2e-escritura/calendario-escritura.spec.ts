@@ -108,9 +108,12 @@ test("crear una jornada y marcar y quitar un descanso", async ({ page }) => {
   await confirmar(page);
   await expect(page.getByText("Descanso eliminado")).toBeVisible();
   await abrir(page, "Jornada 2");
+  // Vuelve a ofrecerse en el desplegable, pero ya no figura como descanso.
   await expect(
-    page.getByRole("region", { name: "Descansos" }).getByText("Norte Calendario"),
-  ).toHaveCount(0);
+    page
+      .getByRole("region", { name: "Descansos" })
+      .getByText("Ningún equipo descansa en esta jornada."),
+  ).toBeVisible();
 });
 
 test("crear en lote las jornadas que faltan", async ({ page }) => {
