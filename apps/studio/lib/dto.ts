@@ -152,8 +152,8 @@ export interface PartidoActaDto {
   estado: string | null;
   fecha: string | null;
   campo_id: string | null;
-  equipo_local: { nombre: string | null } | null;
-  equipo_visitante: { nombre: string | null } | null;
+  equipo_local: { nombre: string | null; escudo_url?: string | null } | null;
+  equipo_visitante: { nombre: string | null; escudo_url?: string | null } | null;
   jornada: { numero: number | null; competicion_id: string | null } | null;
   campo: { nombre: string | null; poblacion: string | null } | null;
 }
