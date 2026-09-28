@@ -14,14 +14,16 @@ function jugadores(lineas: string[]): JugadorFicha[] {
 function equipo(items: readonly Fragmento[], fechaY: number): EquipoFicha {
   const titulo = ancla(items, "TITULARES");
   const nombres = filas(items.filter((i) => i.y > fechaY + 0.003 && i.y < titulo.y - 0.003));
-  if (nombres.length !== 1) throw new Error("Nombre de equipo ambiguo");
+  // Un nombre largo se parte en varias líneas («PREFABRICADOS FARO RODEIRO / VETERANS»): se
+  // juntan. Más de tres ya no es un nombre, es que la plantilla del PDF no es la esperada.
+  if (nombres.length < 1 || nombres.length > 3) throw new Error("Nombre de equipo ambiguo");
   const titulares = jugadores(seccion(items, "TITULARES", "SUPLENTES"));
   const suplentes = jugadores(seccion(items, "SUPLENTES", "CUERPO TÉCNICO"));
   if (!titulares.length) throw new Error("No se detectaron titulares");
   const dorsales = [...titulares, ...suplentes].map((j) => j.dorsal);
   if (new Set(dorsales).size !== dorsales.length)
     throw new Error("Dorsales duplicados en el mismo equipo");
-  return { nombre: exigir(nombres[0], "Equipo vacío"), titulares, suplentes };
+  return { nombre: exigir(nombres.join(" "), "Equipo vacío"), titulares, suplentes };
 }
 
 /** Reconoce las plantillas de una página de sénior y veteranos validadas con muestras. */

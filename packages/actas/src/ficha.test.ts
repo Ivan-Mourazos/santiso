@@ -87,3 +87,15 @@ it.each([[j1], [j2]])("no conserva ubicaciones reales en fixtures", (items) => {
   expect(f.campo).toBe("Campo de prueba");
   expect(f.poblacion).toBe("Localidad de prueba");
 });
+
+it("junta el nombre de equipo que la federación parte en dos líneas", () => {
+  // «PREFABRICADOS FARO RODEIRO / VETERANS» (veteranos, 26/09/2026): antes daba «ambiguo».
+  const local = j1.find((i) => i.texto === "EQUIPO LOCAL");
+  if (!local) throw new Error("falta el nombre local en la muestra");
+  const items = [
+    ...j1.filter((i) => i !== local),
+    { ...local, texto: "PREFABRICADOS FARO RODEIRO" },
+    { ...local, y: local.y + 0.012, texto: "VETERANS" },
+  ];
+  expect(parsearFicha(items).local.nombre).toBe("PREFABRICADOS FARO RODEIRO VETERANS");
+});
