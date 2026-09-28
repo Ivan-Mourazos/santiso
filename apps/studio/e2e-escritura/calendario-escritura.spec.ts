@@ -193,7 +193,11 @@ test.describe("con la hora de Madrid", () => {
     // Solo los del club: el partido de Leste y Oeste no sale.
     await expect(lista.getByRole("region", { name: /Leste Calendario/ })).toHaveCount(0);
 
-    await fila.getByLabel("Fecha y hora", { exact: true }).fill("2026-11-15T19:00");
+    const campoFecha = fila.getByLabel("Fecha y hora", { exact: true });
+    await campoFecha.fill("2026-11-15T19:00");
+    // Con la máquina cargada, pulsar «Guardar» antes de que el campo registre el valor guarda
+    // la fila sin cambios (y avisa de que se guardó): se espera a que el valor esté puesto.
+    await expect(campoFecha).toHaveValue("2026-11-15T19:00");
     await fila.getByRole("button", { name: "Guardar", exact: true }).click();
     await expect(page.getByText("Cambios guardados")).toBeVisible();
 

@@ -99,3 +99,26 @@ test("«Próximos encuentros» tiene dos huecos y desde Jornada se rellena solo"
     )
     .toBe(true);
 });
+
+test("el cartel nuevo (piloto) se previsualiza y se descarga en PNG a 2160×2700", async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  await page.goto("/admin/carteles?plantilla=partido");
+  const piloto = page.getByRole("region", { name: "Cartel nuevo (piloto)" });
+  await expect(piloto).toBeVisible({ timeout: 30000 });
+  await expect(piloto.locator("[data-vista-cartel] [data-cartel]")).toBeVisible();
+
+  await piloto.getByLabel("Composición", { exact: true }).selectOption("enfrentados");
+  await expect(piloto.locator("[data-cartel]")).toHaveClass(/enfrentados/);
+
+  const descarga = page.waitForEvent("download", { timeout: 90000 });
+  await piloto.getByRole("button", { name: "Descargar PNG" }).click();
+  const fichero = await (await descarga).createReadStream();
+  const trozos: Buffer[] = [];
+  for await (const trozo of fichero) trozos.push(trozo as Buffer);
+  const png = Buffer.concat(trozos);
+  // Firma PNG y medidas de la cabecera IHDR.
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([2160, 2700]);
+});

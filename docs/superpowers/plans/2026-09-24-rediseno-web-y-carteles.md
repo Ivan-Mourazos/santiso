@@ -13,6 +13,8 @@ Las capturas actuales de los 7 carteles están en `data/referencias/antes-fase-2
 
 ## Reglas del proyecto (obligatorias)
 
+- **Solo escritorio.** La web se usa desde un monitor pequeño (1280×720) en adelante; no se diseña ni se prueba en móvil. Las pruebas actuales «cabe a 360px» / «390» se sustituyen por 1280×720 cuando se rehaga cada pantalla, y los estilos solo para móvil (`pointer: coarse`, menús plegables) pueden retirarse.
+
 - **pnpm siempre**, nunca `npm`/`yarn`. `pnpm check` (typecheck + lint + formato + tests) es la puerta de cada commit.
 - **Next 16.3:** esta versión cambia APIs. Antes de escribir código de Next, lee la guía que toque en `node_modules/next/dist/docs/`.
 - **Drizzle 0.45:** solo el query builder core, nunca `db.query`. Cambios de esquema: `packages/db/src/schema` + `pnpm db:generate --name <cambio>` + pruebas en `packages/db/src/schema.test.ts`.
@@ -44,7 +46,7 @@ Las capturas actuales de los 7 carteles están en `data/referencias/antes-fase-2
 ## Objetivos
 
 1. **Un flujo guiado por la semana.** Abrir la app enseña qué toca hoy y lleva a hacerlo en el mínimo de pasos.
-2. **Un sistema visual propio, moderno y coherente** en toda la web, que funcione a 360 px y en escritorio.
+2. **Un sistema visual propio, moderno y coherente** en toda la web, **solo para escritorio**: desde un monitor pequeño (1280×720) en adelante. Decisión del usuario (28/09/2026): la web no se diseña para móvil. Los carteles sí, porque se ven en Instagram.
 3. **Un motor de carteles nuevo,** con composición dinámica, escudos protagonistas y formatos 4:5 y 9:16.
 4. **Sin regresiones funcionales:** todo lo que hoy se puede hacer se sigue pudiendo hacer, y las pruebas lo demuestran.
 
@@ -58,7 +60,7 @@ Las capturas actuales de los 7 carteles están en `data/referencias/antes-fase-2
 
 ## Fase R0 — Auditoría y dirección (1 sesión)
 
-- [ ] Recorrer las 15 secciones a 360 y 1280 px con los datos reales. Anotar en este documento, por sección:
+- [ ] Recorrer las 15 secciones a 1280×720 y 1920×1080 con los datos reales. Anotar en este documento, por sección:
   - Qué tarea resuelve.
   - Cuántos clics lleva la tarea típica.
   - Qué sobra.
@@ -81,11 +83,10 @@ Las capturas actuales de los 7 carteles están en `data/referencias/antes-fase-2
 **Tareas:**
 - [ ] Tokens: redefinir `--ui-*` (colores, espaciados, radios, sombras, tipografía) en un único fichero de tokens, con modo oscuro por defecto.
 - [ ] Revisar los componentes `foundation` con los tokens nuevos:
-  - Tamaños táctiles: 44 px en `pointer: coarse`.
   - Foco visible.
   - Estados de carga, vacío y error coherentes.
 - [ ] Borrar el CSS global que quede sin usar. Hoy `globals.css` tiene más de 1100 líneas heredadas.
-- [ ] **Pruebas:** e2e de solo lectura que recorran las secciones a 360 y 1280 px sin desbordes y sin peticiones a internet.
+- [ ] **Pruebas:** e2e de solo lectura que recorran las secciones a 1280×720 y 1920×1080 sin desbordes y sin peticiones a internet.
 
 ## Fase R2 — Flujo nuevo de la web
 
@@ -154,15 +155,25 @@ Hoy: cajas → dentro, escudos pequeños → alrededor, texto centrado → debaj
 - **Variedad controlada:** 2–3 **composiciones** por plantilla (por ejemplo «diagonal», «enfrentados», «escudo gigante») que se eligen en el Estudio. El mismo partido no siempre sale igual.
 - **Legibilidad primero:** contraste AA en todo texto sobre imagen o degradado, y nada importante a menos de 60 px del borde. Instagram recorta la vista previa 4:5 → 1:1 en la cuadrícula del perfil: el partido y la fecha tienen que leerse en el cuadrado central.
 
-### Motor
+### Motor (ya existe: piloto de Claude, 28/09/2026)
 
-El motor nuevo va en `lib/cartel2/`. El actual se mantiene hasta que el nuevo lo sustituya del todo.
+**Decisión del usuario:** los carteles se hacen en **HTML/CSS** y se exportan a PNG con **Chromium local** (Playwright), no en Canvas. Con eso hay diagonales, máscaras, mezclas, grano y tipografía grande con poco código, y más adelante vídeo.
 
-- `escena.ts`: el cartel se describe como **capas** (fondo, color, textura, escudos, tipografía, patrocinadores) con coordenadas relativas. Esto permite los formatos **4:5 (1080×1350)** y **9:16 (1080×1920, historias)** con la misma plantilla.
-- `color.ts`: el **color dominante y el secundario de un escudo**. Es una función pura sobre `ImageData`: cuantización, descartar transparentes, casi blancos y casi negros, y elegir por saturación y área. Tiene pruebas con imágenes generadas con `sharp`. Si no hay escudo o sale un gris, se usa el color de la categoría.
-- `recorte.ts`: la caja visible de un escudo, sin márgenes transparentes, para que todos se vean del mismo tamaño aunque el PNG traiga aire.
-- Fuentes: el motor espera a `document.fonts` y falla con un error claro si falta una fuente, en vez de dibujar con la de reserva.
-- **Determinismo:** el mismo formulario más los mismos ficheros dan el mismo PNG, lo que permite probarlo por huella. Las texturas pseudoaleatorias usan una semilla derivada del id del partido.
+Lo que hay en `main` y **hay que seguir como patrón**:
+
+| Pieza | Dónde | Qué hace |
+|---|---|---|
+| Modelo | `apps/studio/lib/cartel2/modelo.ts` | `DatosPartido`, `COMPOSICIONES`, `FORMATOS` (4:5 1080×1350, 9:16 1080×1920), `fechaCartel` (gallego), `datosDeFormulario` |
+| Color | `apps/studio/lib/cartel2/color.ts` | `colorDominante` sobre píxeles RGBA (puro, con pruebas); el club usa el verde de su bandera |
+| Fuentes | `apps/studio/components/cartel2/fuentes.ts` | Anton (display) y Barlow Condensed, locales con `next/font/local` |
+| Cartel | `apps/studio/components/cartel2/CartelPartido.tsx` + `.module.css` | Un marcado; cada composición (`diagonal`, `enfrentados`, `gigante`) es solo CSS. Vertical en % del alto para servir a los dos formatos |
+| Página de foto | `apps/studio/app/render/cartel/page.tsx` | Pinta lo que recibe por `window.__pintarCartel` y marca `data-listo` cuando fuentes e imágenes han cargado |
+| Exportación | `apps/studio/lib/server/cartel2/render.ts` + `app/api/carteles/png/route.ts` | Chromium reutilizado; fotografía `[data-cartel]` a ×2; valida la petición con zod |
+| Estudio (piloto) | `apps/studio/components/admin/cartel/PilotoPartido.tsx` | Vista previa escalada del mismo componente, selector de composición y formato, «Descargar PNG» |
+
+Muestras aprobadas del piloto: `data/referencias/piloto-carteles/` (no entra en git).
+
+**Para cada plantilla nueva:** su `Datos…` en `lib/cartel2/modelo.ts` (con prueba de la conversión desde el formulario), su componente y CSS en `components/cartel2/`, y un caso más en `PeticionCartel`, la página de foto y el esquema zod de la ruta. Nada de dibujar en Canvas.
 
 ### Plantillas nuevas
 
@@ -182,7 +193,7 @@ Los textos del cartel siguen en gallego («XORNADA», «PRÓXIMOS ENCONTROS», �
 
 ### Estudio
 
-- A la izquierda (arriba en el móvil), la vista previa grande. A la derecha, el formulario corto.
+- A la izquierda, la vista previa grande. A la derecha, el formulario corto.
 - Selector de composición y de formato (4:5 / 9:16).
 - «Descargar PNG» y «Copiar texto para Instagram»; este último ya existe para la clasificación y se extiende a todas.
 - Se abre siempre con los datos ya puestos desde Semana. Los parámetros actuales de URL se mantienen.
@@ -193,18 +204,18 @@ Es la otra lectura de «no estáticos». Consiste en exportar la escena en **ví
 
 ### Tareas R3
 
-- [ ] `lib/cartel2/` (escena, color, recorte y fuentes), con pruebas unitarias.
-- [ ] Plantilla `partido` nueva en 4:5 y 9:16, con 3 composiciones. **Enseñar al usuario los PNG y ajustar antes de seguir** con el resto.
-- [ ] Resto de plantillas.
+- [x] Motor HTML/CSS → PNG (`lib/cartel2/`, `components/cartel2/`, `/render/cartel`, `/api/carteles/png`), con pruebas. Hecho por Claude.
+- [x] Plantilla `partido` en 4:5 y 9:16 con 3 composiciones (piloto). Falta que el usuario elija la composición por defecto.
+- [ ] Resto de plantillas con el mismo patrón. Enseñar al usuario los PNG de cada una antes de darla por buena.
 - [ ] Estudio nuevo, que sustituye a `GeneradorCartel`.
 - [ ] Retirar el motor antiguo (`lib/cartel-draw.ts`, `lib/cartel/**`) cuando no quede ningún uso.
 
 ## Verificación de carteles
 
 Crea `apps/studio/e2e/huellas-carteles.spec.ts`: una prueba **de solo lectura** que se salta sin la variable `SANTISO_REFERENCIA_DIR`.
-- Abre cada plantilla con un **formulario fijo** (no con datos reales).
-- Espera a dos lecturas iguales del lienzo.
-- Guarda el PNG y el SHA-256 de cada una en esa carpeta.
+- Pide cada plantilla a `/api/carteles/png` con una **petición fija** (no con datos reales), en cada composición y formato.
+- Guarda el PNG y el SHA-256 de cada uno en esa carpeta.
+- La prueba e2e de `e2e/carteles.spec.ts` («el cartel nuevo (piloto)…») es el modelo: descarga el PNG y comprueba las medidas en la cabecera.
 
 Así:
 - Un cambio que **no** debe tocar el dibujo deja las huellas idénticas.
@@ -219,7 +230,7 @@ Antes de cada fusión que toque el motor, adjunta en el mensaje del commit qué 
 - **Con `pnpm dev` abierto** las e2e no arrancan su servidor. Hay dos opciones:
   - Pararlo.
   - Usar un `git worktree` aparte con `pnpm install --offline` para `e2e:escritura`, y una configuración temporal con `reuseExistingServer: true` para `e2e`. **Esa configuración no se commitea.**
-- Capturas a 360 y 1280 px de cada pantalla nueva, adjuntas en la conversación con el usuario.
+- Capturas a 1280×720 y 1920×1080 de cada pantalla nueva, adjuntas en la conversación con el usuario.
 
 ## Orden y esfuerzo estimado
 

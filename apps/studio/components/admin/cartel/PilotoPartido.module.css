@@ -1,0 +1,47 @@
+.piloto {
+  display: grid;
+  gap: var(--ui-space-3, 0.75rem);
+  margin-bottom: var(--ui-space-4, 1rem);
+  padding: var(--ui-space-4, 1rem);
+  border: 1px solid rgb(250 204 21 / 40%);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: rgb(250 204 21 / 4%);
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3, 0.75rem);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cabecera h3 {
+  margin: 0;
+}
+
+.cabecera p {
+  margin: 0.25rem 0 0;
+  color: var(--ui-muted);
+  font-size: 0.875rem;
+}
+
+.opciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--ui-space-3, 0.75rem);
+}
+
+.vista {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+.escalado {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
