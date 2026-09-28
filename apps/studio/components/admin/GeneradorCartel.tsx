@@ -36,6 +36,7 @@ import { FormPartido } from "./cartel/FormPartido";
 import { FormResumo } from "./cartel/FormResumo";
 import { FormCronoloxia } from "./cartel/FormCronoloxia";
 import { FormProximos } from "./cartel/FormProximos";
+import PilotoPartido from "./cartel/PilotoPartido";
 import { FormNoso11 } from "./cartel/FormNoso11";
 import { FormMultiusos } from "./cartel/FormMultiusos";
 import { FormClasificacion } from "./cartel/FormClasificacion";
@@ -472,6 +473,9 @@ export default function GeneradorCartel({
         </div>
 
         <div className={styles.previsualizacion}>
+          {tipo === "partido" && (
+            <PilotoPartido form={form} recursos={assetUrls} showToast={showToast} />
+          )}
           <div className={styles.marco}>
             <div className={styles.marcoCabecera}>
               <h3>Previsualización</h3>
