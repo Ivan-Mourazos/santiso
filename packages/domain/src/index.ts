@@ -4,6 +4,7 @@ export * from "./categorias";
 export * from "./clasificacion";
 export * from "./competiciones";
 export * from "./fechas";
+export * from "./normalizar";
 export * from "./nombres";
 export * from "./temporadas";
 export * from "./estadisticas-jugadores";
