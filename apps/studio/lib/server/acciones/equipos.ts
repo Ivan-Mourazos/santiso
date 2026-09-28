@@ -1,7 +1,12 @@
 "use server";
 
 import { schema } from "@santiso/db";
-import { claveNombre, esEquipoPropio, normalizarCategoria } from "@santiso/domain";
+import {
+  claveNombre,
+  esEquipoPropio,
+  normalizarCategoria,
+  normalizarNombreEquipo,
+} from "@santiso/domain";
 import { and, eq, or } from "drizzle-orm";
 import type { EquipoCatalogo } from "@/lib/equipos/modelo";
 import type { EquipoDto } from "@/lib/dto";
@@ -50,9 +55,9 @@ export async function cargarPantallaEquipos(
 /** Alta o edición de un equipo. `id` vacío es alta. `competicionId` lo inscribe tras guardarlo. */
 export async function guardarEquipo(formulario: FormData): Promise<Resultado<EquipoDto>> {
   const id = String(formulario.get("id") ?? "").trim();
-  const nombre = String(formulario.get("nombre") ?? "").trim();
+  const escrito = String(formulario.get("nombre") ?? "").trim();
   const competicionId = String(formulario.get("competicionId") ?? "").trim();
-  if (!nombre) return fallo("El nombre es obligatorio.", { nombre: "Obligatorio" });
+  if (!escrito) return fallo("El nombre es obligatorio.", { nombre: "Obligatorio" });
 
   let categoria: ReturnType<typeof normalizarCategoria>;
   try {
@@ -61,6 +66,8 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
     return fallo("Categoría desconocida.", { categoria: "No válida" });
   }
 
+  // Mismas reglas que el resto de la base: «MELIDE VETERANOS» se guarda como «Melide».
+  const nombre = normalizarNombreEquipo(escrito, categoria);
   const clave = claveNombre(nombre);
   const { db } = await obtenerDb();
   const [chocante] = await db

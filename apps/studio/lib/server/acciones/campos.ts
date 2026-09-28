@@ -1,7 +1,7 @@
 "use server";
 
 import { schema } from "@santiso/db";
-import { claveNombre } from "@santiso/domain";
+import { claveNombre, normalizarCampo } from "@santiso/domain";
 import { eq } from "drizzle-orm";
 import type { CampoDto } from "@/lib/dto";
 import { capturar, fallo, type Resultado } from "@/lib/resultado";
@@ -15,14 +15,17 @@ export async function cargarCampos(): Promise<Resultado<CampoDto[]>> {
 /**
  * Devuelve el campo con ese nombre, creándolo si no existe. Si el campo ya estaba pero sin
  * población y ahora llega una, la rellena; nunca sobrescribe una población ya registrada.
+ * El nombre se normaliza antes de buscar: «A Raña - Rodeiro» es el campo «A Raña (Rodeiro)».
  */
 export async function asegurarCampo(
   nombre: string,
   poblacion: string | null,
 ): Promise<Resultado<CampoDto>> {
-  const limpio = nombre.trim();
-  if (!limpio) return fallo("El nombre del campo es obligatorio.", { nombre: "Obligatorio" });
-  const poblacionLimpia = poblacion?.trim() || null;
+  if (!nombre.trim())
+    return fallo("El nombre del campo es obligatorio.", { nombre: "Obligatorio" });
+  const normalizado = normalizarCampo(nombre, poblacion);
+  const limpio = normalizado.nombre;
+  const poblacionLimpia = normalizado.poblacion;
 
   return capturar("No se pudo guardar el campo.", async () => {
     const { db } = await obtenerDb();

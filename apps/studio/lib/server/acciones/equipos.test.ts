@@ -50,6 +50,15 @@ describe("acciones de equipos", () => {
     vi.restoreAllMocks();
   });
 
+  it("guarda el nombre normalizado, como el resto de la base", async () => {
+    const { acciones } = await entorno();
+    expect(
+      await acciones.guardarEquipo(
+        formulario({ id: "", nombre: "MELIDE VETERANOS", categoria: "Veteranos" }),
+      ),
+    ).toMatchObject({ ok: true, datos: { nombre: "Melide" } });
+  });
+
   it("crea un equipo con su clave normalizada", async () => {
     const { acciones } = await entorno();
     expect(

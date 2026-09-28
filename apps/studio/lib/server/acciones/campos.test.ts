@@ -40,6 +40,18 @@ describe("acciones de campos", () => {
     expect(segundo.datos.id).toBe(primero.datos.id);
   });
 
+  it("el nombre de un acta («A Raña - Rodeiro») es el campo ya normalizado", async () => {
+    const { asegurarCampo } = await entorno();
+    const guardado = await asegurarCampo("A Raña", "Rodeiro");
+    const delActa = await asegurarCampo("A Raña - Rodeiro", "");
+    if (!guardado.ok || !delActa.ok) throw new Error("fallaron");
+    expect(delActa.datos).toEqual(guardado.datos);
+    expect(await asegurarCampo("Mpal Do Camballón", null)).toMatchObject({
+      ok: true,
+      datos: { nombre: "Municipal do Camballón" },
+    });
+  });
+
   it("rellena la población si el campo no la tenía", async () => {
     const { asegurarCampo } = await entorno();
     await asegurarCampo("A Carballeira", null);
