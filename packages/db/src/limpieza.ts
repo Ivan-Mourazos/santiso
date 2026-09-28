@@ -1,6 +1,11 @@
 import { existsSync, mkdirSync, renameSync } from "node:fs";
 import path from "node:path";
 import type { Client, InStatement, Transaction } from "@libsql/client";
+import {
+  normalizacionEnMarkdown,
+  normalizarEnTransaccion,
+  type InformeNormalizacion,
+} from "./normalizacion";
 
 /**
  * Retira una temporada entera de la base de datos: sus competiciones con todo lo que cuelga de
@@ -21,6 +26,18 @@ export interface InformeLimpieza {
   media: string[];
   /** Lo que queda de las demás temporadas: igual antes y después. */
   resto: Record<string, number>;
+  /** Solo con `normalizar`: textos corregidos tras la limpieza, en la misma transacción. */
+  normalizacion?: InformeNormalizacion;
+}
+
+export interface OpcionesLimpieza {
+  normalizar?: boolean;
+}
+
+async function todoEnTransaccion(tx: Ejecutor, temporada: string, opciones: OpcionesLimpieza) {
+  const informe = await limpiarEnTransaccion(tx, temporada);
+  if (opciones.normalizar) informe.normalizacion = await normalizarEnTransaccion(tx);
+  return informe;
 }
 
 type Ejecutor = Pick<Transaction, "execute">;
@@ -280,10 +297,11 @@ async function limpiarEnTransaccion(
 export async function ensayarLimpieza(
   cliente: Client,
   temporada: string,
+  opciones: OpcionesLimpieza = {},
 ): Promise<InformeLimpieza> {
   const tx = await cliente.transaction("write");
   try {
-    return await limpiarEnTransaccion(tx, temporada);
+    return await todoEnTransaccion(tx, temporada, opciones);
   } finally {
     await tx.rollback();
     tx.close();
@@ -299,11 +317,12 @@ export async function aplicarLimpieza(
   temporada: string,
   dirMedia: string,
   dirArchivoMedia: string,
+  opciones: OpcionesLimpieza = {},
 ): Promise<InformeLimpieza> {
   const tx = await cliente.transaction("write");
   let informe: InformeLimpieza;
   try {
-    informe = await limpiarEnTransaccion(tx, temporada);
+    informe = await todoEnTransaccion(tx, temporada, opciones);
     await tx.commit();
   } catch (error) {
     await tx.rollback();
@@ -352,5 +371,6 @@ export function informeEnMarkdown(informe: InformeLimpieza, aplicado: boolean): 
     "",
     ...Object.entries(informe.resto).map(([k, v]) => `- ${k}: ${v}`),
     "",
+    informe.normalizacion ? normalizacionEnMarkdown(informe.normalizacion) : "",
   ].join("\n");
 }

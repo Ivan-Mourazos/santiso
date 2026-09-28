@@ -8,10 +8,15 @@ import { DIR_BACKUPS, DIR_INFORMES, DIR_MEDIA, RUTA_BD, marcaFichero, urlArchivo
 /**
  * pnpm db:limpiar-temporada --temporada 2025/26            → ensayo: informe, sin cambios
  * pnpm db:limpiar-temporada --temporada 2025/26 --aplicar  → copia completa y limpieza
+ * Con `--normalizar`, además deja los textos uniformes (misma transacción, mismo informe).
  * Con `--aplicar`, `pnpm dev` debe estar parado: se mueven ficheros de media.
  */
 const { values } = parseArgs({
-  options: { temporada: { type: "string" }, aplicar: { type: "boolean", default: false } },
+  options: {
+    temporada: { type: "string" },
+    aplicar: { type: "boolean", default: false },
+    normalizar: { type: "boolean", default: false },
+  },
 });
 const temporada = values.temporada?.trim();
 if (!temporada) {
@@ -38,9 +43,10 @@ try {
       temporada,
       DIR_MEDIA,
       path.join(DIR_BACKUPS, `media-${sufijo}-${marca}`),
+      { normalizar: values.normalizar },
     );
   } else {
-    informe = await ensayarLimpieza(cliente, temporada);
+    informe = await ensayarLimpieza(cliente, temporada, { normalizar: values.normalizar });
   }
   mkdirSync(DIR_INFORMES, { recursive: true });
   const destino = path.join(
