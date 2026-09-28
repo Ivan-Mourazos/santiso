@@ -150,6 +150,93 @@ async function sembrar() {
     equipoVisitanteId: equiposCopa[1]!.id,
   });
 
+  // Historial (`historial-escritura.spec.ts`): 2025/26 jugada, con un equipo del club, dos
+  // rivales, una liga terminada y una eliminatoria, y goles de la plantilla de 2025/26. La base
+  // real ya no guarda temporadas pasadas: esto es lo que prueban Clasificación y Estadísticas.
+  // Orden alto para que la primera competición de 2025/26 siga siendo «Liga 25/26».
+  const [historica, eliminatoria] = await db
+    .insert(schema.competiciones)
+    .values([
+      { temporadaId: anterior!.id, categoria: "Senior", nombre: "Liga Histórica", orden: 8 },
+      {
+        temporadaId: anterior!.id,
+        categoria: "Senior",
+        nombre: "Copa Histórica",
+        formato: "eliminatoria",
+        orden: 9,
+      },
+    ])
+    .returning();
+  const [club, uno, dos] = await db
+    .insert(schema.equipos)
+    .values(
+      ["U.D. Santiso Ficticio", "Rival Uno Ficticio", "Rival Dos Ficticio"].map((nombre, i) => ({
+        nombre,
+        clave: claveNombre(nombre),
+        categoria: "Senior" as const,
+        esPropio: i === 0,
+      })),
+    )
+    .returning();
+  if (!historica || !eliminatoria || !club || !uno || !dos) throw new Error("Falta el historial");
+  await db.insert(schema.competicionEquipos).values(
+    [club, uno, dos].flatMap((e) => [
+      { equipoId: e.id, competicionId: historica.id },
+      { equipoId: e.id, competicionId: eliminatoria.id },
+    ]),
+  );
+  const jornadasHistoricas = await db
+    .insert(schema.jornadas)
+    .values([
+      { competicionId: historica.id, numero: 1 },
+      { competicionId: historica.id, numero: 2 },
+      { competicionId: historica.id, numero: 3 },
+      { competicionId: eliminatoria.id, numero: 1 },
+    ])
+    .returning();
+  const [h1, h2, h3, c1] = jornadasHistoricas;
+  const jugado = (
+    jornada: typeof h1,
+    local: typeof club,
+    visitante: typeof club,
+    golesLocal: number,
+    golesVisitante: number,
+  ) => ({
+    jornadaId: jornada!.id,
+    equipoLocalId: local.id,
+    equipoVisitanteId: visitante.id,
+    golesLocal,
+    golesVisitante,
+    estado: "finalizado" as const,
+  });
+  // Tabla final: Santiso 4 puntos, Uno 3, Dos 1. Goles del Santiso: 2 + 1 en liga, 1 en copa.
+  const [p1, p2, , p4] = await db
+    .insert(schema.partidos)
+    .values([
+      jugado(h1, club, uno, 2, 0),
+      jugado(h2, dos, club, 1, 1),
+      jugado(h3, uno, dos, 3, 0),
+      jugado(c1, club, dos, 1, 0),
+    ])
+    .returning();
+  const [brais, iago] = personas;
+  await db.insert(schema.partidoParticipaciones).values(
+    [p1, p2, p4].flatMap((p) => [
+      { partidoId: p!.id, jugadorId: brais!.id, titular: true, jugo: true },
+      { partidoId: p!.id, jugadorId: iago!.id, titular: true, jugo: true },
+    ]),
+  );
+  const gol = (partido: typeof p1, jugador: typeof brais, minuto: number) => ({
+    partidoId: partido!.id,
+    tipo: "gol" as const,
+    lado: "propio" as const,
+    jugadorId: jugador!.id,
+    minuto,
+  });
+  await db
+    .insert(schema.partidoEventos)
+    .values([gol(p1, brais, 10), gol(p1, brais, 60), gol(p2, brais, 30), gol(p4, iago, 80)]);
+
   // Catálogo de patrocinadores: dos activados en la barra y uno de solo web.
   await db.insert(schema.patrocinadores).values([
     {

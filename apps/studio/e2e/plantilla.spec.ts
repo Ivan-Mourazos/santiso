@@ -2,11 +2,11 @@ import { expect, test } from "@playwright/test";
 import { vigilarSalidasAInternet } from "./red";
 
 /**
- * Plantilla por temporada, contra la base de datos real. **Solo lectura**: abre diálogos y los
+ * Plantilla de la temporada activa, contra la base de datos real. **Solo lectura**: abre diálogos y los
  * cancela, para no tocar la temporada de verdad del usuario. Las escrituras se prueban en
  * `plantilla-escritura.spec.ts`, sobre una carpeta de datos temporal.
  */
-test("la plantilla es por temporada y la nueva se construye desde la anterior", async ({
+test("la plantilla de la temporada activa se lista y se filtra sin tocar nada", async ({
   page,
 }) => {
   const errores: string[] = [];
@@ -14,13 +14,8 @@ test("la plantilla es por temporada y la nueva se construye desde la anterior", 
   page.on("pageerror", (error) => errores.push(error.message));
 
   await page.goto("/admin/jugadores?categoria=Senior");
-  const temporada = page.getByLabel("Temporada", { exact: true });
-  await expect(temporada).toBeVisible({ timeout: 20000 });
-
-  // 2025/26 conserva su plantilla, con sus dorsales.
-  await temporada.selectOption({ label: "2025/26" });
-  await expect(page.getByText("Lo que cambies se guarda en esa temporada")).toBeVisible();
-  const tabla = page.getByRole("table", { name: "Plantilla Senior 2025/26" });
+  await expect(page.getByLabel("Temporada", { exact: true })).toBeVisible({ timeout: 20000 });
+  const tabla = page.getByRole("table", { name: /^Plantilla Senior/ });
   await expect(tabla).toBeVisible({ timeout: 20000 });
   expect(await tabla.getByRole("row").count()).toBeGreaterThan(1);
 
@@ -32,20 +27,7 @@ test("la plantilla es por temporada y la nueva se construye desde la anterior", 
   await page.getByRole("button", { name: "Quitar filtros" }).click();
   await expect(contador).toHaveText(total ?? "");
 
-  // La activa se puede traer de la anterior.
-  await temporada.selectOption({ label: "2026/27 (activa)" });
-  const anadir = page.getByRole("button", { name: /Añadir de 2025\/26/ }).first();
-  await expect(anadir).toBeVisible({ timeout: 20000 });
-  await anadir.click();
-  const dialogo = page.getByRole("dialog", { name: "Añadir de 2025/26" });
-  await expect(dialogo).toBeVisible();
-  const casillas = dialogo.locator('li input[type="checkbox"]');
-  await casillas.first().check();
-  await expect(dialogo.getByRole("button", { name: "Añadir 1" })).toBeEnabled();
-  await dialogo.getByRole("button", { name: "Cancelar" }).click();
-  await expect(dialogo).toBeHidden();
-
-  // Femenino vuelve a poder consultarse en Plantilla.
+  // Femenino se puede consultar en Plantilla.
   await expect(page.getByRole("button", { name: "Femenino", exact: true })).toBeVisible();
 
   expect(errores).toEqual([]);
@@ -56,9 +38,9 @@ test("cerrar el editor con cambios pide descartarlos", async ({ page }) => {
   await page.goto("/admin/jugadores?categoria=Senior");
   const temporada = page.getByLabel("Temporada", { exact: true });
   await expect(temporada).toBeVisible({ timeout: 20000 });
-  await temporada.selectOption({ label: "2025/26" });
-  // Esperar a la lista de 2025/26: la de la temporada activa ya no está vacía.
-  await expect(page.getByRole("button", { name: /de 2025\/26$/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Editar a / }).first()).toBeVisible({
+    timeout: 20000,
+  });
   await page
     .getByRole("button", { name: /^Editar a / })
     .first()
@@ -85,8 +67,7 @@ for (const ancho of [360, 1280]) {
   test(`listado y editor de plantilla caben a ${ancho}px`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: ancho, height: 900 });
     await page.goto("/admin/jugadores?categoria=Senior");
-    await page.getByLabel("Temporada", { exact: true }).selectOption({ label: "2025/26" });
-    await expect(page.getByRole("button", { name: /de 2025\/26$/ }).first()).toBeVisible({
+    await expect(page.getByRole("button", { name: /^Editar a / }).first()).toBeVisible({
       timeout: 20000,
     });
     await expect(page.getByRole("table")).toBeVisible();
