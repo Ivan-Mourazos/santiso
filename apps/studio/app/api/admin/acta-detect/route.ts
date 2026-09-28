@@ -76,7 +76,10 @@ Reglas:
 
     if (!response.ok) {
       const detail = await response.text();
-      return Response.json({ error: `Gemini error ${response.status}`, detail }, { status: 502 });
+      return Response.json(
+        { error: `Gemini error ${response.status}`, detail },
+        { status: 502 },
+      );
     }
 
     const payload = await response.json();

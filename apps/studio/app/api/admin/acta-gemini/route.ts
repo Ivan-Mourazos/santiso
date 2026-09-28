@@ -94,7 +94,10 @@ function tokenScore(left: string, right: string) {
 
 function isSantisoPlayer(rawName: string, jugadores: ActaPlayerDb[]): boolean {
   const best = jugadores
-    .map((p) => Math.max(tokenScore(rawName, p.nombre), p.apodo ? tokenScore(rawName, p.apodo) : 0))
+    .map((p) => Math.max(
+      tokenScore(rawName, p.nombre),
+      p.apodo ? tokenScore(rawName, p.apodo) : 0,
+    ))
     .reduce((max, s) => Math.max(max, s), 0);
   return best >= 0.4;
 }
@@ -127,9 +130,7 @@ function toParsedActa(
       if (hasValidId || nameMatchesSantiso) {
         valid.push(p);
       } else {
-        warnings.push(
-          `⚠ Jugador descartado (probable rival en ${section}): dorsal ${p.dorsal ?? "?"} "${rawName}"`,
-        );
+        warnings.push(`⚠ Jugador descartado (probable rival en ${section}): dorsal ${p.dorsal ?? "?"} "${rawName}"`);
       }
     }
     return valid.map(makePlayerRef);
@@ -152,19 +153,20 @@ function toParsedActa(
     marcadorVisitante: safeString(data.marcadorVisitante),
     campoNombre: safeString(data.campoNombre),
     campoPoblacion: safeString(data.campoPoblacion),
-    titulares: Array.isArray(data.titulares) ? filterSantisoOnly(data.titulares, "titulares") : [],
-    suplentes: Array.isArray(data.suplentes) ? filterSantisoOnly(data.suplentes, "suplentes") : [],
+    titulares: Array.isArray(data.titulares)
+      ? filterSantisoOnly(data.titulares, "titulares")
+      : [],
+    suplentes: Array.isArray(data.suplentes)
+      ? filterSantisoOnly(data.suplentes, "suplentes")
+      : [],
     eventos: Array.isArray(data.eventos)
       ? (() => {
           const result = [];
           for (const event of data.eventos) {
             // Normalizar explícitamente — Boolean("false") = true en JS
-            const isRival =
-              event.isRival === true || event.isRival === "true" || event.isRival === 1;
+            const isRival = event.isRival === true || event.isRival === "true" || event.isRival === 1;
             const tipo = event.tipo;
-            const minutoStr = (event.minuto != null ? String(event.minuto) : "")
-              .trim()
-              .toLowerCase();
+            const minutoStr = (event.minuto != null ? String(event.minuto) : "").trim().toLowerCase();
             // "final", "(final)", "f", "post" → sentinel 999
             const minutoRaw = /^(final|\(final\)|f|post.*)$/.test(minutoStr)
               ? "999"
@@ -185,13 +187,10 @@ function toParsedActa(
             const jugadorId = safeString(event.jugadorId) || undefined;
             const nombreRival = safeString(event.nombreRival) || undefined;
             // Propia del rival: gol para Santiso (isRival=false) sin jugador Santiso pero con nombre rival
-            const esPropia =
-              event.esPropia === true ||
-              event.esPropia === "true" ||
-              (!isRival && tipo === "gol" && !jugadorId && Boolean(nombreRival)) ||
-              undefined;
-            const esPropiaSantiso =
-              event.esPropiaSantiso === true || event.esPropiaSantiso === "true" || undefined;
+            const esPropia = (event.esPropia === true || event.esPropia === "true")
+              || (!isRival && tipo === "gol" && !jugadorId && Boolean(nombreRival))
+              || undefined;
+            const esPropiaSantiso = (event.esPropiaSantiso === true || event.esPropiaSantiso === "true") || undefined;
 
             result.push({
               id: crypto.randomUUID(),
@@ -225,11 +224,14 @@ function toParsedActa(
 
           return result;
         })()
+
+
       : [],
     warnings,
     rawText: "Analizado con Gemini",
   };
 }
+
 
 function buildPrompt({
   match,
@@ -240,49 +242,39 @@ function buildPrompt({
   jugadores: ActaPlayerDb[];
   campos: ActaCampoDb[];
 }) {
-  const santisoLocal = match.equipo_local?.nombre?.toLowerCase().includes("santiso");
+  const santisoLocal = match.equipo_local?.nombre
+    ?.toLowerCase()
+    .includes("santiso");
 
   return `
 Eres un extractor de datos de actas de Futgal para U.D. Santiso.
 Lee TODO el documento completo (todas las páginas si hay varias) y devuelve SOLO JSON válido, sin markdown.
 
 Partido seleccionado:
-${JSON.stringify(
-  {
-    id: match.id,
-    categoria: match.categoria,
-    local: match.equipo_local?.nombre,
-    visitante: match.equipo_visitante?.nombre,
-    santisoSide: santisoLocal ? "local" : "visitante",
-    jornada: match.jornada?.numero,
-  },
-  null,
-  2,
-)}
+${JSON.stringify({
+  id: match.id,
+  categoria: match.categoria,
+  local: match.equipo_local?.nombre,
+  visitante: match.equipo_visitante?.nombre,
+  santisoSide: santisoLocal ? "local" : "visitante",
+  jornada: match.jornada?.numero,
+}, null, 2)}
 
 Jugadores Santiso disponibles en BD. Para cualquier jugador del Santiso usa SOLO uno de estos jugadorId. No inventes ids:
-${JSON.stringify(
-  jugadores.map((player) => ({
-    jugadorId: player.id,
-    dorsal: player.dorsal,
-    nombre: player.nombre,
-    apodo: player.apodo,
-    display: getDisplayName(player),
-  })),
-  null,
-  2,
-)}
+${JSON.stringify(jugadores.map((player) => ({
+  jugadorId: player.id,
+  dorsal: player.dorsal,
+  nombre: player.nombre,
+  apodo: player.apodo,
+  display: getDisplayName(player),
+})), null, 2)}
 
 Campos existentes. Si el campo del acta coincide razonablemente con uno, usa su campoId. Si no, deja campoId vacío y propone campoNombre/campoPoblacion:
-${JSON.stringify(
-  campos.map((campo) => ({
-    campoId: campo.id,
-    nombre: campo.nombre,
-    poblacion: campo.poblacion,
-  })),
-  null,
-  2,
-)}
+${JSON.stringify(campos.map((campo) => ({
+  campoId: campo.id,
+  nombre: campo.nombre,
+  poblacion: campo.poblacion,
+})), null, 2)}
 
 Extrae:
 - marcadorLocal y marcadorVisitante.
@@ -356,8 +348,12 @@ Formato exacto:
 
 function getModelCandidates() {
   const preferred = process.env.GEMINI_MODEL?.trim();
-  return [preferred, "gemini-3.5-flash", "gemini-2.5-flash"].filter(
-    (model, index, models): model is string => Boolean(model && models.indexOf(model) === index),
+  return [
+    preferred,
+    "gemini-3.5-flash",
+    "gemini-2.5-flash",
+  ].filter((model, index, models): model is string =>
+    Boolean(model && models.indexOf(model) === index),
   );
 }
 
@@ -381,13 +377,7 @@ async function getAvailableGenerateContentModels(apiKey: string) {
     .sort((a, b) => {
       const rank = (model: string) => {
         // Prefiere versiones más nuevas y no-lite (mayor calidad para análisis completo)
-        const version = model.includes("3.5")
-          ? 0
-          : model.includes("3.")
-            ? 1
-            : model.includes("2.5")
-              ? 2
-              : 3;
+        const version = model.includes("3.5") ? 0 : model.includes("3.") ? 1 : model.includes("2.5") ? 2 : 3;
         const lite = model.includes("flash-lite") ? 10 : 0;
         const preview = model.includes("preview") ? 5 : 0;
         return version + lite + preview;
@@ -489,7 +479,10 @@ async function generateWithFallback({
 export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return Response.json({ error: "Falta GEMINI_API_KEY en .env.local" }, { status: 500 });
+    return Response.json(
+      { error: "Falta GEMINI_API_KEY en .env.local" },
+      { status: 500 },
+    );
   }
 
   const formData = await request.formData();
