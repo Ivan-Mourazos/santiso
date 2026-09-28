@@ -1,0 +1,184 @@
+/*
+ * Próximos encuentros, sobre `Base` (variante club). Zonas: logos 44–114 · cabecera 136–290 ·
+ * bandas 305–1175 · patrocinadores 1200–1310. Cada banda lleva sus colores en --l-base,
+ * --l-luz, --v-base y --v-luz.
+ */
+
+.cabecera {
+  position: absolute;
+  z-index: 6;
+  top: 136px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.cabecera > :last-child {
+  font-size: 104px;
+}
+
+.antetitulo {
+  margin-bottom: 8px;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: 0.4em;
+  color: rgb(255 255 255 / 80%);
+}
+
+.bandas {
+  position: absolute;
+  z-index: 4;
+  top: 305px;
+  left: 0;
+  right: 0;
+  height: 870px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.banda {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  clip-path: polygon(0 5%, 100% 0, 100% 95%, 0 100%);
+}
+
+/* Los colores de cada equipo, partidos en diagonal dentro de la banda. */
+.color {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(40% 70% at 16% 50%, var(--l-luz), transparent 75%),
+    linear-gradient(160deg, var(--l-base), #06080b 90%);
+}
+
+.color::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(60% 0, 100% 0, 100% 100%, 40% 100%);
+  background:
+    radial-gradient(40% 70% at 84% 50%, var(--v-luz), transparent 75%),
+    linear-gradient(200deg, var(--v-base), #06080b 90%);
+}
+
+/* Franja amarilla y negra en el corte; el centro, oscurecido para leer la fecha. */
+.corte {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(28% 60% at 50% 50%, rgb(6 8 11 / 78%), transparent 100%),
+    repeating-linear-gradient(-62deg, var(--amarillo) 0 16px, var(--negro) 16px 32px);
+  clip-path: polygon(59% 0, 61% 0, 41% 100%, 39% 100%);
+}
+
+.escudoLocal,
+.escudoVisitante {
+  width: 250px;
+  height: 250px;
+  top: calc(50% - 150px);
+}
+
+.escudoLocal {
+  left: 50px;
+}
+
+.escudoVisitante {
+  right: 50px;
+}
+
+.nombreLocal,
+.nombreVisitante {
+  top: calc(50% + 112px);
+  width: 330px;
+  text-align: center;
+}
+
+.nombreLocal {
+  left: 10px;
+}
+
+.nombreVisitante {
+  right: 10px;
+}
+
+.centro {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  left: 330px;
+  right: 330px;
+  transform: translateY(-50%);
+  text-align: center;
+  text-shadow: 0 4px 18px rgb(0 0 0 / 70%);
+}
+
+.categoria {
+  margin-bottom: 10px;
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 0.35em;
+  color: var(--amarillo);
+}
+
+.dia {
+  font-size: 46px;
+}
+
+.hora {
+  font-size: 96px;
+  color: var(--amarillo);
+}
+
+.campo {
+  margin-top: 8px;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+/* Un solo partido: la banda ocupa todo y todo crece. */
+.uno .escudoLocal,
+.uno .escudoVisitante {
+  width: 360px;
+  height: 360px;
+  top: calc(50% - 230px);
+}
+
+.uno .escudoLocal {
+  left: 30px;
+}
+
+.uno .escudoVisitante {
+  right: 30px;
+}
+
+.uno .nombreLocal,
+.uno .nombreVisitante {
+  top: calc(50% + 150px);
+  width: 420px;
+}
+
+.uno .centro {
+  top: auto;
+  bottom: 70px;
+  left: 120px;
+  right: 120px;
+  transform: none;
+}
+
+.uno .dia {
+  font-size: 64px;
+}
+
+.uno .hora {
+  font-size: 150px;
+}
+
+.uno .campo {
+  font-size: 26px;
+}
+
+.bandasUna .banda {
+  clip-path: polygon(0 3%, 100% 0, 100% 97%, 0 100%);
+}

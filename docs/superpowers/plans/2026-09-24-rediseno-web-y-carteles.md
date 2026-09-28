@@ -206,7 +206,12 @@ Es la otra lectura de «no estáticos». Consiste en exportar la escena en **ví
 
 - [x] Motor HTML/CSS → PNG (`lib/cartel2/`, `components/cartel2/`, `/render/cartel`, `/api/carteles/png`), con pruebas. Hecho por Claude.
 - [x] Plantilla `partido` en 4:5 con 2 composiciones (piloto; diagonal por defecto), probada con los nombres más largos de las dos ligas y sin escudo ni fecha. El usuario quiere carteles «increíbles»: el fondo por capas es el listón mínimo para las demás plantillas.
-- [ ] Resto de plantillas con el mismo patrón. Enseñar al usuario los PNG de cada una antes de darla por buena.
+- [x] Las otras 6 plantillas en el motor nuevo (Claude, 29/09/2026): `resultado` (con foto de fondo opcional), `cronoloxia`, `proximos`, `once`, `anuncio` y `clasificacion` (liga y copa). Base común en `components/cartel2/Base.tsx`; del formulario a cada petición en `lib/cartel2/formulario.ts`; validación en `lib/cartel2/esquema.ts`. Muestras en `data/referencias/piloto-carteles/`.
+- [ ] **Revisión de Codex** (pedida por el usuario), plantilla a plantilla, con PNG generados por `/api/carteles/png`:
+  - Nada se sale ni se tapa con los casos límite: nombres más largos de las dos ligas, 0 y 12+ hechos en cronoloxía, 16 equipos en clasificación, una y dos bandas en próximos, once sin foto, anuncio con 0/1/2 imágenes, copa con 1–4 rondas.
+  - Legibilidad en el móvil (Instagram) y contraste del texto sobre fotos y ecos.
+  - Coherencia visual entre las siete y con la regla de colores (Santiso amarillo y negro).
+  - Proponer mejoras de diseño con PNG de antes y después; el usuario decide.
 - [ ] Estudio nuevo, que sustituye a `GeneradorCartel`.
 - [ ] Retirar el motor antiguo (`lib/cartel-draw.ts`, `lib/cartel/**`) cuando no quede ningún uso.
 

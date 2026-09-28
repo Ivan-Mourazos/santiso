@@ -1,0 +1,85 @@
+/*
+ * Anuncio (multiusos), sobre `Base` (variante club). Una columna de 64 a 1016: etiqueta,
+ * título, texto e imágenes, de 180 a 1180 · patrocinadores 1200–1310. `--acento` es el color
+ * del tema (celebración, parte médico, fichaje…).
+ */
+
+.contenido {
+  position: absolute;
+  z-index: 6;
+  top: 180px;
+  bottom: 176px;
+  left: 64px;
+  right: 64px;
+  display: flex;
+  flex-direction: column;
+}
+
+.etiqueta {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: 0.32em;
+  color: var(--acento);
+}
+
+.etiqueta::after {
+  content: "";
+  flex: 1;
+  height: 3px;
+  background: linear-gradient(90deg, var(--acento), transparent);
+}
+
+.titulo {
+  margin: 22px 0 0;
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  text-shadow: 0 8px 36px rgb(0 0 0 / 60%);
+  overflow-wrap: anywhere;
+}
+
+.tituloAcento {
+  color: var(--amarillo);
+}
+
+.texto {
+  margin: 26px 0 0;
+  max-width: 900px;
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 1.3;
+  color: rgb(255 255 255 / 88%);
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.imagenes {
+  flex: 1;
+  min-height: 0;
+  margin-top: 34px;
+  display: flex;
+  gap: 28px;
+  align-items: stretch;
+}
+
+.imagenes img {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Suelen ser personas: mejor recortar por abajo que cortar cabezas. */
+  object-position: 50% 15%;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 55%);
+  transform: rotate(-1.5deg);
+}
+
+.dos img:last-child {
+  transform: rotate(1.5deg);
+}

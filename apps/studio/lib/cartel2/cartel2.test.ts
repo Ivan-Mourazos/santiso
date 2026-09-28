@@ -1,7 +1,10 @@
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
+import type { FormState } from "@/components/admin/cartel/types";
 import { aHex, colorDominante, oscurecer } from "./color";
-import { categoriaCartel, datosDeFormulario, fechaCartel } from "./modelo";
+import { leerPeticion } from "./esquema";
+import { peticionDeFormulario } from "./formulario";
+import { categoriaCartel, fechaCartel, goleadores, PLANTILLAS } from "./modelo";
 
 /** Píxeles RGBA de una imagen hecha con franjas de colores, como un escudo simplificado. */
 async function pixeles(franjas: { color: string; alto: number }[], ancho = 40) {
@@ -27,6 +30,91 @@ async function pixeles(franjas: { color: string; alto: number }[], ancho = 40) {
     .raw()
     .toBuffer();
 }
+
+/** Formulario del Estudio con valores de prueba; `cambios` sobrescribe lo que haga falta. */
+function formulario(cambios: Partial<FormState> = {}): FormState {
+  return {
+    categoria: "Senior",
+    jugadorXOffset: 0.5,
+    jugadorYOffset: 0.4,
+    jugadorZoom: 1.2,
+    showCarouselIndicator: false,
+    competicion_id: "c",
+    competicion: "Tercera Futgal - Grupo 3",
+    jornada: "2",
+    rivalNombre: "C.D. Berres",
+    rivalEscudoUrl: "/media/escudos/berres.webp",
+    fecha: "2026-10-04",
+    hora: "17:00",
+    lugar: "Pardiñeiro",
+    santisoSide: "right",
+    golesLocal: "1",
+    golesRival: "3",
+    estadio: "",
+    localSponsor: "",
+    rivalSponsor: "",
+    events: [
+      { id: "1", minuto: "10", tipo: "gol", equipo: "rival", jugador: "Rival Uno" },
+      { id: "2", minuto: "20", tipo: "gol", equipo: "local", jugador: "Bareto" },
+      { id: "3", minuto: "30", tipo: "penalti", equipo: "local", jugador: "Bareto" },
+      { id: "4", minuto: "40", tipo: "amarela", equipo: "local", jugador: "Moncho" },
+      { id: "5", minuto: "60", tipo: "cambio", equipo: "local", jugador: "Pío", jugadorEntra: "Tato" },
+      { id: "6", minuto: "", tipo: "amarela", equipo: "rival", jugador: "" },
+    ],
+    categoriasText: "",
+    matches: [
+      {
+        rival: "Melide",
+        rivalEscudoUrl: "/media/m.webp",
+        fecha: "2026-10-03",
+        categoria: "Veteranos",
+        hora: "19:00",
+        lugar: "",
+        santisoSide: "left",
+      },
+      {
+        rival: "",
+        rivalEscudoUrl: "",
+        fecha: "",
+        categoria: "Senior",
+        hora: "",
+        santisoSide: "left",
+      },
+    ],
+    jugadorFotoUrl: "",
+    noso11Flip: false,
+    titulares: [
+      { id: "a", dorsal: "1", nome: "Miguel Pampín", eCapitan: false },
+      { id: "b", dorsal: "4", nome: "Iago SR", eCapitan: true },
+      { id: "c", dorsal: "", nome: "  ", eCapitan: false },
+    ],
+    suplentes: [],
+    multiusosTema: "fichaje",
+    multiusosTitulo: "Benvido, Hugo",
+    multiusosTexto: "Chega do Arzúa.",
+    multiusosImg1Url: "/media/a.webp",
+    multiusosImg2Url: "",
+    clasificacionTipo: "liga",
+    clasificacionNombre: "",
+    clasificacionData: [
+      { posicion: 1, nombre: "S.D. Cruces", pj: 1, pg: 1, pe: 0, pp: 0, gf: 6, gc: 1, pts: 3 },
+      { posicion: 2, nombre: "U.D. Santiso F.C.", pj: 1, pg: 0, pe: 0, pp: 1, gf: 1, gc: 3, pts: 0 },
+    ],
+    showAssets: true,
+    ...cambios,
+  } as FormState;
+}
+
+const recursos = {
+  escudoClub: "/media/club.webp",
+  patrocinadores: ["/media/p.webp"],
+  institucionales: ["/media/rfgf.webp"],
+};
+const opciones = {
+  color: (url: string | null) => (url ? "#d32f2f" : "#64748b"),
+  composicion: "diagonal" as const,
+  foto: null,
+};
 
 describe("colorDominante", () => {
   it("se queda con el color del club, no con el blanco del fondo ni el negro del contorno", async () => {
@@ -54,44 +142,110 @@ describe("colorDominante", () => {
   });
 });
 
-describe("modelo del cartel", () => {
-  it("fecha en gallego, sin depender de la zona horaria", () => {
+describe("modelo", () => {
+  it("fecha y categoría en gallego, sin depender de la zona horaria", () => {
     expect(fechaCartel("2026-09-27")).toEqual({ dia: "DOMINGO", numero: "27", mes: "SET" });
     expect(fechaCartel("2026-10-03")).toEqual({ dia: "SÁBADO", numero: "3", mes: "OUT" });
     expect(fechaCartel("")).toBeNull();
-  });
-
-  it("categoría en gallego", () => {
-    expect(categoriaCartel("Senior")).toBe("SÉNIOR");
     expect(categoriaCartel("Veteranos")).toBe("VETERANOS");
   });
 
-  it("el formulario pone al Santiso de local o visitante según el lado", () => {
-    const base = {
-      categoria: "Senior",
-      competicion: "Tercera Futgal - Grupo 3",
-      jornada: "2",
-      rivalNombre: "C.D. Berres",
-      rivalEscudoUrl: "/media/escudos/b.webp",
-      fecha: "2026-10-04",
-      hora: "17:00",
-      lugar: "Pardiñeiro",
-    };
-    const recursos = {
-      escudoClub: "/media/club.webp",
-      nombreClub: "UD Santiso FC",
-      patrocinadores: [],
-      institucionales: [],
-    };
-    const colores = { club: "#1f7a3a", rival: "#d32f2f" };
-    const fuera = datosDeFormulario({ ...base, santisoSide: "right" }, recursos, colores);
-    expect(fuera.local).toMatchObject({ nombre: "C.D. Berres", propio: false, color: "#d32f2f" });
-    expect(fuera.visitante).toMatchObject({ nombre: "UD Santiso FC", propio: true });
-    const casa = datosDeFormulario({ ...base, santisoSide: "left" }, recursos, colores);
-    expect(casa.local.propio).toBe(true);
+  it("agrupa los goles por jugador, con penaltis y en propia marcados", () => {
     expect(
-      datosDeFormulario({ ...base, rivalNombre: " ", santisoSide: "left" }, recursos, colores)
-        .visitante.nombre,
-    ).toBe("Rival");
+      goleadores(
+        [
+          { minuto: "59", jugador: "Bareto", lado: "local", tipo: "gol" },
+          { minuto: "66", jugador: "Bareto", lado: "local", tipo: "penalti" },
+          { minuto: "80", jugador: "Rival", lado: "local", tipo: "propia" },
+          { minuto: "5", jugador: "Otro", lado: "visitante", tipo: "gol" },
+        ],
+        "local",
+      ),
+    ).toEqual([
+      { nombre: "Bareto", minutos: ["59'", "66' (pen.)"] },
+      { nombre: "Rival (p.p.)", minutos: ["80'"] },
+    ]);
+  });
+});
+
+describe("peticionDeFormulario", () => {
+  it("partido: el Santiso de visitante con su amarillo; el rival con el color de su escudo", () => {
+    const p = peticionDeFormulario("partido", formulario(), recursos, opciones);
+    if (p.plantilla !== "partido") throw new Error("plantilla");
+    expect(p.datos.local).toMatchObject({ nombre: "C.D. Berres", propio: false, color: "#d32f2f" });
+    expect(p.datos.visitante).toMatchObject({ nombre: "UD Santiso FC", propio: true, color: "#f5c518" });
+  });
+
+  it("resultado: goles con el lado del marcador y solo los goles", () => {
+    const p = peticionDeFormulario("resumo", formulario(), recursos, opciones);
+    if (p.plantilla !== "resultado") throw new Error("plantilla");
+    expect([p.datos.golesLocal, p.datos.golesVisitante]).toEqual([1, 3]);
+    // El Santiso juega fuera: sus goles («local» en el formulario) son del visitante.
+    expect(p.datos.goles).toEqual([
+      { minuto: "10", jugador: "Rival Uno", lado: "local", tipo: "gol" },
+      { minuto: "20", jugador: "Bareto", lado: "visitante", tipo: "gol" },
+      { minuto: "30", jugador: "Bareto", lado: "visitante", tipo: "penalti" },
+    ]);
+  });
+
+  it("cronoloxía: todos los hechos con nombre, con los tipos traducidos", () => {
+    const p = peticionDeFormulario("cronoloxia", formulario(), recursos, opciones);
+    if (p.plantilla !== "cronoloxia") throw new Error("plantilla");
+    expect(p.datos.eventos.map((e) => e.tipo)).toEqual(["gol", "gol", "penalti", "amarilla", "cambio"]);
+    expect(p.datos.eventos[4]).toMatchObject({ jugador: "Pío", entra: "Tato", lado: "visitante" });
+  });
+
+  it("próximos: solo los partidos con rival, con el Santiso de su categoría", () => {
+    const p = peticionDeFormulario("proximos", formulario(), recursos, opciones);
+    if (p.plantilla !== "proximos") throw new Error("plantilla");
+    expect(p.datos.partidos).toHaveLength(1);
+    expect(p.datos.partidos[0]!.local.nombre).toBe("UD Santiso FC Solaina");
+  });
+
+  it("once: sin jugadores vacíos; la foto con su encuadre", () => {
+    const p = peticionDeFormulario(
+      "noso11",
+      formulario({ jugadorFotoUrl: "/media/foto.webp" }),
+      recursos,
+      opciones,
+    );
+    if (p.plantilla !== "once") throw new Error("plantilla");
+    expect(p.datos.titulares).toEqual([
+      { dorsal: "1", nombre: "Miguel Pampín", capitan: false },
+      { dorsal: "4", nombre: "Iago SR", capitan: true },
+    ]);
+    expect(p.datos.foto).toEqual({ url: "/media/foto.webp", x: 0.5, y: 0.4, zoom: 1.2 });
+  });
+
+  it("anuncio: tema e imágenes que hay", () => {
+    const p = peticionDeFormulario("multiusos", formulario(), recursos, opciones);
+    if (p.plantilla !== "anuncio") throw new Error("plantilla");
+    expect(p.datos).toMatchObject({ tema: "fichaje", imagenes: ["/media/a.webp"] });
+  });
+
+  it("clasificación: marca la fila del Santiso", () => {
+    const p = peticionDeFormulario("clasificacion", formulario(), recursos, opciones);
+    if (p.plantilla !== "clasificacion" || p.datos.tipo !== "liga") throw new Error("plantilla");
+    expect(p.datos.filas.map((f) => f.propio)).toEqual([false, true]);
+    expect(p.datos.titulo).toBe("Tercera Futgal - Grupo 3");
+  });
+});
+
+describe("leerPeticion", () => {
+  it("acepta la petición de cada plantilla sacada del formulario", () => {
+    const tipos = ["partido", "resumo", "cronoloxia", "proximos", "noso11", "multiusos", "clasificacion"] as const;
+    const plantillas = tipos.map((t) => {
+      const p = peticionDeFormulario(t, formulario(), recursos, opciones);
+      expect(leerPeticion(JSON.parse(JSON.stringify(p))), t).not.toBeNull();
+      return p.plantilla;
+    });
+    expect(plantillas.sort()).toEqual([...PLANTILLAS].sort());
+  });
+
+  it("rechaza lo que no tiene forma de cartel", () => {
+    expect(leerPeticion(null)).toBeNull();
+    expect(leerPeticion({ plantilla: "otra", datos: {} })).toBeNull();
+    const p = peticionDeFormulario("partido", formulario(), recursos, opciones);
+    expect(leerPeticion({ ...p, datos: { ...p.datos, local: { nombre: "x" } } })).toBeNull();
   });
 });

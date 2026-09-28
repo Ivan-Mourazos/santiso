@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CartelPartido } from "@/components/cartel2/CartelPartido";
+import { Cartel } from "@/components/cartel2/Cartel";
 import type { PeticionCartel } from "@/lib/cartel2/modelo";
 
 declare global {
@@ -48,7 +48,7 @@ export default function PaginaRenderCartel() {
     <div data-listo={listo ? "" : undefined} style={{ display: "inline-block" }}>
       {/* El botón de las herramientas de Next (solo en desarrollo) no debe salir en la foto. */}
       <style>{"nextjs-portal{display:none!important}"}</style>
-      <CartelPartido datos={peticion.datos} composicion={peticion.composicion} />
+      <Cartel peticion={peticion} />
     </div>
   );
 }

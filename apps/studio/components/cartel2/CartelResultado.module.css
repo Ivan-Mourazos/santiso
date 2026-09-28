@@ -1,0 +1,192 @@
+/*
+ * Cartel de resultado, sobre `Base`. Zonas: cabecera 56–190 · etiqueta 250 · escudos y
+ * marcador 300–600 · nombres 630 · goleadores 710–1120 · fecha y campo 1140 · logos 1200–1310.
+ */
+
+.etiqueta {
+  position: absolute;
+  z-index: 6;
+  top: 244px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: 0.4em;
+  color: var(--amarillo);
+}
+
+.escudoLocal,
+.escudoVisitante {
+  width: 270px;
+  height: 270px;
+  top: 318px;
+}
+
+.escudoLocal {
+  left: 70px;
+}
+
+.escudoVisitante {
+  right: 70px;
+}
+
+.marcador {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  top: 330px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  line-height: 1;
+  text-shadow: 0 10px 40px rgb(0 0 0 / 60%);
+}
+
+.propio {
+  color: var(--amarillo);
+}
+
+.guion {
+  color: rgb(255 255 255 / 55%);
+  font-size: 0.6em;
+}
+
+.nombreLocal,
+.nombreVisitante {
+  top: 620px;
+  width: 360px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.nombreLocal {
+  left: 25px;
+}
+
+.nombreVisitante {
+  right: 25px;
+}
+
+.goles {
+  position: absolute;
+  z-index: 6;
+  top: 712px;
+  width: 440px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.golesLocal {
+  left: 64px;
+}
+
+.golesVisitante {
+  right: 64px;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.goles li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 12px;
+  row-gap: 2px;
+  line-height: 1.05;
+  text-shadow: 0 3px 14px rgb(0 0 0 / 70%);
+}
+
+.golesVisitante li {
+  flex-direction: row-reverse;
+}
+
+.goles li svg {
+  align-self: center;
+  flex: none;
+}
+
+.goleador {
+  font-weight: 800;
+  font-style: italic;
+  font-size: 38px;
+}
+
+.minutos {
+  font-weight: 600;
+  font-size: 30px;
+  color: rgb(245 197 24 / 90%);
+  letter-spacing: 0.04em;
+}
+
+.golesMuchos {
+  gap: 10px;
+}
+
+.golesMuchos .goleador {
+  font-size: 28px;
+}
+
+.golesMuchos .minutos {
+  font-size: 24px;
+}
+
+.pie {
+  position: absolute;
+  z-index: 6;
+  left: 64px;
+  right: 64px;
+  bottom: 150px;
+  text-align: center;
+  font-size: 26px;
+}
+
+/* Con foto: la parte de arriba es para la foto; marcador y goles bajan a la mitad inferior,
+   donde la foto ya está oscurecida. */
+.conFoto .etiqueta {
+  top: 620px;
+}
+
+.conFoto .escudoLocal,
+.conFoto .escudoVisitante {
+  width: 210px;
+  height: 210px;
+  top: 676px;
+}
+
+.conFoto .escudoLocal {
+  left: 90px;
+}
+
+.conFoto .escudoVisitante {
+  right: 90px;
+}
+
+.conFoto .marcador {
+  top: 672px;
+  font-size: 200px !important;
+}
+
+.conFoto .nombreLocal,
+.conFoto .nombreVisitante {
+  top: 900px;
+}
+
+.conFoto .goles {
+  top: 960px;
+  gap: 8px;
+}
+
+.conFoto .goleador {
+  font-size: 30px;
+}
+
+.conFoto .minutos {
+  font-size: 24px;
+}
