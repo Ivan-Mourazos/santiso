@@ -4,3 +4,4 @@ export * from "./migraciones";
 export * from "./rutas";
 export * as schema from "./schema";
 export * from "./lectura-estadisticas";
+export * from "./limpieza";
