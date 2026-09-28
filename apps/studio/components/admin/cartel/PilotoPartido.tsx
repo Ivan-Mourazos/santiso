@@ -5,13 +5,12 @@ import { CartelPartido } from "@/components/cartel2/CartelPartido";
 import { Button } from "@/components/ui/foundation/Button";
 import { Select } from "@/components/ui/foundation/Fields";
 import { getSantisoName } from "@/lib/cartel/shared";
-import { aHex, COLOR_CATEGORIA, colorDominante, VERDE_SANTISO } from "@/lib/cartel2/color";
+import { AMARILLO_SANTISO, aHex, COLOR_RIVAL_RESERVA, colorDominante } from "@/lib/cartel2/color";
 import {
   COMPOSICIONES,
   datosDeFormulario,
-  FORMATOS,
+  MEDIDAS,
   type Composicion,
-  type Formato,
   type PeticionCartel,
 } from "@/lib/cartel2/modelo";
 import styles from "./PilotoPartido.module.css";
@@ -65,7 +64,6 @@ export default function PilotoPartido({
   showToast: (msg: string, type?: "success" | "error") => void;
 }) {
   const [composicion, setComposicion] = useState<Composicion>("diagonal");
-  const [formato, setFormato] = useState<Formato>("4:5");
   const [colorRival, setColorRival] = useState<string | null>(null);
   const [ancho, setAncho] = useState(0);
   const [exportando, setExportando] = useState(false);
@@ -93,9 +91,7 @@ export default function PilotoPartido({
     return () => observador.disconnect();
   }, []);
 
-  const medidas = FORMATOS.find((f) => f.id === formato) ?? FORMATOS[0];
-  const escala = ancho ? ancho / medidas.ancho : 0;
-  const reserva = COLOR_CATEGORIA[form.categoria] ?? COLOR_CATEGORIA.Senior!;
+  const escala = ancho ? ancho / MEDIDAS.ancho : 0;
   const datos = datosDeFormulario(
     form,
     {
@@ -107,8 +103,8 @@ export default function PilotoPartido({
         : [recursos.rfgf, recursos.xunta]
       ).filter(Boolean),
     },
-    // El club, con el verde de su bandera: oscurecido queda mejor que el amarillo del escudo.
-    { club: aHex(VERDE_SANTISO), rival: colorRival ?? aHex(reserva) },
+    // El club juega de amarillo y negro; el cartel pinta su lado en negro con luz amarilla.
+    { club: aHex(AMARILLO_SANTISO), rival: colorRival ?? aHex(COLOR_RIVAL_RESERVA) },
   );
 
   async function descargar() {
@@ -117,7 +113,6 @@ export default function PilotoPartido({
       const peticion: PeticionCartel = {
         plantilla: "partido",
         composicion,
-        formato,
         datos: {
           ...datos,
           local: { ...datos.local, escudo: await aUrlExportable(datos.local.escudo) },
@@ -133,7 +128,7 @@ export default function PilotoPartido({
       const url = URL.createObjectURL(await respuesta.blob());
       const enlace = document.createElement("a");
       enlace.href = url;
-      enlace.download = `partido-${form.fecha || "sin-fecha"}-${composicion}-${formato.replace(":", "x")}.png`;
+      enlace.download = `partido-${form.fecha || "sin-fecha"}-${composicion}.png`;
       enlace.click();
       URL.revokeObjectURL(url);
       showToast("Cartel descargado");
@@ -149,7 +144,7 @@ export default function PilotoPartido({
       <div className={styles.cabecera}>
         <div>
           <h3>Cartel nuevo · piloto</h3>
-          <p>Mismos datos del formulario. Elige composición y formato.</p>
+          <p>Mismos datos del formulario. Elige la composición.</p>
         </div>
         <Button onClick={() => void descargar()} disabled={exportando}>
           {exportando ? "Generando…" : "Descargar PNG"}
@@ -167,22 +162,11 @@ export default function PilotoPartido({
             </option>
           ))}
         </Select>
-        <Select
-          label="Formato"
-          value={formato}
-          onChange={(e) => setFormato(e.target.value as Formato)}
-        >
-          {FORMATOS.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.nombre}
-            </option>
-          ))}
-        </Select>
       </div>
       <div
         ref={caja}
         className={styles.vista}
-        style={{ height: escala ? medidas.alto * escala : undefined }}
+        style={{ height: escala ? MEDIDAS.alto * escala : undefined }}
       >
         {escala > 0 && (
           <div
@@ -190,7 +174,7 @@ export default function PilotoPartido({
             style={{ transform: `scale(${escala})` }}
             data-vista-cartel
           >
-            <CartelPartido datos={datos} composicion={composicion} formato={formato} />
+            <CartelPartido datos={datos} composicion={composicion} />
           </div>
         )}
       </div>

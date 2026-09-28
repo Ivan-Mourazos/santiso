@@ -48,11 +48,7 @@ export default function PaginaRenderCartel() {
     <div data-listo={listo ? "" : undefined} style={{ display: "inline-block" }}>
       {/* El botón de las herramientas de Next (solo en desarrollo) no debe salir en la foto. */}
       <style>{"nextjs-portal{display:none!important}"}</style>
-      <CartelPartido
-        datos={peticion.datos}
-        composicion={peticion.composicion}
-        formato={peticion.formato}
-      />
+      <CartelPartido datos={peticion.datos} composicion={peticion.composicion} />
     </div>
   );
 }

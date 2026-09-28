@@ -3,52 +3,77 @@ import type { CSSProperties } from "react";
 import {
   categoriaCartel,
   fechaCartel,
-  FORMATOS,
+  MEDIDAS,
+  urlLogo,
   type Composicion,
   type DatosPartido,
-  type Formato,
+  type EquipoCartel,
 } from "@/lib/cartel2/modelo";
 import { anton, barlow } from "./fuentes";
 import s from "./CartelPartido.module.css";
 
-/** Cuerpo de letra para que un nombre largo quepa en `ancho` px con la display condensada. */
-function cuerpo(texto: string, ancho: number, maximo: number, minimo: number) {
-  // Anton mide ~0,46 em de media por carácter en mayúsculas.
-  return Math.max(minimo, Math.min(maximo, Math.floor(ancho / (Math.max(texto.length, 1) * 0.46))));
+/**
+ * Cuerpo de letra para que `texto` quepa en una línea de `ancho` px. `em` es el ancho medio de
+ * un carácter en mayúsculas de esa fuente, en em (Anton ≈ 0,46; Barlow Condensed 800 ≈ 0,5).
+ */
+function cuerpo(texto: string, ancho: number, maximo: number, minimo: number, em: number) {
+  const n = Math.max(texto.length, 1);
+  return Math.max(minimo, Math.min(maximo, Math.floor(ancho / (n * em))));
 }
 
 /**
- * Cartel de partido, motor nuevo. Un solo marcado para las tres composiciones: cada una solo
- * cambia el CSS. Mide exactamente el formato (1080 × 1350 o 1080 × 1920); la vista previa lo
- * escala y la exportación lo fotografía tal cual.
+ * Colores de un lado del cartel: `base` rellena su mitad y `luz` es el brillo detrás del
+ * escudo. El Santiso juega de amarillo y negro: su lado es negro con luz amarilla.
+ */
+function coloresDe(equipo: EquipoCartel) {
+  return equipo.propio
+    ? { base: "#0b0b0c", luz: "color-mix(in srgb, #f5c518 55%, transparent)" }
+    : {
+        base: `color-mix(in srgb, ${equipo.color} 62%, #06080b)`,
+        luz: `color-mix(in srgb, ${equipo.color} 72%, transparent)`,
+      };
+}
+
+/**
+ * Cartel de partido del motor nuevo, 1080 × 1350. Un solo marcado para las tres composiciones:
+ * cada una solo cambia el CSS. La vista previa lo escala y la exportación lo fotografía tal cual.
+ * Nada se sale del cartel: escudos enteros y nombres ajustados a su hueco.
  */
 export function CartelPartido({
   datos,
   composicion,
-  formato,
 }: {
   datos: DatosPartido;
   composicion: Composicion;
-  formato: Formato;
 }) {
-  const medidas = FORMATOS.find((f) => f.id === formato) ?? FORMATOS[0];
   const fecha = fechaCartel(datos.fecha);
-  const propio = datos.local.propio ? datos.local : datos.visitante;
   const rival = datos.local.propio ? datos.visitante : datos.local;
+  const local = coloresDe(datos.local);
+  const visitante = coloresDe(datos.visitante);
   const estilo = {
-    "--local": datos.local.color,
-    "--visitante": datos.visitante.color,
-    "--propio": propio.color,
-    "--rival": rival.color,
-    width: medidas.ancho,
-    height: medidas.alto,
+    "--local-base": local.base,
+    "--local-luz": local.luz,
+    "--visitante-base": visitante.base,
+    "--visitante-luz": visitante.luz,
+    width: MEDIDAS.ancho,
+    height: MEDIDAS.alto,
   } as CSSProperties;
+  // Hueco de cada nombre según la composición (px de ancho, una sola línea).
+  const huecoNombre = composicion === "enfrentados" ? 440 : 470;
+  const nombre = (texto: string) => ({ fontSize: cuerpo(texto, huecoNombre, 40, 24, 0.5) });
+  // El rival en «gigante»: hasta dos líneas de 400 px, sin que la palabra más larga se corte.
+  const palabraMasLarga = rival.nombre
+    .split(/\s+/)
+    .reduce((a, b) => (b.length > a.length ? b : a), "");
+  const cuerpoRival = Math.min(
+    cuerpo(rival.nombre, 2 * 400, 120, 52, 0.46),
+    cuerpo(palabraMasLarga, 400, 120, 52, 0.46),
+  );
 
   return (
     <div
       className={`${s.cartel} ${s[composicion]} ${anton.variable} ${barlow.variable}`}
       style={estilo}
-      data-formato={formato}
       data-propio={datos.local.propio ? "local" : "visitante"}
       data-cartel
     >
@@ -71,6 +96,14 @@ export function CartelPartido({
 
       <div className={s.vs}>VS</div>
 
+      {datos.institucionales.length > 0 && (
+        <div className={s.institucionales}>
+          {datos.institucionales.map((logo) => (
+            <img key={logo} src={urlLogo(logo)} alt="" />
+          ))}
+        </div>
+      )}
+
       <header className={s.cabecera}>
         <div className={s.xornada}>
           {datos.jornada ? `XORNADA ${datos.jornada}` : "DÍA DE PARTIDO"}
@@ -81,23 +114,17 @@ export function CartelPartido({
         </div>
       </header>
 
-      {datos.institucionales.length > 0 && (
-        <div className={s.institucionales}>
-          {datos.institucionales.map((logo) => (
-            <img key={logo} src={logo} alt="" />
-          ))}
-        </div>
-      )}
-
-      <div className={`${s.nombre} ${s.nombreLocal}`}>{datos.local.nombre.toUpperCase()}</div>
-      <div className={`${s.nombre} ${s.nombreVisitante}`}>
+      <div className={`${s.nombre} ${s.nombreLocal}`} style={nombre(datos.local.nombre)}>
+        {datos.local.nombre.toUpperCase()}
+      </div>
+      <div className={`${s.nombre} ${s.nombreVisitante}`} style={nombre(datos.visitante.nombre)}>
         {datos.visitante.nombre.toUpperCase()}
       </div>
 
       {composicion === "gigante" && (
-        <div className={s.rivalGrande} style={{ fontSize: cuerpo(rival.nombre, 520, 150, 64) }}>
+        <div className={s.rivalGrande}>
           <span className={s.rivalVs}>{datos.local.propio ? "vs" : "en"}</span>
-          {rival.nombre.toUpperCase()}
+          <span style={{ fontSize: cuerpoRival }}>{rival.nombre.toUpperCase()}</span>
         </div>
       )}
 
@@ -121,7 +148,7 @@ export function CartelPartido({
       {datos.patrocinadores.length > 0 && (
         <footer className={s.patrocinadores}>
           {datos.patrocinadores.map((logo) => (
-            <img key={logo} src={logo} alt="" />
+            <img key={logo} src={urlLogo(logo)} alt="" />
           ))}
         </footer>
       )}

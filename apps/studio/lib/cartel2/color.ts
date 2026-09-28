@@ -60,12 +60,14 @@ export function oscurecer({ r, g, b }: Rgb, cuanto: number): Rgb {
   return { r: Math.round(r * f), g: Math.round(g * f), b: Math.round(b * f) };
 }
 
-/** Colores de reserva por categoría, cuando el escudo no tiene color propio. */
-export const COLOR_CATEGORIA: Record<string, Rgb> = {
-  Senior: { r: 245, g: 197, b: 24 },
-  Veteranos: { r: 20, g: 184, b: 166 },
-  Femenino: { r: 236, g: 72, b: 153 },
-};
+/**
+ * Color del rival cuando su escudo no tiene uno claro (blanco y negro, o sin escudo): un gris
+ * azulado neutro. Nunca amarillo, que es el del Santiso.
+ */
+export const COLOR_RIVAL_RESERVA: Rgb = { r: 100, g: 116, b: 139 };
 
-/** Verde de la bandera del Santiso: el color del club cuando juega en casa. */
-export const VERDE_SANTISO: Rgb = { r: 31, g: 122, b: 58 };
+/**
+ * El Santiso juega de amarillo y negro (el escudo lleva verde, la equipación no): su lado del
+ * cartel va en negro con acentos amarillos, sea local o visitante.
+ */
+export const AMARILLO_SANTISO: Rgb = { r: 245, g: 197, b: 24 };

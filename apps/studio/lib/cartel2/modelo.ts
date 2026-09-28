@@ -10,11 +10,8 @@ export const COMPOSICIONES = [
 ] as const;
 export type Composicion = (typeof COMPOSICIONES)[number]["id"];
 
-export const FORMATOS = [
-  { id: "4:5", nombre: "Publicación 4:5", ancho: 1080, alto: 1350 },
-  { id: "9:16", nombre: "Historia 9:16", ancho: 1080, alto: 1920 },
-] as const;
-export type Formato = (typeof FORMATOS)[number]["id"];
+/** Solo publicación 4:5, a ×2 al exportar (2160 × 2700): lo que Instagram muestra sin recortar. */
+export const MEDIDAS = { ancho: 1080, alto: 1350 } as const;
 
 export interface EquipoCartel {
   nombre: string;
@@ -43,7 +40,6 @@ export interface DatosPartido {
 export interface PeticionCartel {
   plantilla: "partido";
   composicion: Composicion;
-  formato: Formato;
   datos: DatosPartido;
 }
 
@@ -58,6 +54,14 @@ export function fechaCartel(fecha: string): { dia: string; numero: string; mes: 
   // Mediodía UTC: el día de la semana no depende de la zona horaria del equipo que lo abre.
   const dia = new Date(Date.UTC(Number(a), Number(mes) - 1, Number(d), 12)).getUTCDay();
   return { dia: DIAS[dia]!, numero: String(Number(d)), mes: MESES[Number(mes) - 1]! };
+}
+
+/**
+ * Un logo de la media local, recortado a su contenido: se guardan centrados en un cuadrado con
+ * margen y, sin recortar, un logo ancho se ve diminuto. Las URL de fuera se dejan tal cual.
+ */
+export function urlLogo(url: string) {
+  return url.startsWith("/media/") ? `${url}?recorte=1` : url;
 }
 
 /** «Senior» → «SÉNIOR»; en gallego, como el resto de textos del cartel. */
