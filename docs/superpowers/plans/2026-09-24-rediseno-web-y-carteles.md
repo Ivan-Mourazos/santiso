@@ -47,7 +47,7 @@ Las capturas actuales de los 7 carteles están en `data/referencias/antes-fase-2
 
 1. **Un flujo guiado por la semana.** Abrir la app enseña qué toca hoy y lleva a hacerlo en el mínimo de pasos.
 2. **Un sistema visual propio, moderno y coherente** en toda la web, **solo para escritorio**: desde un monitor pequeño (1280×720) en adelante. Decisión del usuario (28/09/2026): la web no se diseña para móvil. Los carteles sí, porque se ven en Instagram.
-3. **Un motor de carteles nuevo,** con composición dinámica, escudos protagonistas y formatos 4:5 y 9:16.
+3. **Un motor de carteles nuevo,** con composición dinámica y escudos protagonistas, solo en 4:5 (decisión del usuario, 28/09/2026: no hace falta 9:16).
 4. **Sin regresiones funcionales:** todo lo que hoy se puede hacer se sigue pudiendo hacer, y las pruebas lo demuestran.
 
 **No son objetivos:**
@@ -70,7 +70,7 @@ Las capturas actuales de los 7 carteles están en `data/referencias/antes-fase-2
 ## Fase R1 — Sistema visual (base de todo)
 
 **Paleta del club,** sacada del escudo:
-- Verde de la bandera (≈ `#1f7a3a`), amarillo de las franjas (≈ `#f5c518`) y un negro profundo casi azul (≈ `#0b0f14`).
+- **El Santiso juega de amarillo y negro** (el escudo lleva verde, la equipación no): amarillo (≈ `#f5c518`) y negro (≈ `#0b0b0c`) son los colores del club en la web y en los carteles. Neutro de fondo: negro casi azul (≈ `#0b0f14`).
 - Neutros fríos para la interfaz.
 - Un color de acento por categoría: Senior amarillo, Veteranos turquesa (el actual `catAccent`).
 
@@ -163,13 +163,13 @@ Lo que hay en `main` y **hay que seguir como patrón**:
 
 | Pieza | Dónde | Qué hace |
 |---|---|---|
-| Modelo | `apps/studio/lib/cartel2/modelo.ts` | `DatosPartido`, `COMPOSICIONES`, `FORMATOS` (4:5 1080×1350, 9:16 1080×1920), `fechaCartel` (gallego), `datosDeFormulario` |
-| Color | `apps/studio/lib/cartel2/color.ts` | `colorDominante` sobre píxeles RGBA (puro, con pruebas); el club usa el verde de su bandera |
+| Modelo | `apps/studio/lib/cartel2/modelo.ts` | `DatosPartido`, `COMPOSICIONES`, `MEDIDAS` (1080×1350, solo 4:5), `fechaCartel` (gallego), `urlLogo` (logo recortado a su contenido), `datosDeFormulario` |
+| Color | `apps/studio/lib/cartel2/color.ts` | `colorDominante` sobre píxeles RGBA (puro, con pruebas). El lado del Santiso va en negro con luz amarilla; un rival sin color claro usa un gris azulado, nunca amarillo |
 | Fuentes | `apps/studio/components/cartel2/fuentes.ts` | Anton (display) y Barlow Condensed, locales con `next/font/local` |
-| Cartel | `apps/studio/components/cartel2/CartelPartido.tsx` + `.module.css` | Un marcado; cada composición (`diagonal`, `enfrentados`, `gigante`) es solo CSS. Vertical en % del alto para servir a los dos formatos |
+| Cartel | `apps/studio/components/cartel2/CartelPartido.tsx` + `.module.css` | Un marcado; cada composición (`diagonal`, `enfrentados`, `gigante`) es solo CSS. Nada se sale del cartel: escudos enteros, nombres ajustados a una línea, campo largo en dos líneas |
 | Página de foto | `apps/studio/app/render/cartel/page.tsx` | Pinta lo que recibe por `window.__pintarCartel` y marca `data-listo` cuando fuentes e imágenes han cargado |
 | Exportación | `apps/studio/lib/server/cartel2/render.ts` + `app/api/carteles/png/route.ts` | Chromium reutilizado; fotografía `[data-cartel]` a ×2; valida la petición con zod |
-| Estudio (piloto) | `apps/studio/components/admin/cartel/PilotoPartido.tsx` | Vista previa escalada del mismo componente, selector de composición y formato, «Descargar PNG» |
+| Estudio (piloto) | `apps/studio/components/admin/cartel/PilotoPartido.tsx` | Vista previa escalada del mismo componente, selector de composición, «Descargar PNG» |
 
 Muestras aprobadas del piloto: `data/referencias/piloto-carteles/` (no entra en git).
 
@@ -194,7 +194,7 @@ Los textos del cartel siguen en gallego («XORNADA», «PRÓXIMOS ENCONTROS», �
 ### Estudio
 
 - A la izquierda, la vista previa grande. A la derecha, el formulario corto.
-- Selector de composición y de formato (4:5 / 9:16).
+- Selector de composición. Solo 4:5.
 - «Descargar PNG» y «Copiar texto para Instagram»; este último ya existe para la clasificación y se extiende a todas.
 - Se abre siempre con los datos ya puestos desde Semana. Los parámetros actuales de URL se mantienen.
 
@@ -205,7 +205,7 @@ Es la otra lectura de «no estáticos». Consiste en exportar la escena en **ví
 ### Tareas R3
 
 - [x] Motor HTML/CSS → PNG (`lib/cartel2/`, `components/cartel2/`, `/render/cartel`, `/api/carteles/png`), con pruebas. Hecho por Claude.
-- [x] Plantilla `partido` en 4:5 y 9:16 con 3 composiciones (piloto). Falta que el usuario elija la composición por defecto.
+- [x] Plantilla `partido` en 4:5 con 3 composiciones (piloto), probada con los nombres más largos de las dos ligas y sin escudo ni fecha. Falta que el usuario elija la composición por defecto.
 - [ ] Resto de plantillas con el mismo patrón. Enseñar al usuario los PNG de cada una antes de darla por buena.
 - [ ] Estudio nuevo, que sustituye a `GeneradorCartel`.
 - [ ] Retirar el motor antiguo (`lib/cartel-draw.ts`, `lib/cartel/**`) cuando no quede ningún uso.
@@ -213,7 +213,7 @@ Es la otra lectura de «no estáticos». Consiste en exportar la escena en **ví
 ## Verificación de carteles
 
 Crea `apps/studio/e2e/huellas-carteles.spec.ts`: una prueba **de solo lectura** que se salta sin la variable `SANTISO_REFERENCIA_DIR`.
-- Pide cada plantilla a `/api/carteles/png` con una **petición fija** (no con datos reales), en cada composición y formato.
+- Pide cada plantilla a `/api/carteles/png` con una **petición fija** (no con datos reales), en cada composición.
 - Guarda el PNG y el SHA-256 de cada uno en esa carpeta.
 - La prueba e2e de `e2e/carteles.spec.ts` («el cartel nuevo (piloto)…») es el modelo: descarga el PNG y comprueba las medidas en la cabecera.
 
@@ -239,7 +239,7 @@ Antes de cada fusión que toque el motor, adjunta en el mensaje del commit qué 
 | R0 | Auditoría y decisiones | 2–3 h |
 | R1 | Sistema visual, fuentes locales y limpieza de CSS | 1–1,5 días |
 | R2 | Flujo nuevo: navegación, Semana con ciclo, acta rápida, cabecera, asistente | 3–4 días |
-| R3 | Motor y 7 plantillas, en 2 formatos, y el Estudio | 4–6 días |
+| R3 | 6 plantillas más sobre el motor ya hecho, y el Estudio | 3–4 días |
 | R3+ | Carteles animados (opcional) | 1–2 días |
 
 **Orden recomendado:** R0 → R1 → **R3 (plantilla `partido`, enseñar y ajustar)** → R2 → resto de R3.

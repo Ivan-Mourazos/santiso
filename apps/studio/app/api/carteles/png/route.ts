@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { COMPOSICIONES, FORMATOS } from "@/lib/cartel2/modelo";
+import { COMPOSICIONES } from "@/lib/cartel2/modelo";
 import { renderizarCartel } from "@/lib/server/cartel2/render";
 
 const equipo = z.object({
@@ -12,7 +12,6 @@ const equipo = z.object({
 const peticion = z.object({
   plantilla: z.literal("partido"),
   composicion: z.enum(COMPOSICIONES.map((c) => c.id) as [string, ...string[]]),
-  formato: z.enum(FORMATOS.map((f) => f.id) as [string, ...string[]]),
   datos: z.object({
     categoria: z.string().max(40),
     competicion: z.string().max(200),

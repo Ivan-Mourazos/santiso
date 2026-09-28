@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import sharp from "sharp";
 import { resolverRutaMedia, tipoMedia } from "@/lib/server/media";
 
 const noEncontrado = () => new Response("No encontrado", { status: 404 });
@@ -6,9 +7,13 @@ const noEncontrado = () => new Response("No encontrado", { status: 404 });
 const esFicheroInexistente = (error: unknown) =>
   error instanceof Error && "code" in error && (error.code === "ENOENT" || error.code === "EISDIR");
 
-/** Sirve `data/media/<clave>`. Revalida también claves heredadas que conservan el nombre tras una restauración. */
+/**
+ * Sirve `data/media/<clave>`. Revalida también claves heredadas que conservan el nombre tras una restauración.
+ * Con `?recorte=1` devuelve la imagen recortada a su contenido (PNG): los logos se guardan
+ * centrados en un cuadrado con margen, y en un cartel un logo ancho se veía diminuto.
+ */
 export async function GET(
-  _solicitud: Request,
+  solicitud: Request,
   { params }: { params: Promise<{ clave: string[] }> },
 ) {
   const { clave } = await params;
@@ -17,6 +22,12 @@ export async function GET(
   if (!ruta || !tipo) return noEncontrado();
   try {
     const contenido = await readFile(ruta);
+    if (new URL(solicitud.url).searchParams.has("recorte")) {
+      const recortada = await sharp(contenido).trim().png().toBuffer();
+      return new Response(new Uint8Array(recortada), {
+        headers: { "Content-Type": "image/png", "Cache-Control": "no-cache" },
+      });
+    }
     return new Response(new Uint8Array(contenido), {
       headers: {
         "Content-Type": tipo,

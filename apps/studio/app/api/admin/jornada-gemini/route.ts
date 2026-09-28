@@ -46,13 +46,8 @@ function stripJsonFence(value: string) {
 
 function getModelCandidates() {
   const preferred = process.env.GEMINI_MODEL?.trim();
-  return [
-    preferred,
-    "gemini-2.5-flash-lite",
-    "gemini-2.5-flash",
-  ].filter(
-    (model, index, models): model is string =>
-      Boolean(model && models.indexOf(model) === index),
+  return [preferred, "gemini-2.5-flash-lite", "gemini-2.5-flash"].filter(
+    (model, index, models): model is string => Boolean(model && models.indexOf(model) === index),
   );
 }
 
@@ -198,10 +193,7 @@ async function generateWithFallback(
 export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return Response.json(
-      { error: "Falta GEMINI_API_KEY en .env.local" },
-      { status: 500 },
-    );
+    return Response.json({ error: "Falta GEMINI_API_KEY en .env.local" }, { status: 500 });
   }
 
   const formData = await request.formData();
@@ -212,21 +204,14 @@ export async function POST(request: Request) {
     return Response.json({ error: "Falta archivo (imagen o pdf)" }, { status: 400 });
   }
 
-  const equiposDB: string[] = equiposRaw
-    ? (JSON.parse(String(equiposRaw)) as string[])
-    : [];
+  const equiposDB: string[] = equiposRaw ? (JSON.parse(String(equiposRaw)) as string[]) : [];
 
   const bytes = Buffer.from(await file.arrayBuffer());
   const base64 = bytes.toString("base64");
 
   let result: { model: string; payload: GeminiGenerateResponse };
   try {
-    result = await generateWithFallback(
-      apiKey,
-      base64,
-      file.type || "application/pdf",
-      equiposDB,
-    );
+    result = await generateWithFallback(apiKey, base64, file.type || "application/pdf", equiposDB);
   } catch (error) {
     return Response.json(
       {
@@ -237,8 +222,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const text =
-    result.payload?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text = result.payload?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
     return Response.json(
       { error: "Gemini no devolvió texto", detail: result.payload },

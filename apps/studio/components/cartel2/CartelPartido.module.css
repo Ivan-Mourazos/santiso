@@ -1,12 +1,14 @@
 /*
- * Cartel de partido (motor nuevo). Medidas absolutas en px sobre 1080 de ancho; lo vertical va
- * en % del alto para que la misma composición sirva en 4:5 (1350) y 9:16 (1920).
- * Colores de cada equipo en --local / --visitante (y --propio / --rival), sacados del escudo.
+ * Cartel de partido (motor nuevo), 1080 × 1350 en px. Todo cabe dentro: escudos enteros,
+ * nombres en una línea ajustada (el cuerpo lo calcula el componente) y zonas sin solaparse:
+ *   cabecera 56–190 · escudos y nombres 240–1100 · fecha y hora 810–1180 · logos 1200–1310.
+ * Colores de cada lado en --local-base/--local-luz y --visitante-base/--visitante-luz. El
+ * Santiso juega de amarillo y negro: su lado es negro con luz amarilla.
  */
 
 .cartel {
   --amarillo: #f5c518;
-  --verde: #1f7a3a;
+  --negro: #0b0b0c;
   --tinta: #06080b;
   --display: var(--f-display), "Arial Narrow", sans-serif;
   --texto: var(--f-texto), "Arial Narrow", sans-serif;
@@ -31,7 +33,7 @@
   pointer-events: none;
 }
 
-/* Grano de película: da textura y evita los degradados planos de «plantilla». */
+/* Grano de película: textura en vez de degradados planos de «plantilla». */
 .grano {
   z-index: 8;
   opacity: 0.22;
@@ -43,7 +45,7 @@
   position: absolute;
   z-index: 3;
   object-fit: contain;
-  filter: drop-shadow(0 34px 44px rgb(0 0 0 / 55%)) drop-shadow(0 0 2px rgb(0 0 0 / 40%));
+  filter: drop-shadow(0 30px 40px rgb(0 0 0 / 55%)) drop-shadow(0 0 2px rgb(0 0 0 / 40%));
 }
 
 .vs {
@@ -57,6 +59,8 @@
 .cabecera {
   position: absolute;
   z-index: 6;
+  top: 64px;
+  left: 64px;
 }
 
 .xornada {
@@ -72,39 +76,42 @@
   font-size: 27px;
   letter-spacing: 0.14em;
   color: rgb(255 255 255 / 82%);
+  white-space: nowrap;
 }
 
+/* RFGF y Xunta: logos recortados a su contenido, a buen tamaño. */
 .institucionales {
   position: absolute;
   z-index: 6;
-  top: 64px;
+  top: 56px;
   right: 64px;
   display: flex;
-  gap: 28px;
+  gap: 32px;
   align-items: center;
 }
 
 .institucionales img {
-  height: 64px;
-  width: auto;
-  filter: drop-shadow(0 2px 8px rgb(0 0 0 / 45%));
+  height: 84px;
+  max-width: 250px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 10px rgb(0 0 0 / 50%));
 }
 
 .nombre {
   position: absolute;
   z-index: 6;
-  max-width: 470px;
   font-weight: 800;
   font-style: italic;
-  font-size: 40px;
-  line-height: 0.95;
+  line-height: 1;
   letter-spacing: 0.01em;
-  text-shadow: 0 4px 18px rgb(0 0 0 / 60%);
+  white-space: nowrap;
+  text-shadow: 0 4px 18px rgb(0 0 0 / 65%);
 }
 
 .cuando {
   position: absolute;
   z-index: 6;
+  bottom: 170px;
 }
 
 .fecha {
@@ -142,39 +149,37 @@
   font-size: 28px;
   letter-spacing: 0.12em;
   color: rgb(255 255 255 / 80%);
+  white-space: nowrap;
 }
 
+/* Patrocinadores: sin caja, recortados a su contenido. */
 .patrocinadores {
   position: absolute;
   z-index: 6;
   left: 64px;
   right: 64px;
-  bottom: 44px;
+  bottom: 40px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 36px;
-  padding-top: 26px;
+  gap: 28px;
+  padding-top: 24px;
   border-top: 2px solid rgb(255 255 255 / 18%);
 }
 
 .patrocinadores img {
-  height: 76px;
-  max-width: 170px;
+  height: 70px;
+  max-width: 172px;
   object-fit: contain;
   filter: drop-shadow(0 2px 8px rgb(0 0 0 / 45%));
 }
 
-/* ─── Diagonal: el campo partido en dos colores, un escudo en cada lado ─────────────────── */
+/* ─── Diagonal: el cartel partido en dos colores, un escudo en cada lado ─────────────────── */
 
 .diagonal .fondo {
   background:
-    radial-gradient(
-      60% 45% at 18% 30%,
-      color-mix(in srgb, var(--local) 70%, transparent),
-      transparent 70%
-    ),
-    linear-gradient(160deg, color-mix(in srgb, var(--local) 62%, var(--tinta)), var(--tinta) 85%);
+    radial-gradient(44% 34% at 26% 40%, var(--local-luz), transparent 72%),
+    linear-gradient(160deg, var(--local-base), var(--tinta) 88%);
 }
 
 .diagonal .fondo::after {
@@ -183,161 +188,148 @@
   inset: 0;
   clip-path: polygon(68% 0, 100% 0, 100% 100%, 32% 100%);
   background:
-    radial-gradient(
-      60% 45% at 82% 68%,
-      color-mix(in srgb, var(--visitante) 70%, transparent),
-      transparent 70%
-    ),
-    linear-gradient(
-      200deg,
-      color-mix(in srgb, var(--visitante) 62%, var(--tinta)),
-      var(--tinta) 85%
-    );
+    radial-gradient(44% 34% at 74% 60%, var(--visitante-luz), transparent 72%),
+    linear-gradient(200deg, var(--visitante-base), var(--tinta) 88%);
 }
 
-/* Franjas de la bandera del Santiso a lo largo del corte. */
+/* Franjas amarillas y negras (la equipación) a lo largo del corte. */
 .diagonal .franja {
   z-index: 2;
   clip-path: polygon(66.2% 0, 68.8% 0, 32.8% 100%, 30.2% 100%);
-  background: repeating-linear-gradient(-58deg, var(--amarillo) 0 22px, var(--verde) 22px 44px);
-  opacity: 0.95;
+  background: repeating-linear-gradient(-58deg, var(--amarillo) 0 22px, var(--negro) 22px 44px);
 }
 
+/* Escudos a los lados y el «VS» en el hueco entre ellos: no tapa a ninguno. */
 .diagonal .escudoLocal {
-  width: 590px;
-  height: 590px;
-  left: -46px;
-  top: 25%;
+  width: 440px;
+  height: 440px;
+  left: 40px;
+  top: 300px;
 }
 
 .diagonal .escudoVisitante {
-  width: 590px;
-  height: 590px;
-  right: -46px;
-  top: 41%;
+  width: 440px;
+  height: 440px;
+  right: 40px;
+  top: 590px;
 }
 
 .diagonal .vs {
-  left: 50%;
-  top: 47%;
+  left: 522px;
+  top: 660px;
   transform: translate(-50%, -50%) skewX(-8deg);
-  font-size: 250px;
+  font-size: 176px;
   color: #fff;
   text-shadow:
     0 0 60px rgb(0 0 0 / 55%),
     8px 8px 0 var(--tinta);
 }
 
-.diagonal .cabecera {
-  top: 64px;
-  left: 64px;
-}
-
 .diagonal .nombreLocal {
   left: 64px;
-  top: 23%;
+  top: 244px;
 }
 
 .diagonal .nombreVisitante {
   right: 64px;
-  top: 34%;
+  top: 530px;
   text-align: right;
 }
 
 .diagonal .cuando {
   left: 64px;
-  bottom: 170px;
 }
 
-.diagonal[data-formato="9:16"] .cuando {
-  bottom: 230px;
+/* Un campo con nombre largo se parte en dos líneas dentro de su columna, sin cruzar el corte. */
+.diagonal .campo,
+.gigante .campo {
+  max-width: 500px;
+  white-space: normal;
+  line-height: 1.25;
 }
 
 /* ─── Enfrentados: fondo oscuro, dos luces de color y los escudos cara a cara ─────────────── */
 
 .enfrentados .fondo {
   background:
-    radial-gradient(
-      48% 34% at 22% 46%,
-      color-mix(in srgb, var(--local) 75%, transparent),
-      transparent 72%
-    ),
-    radial-gradient(
-      48% 34% at 78% 46%,
-      color-mix(in srgb, var(--visitante) 75%, transparent),
-      transparent 72%
-    ),
+    radial-gradient(46% 32% at 24% 42%, var(--local-luz), transparent 72%),
+    radial-gradient(46% 32% at 76% 42%, var(--visitante-luz), transparent 72%),
     linear-gradient(180deg, #0d1117, var(--tinta));
 }
 
 .enfrentados .franja {
   z-index: 1;
-  inset: auto 0 0 0;
+  inset: auto 0 0;
   height: 36%;
   background: linear-gradient(0deg, rgb(0 0 0 / 70%), transparent);
 }
 
-.enfrentados .escudoLocal,
-.enfrentados .escudoVisitante {
-  width: 470px;
-  height: 470px;
-  top: 25%;
+.enfrentados .institucionales {
+  left: 0;
+  right: 0;
+  top: 44px;
+  justify-content: center;
 }
 
-.enfrentados .escudoLocal {
-  left: 40px;
-  transform: rotate(-6deg);
-}
-
-.enfrentados .escudoVisitante {
-  right: 40px;
-  transform: rotate(6deg);
-}
-
-.enfrentados .vs {
-  left: 50%;
-  top: 43%;
-  transform: translate(-50%, -50%) rotate(-8deg);
-  padding: 18px 26px 8px;
-  font-size: 110px;
-  color: var(--tinta);
-  background: var(--amarillo);
+.enfrentados .institucionales img {
+  height: 70px;
 }
 
 .enfrentados .cabecera {
-  top: 72px;
+  top: 146px;
   left: 0;
   right: 0;
   text-align: center;
 }
 
 .enfrentados .xornada {
-  font-size: 96px;
+  font-size: 92px;
+}
+
+.enfrentados .escudoLocal,
+.enfrentados .escudoVisitante {
+  width: 430px;
+  height: 430px;
+  top: 340px;
+}
+
+.enfrentados .escudoLocal {
+  left: 56px;
+  transform: rotate(-6deg);
+}
+
+.enfrentados .escudoVisitante {
+  right: 56px;
+  transform: rotate(6deg);
+}
+
+.enfrentados .vs {
+  left: 540px;
+  top: 560px;
+  transform: translate(-50%, -50%) rotate(-8deg);
+  padding: 18px 26px 8px;
+  font-size: 104px;
+  color: var(--tinta);
+  background: var(--amarillo);
 }
 
 .enfrentados .nombre {
-  top: 62%;
+  top: 800px;
   width: 440px;
   text-align: center;
-  font-size: 36px;
 }
 
 .enfrentados .nombreLocal {
-  left: 55px;
+  left: 50px;
 }
 
 .enfrentados .nombreVisitante {
-  right: 55px;
-}
-
-.enfrentados .institucionales {
-  display: none;
+  right: 50px;
 }
 
 .enfrentados .cuando {
   left: 0;
   right: 0;
-  bottom: 170px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -355,78 +347,61 @@
   flex-basis: 100%;
 }
 
-.enfrentados[data-formato="9:16"] .escudoLocal,
-.enfrentados[data-formato="9:16"] .escudoVisitante {
-  width: 520px;
-  height: 520px;
-  top: 24%;
-}
-
-.enfrentados[data-formato="9:16"] .vs {
-  top: 38%;
-}
-
-.enfrentados[data-formato="9:16"] .nombre {
-  top: 53%;
-}
-
-.enfrentados[data-formato="9:16"] .cuando {
-  bottom: 330px;
-}
-
-/* ─── Escudo gigante: el del club manda, recortado, y el rival en letra enorme ──────────── */
+/* ─── Escudo gigante: el del club manda y el rival va en letra enorme ─────────────────────── */
 
 .gigante .fondo {
   background:
     radial-gradient(
-      70% 55% at 90% 40%,
-      color-mix(in srgb, var(--propio) 80%, transparent),
+      48% 40% at 74% 36%,
+      color-mix(in srgb, var(--amarillo) 45%, transparent),
       transparent 70%
     ),
-    linear-gradient(135deg, var(--tinta) 35%, color-mix(in srgb, var(--propio) 45%, var(--tinta)));
+    linear-gradient(135deg, var(--tinta) 40%, #17140a);
 }
 
 .gigante .franja {
   z-index: 1;
   inset: 0 auto 0 0;
-  width: 26px;
-  background: repeating-linear-gradient(180deg, var(--amarillo) 0 40px, var(--verde) 40px 80px);
+  width: 24px;
+  background: repeating-linear-gradient(180deg, var(--amarillo) 0 40px, var(--negro) 40px 80px);
 }
 
+/* Palabra de la categoría, en hueco, al fondo; cabe entera («VETERANOS» es la más larga). */
 .gigante .palabraFondo {
   position: absolute;
   z-index: 1;
-  left: 40px;
-  bottom: 13%;
+  left: 50px;
+  bottom: 190px;
   font-family: var(--display);
-  font-size: 330px;
+  font-size: 210px;
   line-height: 0.8;
   color: transparent;
-  -webkit-text-stroke: 3px rgb(255 255 255 / 14%);
+  -webkit-text-stroke: 3px rgb(255 255 255 / 12%);
   white-space: nowrap;
 }
 
-/* El escudo del club, enorme y cortado por el borde derecho. */
 .gigante .escudo {
   display: none;
 }
 
+/* El escudo del club, grande y entero, a la derecha. */
 .gigante[data-propio="local"] .escudoLocal,
 .gigante[data-propio="visitante"] .escudoVisitante {
   display: block;
-  width: 1040px;
-  height: 1040px;
-  right: -440px;
-  top: 12%;
+  width: 600px;
+  height: 600px;
+  right: 40px;
+  top: 190px;
 }
 
+/* El del rival, pequeño, junto a su nombre. */
 .gigante[data-propio="local"] .escudoVisitante,
 .gigante[data-propio="visitante"] .escudoLocal {
   display: block;
-  width: 250px;
-  height: 250px;
+  width: 200px;
+  height: 200px;
   left: 64px;
-  top: 25%;
+  top: 236px;
   z-index: 5;
 }
 
@@ -435,17 +410,12 @@
   display: none;
 }
 
-.gigante .cabecera {
-  top: 64px;
-  left: 64px;
-}
-
 .gigante .rivalGrande {
   position: absolute;
   z-index: 6;
   left: 64px;
-  top: 46%;
-  width: 520px;
+  top: 460px;
+  width: 400px;
   font-family: var(--display);
   line-height: 0.9;
   text-shadow: 0 6px 30px rgb(0 0 0 / 55%);
@@ -453,6 +423,7 @@
 
 .gigante .rivalVs {
   display: block;
+  margin-bottom: 6px;
   font-family: var(--texto);
   font-weight: 800;
   font-style: italic;
@@ -463,9 +434,4 @@
 
 .gigante .cuando {
   left: 64px;
-  bottom: 170px;
-}
-
-.gigante[data-formato="9:16"] .cuando {
-  bottom: 240px;
 }
