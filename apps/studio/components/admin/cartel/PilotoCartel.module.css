@@ -45,3 +45,16 @@
   left: 0;
   transform-origin: top left;
 }
+
+.foto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3, 0.75rem);
+  align-items: center;
+}
+
+.foto label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 700;
+}

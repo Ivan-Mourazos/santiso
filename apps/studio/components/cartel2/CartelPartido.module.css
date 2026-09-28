@@ -1,134 +1,7 @@
 /*
- * Cartel de partido (motor nuevo), 1080 × 1350 en px. Todo cabe dentro: escudos enteros,
- * nombres en una línea ajustada (el cuerpo lo calcula el componente) y zonas sin solaparse:
+ * Cartel de partido (previa), sobre `Base`. Zonas sin solaparse:
  *   cabecera 56–190 · escudos y nombres 240–1100 · fecha y hora 810–1180 · logos 1200–1310.
- * Colores de cada lado en --local-base/--local-luz y --visitante-base/--visitante-luz. El
- * Santiso juega de amarillo y negro: su lado es negro con luz amarilla.
  */
-
-.cartel {
-  --amarillo: #f5c518;
-  --negro: #0b0b0c;
-  --tinta: #06080b;
-  --display: var(--f-display), "Arial Narrow", sans-serif;
-  --texto: var(--f-texto), "Arial Narrow", sans-serif;
-
-  position: relative;
-  overflow: hidden;
-  color: #fff;
-  background: var(--tinta);
-  font-family: var(--texto);
-  isolation: isolate;
-}
-
-.cartel * {
-  box-sizing: border-box;
-}
-
-.fondo,
-.franja,
-.grano {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-/* Grano de película: textura en vez de degradados planos de «plantilla». */
-.grano {
-  z-index: 8;
-  opacity: 0.22;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-}
-
-/* Eco de cada escudo: enorme, desenfocado y saturado, tiñe su lado con los colores del club. */
-.eco {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.eco img {
-  position: absolute;
-  width: 1150px;
-  height: 1150px;
-  object-fit: contain;
-  filter: blur(46px) saturate(1.5);
-  opacity: 0.42;
-}
-
-/* El Santiso juega de amarillo y negro: su eco va en gris, sin el verde del escudo. */
-.ecoPropio img {
-  filter: blur(46px) grayscale(1) brightness(0.8);
-  opacity: 0.3;
-}
-
-/* Trama de puntos que sube desde abajo. */
-.trama {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background-image: radial-gradient(rgb(255 255 255 / 16%) 1.6px, transparent 2.2px);
-  background-size: 16px 16px;
-  mask-image: linear-gradient(0deg, #000 0%, transparent 45%);
-}
-
-/* Focos de estadio: dos haces de luz desde las esquinas de arriba. */
-.foco {
-  position: absolute;
-  z-index: 2;
-  top: -40px;
-  width: 520px;
-  height: 1100px;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgb(255 255 255 / 22%), transparent 75%);
-  filter: blur(34px);
-  mix-blend-mode: screen;
-}
-
-.focoIzquierda {
-  left: -120px;
-  clip-path: polygon(8% 0, 22% 0, 100% 100%, 62% 100%);
-}
-
-.focoDerecha {
-  right: -120px;
-  clip-path: polygon(78% 0, 92% 0, 38% 100%, 0 100%);
-}
-
-.lineasCampo {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: rgb(255 255 255 / 9%);
-  stroke-width: 5;
-  pointer-events: none;
-}
-
-.lineasCampo circle:last-child {
-  fill: rgb(255 255 255 / 12%);
-}
-
-.vineta {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgb(0 0 0 / 60%));
-}
-
-.escudo {
-  position: absolute;
-  z-index: 3;
-  object-fit: contain;
-  filter: drop-shadow(0 30px 40px rgb(0 0 0 / 55%)) drop-shadow(0 0 2px rgb(0 0 0 / 40%));
-}
 
 .vs {
   position: absolute;
@@ -136,58 +9,6 @@
   font-family: var(--display);
   line-height: 0.8;
   letter-spacing: -0.02em;
-}
-
-.cabecera {
-  position: absolute;
-  z-index: 6;
-  top: 64px;
-  left: 64px;
-}
-
-.xornada {
-  font-family: var(--display);
-  font-size: 76px;
-  line-height: 0.9;
-  color: var(--amarillo);
-}
-
-.competicion {
-  margin-top: 14px;
-  font-weight: 600;
-  font-size: 27px;
-  letter-spacing: 0.14em;
-  color: rgb(255 255 255 / 82%);
-  white-space: nowrap;
-}
-
-/* RFGF y Xunta: logos recortados a su contenido, a buen tamaño. */
-.institucionales {
-  position: absolute;
-  z-index: 6;
-  top: 56px;
-  right: 64px;
-  display: flex;
-  gap: 32px;
-  align-items: center;
-}
-
-.institucionales img {
-  height: 84px;
-  max-width: 250px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 10px rgb(0 0 0 / 50%));
-}
-
-.nombre {
-  position: absolute;
-  z-index: 6;
-  font-weight: 800;
-  font-style: italic;
-  line-height: 1;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-  text-shadow: 0 4px 18px rgb(0 0 0 / 65%);
 }
 
 .cuando {
@@ -199,8 +20,6 @@
 .fecha {
   display: flex;
   flex-direction: column;
-  font-family: var(--display);
-  line-height: 0.86;
 }
 
 .dia {
@@ -218,7 +37,6 @@
 }
 
 .hora {
-  font-family: var(--display);
   font-size: 168px;
   line-height: 0.82;
   color: var(--amarillo);
@@ -227,77 +45,10 @@
 
 .campo {
   margin-top: 18px;
-  font-weight: 600;
-  font-size: 28px;
-  letter-spacing: 0.12em;
-  color: rgb(255 255 255 / 80%);
   white-space: nowrap;
 }
 
-/* Patrocinadores: sin caja, recortados a su contenido. */
-.patrocinadores {
-  position: absolute;
-  z-index: 6;
-  left: 64px;
-  right: 64px;
-  bottom: 40px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 28px;
-  padding-top: 24px;
-  border-top: 2px solid rgb(255 255 255 / 18%);
-}
-
-.patrocinadores img {
-  height: 70px;
-  max-width: 172px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 8px rgb(0 0 0 / 45%));
-}
-
-/* ─── Diagonal: el cartel partido en dos colores, un escudo en cada lado ─────────────────── */
-
-.diagonal .fondo {
-  background:
-    radial-gradient(44% 34% at 26% 40%, var(--local-luz), transparent 72%),
-    linear-gradient(160deg, var(--local-base), var(--tinta) 88%);
-}
-
-.diagonal .fondo::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  clip-path: polygon(68% 0, 100% 0, 100% 100%, 32% 100%);
-  background:
-    radial-gradient(44% 34% at 74% 60%, var(--visitante-luz), transparent 72%),
-    linear-gradient(200deg, var(--visitante-base), var(--tinta) 88%);
-}
-
-.diagonal .ecoLocal {
-  clip-path: polygon(0 0, 68% 0, 32% 100%, 0 100%);
-}
-
-.diagonal .ecoVisitante {
-  clip-path: polygon(68% 0, 100% 0, 100% 100%, 32% 100%);
-}
-
-.diagonal .ecoLocal img {
-  left: -420px;
-  top: -40px;
-}
-
-.diagonal .ecoVisitante img {
-  right: -420px;
-  top: 300px;
-}
-
-/* Franjas amarillas y negras (la equipación) a lo largo del corte. */
-.diagonal .franja {
-  z-index: 2;
-  clip-path: polygon(66.2% 0, 68.8% 0, 32.8% 100%, 30.2% 100%);
-  background: repeating-linear-gradient(-58deg, var(--amarillo) 0 22px, var(--negro) 22px 44px);
-}
+/* ─── Diagonal ─────────────────────────────────────────────────────────────────────────── */
 
 /* Escudos a los lados y el «VS» en el hueco entre ellos: no tapa a ninguno. */
 .diagonal .escudoLocal {
@@ -347,53 +98,7 @@
   line-height: 1.25;
 }
 
-/* ─── Enfrentados: fondo oscuro, dos luces de color y los escudos cara a cara ─────────────── */
-
-.enfrentados .fondo {
-  background:
-    radial-gradient(46% 32% at 24% 42%, var(--local-luz), transparent 72%),
-    radial-gradient(46% 32% at 76% 42%, var(--visitante-luz), transparent 72%),
-    linear-gradient(180deg, #0d1117, var(--tinta));
-}
-
-/* Aquí los ecos se juntan en el centro: más suaves para que no hagan «camuflaje». */
-.enfrentados .eco img {
-  filter: blur(80px) saturate(1.3);
-  opacity: 0.3;
-}
-
-.enfrentados .ecoPropio img {
-  filter: blur(80px) grayscale(1) brightness(0.8);
-  opacity: 0.22;
-}
-
-.enfrentados .ecoLocal img {
-  left: -620px;
-  top: 40px;
-}
-
-.enfrentados .ecoVisitante img {
-  right: -620px;
-  top: 40px;
-}
-
-.enfrentados .franja {
-  z-index: 1;
-  inset: auto 0 0;
-  height: 36%;
-  background: linear-gradient(0deg, rgb(0 0 0 / 70%), transparent);
-}
-
-.enfrentados .institucionales {
-  left: 0;
-  right: 0;
-  top: 44px;
-  justify-content: center;
-}
-
-.enfrentados .institucionales img {
-  height: 70px;
-}
+/* ─── Enfrentados ──────────────────────────────────────────────────────────────────────── */
 
 .enfrentados .cabecera {
   top: 146px;
@@ -402,7 +107,7 @@
   text-align: center;
 }
 
-.enfrentados .xornada {
+.enfrentados .cabecera > :first-child {
   font-size: 92px;
 }
 
@@ -433,7 +138,8 @@
   background: var(--amarillo);
 }
 
-.enfrentados .nombre {
+.enfrentados .nombreLocal,
+.enfrentados .nombreVisitante {
   top: 800px;
   width: 440px;
   text-align: center;

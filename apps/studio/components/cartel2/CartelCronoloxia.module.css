@@ -1,0 +1,162 @@
+/*
+ * Cronoloxía, sobre `Base`. Zonas: cabecera 56–190 · marcador 205–350 · línea de tiempo
+ * 380–1110 · fecha y campo 1140 · logos 1200–1310. `--fila` (alto de cada hecho) lo pone el
+ * componente según cuántos haya.
+ */
+
+.marcador {
+  position: absolute;
+  z-index: 5;
+  top: 205px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 44px;
+}
+
+.escudo {
+  display: block;
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 24px rgb(0 0 0 / 55%));
+}
+
+.goles {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 130px;
+  line-height: 1;
+}
+
+.propio {
+  color: var(--amarillo);
+}
+
+.guion {
+  color: rgb(255 255 255 / 55%);
+  font-size: 0.6em;
+}
+
+/* La línea de tiempo: un eje vertical en el centro con los minutos encima. */
+.linea {
+  position: absolute;
+  z-index: 5;
+  top: 382px;
+  left: 64px;
+  right: 64px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.linea::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 2px);
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--amarillo), rgb(245 197 24 / 20%));
+}
+
+.linea li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 96px 1fr;
+  align-items: center;
+  height: var(--fila);
+}
+
+.minuto {
+  grid-column: 2;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: calc(min(var(--fila), 64px) - 8px);
+  border-radius: 999px;
+  background: var(--amarillo);
+  color: var(--tinta);
+  font-size: calc(min(var(--fila), 64px) * 0.5);
+  line-height: 1;
+}
+
+.hecho {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: calc(min(var(--fila), 64px) * 0.5);
+  text-shadow: 0 3px 12px rgb(0 0 0 / 70%);
+}
+
+.izquierda .hecho {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: end;
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.derecha .hecho {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: start;
+}
+
+.jugador {
+  font-weight: 800;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.tarjeta {
+  display: inline-block;
+  width: 20px;
+  height: 28px;
+  border-radius: 3px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 50%);
+}
+
+.doble {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.cambio {
+  display: flex;
+  flex-direction: column;
+  font-weight: 800;
+  font-style: italic;
+  font-size: 0.82em;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.cambio > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.izquierda .cambio > span {
+  flex-direction: row-reverse;
+}
+
+.sale {
+  color: rgb(255 255 255 / 62%);
+}
+
+.pie {
+  position: absolute;
+  z-index: 6;
+  left: 64px;
+  right: 64px;
+  bottom: 150px;
+  text-align: center;
+  font-size: 26px;
+}

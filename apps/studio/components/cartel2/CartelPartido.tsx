@@ -1,43 +1,18 @@
 /* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
-import type { CSSProperties } from "react";
 import {
   categoriaCartel,
+  cuerpo,
   fechaCartel,
-  MEDIDAS,
-  urlLogo,
   type Composicion,
   type DatosPartido,
-  type EquipoCartel,
 } from "@/lib/cartel2/modelo";
-import { anton, barlow } from "./fuentes";
+import { Base } from "./Base";
+import b from "./Base.module.css";
 import s from "./CartelPartido.module.css";
 
 /**
- * Cuerpo de letra para que `texto` quepa en una línea de `ancho` px. `em` es el ancho medio de
- * un carácter en mayúsculas de esa fuente, en em (Anton ≈ 0,46; Barlow Condensed 800 ≈ 0,5).
- */
-function cuerpo(texto: string, ancho: number, maximo: number, minimo: number, em: number) {
-  const n = Math.max(texto.length, 1);
-  return Math.max(minimo, Math.min(maximo, Math.floor(ancho / (n * em))));
-}
-
-/**
- * Colores de un lado del cartel: `base` rellena su mitad y `luz` es el brillo detrás del
- * escudo. El Santiso juega de amarillo y negro: su lado es negro con luz amarilla.
- */
-function coloresDe(equipo: EquipoCartel) {
-  return equipo.propio
-    ? { base: "#0b0b0c", luz: "color-mix(in srgb, #f5c518 55%, transparent)" }
-    : {
-        base: `color-mix(in srgb, ${equipo.color} 62%, #06080b)`,
-        luz: `color-mix(in srgb, ${equipo.color} 72%, transparent)`,
-      };
-}
-
-/**
- * Cartel de partido del motor nuevo, 1080 × 1350. Un solo marcado para las dos composiciones:
- * cada una solo cambia el CSS. La vista previa lo escala y la exportación lo fotografía tal cual.
- * Nada se sale del cartel: escudos enteros y nombres ajustados a su hueco.
+ * Cartel de partido (previa). Dos composiciones sobre el mismo marcado: `diagonal` (por
+ * defecto) y `enfrentados`. Nada se sale del cartel: escudos enteros y nombres a una línea.
  */
 export function CartelPartido({
   datos,
@@ -47,105 +22,62 @@ export function CartelPartido({
   composicion: Composicion;
 }) {
   const fecha = fechaCartel(datos.fecha);
-  const local = coloresDe(datos.local);
-  const visitante = coloresDe(datos.visitante);
-  const estilo = {
-    "--local-base": local.base,
-    "--local-luz": local.luz,
-    "--visitante-base": visitante.base,
-    "--visitante-luz": visitante.luz,
-    width: MEDIDAS.ancho,
-    height: MEDIDAS.alto,
-  } as CSSProperties;
-  // Hueco de cada nombre según la composición (px de ancho, una sola línea).
   const huecoNombre = composicion === "enfrentados" ? 440 : 470;
   const nombre = (texto: string) => ({ fontSize: cuerpo(texto, huecoNombre, 40, 24, 0.5) });
 
   return (
-    <div
-      className={`${s.cartel} ${s[composicion]} ${anton.variable} ${barlow.variable}`}
-      style={estilo}
-      data-cartel
+    <Base
+      variante={composicion === "diagonal" ? "diagonal" : "centro"}
+      izquierda={datos.local}
+      derecha={datos.visitante}
+      lineas
+      logosArriba={composicion === "diagonal" ? "derecha" : "centro"}
+      institucionales={datos.institucionales}
+      patrocinadores={datos.patrocinadores}
+      className={s[composicion]}
     >
-      {/* Fondo por capas: color de cada lado, eco desenfocado de cada escudo, focos de
-          estadio, líneas del campo, trama de puntos, viñeta, franjas y grano. */}
-      <div className={s.fondo} />
-      <div className={`${s.eco} ${s.ecoLocal} ${datos.local.propio ? s.ecoPropio : ""}`}>
-        {datos.local.escudo && <img src={datos.local.escudo} alt="" />}
-      </div>
-      <div className={`${s.eco} ${s.ecoVisitante} ${datos.visitante.propio ? s.ecoPropio : ""}`}>
-        {datos.visitante.escudo && <img src={datos.visitante.escudo} alt="" />}
-      </div>
-      <div className={s.trama} />
-      <div className={`${s.foco} ${s.focoIzquierda}`} />
-      <div className={`${s.foco} ${s.focoDerecha}`} />
-      <svg className={s.lineasCampo} viewBox="0 0 1080 1350" aria-hidden>
-        <line x1="0" y1="660" x2="1080" y2="660" />
-        <circle cx="540" cy="660" r="250" />
-        <circle cx="540" cy="660" r="9" />
-      </svg>
-      <div className={s.vineta} />
-      <div className={s.franja} />
-      <div className={s.grano} />
-
       {datos.local.escudo && (
-        <img className={`${s.escudo} ${s.escudoLocal}`} src={datos.local.escudo} alt="" />
+        <img className={`${b.escudo} ${s.escudoLocal}`} src={datos.local.escudo} alt="" />
       )}
       {datos.visitante.escudo && (
-        <img className={`${s.escudo} ${s.escudoVisitante}`} src={datos.visitante.escudo} alt="" />
+        <img className={`${b.escudo} ${s.escudoVisitante}`} src={datos.visitante.escudo} alt="" />
       )}
 
       <div className={s.vs}>VS</div>
 
-      {datos.institucionales.length > 0 && (
-        <div className={s.institucionales}>
-          {datos.institucionales.map((logo) => (
-            <img key={logo} src={urlLogo(logo)} alt="" />
-          ))}
-        </div>
-      )}
-
-      <header className={s.cabecera}>
-        <div className={s.xornada}>
+      <header className={`${b.cabecera} ${s.cabecera}`}>
+        <div className={b.xornada}>
           {datos.jornada ? `XORNADA ${datos.jornada}` : "DÍA DE PARTIDO"}
         </div>
-        <div className={s.competicion}>
+        <div className={b.competicion}>
           {categoriaCartel(datos.categoria)}
           {datos.competicion ? ` · ${datos.competicion.toUpperCase()}` : ""}
         </div>
       </header>
 
-      <div className={`${s.nombre} ${s.nombreLocal}`} style={nombre(datos.local.nombre)}>
+      <div className={`${b.nombre} ${s.nombreLocal}`} style={nombre(datos.local.nombre)}>
         {datos.local.nombre.toUpperCase()}
       </div>
-      <div className={`${s.nombre} ${s.nombreVisitante}`} style={nombre(datos.visitante.nombre)}>
+      <div className={`${b.nombre} ${s.nombreVisitante}`} style={nombre(datos.visitante.nombre)}>
         {datos.visitante.nombre.toUpperCase()}
       </div>
 
       <div className={s.cuando}>
         {fecha ? (
-          <div className={s.fecha}>
+          <div className={`${b.display} ${s.fecha}`}>
             <span className={s.dia}>{fecha.dia}</span>
             <span className={s.numero}>
               {fecha.numero} {fecha.mes}
             </span>
           </div>
         ) : (
-          <div className={s.fecha}>
+          <div className={`${b.display} ${s.fecha}`}>
             <span className={s.sinFecha}>DATA POR DEFINIR</span>
           </div>
         )}
-        {datos.hora && <div className={s.hora}>{datos.hora}</div>}
-        {datos.campo && <div className={s.campo}>{datos.campo.toUpperCase()}</div>}
+        {datos.hora && <div className={`${b.display} ${s.hora}`}>{datos.hora}</div>}
+        {datos.campo && <div className={`${b.dato} ${s.campo}`}>{datos.campo.toUpperCase()}</div>}
       </div>
-
-      {datos.patrocinadores.length > 0 && (
-        <footer className={s.patrocinadores}>
-          {datos.patrocinadores.map((logo) => (
-            <img key={logo} src={urlLogo(logo)} alt="" />
-          ))}
-        </footer>
-      )}
-    </div>
+    </Base>
   );
 }

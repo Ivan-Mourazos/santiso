@@ -122,3 +122,22 @@ test("el cartel nuevo (piloto) se previsualiza y se descarga en PNG a 2160×2700
   expect(png.subarray(1, 4).toString()).toBe("PNG");
   expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([2160, 2700]);
 });
+
+test("las siete plantillas tienen su cartel nuevo en el Estudio", async ({ page }) => {
+  test.setTimeout(120000);
+  for (const plantilla of [
+    "partido",
+    "resumo",
+    "cronoloxia",
+    "proximos",
+    "noso11",
+    "multiusos",
+    "clasificacion",
+  ]) {
+    await page.goto(`/admin/carteles?plantilla=${plantilla}`);
+    const piloto = page.getByRole("region", { name: "Cartel nuevo (piloto)" });
+    await expect(piloto.locator("[data-vista-cartel] [data-cartel]"), plantilla).toBeVisible({
+      timeout: 30000,
+    });
+  }
+});

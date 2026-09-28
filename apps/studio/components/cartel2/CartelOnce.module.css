@@ -1,0 +1,143 @@
+/*
+ * O Noso 11, sobre `Base` (variante club). Retrato a la izquierda (0–560) y lista a la
+ * derecha (560–1016); `invertido` los cambia de lado. Logos 44–114 · lista 150–1180 ·
+ * patrocinadores 1200–1310.
+ */
+
+.retrato {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  bottom: 150px;
+  left: 0;
+  width: 600px;
+  overflow: hidden;
+  mask-image:
+    linear-gradient(90deg, #000 62%, transparent), linear-gradient(0deg, transparent, #000 18%);
+  mask-composite: intersect;
+}
+
+.foto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: contrast(1.08) saturate(1.05);
+}
+
+.escudoClub {
+  width: 480px;
+  height: 480px;
+  left: 50px;
+  top: 360px;
+}
+
+.lista {
+  position: absolute;
+  z-index: 6;
+  top: 150px;
+  right: 64px;
+  width: 470px;
+  text-shadow: 0 3px 14px rgb(0 0 0 / 70%);
+}
+
+.categoria {
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 0.3em;
+  color: rgb(255 255 255 / 80%);
+}
+
+.titulo {
+  font-size: 118px;
+  color: var(--amarillo);
+}
+
+.subtitulo {
+  margin-top: 6px;
+  font-weight: 800;
+  font-style: italic;
+  font-size: 26px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titulares {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.titulares li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+
+.dorsal {
+  width: 60px;
+  flex: none;
+  text-align: right;
+  font-size: 44px;
+  color: var(--amarillo);
+}
+
+.nombre {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-weight: 800;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.capitan {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--amarillo);
+  color: var(--tinta);
+  font-weight: 800;
+  font-size: 22px;
+  text-shadow: none;
+}
+
+.suplentes {
+  margin-top: 18px;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.35;
+  color: rgb(255 255 255 / 78%);
+}
+
+.etiquetaSuplentes {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  color: var(--amarillo);
+}
+
+/* Invertido: foto a la derecha, lista a la izquierda. */
+.invertido .retrato {
+  left: auto;
+  right: 0;
+  mask-image:
+    linear-gradient(270deg, #000 62%, transparent), linear-gradient(0deg, transparent, #000 18%);
+}
+
+.invertido .lista {
+  right: auto;
+  left: 64px;
+}
+
+.invertido .escudoClub {
+  left: auto;
+  right: 50px;
+}
