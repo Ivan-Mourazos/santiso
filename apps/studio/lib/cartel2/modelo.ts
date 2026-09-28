@@ -3,10 +3,10 @@
  * componente no consulta nada y la exportación a PNG recibe exactamente lo mismo que la vista previa.
  */
 
+/** La primera es la de por defecto. */
 export const COMPOSICIONES = [
   { id: "diagonal", nombre: "Diagonal" },
   { id: "enfrentados", nombre: "Enfrentados" },
-  { id: "gigante", nombre: "Escudo gigante" },
 ] as const;
 export type Composicion = (typeof COMPOSICIONES)[number]["id"];
 

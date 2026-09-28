@@ -166,7 +166,7 @@ Lo que hay en `main` y **hay que seguir como patrón**:
 | Modelo | `apps/studio/lib/cartel2/modelo.ts` | `DatosPartido`, `COMPOSICIONES`, `MEDIDAS` (1080×1350, solo 4:5), `fechaCartel` (gallego), `urlLogo` (logo recortado a su contenido), `datosDeFormulario` |
 | Color | `apps/studio/lib/cartel2/color.ts` | `colorDominante` sobre píxeles RGBA (puro, con pruebas). El lado del Santiso va en negro con luz amarilla; un rival sin color claro usa un gris azulado, nunca amarillo |
 | Fuentes | `apps/studio/components/cartel2/fuentes.ts` | Anton (display) y Barlow Condensed, locales con `next/font/local` |
-| Cartel | `apps/studio/components/cartel2/CartelPartido.tsx` + `.module.css` | Un marcado; cada composición (`diagonal`, `enfrentados`, `gigante`) es solo CSS. Nada se sale del cartel: escudos enteros, nombres ajustados a una línea, campo largo en dos líneas |
+| Cartel | `apps/studio/components/cartel2/CartelPartido.tsx` + `.module.css` | Un marcado; cada composición (`diagonal`, por defecto, y `enfrentados`) es solo CSS. «Escudo gigante» se probó y el usuario lo descartó. Fondo por capas: color de cada lado, eco desenfocado de cada escudo (el del Santiso en gris: juega de amarillo y negro), focos de estadio, líneas del campo, trama de puntos, viñeta, franjas y grano. Nada se sale del cartel: escudos enteros, nombres ajustados a una línea, campo largo en dos líneas |
 | Página de foto | `apps/studio/app/render/cartel/page.tsx` | Pinta lo que recibe por `window.__pintarCartel` y marca `data-listo` cuando fuentes e imágenes han cargado |
 | Exportación | `apps/studio/lib/server/cartel2/render.ts` + `app/api/carteles/png/route.ts` | Chromium reutilizado; fotografía `[data-cartel]` a ×2; valida la petición con zod |
 | Estudio (piloto) | `apps/studio/components/admin/cartel/PilotoPartido.tsx` | Vista previa escalada del mismo componente, selector de composición, «Descargar PNG» |
@@ -205,7 +205,7 @@ Es la otra lectura de «no estáticos». Consiste en exportar la escena en **ví
 ### Tareas R3
 
 - [x] Motor HTML/CSS → PNG (`lib/cartel2/`, `components/cartel2/`, `/render/cartel`, `/api/carteles/png`), con pruebas. Hecho por Claude.
-- [x] Plantilla `partido` en 4:5 con 3 composiciones (piloto), probada con los nombres más largos de las dos ligas y sin escudo ni fecha. Falta que el usuario elija la composición por defecto.
+- [x] Plantilla `partido` en 4:5 con 2 composiciones (piloto; diagonal por defecto), probada con los nombres más largos de las dos ligas y sin escudo ni fecha. El usuario quiere carteles «increíbles»: el fondo por capas es el listón mínimo para las demás plantillas.
 - [ ] Resto de plantillas con el mismo patrón. Enseñar al usuario los PNG de cada una antes de darla por buena.
 - [ ] Estudio nuevo, que sustituye a `GeneradorCartel`.
 - [ ] Retirar el motor antiguo (`lib/cartel-draw.ts`, `lib/cartel/**`) cuando no quede ningún uso.

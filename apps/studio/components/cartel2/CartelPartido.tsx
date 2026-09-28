@@ -35,7 +35,7 @@ function coloresDe(equipo: EquipoCartel) {
 }
 
 /**
- * Cartel de partido del motor nuevo, 1080 × 1350. Un solo marcado para las tres composiciones:
+ * Cartel de partido del motor nuevo, 1080 × 1350. Un solo marcado para las dos composiciones:
  * cada una solo cambia el CSS. La vista previa lo escala y la exportación lo fotografía tal cual.
  * Nada se sale del cartel: escudos enteros y nombres ajustados a su hueco.
  */
@@ -47,7 +47,6 @@ export function CartelPartido({
   composicion: Composicion;
 }) {
   const fecha = fechaCartel(datos.fecha);
-  const rival = datos.local.propio ? datos.visitante : datos.local;
   const local = coloresDe(datos.local);
   const visitante = coloresDe(datos.visitante);
   const estilo = {
@@ -61,31 +60,33 @@ export function CartelPartido({
   // Hueco de cada nombre según la composición (px de ancho, una sola línea).
   const huecoNombre = composicion === "enfrentados" ? 440 : 470;
   const nombre = (texto: string) => ({ fontSize: cuerpo(texto, huecoNombre, 40, 24, 0.5) });
-  // El rival en «gigante»: hasta dos líneas de 400 px, sin que la palabra más larga se corte.
-  const palabraMasLarga = rival.nombre
-    .split(/\s+/)
-    .reduce((a, b) => (b.length > a.length ? b : a), "");
-  const cuerpoRival = Math.min(
-    cuerpo(rival.nombre, 2 * 400, 120, 52, 0.46),
-    cuerpo(palabraMasLarga, 400, 120, 52, 0.46),
-  );
 
   return (
     <div
       className={`${s.cartel} ${s[composicion]} ${anton.variable} ${barlow.variable}`}
       style={estilo}
-      data-propio={datos.local.propio ? "local" : "visitante"}
       data-cartel
     >
+      {/* Fondo por capas: color de cada lado, eco desenfocado de cada escudo, focos de
+          estadio, líneas del campo, trama de puntos, viñeta, franjas y grano. */}
       <div className={s.fondo} />
+      <div className={`${s.eco} ${s.ecoLocal} ${datos.local.propio ? s.ecoPropio : ""}`}>
+        {datos.local.escudo && <img src={datos.local.escudo} alt="" />}
+      </div>
+      <div className={`${s.eco} ${s.ecoVisitante} ${datos.visitante.propio ? s.ecoPropio : ""}`}>
+        {datos.visitante.escudo && <img src={datos.visitante.escudo} alt="" />}
+      </div>
+      <div className={s.trama} />
+      <div className={`${s.foco} ${s.focoIzquierda}`} />
+      <div className={`${s.foco} ${s.focoDerecha}`} />
+      <svg className={s.lineasCampo} viewBox="0 0 1080 1350" aria-hidden>
+        <line x1="0" y1="660" x2="1080" y2="660" />
+        <circle cx="540" cy="660" r="250" />
+        <circle cx="540" cy="660" r="9" />
+      </svg>
+      <div className={s.vineta} />
       <div className={s.franja} />
       <div className={s.grano} />
-
-      {composicion === "gigante" && (
-        <div className={s.palabraFondo} aria-hidden>
-          {categoriaCartel(datos.categoria)}
-        </div>
-      )}
 
       {datos.local.escudo && (
         <img className={`${s.escudo} ${s.escudoLocal}`} src={datos.local.escudo} alt="" />
@@ -120,13 +121,6 @@ export function CartelPartido({
       <div className={`${s.nombre} ${s.nombreVisitante}`} style={nombre(datos.visitante.nombre)}>
         {datos.visitante.nombre.toUpperCase()}
       </div>
-
-      {composicion === "gigante" && (
-        <div className={s.rivalGrande}>
-          <span className={s.rivalVs}>{datos.local.propio ? "vs" : "en"}</span>
-          <span style={{ fontSize: cuerpoRival }}>{rival.nombre.toUpperCase()}</span>
-        </div>
-      )}
 
       <div className={s.cuando}>
         {fecha ? (
