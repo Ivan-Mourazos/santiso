@@ -27,15 +27,13 @@ async function escribirAjuste(clave: ClaveAjuste, valor: unknown): Promise<void>
  */
 export async function cargarAjustesCartel(): Promise<Resultado<AjustesCartelDto>> {
   return capturar("No se pudieron cargar los ajustes de carteles.", async () => {
-    const [escudo, xunta, rfgf, orden, patrocinadores] = await Promise.all([
-      leerAjuste("club.escudo"),
+    const [xunta, rfgf, orden, patrocinadores] = await Promise.all([
       leerAjuste("cartel.logo_xunta"),
       leerAjuste("cartel.logo_rfgf"),
       leerAjuste("cartel.orden_logos"),
       listarPatrocinadores(true),
     ]);
     return {
-      escudoClub: escudo ? urlMedia(escudo) : null,
       logoXunta: xunta ? urlMedia(xunta) : null,
       logoRfgf: rfgf ? urlMedia(rfgf) : null,
       ordenLogos: orden ?? ORDEN_POR_DEFECTO,
@@ -44,7 +42,7 @@ export async function cargarAjustesCartel(): Promise<Resultado<AjustesCartelDto>
   });
 }
 
-/** Guarda una imagen y la deja apuntada en un ajuste (`club.escudo`, `cartel.logo_*`). */
+/** Guarda una imagen y la deja apuntada en un ajuste (`cartel.logo_*`). */
 export async function guardarLogoAjuste(
   clave: string,
   formulario: FormData,

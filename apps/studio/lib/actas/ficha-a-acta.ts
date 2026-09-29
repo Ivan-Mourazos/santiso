@@ -53,10 +53,9 @@ function refDeNombre(nombre: string, equipo: EquipoFicha): ActaPlayerRef {
  * (…)»), pero no la categoría. Solo se deduce cuando el nombre lo dice: devolver `""` y que
  * la pantalla pregunte es mejor que suponer Senior y guardar el acta en el partido de otro.
  */
-export function categoriaDeCompeticion(competicion: string): "Veteranos" | "Femenino" | "" {
+export function categoriaDeCompeticion(competicion: string): "Veteranos" | "" {
   const texto = clave(competicion);
   if (texto.includes("vetera")) return "Veteranos";
-  if (texto.includes("femin") || texto.includes("femen")) return "Femenino";
   return "";
 }
 

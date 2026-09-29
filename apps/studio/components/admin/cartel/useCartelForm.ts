@@ -177,7 +177,7 @@ export function useCartelForm(partidoInicial?: string | null) {
 
         const equiposDeTodas = (
           await Promise.all(
-            ["Senior", "Femenino", "Veteranos"].map((c) => cargarEquiposDeCategoria(c)),
+            ["Senior", "Veteranos"].map((c) => cargarEquiposDeCategoria(c)),
           )
         ).flat();
         setEquipos(equiposDeTodas as unknown as typeof equipos);

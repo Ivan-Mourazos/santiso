@@ -2,7 +2,7 @@
 import dynamic from "next/dynamic";
 import { useSyncExternalStore } from "react";
 import type { Seccion } from "@/lib/navigation/contexto";
-import { categoriaDe, categoriaPlantillaDe } from "@/lib/navigation/contexto";
+import { categoriaDe } from "@/lib/navigation/contexto";
 import { TEMPLATES } from "@/components/admin/cartel/types";
 import { LoadingState } from "@/components/ui/foundation/States";
 import { Select } from "@/components/ui/foundation/Fields";
@@ -40,7 +40,6 @@ export function StudioSection({ section }: { section: Seccion }) {
   const { params, setParams, showToast, showConfirm } = useStudio();
   const hydrated = useSyncExternalStore(subscribeHydration, clientReady, serverReady);
   const category = categoriaDe(params);
-  const squadCategory = categoriaPlantillaDe(params);
   const feedback = { showToast, showConfirm };
   // Equipos no entra: carga el catálogo una vez y filtra en memoria por la competición elegida.
   // Remontarla al cambiar de competición no aporta nada y abre una carrera: un diálogo abierto
@@ -51,7 +50,7 @@ export function StudioSection({ section }: { section: Seccion }) {
   const key = contextual
     ? `${section}:${category}:${params.get("temporada") ?? ""}:${params.get("competicion") ?? ""}`
     : squad
-      ? `${section}:${squadCategory}:${params.get("temporada") ?? ""}`
+      ? `${section}:${category}:${params.get("temporada") ?? ""}`
       : `${section}:${category}`;
   const template = TEMPLATES.find((t) => t.id === params.get("plantilla"))?.id ?? "partido";
   if (!hydrated) return <LoadingState title="Preparando sección…" />;
@@ -60,9 +59,9 @@ export function StudioSection({ section }: { section: Seccion }) {
       {section === "jornada" && <Week />}
       {section === "calendario" && <Calendar {...feedback} categoria={category} />}
       {section === "clasificacion" && <League categoria={category} />}
-      {section === "estadisticas" && <Stats showToast={showToast} categoria={squadCategory} />}
-      {section === "jugadores" && <Players {...feedback} categoria={squadCategory} />}
-      {section === "tecnicos" && <Staff {...feedback} tipo="Tecnico" categoria={squadCategory} />}
+      {section === "estadisticas" && <Stats showToast={showToast} categoria={category} />}
+      {section === "jugadores" && <Players {...feedback} categoria={category} />}
+      {section === "tecnicos" && <Staff {...feedback} tipo="Tecnico" categoria={category} />}
       {section === "directiva" && <Staff {...feedback} tipo="Directiva" />}
       {section === "equipos" && <Teams {...feedback} categoria={category} />}
       {section === "patrocinadores" && <Sponsors {...feedback} />}

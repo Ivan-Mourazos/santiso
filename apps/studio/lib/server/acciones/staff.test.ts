@@ -127,7 +127,7 @@ describe("acciones de staff", () => {
         nombre: "Marta",
         cargo: "Entrenadora",
         tipo: "Tecnico",
-        categoria: "Femenino",
+        categoria: "Veteranos",
       }),
     );
     await guardarMiembroStaff(

@@ -306,9 +306,8 @@ describe("categoriaDeCompeticion", () => {
     );
   });
 
-  it("reconoce femenino con las dos grafías", () => {
-    expect(categoriaDeCompeticion("PRIMERA FEMININA GALEGA")).toBe("Femenino");
-    expect(categoriaDeCompeticion("Liga Femenina Aficionada")).toBe("Femenino");
+  it("el femenino no es una categoría del club: la elige el usuario", () => {
+    expect(categoriaDeCompeticion("PRIMERA FEMININA GALEGA")).toBe("");
   });
 
   it("no inventa categoría cuando el nombre no la dice", () => {

@@ -17,46 +17,46 @@ test.beforeAll(async () => {
     .png()
     .toBuffer();
 });
-const escudo = (page: Page) => page.getByRole("region", { name: "Escudo del club" });
+const logo = (page: Page) => page.getByRole("region", { name: "Xunta de Galicia" });
 
 async function abrir(page: Page) {
   await page.goto("/admin/ajustes-graficos");
-  await expect(escudo(page)).toBeVisible({ timeout: 30000 });
+  await expect(logo(page)).toBeVisible({ timeout: 30000 });
 }
 
 test("elegir una imagen no guarda nada hasta confirmar, y cancelar la descarta", async ({
   page,
 }) => {
   await abrir(page);
-  await expect(escudo(page).getByText("Sin imagen")).toBeVisible();
+  await expect(logo(page).getByText("Sin imagen")).toBeVisible();
 
-  await escudo(page)
-    .getByLabel("Subir Escudo del club")
-    .setInputFiles({ name: "escudo.png", mimeType: "image/png", buffer: PNG });
-  await expect(escudo(page).getByText("Vista previa: todavía no se ha guardado.")).toBeVisible();
-  await escudo(page).getByRole("button", { name: "Cancelar" }).click();
-  await expect(escudo(page).getByText("Sin imagen")).toBeVisible();
+  await logo(page)
+    .getByLabel("Subir Xunta de Galicia")
+    .setInputFiles({ name: "xunta.png", mimeType: "image/png", buffer: PNG });
+  await expect(logo(page).getByText("Vista previa: todavía no se ha guardado.")).toBeVisible();
+  await logo(page).getByRole("button", { name: "Cancelar" }).click();
+  await expect(logo(page).getByText("Sin imagen")).toBeVisible();
 
-  // Tras recargar sigue sin escudo: cancelar no escribió nada.
+  // Tras recargar sigue sin logo: cancelar no escribió nada.
   await abrir(page);
-  await expect(escudo(page).getByText("Sin imagen")).toBeVisible();
+  await expect(logo(page).getByText("Sin imagen")).toBeVisible();
 });
 
 test("guardar deja la imagen puesta y sobrevive a recargar", async ({ page }) => {
   await abrir(page);
-  await escudo(page)
-    .getByLabel("Subir Escudo del club")
-    .setInputFiles({ name: "escudo.png", mimeType: "image/png", buffer: PNG });
-  await escudo(page).getByRole("button", { name: "Guardar" }).click();
-  await expect(page.getByText("Escudo del club guardado")).toBeVisible();
-  await expect(escudo(page).getByRole("img", { name: "Escudo del club" })).toHaveAttribute(
+  await logo(page)
+    .getByLabel("Subir Xunta de Galicia")
+    .setInputFiles({ name: "xunta.png", mimeType: "image/png", buffer: PNG });
+  await logo(page).getByRole("button", { name: "Guardar" }).click();
+  await expect(page.getByText("Logo de la Xunta guardado")).toBeVisible();
+  await expect(logo(page).getByRole("img", { name: "Xunta de Galicia" })).toHaveAttribute(
     "src",
     /^\/media\/cartel\/.+\.webp$/,
   );
 
   await abrir(page);
-  await expect(escudo(page).getByRole("img", { name: "Escudo del club" })).toBeVisible();
-  await expect(escudo(page).getByLabel("Cambiar Escudo del club")).toBeAttached();
+  await expect(logo(page).getByRole("img", { name: "Xunta de Galicia" })).toBeVisible();
+  await expect(logo(page).getByLabel("Cambiar Xunta de Galicia")).toBeAttached();
 });
 
 test("el orden de la cabecera se guarda", async ({ page }) => {

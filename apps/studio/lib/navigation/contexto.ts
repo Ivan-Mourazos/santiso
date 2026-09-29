@@ -21,21 +21,6 @@ export function esSeccion(value: string): value is Seccion {
 export function categoriaDe(params: URLSearchParams): "Senior" | "Veteranos" {
   return params.get("categoria") === "Veteranos" ? "Veteranos" : "Senior";
 }
-export type CategoriaPlantilla = "Senior" | "Femenino" | "Veteranos";
-/**
- * Secciones cuya categoría admite también Femenino. Estadísticas entra aquí: sus datos salen de
- * la plantilla y de las actas, y el Femenino tiene ambos aunque este año no compita.
- */
-export const SECCIONES_DE_PLANTILLA: readonly Seccion[] = ["jugadores", "tecnicos", "estadisticas"];
-/**
- * En Plantilla la categoría incluye Femenino: aunque este año no compita, su plantilla y su
- * cuerpo técnico de temporadas anteriores siguen existiendo y tienen que poder consultarse.
- * El resto de secciones sigue con `categoriaDe`.
- */
-export function categoriaPlantillaDe(params: URLSearchParams): CategoriaPlantilla {
-  const categoria = params.get("categoria");
-  return categoria === "Veteranos" || categoria === "Femenino" ? categoria : "Senior";
-}
 export function cambiarParametros(
   params: URLSearchParams,
   patch: Record<string, string | null>,

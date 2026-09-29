@@ -27,8 +27,8 @@ test("la plantilla de la temporada activa se lista y se filtra sin tocar nada", 
   await page.getByRole("button", { name: "Quitar filtros" }).click();
   await expect(contador).toHaveText(total ?? "");
 
-  // Femenino se puede consultar en Plantilla.
-  await expect(page.getByRole("button", { name: "Femenino", exact: true })).toBeVisible();
+  // El club no tiene equipo femenino: la categoría no se ofrece.
+  await expect(page.getByRole("button", { name: "Femenino", exact: true })).toHaveCount(0);
 
   expect(errores).toEqual([]);
   expect(externas).toEqual([]);

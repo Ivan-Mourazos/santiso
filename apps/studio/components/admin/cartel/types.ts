@@ -72,6 +72,5 @@ export interface AssetUrls {
   xunta: string;
   rfgf: string;
   xuntaIsLeft: boolean;
-  santiso: string;
   sponsors: string[];
 }

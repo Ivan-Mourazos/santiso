@@ -44,7 +44,13 @@ beforeEach(async () => {
       categoria: "Veteranos",
       esPropio: true,
     },
-    { id: "fem", nombre: "Santiso Femenino", clave: "fem", categoria: "Femenino", esPropio: true },
+    {
+      id: "fem",
+      nombre: "Santiso Solaina B",
+      clave: "fem",
+      categoria: "Veteranos",
+      esPropio: true,
+    },
     // Solo del año pasado: se va, con su escudo.
     {
       id: "viejo",
@@ -243,7 +249,7 @@ describe("limpieza de temporada", () => {
       "santiso",
       "siempre",
     ]);
-    // Los del club no se borran aunque no jueguen (Femenino), y lo recién creado tampoco.
+    // Los del club no se borran aunque no jueguen, y lo recién creado tampoco.
     expect(await q("select id from equipos order by id")).toEqual([
       "faro-nuevo",
       "fem",

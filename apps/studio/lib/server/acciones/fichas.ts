@@ -15,7 +15,7 @@ export interface DeteccionFicha {
   visitorTeam: string;
   competicion: string;
   /** Vacía cuando el nombre de la competición no la dice; entonces la elige el usuario. */
-  categoria: "Veteranos" | "Femenino" | "";
+  categoria: "Veteranos" | "";
   fecha: string;
 }
 

@@ -52,16 +52,16 @@ it("reconcilia SQL con goles en propia de ambos lados y gol sin autor", async ()
     await db.insert(schema.temporadas).values({ id: "t", nombre: "2025/26" });
     await db
       .insert(schema.competiciones)
-      .values({ id: "c", temporadaId: "t", categoria: "Femenino", nombre: "Liga" });
+      .values({ id: "c", temporadaId: "t", categoria: "Veteranos", nombre: "Liga" });
     await db.insert(schema.equipos).values([
       {
         id: "local",
         nombre: "Club ficticio",
         clave: "club",
-        categoria: "Femenino",
+        categoria: "Veteranos",
         esPropio: true,
       },
-      { id: "rival", nombre: "Rival ficticio", clave: "rival", categoria: "Femenino" },
+      { id: "rival", nombre: "Rival ficticio", clave: "rival", categoria: "Veteranos" },
     ]);
     await db.insert(schema.jornadas).values({ id: "j", competicionId: "c", numero: 1 });
     await db
@@ -86,7 +86,7 @@ it("reconcilia SQL con goles en propia de ambos lados y gol sin autor", async ()
     ]);
     const resultado = await auditarEstadisticas(
       { db, ejecutar: (sql) => conexion.cliente.execute(sql) },
-      { temporadaId: "t", categoria: "Femenino" },
+      { temporadaId: "t", categoria: "Veteranos" },
     );
     expect(resultado).toMatchObject({
       jugadores: 1,

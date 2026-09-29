@@ -95,7 +95,7 @@ describe("acciones de equipos", () => {
     await acciones.guardarEquipo(formulario({ id: "", nombre: "S.D. Touro", categoria: "Senior" }));
     expect(
       await acciones.guardarEquipo(
-        formulario({ id: "", nombre: "S.D. Touro", categoria: "Femenino" }),
+        formulario({ id: "", nombre: "S.D. Touro", categoria: "Veteranos" }),
       ),
     ).toMatchObject({ ok: true });
   });

@@ -43,7 +43,6 @@ describe("acciones de ajustes de cartel", () => {
     const pantalla = await cargarAjustesCartel();
     if (!pantalla.ok) throw new Error("falló la carga");
     expect(pantalla.datos).toMatchObject({
-      escudoClub: null,
       logoXunta: null,
       logoRfgf: null,
       ordenLogos: "xunta_izquierda",
@@ -112,14 +111,5 @@ describe("acciones de ajustes de cartel", () => {
     const pantalla = await cargarAjustesCartel();
     if (!pantalla.ok) throw new Error("falló la carga");
     expect(pantalla.datos.patrocinadores.map((p) => p.nombre)).toEqual(["Primero", "Segundo"]);
-  });
-
-  it("guarda el escudo del club", async () => {
-    const { guardarLogoAjuste, cargarAjustesCartel } = await entorno();
-    const guardado = await guardarLogoAjuste("club.escudo", await conImagen());
-    if (!guardado.ok) throw new Error("no guardó");
-    const pantalla = await cargarAjustesCartel();
-    if (!pantalla.ok) throw new Error("falló la carga");
-    expect(pantalla.datos.escudoClub).toBe(guardado.datos);
   });
 });
