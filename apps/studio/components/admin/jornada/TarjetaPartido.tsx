@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import GaleriaPartido from "@/components/admin/fotos/GaleriaPartido";
+import { useStudio } from "@/components/studio/StudioContext";
 import boton from "@/components/ui/foundation/Button.module.css";
 import { hoyLocal } from "@/lib/jornada/semana";
 import type { PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
@@ -86,6 +89,8 @@ function Paso({
  * ya elegido.
  */
 export default function TarjetaPartido({ partido: p, categoria }: Props) {
+  const { showToast } = useStudio();
+  const [galeria, setGaleria] = useState(false);
   const cuando = fechaCorta(p.fecha);
   const conResultado = p.golesSantiso !== null;
   // Un partido cuya hora ya pasó cuenta como jugado aunque siga «programado»: es justo cuando
@@ -251,7 +256,23 @@ export default function TarjetaPartido({ partido: p, categoria }: Props) {
             >
               O noso 11
             </Accion>
+            {/* Siempre disponible: las fotos se pueden subir en cuanto llegan, antes del acta. */}
+            <button
+              type="button"
+              className={`${boton.button} ${boton.secondary} ${boton.sm}`}
+              onClick={() => setGaleria(true)}
+            >
+              Fotos del partido
+            </button>
           </div>
+          {galeria && (
+            <GaleriaPartido
+              partidoId={p.id}
+              partido={`${local.nombre} – ${visitante.nombre}${cuando ? ` · ${cuando}` : ""}`}
+              onCerrar={() => setGaleria(false)}
+              showToast={showToast}
+            />
+          )}
         </Paso>
 
         <Paso

@@ -4,7 +4,7 @@ import type { FormState } from "@/components/admin/cartel/types";
 import { aHex, colorDominante, oscurecer } from "./color";
 import { leerPeticion } from "./esquema";
 import { peticionDeFormulario } from "./formulario";
-import { categoriaCartel, fechaCartel, goleadores, PLANTILLAS } from "./modelo";
+import { categoriaCartel, fechaCartel, goleadores, PLANTILLAS, urlFoto } from "./modelo";
 
 /** Píxeles RGBA de una imagen hecha con franjas de colores, como un escudo simplificado. */
 async function pixeles(franjas: { color: string; alto: number }[], ancho = 40) {
@@ -319,10 +319,30 @@ describe("leerPeticion", () => {
     expect(plantillas.sort()).toEqual([...PLANTILLAS].sort());
   });
 
+  it("resultado: la foto va con su foco y estilo, y el foco no sale de 0–1", () => {
+    const foto = { url: "/media/partidos/f.webp", x: 0.7, y: 0.3, estilo: "amarillo" as const };
+    const p = peticionDeFormulario("resumo", formulario(), recursos, { ...opciones, foto });
+    if (p.plantilla !== "resultado") throw new Error("plantilla");
+    expect(p.datos.foto).toEqual(foto);
+    expect(leerPeticion(JSON.parse(JSON.stringify(p)))).not.toBeNull();
+    const fuera = { ...p, datos: { ...p.datos, foto: { ...foto, x: 1.4 } } };
+    expect(leerPeticion(fuera)).toBeNull();
+    const sinEstilo = { ...p, datos: { ...p.datos, foto: { ...foto, estilo: "sepia" } } };
+    expect(leerPeticion(sinEstilo)).toBeNull();
+  });
+
   it("rechaza lo que no tiene forma de cartel", () => {
     expect(leerPeticion(null)).toBeNull();
     expect(leerPeticion({ plantilla: "otra", datos: {} })).toBeNull();
     const p = peticionDeFormulario("partido", formulario(), recursos, opciones);
     expect(leerPeticion({ ...p, datos: { ...p.datos, local: { nombre: "x" } } })).toBeNull();
+  });
+});
+
+describe("urlFoto", () => {
+  it("pide la media local al ancho del cartel exportado; lo demás, tal cual", () => {
+    expect(urlFoto("/media/partidos/f.webp")).toBe("/media/partidos/f.webp?ancho=2160");
+    expect(urlFoto("/media/partidos/f.webp?ancho=480")).toBe("/media/partidos/f.webp?ancho=480");
+    expect(urlFoto("data:image/png;base64,AAA")).toBe("data:image/png;base64,AAA");
   });
 });

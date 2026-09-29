@@ -35,6 +35,22 @@ export interface EquipoCartel {
   relieve: boolean;
 }
 
+/** Tratamiento de la foto de fondo: la de por defecto es la primera. */
+export const ESTILOS_FOTO = [
+  { id: "color", nombre: "Color" },
+  { id: "byn", nombre: "B/N" },
+  { id: "amarillo", nombre: "Amarillo" },
+] as const;
+export type EstiloFoto = (typeof ESTILOS_FOTO)[number]["id"];
+
+/** Foto de fondo: se recorta alrededor de su foco (`x`, `y` entre 0 y 1). */
+export interface FotoCartel {
+  url: string;
+  x: number;
+  y: number;
+  estilo: EstiloFoto;
+}
+
 /** Lo que llevan todos los carteles: logos institucionales (RFGF, Xunta) y patrocinadores. */
 export interface Logos {
   institucionales: string[];
@@ -75,7 +91,7 @@ export interface DatosResultado extends Logos, Competicion {
   fecha: string;
   campo: string;
   /** Foto del partido: si la hay, es el fondo del cartel. */
-  foto: string | null;
+  foto: FotoCartel | null;
 }
 
 export const TIPOS_EVENTO = [
@@ -221,6 +237,14 @@ export function fechaCorta(fecha: string) {
  */
 export function urlLogo(url: string) {
   return url.startsWith("/media/") ? `${url}?recorte=1` : url;
+}
+
+/**
+ * Una foto de la media local al ancho del cartel exportado (2160 px, ×2): las de partido se
+ * guardan hasta 3000 px y no hace falta mover más. Las URL de fuera (`data:`) se dejan tal cual.
+ */
+export function urlFoto(url: string) {
+  return url.startsWith("/media/") && !url.includes("?") ? `${url}?ancho=2160` : url;
 }
 
 /** «Senior» → «SÉNIOR»; en gallego, como el resto de textos del cartel. */

@@ -93,6 +93,7 @@ function toCartelPlayer(player: CartelPlayer): Player {
 
 const DEFAULT_FORM: FormState = {
   categoria: "Senior",
+  partido_id: "",
   competicion_id: "",
   competicion: "",
   jornada: "1",
@@ -345,6 +346,7 @@ export function useCartelForm(partidoInicial?: string | null) {
     setForm((p) => ({
       ...p,
       categoria: match.categoria || p.categoria,
+      partido_id: match.id,
       competicion_id: compId || p.competicion_id,
       competicion: compNombre || p.competicion,
       jornada: match.jornada?.numero?.toString() || "1",

@@ -1,5 +1,13 @@
 import { LADOS_EVENTO, MINUTO_MAXIMO, TIPOS_EVENTO } from "@santiso/domain";
-import { check, index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  check,
+  index,
+  integer,
+  primaryKey,
+  real,
+  sqliteTable,
+  text,
+} from "drizzle-orm/sqlite-core";
 import { partidos } from "./calendario";
 import { checkEnum, condicion, id, marcasTiempo } from "./comunes";
 import { jugadores } from "./plantilla";
@@ -63,6 +71,34 @@ export const partidoEventos = sqliteTable(
     check(
       "partido_eventos_minuto_ck",
       condicion(`"minuto" is null or "minuto" between 0 and ${MINUTO_MAXIMO}`),
+    ),
+  ],
+);
+
+/**
+ * Galería de fotos de un partido, para los carteles (fondo de Resultado, O noso 11).
+ * `foco_x`/`foco_y` (0–1): punto de interés de la foto, calculado al subirla y corregible;
+ * el cartel recorta alrededor de él. La media vive en `partidos/<uuid>.webp`.
+ */
+export const fotosPartido = sqliteTable(
+  "fotos_partido",
+  {
+    id: id(),
+    partidoId: text("partido_id")
+      .notNull()
+      .references(() => partidos.id, { onDelete: "cascade" }),
+    clave: text("clave").notNull(),
+    ancho: integer("ancho").notNull(),
+    alto: integer("alto").notNull(),
+    focoX: real("foco_x").notNull().default(0.5),
+    focoY: real("foco_y").notNull().default(0.4),
+    ...marcasTiempo(),
+  },
+  (t) => [
+    index("fotos_partido_partido_idx").on(t.partidoId),
+    check(
+      "fotos_partido_foco_ck",
+      condicion(`"foco_x" between 0 and 1 and "foco_y" between 0 and 1`),
     ),
   ],
 );

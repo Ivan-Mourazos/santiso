@@ -113,6 +113,17 @@ export interface JornadaDto {
 }
 
 /** @deprecated Ver TemporadaDto. Sin `categoria` ni `competicion_id`: los da la jornada. */
+/** Foto de la galería de un partido. `foco_*` (0–1): dónde se centra al recortarla en el cartel. */
+export interface FotoPartidoDto {
+  id: string;
+  partido_id: string;
+  url: string;
+  ancho: number;
+  alto: number;
+  foco_x: number;
+  foco_y: number;
+}
+
 export interface PartidoDto {
   id: string;
   jornada_id: string;

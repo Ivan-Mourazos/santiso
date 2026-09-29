@@ -1,6 +1,12 @@
 /* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
 import type { CSSProperties, ReactNode } from "react";
-import { MEDIDAS, urlLogo, type EquipoCartel } from "@/lib/cartel2/modelo";
+import {
+  MEDIDAS,
+  urlFoto,
+  urlLogo,
+  type EquipoCartel,
+  type FotoCartel,
+} from "@/lib/cartel2/modelo";
 import { FiltroRelieve } from "./Escudo";
 import { anton, barlow } from "./fuentes";
 import b from "./Base.module.css";
@@ -56,7 +62,7 @@ export function Base({
   variante: "diagonal" | "centro" | "club";
   izquierda?: Lado | null;
   derecha?: Lado | null;
-  foto?: string | null;
+  foto?: FotoCartel | null;
   lineas?: boolean;
   logosArriba?: "derecha" | "centro" | "ninguno";
   institucionales: string[];
@@ -84,8 +90,13 @@ export function Base({
       <FiltroRelieve />
       <div className={b.fondo} />
       {foto ? (
-        <div className={b.foto}>
-          <img src={foto} alt="" />
+        <div className={`${b.foto} ${b[`foto_${foto.estilo}`] ?? ""}`}>
+          <img
+            src={urlFoto(foto.url)}
+            alt=""
+            style={{ objectPosition: `${foto.x * 100}% ${foto.y * 100}%` }}
+          />
+          {foto.estilo === "amarillo" && <div className={b.tinte} />}
         </div>
       ) : (
         <>

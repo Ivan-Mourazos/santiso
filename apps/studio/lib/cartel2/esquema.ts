@@ -3,7 +3,13 @@
  * Mismas formas que `modelo.ts`; los límites solo evitan peticiones absurdas.
  */
 import { z } from "zod";
-import { COMPOSICIONES, TEMAS_ANUNCIO, TIPOS_EVENTO, type PeticionCartel } from "./modelo";
+import {
+  COMPOSICIONES,
+  ESTILOS_FOTO,
+  TEMAS_ANUNCIO,
+  TIPOS_EVENTO,
+  type PeticionCartel,
+} from "./modelo";
 
 const texto = (max = 200) => z.string().max(max);
 /** URL de imagen: `/media/…`, `data:` (subida a mano) o `blob:` ya convertida. */
@@ -24,6 +30,12 @@ const logos = {
 };
 const cabecera = { categoria: texto(40), competicion: texto(200), jornada: texto(10) };
 const lado = z.enum(["local", "visitante"]);
+const fotoFondo = z.object({
+  url: imagen,
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+  estilo: z.enum(ESTILOS_FOTO.map((e) => e.id) as [string, ...string[]]),
+});
 
 const partido = z.object({
   plantilla: z.literal("partido"),
@@ -60,7 +72,7 @@ const resultado = z.object({
       .max(40),
     fecha: texto(10),
     campo: texto(),
-    foto: imagen.nullable(),
+    foto: fotoFondo.nullable(),
   }),
 });
 

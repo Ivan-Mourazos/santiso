@@ -1,0 +1,105 @@
+/* Galería de fotos de un partido (ver `GaleriaPartido.tsx`). */
+
+.galeria {
+  display: grid;
+  gap: 1rem;
+  width: min(56rem, 80vw);
+}
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.subir {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-accent, #facc15);
+  color: var(--ui-on-accent, #000);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.subir[aria-disabled="true"] {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.subir input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.subir:focus-within {
+  outline: 3px solid var(--ui-accent, #facc15);
+  outline-offset: 3px;
+}
+
+.nota {
+  flex: 1 1 18rem;
+  margin: 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+  gap: 0.75rem;
+  max-height: 62vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.foto {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.marco {
+  position: relative;
+  line-height: 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--ui-raised, #242424);
+}
+
+.marco img {
+  width: 100%;
+  height: auto;
+}
+
+.foto[data-enfocando="true"] .marco {
+  outline: 3px solid var(--ui-accent, #facc15);
+}
+
+.foto[data-enfocando="true"] img {
+  cursor: crosshair;
+}
+
+/* Punto de interés: donde el cartel centra el recorte. */
+.foco {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 3px solid var(--ui-accent, #facc15);
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px rgb(0 0 0 / 60%);
+  pointer-events: none;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
