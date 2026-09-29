@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
+ 
 import type { CSSProperties } from "react";
 import {
   categoriaCartel,
@@ -8,6 +8,7 @@ import {
 } from "@/lib/cartel2/modelo";
 import { Balon } from "./Balon";
 import { Base } from "./Base";
+import { Escudo } from "./Escudo";
 import b from "./Base.module.css";
 import s from "./CartelCronoloxia.module.css";
 
@@ -100,7 +101,7 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
 
       <div className={s.marcador}>
         {datos.local.escudo ? (
-          <img className={s.escudo} src={datos.local.escudo} alt="" />
+          <Escudo className={s.escudo} src={datos.local.escudo} />
         ) : (
           <span className={s.escudo} />
         )}
@@ -112,7 +113,7 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
           </span>
         </div>
         {datos.visitante.escudo ? (
-          <img className={s.escudo} src={datos.visitante.escudo} alt="" />
+          <Escudo className={s.escudo} src={datos.visitante.escudo} />
         ) : (
           <span className={s.escudo} />
         )}

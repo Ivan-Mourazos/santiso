@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
+ 
 import type { CSSProperties } from "react";
 import {
   categoriaCartel,
@@ -7,6 +7,7 @@ import {
   type DatosProximos,
   type PartidoProximo,
 } from "@/lib/cartel2/modelo";
+import { Escudo } from "./Escudo";
 import { Base, coloresDe } from "./Base";
 import b from "./Base.module.css";
 import s from "./CartelProximos.module.css";
@@ -30,10 +31,10 @@ function Banda({ partido, uno }: { partido: PartidoProximo; uno: boolean }) {
       <div className={s.color} />
       <div className={s.corte} />
       {partido.local.escudo && (
-        <img className={`${b.escudo} ${s.escudoLocal}`} src={partido.local.escudo} alt="" />
+        <Escudo className={`${b.escudo} ${s.escudoLocal}`} src={partido.local.escudo} />
       )}
       {partido.visitante.escudo && (
-        <img className={`${b.escudo} ${s.escudoVisitante}`} src={partido.visitante.escudo} alt="" />
+        <Escudo className={`${b.escudo} ${s.escudoVisitante}`} src={partido.visitante.escudo} />
       )}
       <div className={`${b.nombre} ${s.nombreLocal}`} style={nombre(partido.local.nombre)}>
         {partido.local.nombre.toUpperCase()}

@@ -308,11 +308,10 @@
 
 /* ─── Tipografía compartida ───────────────────────────────────────────────────────────── */
 
+/* Posición de los escudos; el relieve y la sombra los pone el componente `Escudo`. */
 .escudo {
   position: absolute;
   z-index: 3;
-  object-fit: contain;
-  filter: drop-shadow(0 30px 40px rgb(0 0 0 / 55%)) drop-shadow(0 0 2px rgb(0 0 0 / 40%));
 }
 
 .cabecera {

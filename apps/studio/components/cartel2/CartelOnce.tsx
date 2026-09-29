@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
 import { categoriaCartel, cuerpo, fechaCorta, type DatosOnce } from "@/lib/cartel2/modelo";
+import { Escudo } from "./Escudo";
 import { Base } from "./Base";
 import b from "./Base.module.css";
 import s from "./CartelOnce.module.css";
@@ -47,7 +48,7 @@ export function CartelOnce({ datos }: { datos: DatosOnce }) {
           />
         ) : (
           datos.club.escudo && (
-            <img className={`${b.escudo} ${s.escudoClub}`} src={datos.club.escudo} alt="" />
+            <Escudo className={`${b.escudo} ${s.escudoClub}`} src={datos.club.escudo} />
           )
         )}
       </div>

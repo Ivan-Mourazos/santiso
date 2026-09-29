@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
 import type { CSSProperties, ReactNode } from "react";
 import { MEDIDAS, urlLogo, type EquipoCartel } from "@/lib/cartel2/modelo";
+import { FiltroRelieve } from "./Escudo";
 import { anton, barlow } from "./fuentes";
 import b from "./Base.module.css";
 
@@ -80,6 +81,7 @@ export function Base({
       style={estilo}
       data-cartel
     >
+      <FiltroRelieve />
       <div className={b.fondo} />
       {foto ? (
         <div className={b.foto}>

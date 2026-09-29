@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
+ 
 import {
   categoriaCartel,
   cuerpo,
@@ -6,6 +6,7 @@ import {
   type Composicion,
   type DatosPartido,
 } from "@/lib/cartel2/modelo";
+import { Escudo } from "./Escudo";
 import { Base } from "./Base";
 import b from "./Base.module.css";
 import s from "./CartelPartido.module.css";
@@ -37,10 +38,10 @@ export function CartelPartido({
       className={s[composicion]}
     >
       {datos.local.escudo && (
-        <img className={`${b.escudo} ${s.escudoLocal}`} src={datos.local.escudo} alt="" />
+        <Escudo className={`${b.escudo} ${s.escudoLocal}`} src={datos.local.escudo} />
       )}
       {datos.visitante.escudo && (
-        <img className={`${b.escudo} ${s.escudoVisitante}`} src={datos.visitante.escudo} alt="" />
+        <Escudo className={`${b.escudo} ${s.escudoVisitante}`} src={datos.visitante.escudo} />
       )}
 
       <div className={s.vs}>VS</div>

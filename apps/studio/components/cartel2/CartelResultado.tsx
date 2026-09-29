@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
+ 
 import type { CSSProperties } from "react";
 import {
   categoriaCartel,
@@ -8,6 +8,7 @@ import {
   type DatosResultado,
 } from "@/lib/cartel2/modelo";
 import { Balon } from "./Balon";
+import { Escudo } from "./Escudo";
 import { Base } from "./Base";
 import b from "./Base.module.css";
 import s from "./CartelResultado.module.css";
@@ -51,10 +52,10 @@ export function CartelResultado({ datos }: { datos: DatosResultado }) {
       <div className={s.etiqueta}>RESULTADO FINAL</div>
 
       {datos.local.escudo && (
-        <img className={`${b.escudo} ${s.escudoLocal}`} src={datos.local.escudo} alt="" />
+        <Escudo className={`${b.escudo} ${s.escudoLocal}`} src={datos.local.escudo} />
       )}
       {datos.visitante.escudo && (
-        <img className={`${b.escudo} ${s.escudoVisitante}`} src={datos.visitante.escudo} alt="" />
+        <Escudo className={`${b.escudo} ${s.escudoVisitante}`} src={datos.visitante.escudo} />
       )}
 
       <div className={`${b.display} ${s.marcador}`} style={{ fontSize: cuerpoMarcador }}>
