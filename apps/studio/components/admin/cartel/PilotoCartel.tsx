@@ -78,7 +78,7 @@ export default function PilotoCartel({
   tipo: TemplateId;
   form: FormState;
   recursos: AssetUrls;
-  /** Equipos de las tres categorías: de aquí salen el escudo del Santiso y los marcados en 3D. */
+  /** Equipos del Senior y de Veteranos: de aquí salen el escudo del Santiso y los marcados en 3D. */
   equipos: CartelTeam[];
   showToast: (msg: string, type?: "success" | "error") => void;
 }) {
@@ -155,7 +155,6 @@ export default function PilotoCartel({
         tipo,
         form,
         {
-          escudoClub: recursos.santiso,
           escudosClub: Object.fromEntries(
             equipos
               .filter((e) => e.es_propio && e.escudo_url)

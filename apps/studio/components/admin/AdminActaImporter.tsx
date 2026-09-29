@@ -33,7 +33,7 @@ interface AdminActaImporterProps {
   inicial?: { categoria?: string | null; competicionId?: string | null; partidoId?: string | null };
 }
 
-const CATEGORIES: ActaCategoria[] = ["Senior", "Femenino", "Veteranos"];
+const CATEGORIES: ActaCategoria[] = ["Senior", "Veteranos"];
 
 interface DetectedActaMeta {
   jornada: number;

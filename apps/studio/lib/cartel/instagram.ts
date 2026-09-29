@@ -9,25 +9,19 @@ import type { CronEvent, NextMatch } from "./types";
 
 const CAT_EMOJI: Record<string, string> = {
   Veteranos: "👴",
-  Femenino:  "👧",
   Senior:    "👱‍♂️",
-  Feminino:  "👧",
   "Sénior":  "👱‍♂️",
 };
 
 const CAT_LABEL: Record<string, string> = {
   Veteranos: "VETERANOS",
-  Femenino:  "FEMININO",
   Senior:    "SÉNIOR",
-  Feminino:  "FEMININO",
   "Sénior":  "SÉNIOR",
 };
 
 const CAT_HASHTAG: Record<string, string> = {
   Veteranos: "#Veteranos",
-  Femenino:  "#Feminino",
   Senior:    "#Senior",
-  Feminino:  "#Feminino",
   "Sénior":  "#Senior",
 };
 

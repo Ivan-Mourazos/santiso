@@ -7,7 +7,7 @@ import { guardarLogoAjuste } from "@/lib/server/acciones/ajustes-cartel";
 import styles from "./Ajustes.module.css";
 
 interface Props {
-  /** Clave del ajuste donde queda apuntada la imagen (`club.escudo`, `cartel.logo_xunta`…). */
+  /** Clave del ajuste donde queda apuntada la imagen (`cartel.logo_xunta`, `cartel.logo_rfgf`). */
   clave: string;
   titulo: string;
   /** Dónde sale esta imagen hoy, dicho en claro. */

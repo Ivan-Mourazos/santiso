@@ -11,7 +11,6 @@ const DEFAULT_URLS: AssetUrls = {
   xunta: "",
   rfgf: "",
   xuntaIsLeft: true,
-  santiso: "",
   sponsors: [],
 };
 
@@ -25,14 +24,13 @@ export function useCartelAssets(tipo: TemplateId, refreshKey = 0) {
         setAssetUrls(DEFAULT_URLS);
         return;
       }
-      const { escudoClub, logoXunta, logoRfgf, ordenLogos, patrocinadores } = resultado.datos;
+      const { logoXunta, logoRfgf, ordenLogos, patrocinadores } = resultado.datos;
 
       setAssetUrls({
         xunta: logoXunta ?? "",
         rfgf: logoRfgf ?? "",
         // El valor antiguo era "xunta_left"; el nuevo, "xunta_izquierda".
         xuntaIsLeft: ordenLogos !== "rfgf_izquierda",
-        santiso: escudoClub ?? "",
         // `listarPatrocinadores(true)` ya los devuelve ordenados por `orden`.
         sponsors: patrocinadores
           .map((p) => p.logo_url)

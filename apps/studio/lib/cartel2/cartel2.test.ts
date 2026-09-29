@@ -123,7 +123,6 @@ function formulario(cambios: Partial<FormState> = {}): FormState {
 }
 
 const recursos = {
-  escudoClub: "/media/club.webp",
   escudosClub: { Senior: "/media/santiso-senior.webp" } as Record<string, string>,
   patrocinadores: ["/media/p.webp"],
   institucionales: ["/media/rfgf.webp"],
@@ -261,7 +260,7 @@ describe("peticionDeFormulario", () => {
 });
 
 describe("escudos del club y relieve", () => {
-  it("el Santiso usa el escudo de su equipo de la categoría; si no hay, el Senior o el de Ajustes", () => {
+  it("el Santiso usa el escudo de su equipo de la categoría; si no hay, el del Senior", () => {
     const vet = peticionDeFormulario(
       "partido",
       formulario({ categoria: "Veteranos" }),
@@ -270,6 +269,14 @@ describe("escudos del club y relieve", () => {
     );
     if (vet.plantilla !== "partido") throw new Error("plantilla");
     expect(vet.datos.visitante.escudo).toBe("/media/vet.webp");
+    const vetSinEscudo = peticionDeFormulario(
+      "partido",
+      formulario({ categoria: "Veteranos" }),
+      { ...recursos, escudosClub: { Senior: "/media/sen.webp" } },
+      opciones,
+    );
+    if (vetSinEscudo.plantilla !== "partido") throw new Error("plantilla");
+    expect(vetSinEscudo.datos.visitante.escudo).toBe("/media/sen.webp");
     const sinEquipo = peticionDeFormulario(
       "partido",
       formulario(),
@@ -277,7 +284,7 @@ describe("escudos del club y relieve", () => {
       opciones,
     );
     if (sinEquipo.plantilla !== "partido") throw new Error("plantilla");
-    expect(sinEquipo.datos.visitante.escudo).toBe("/media/club.webp");
+    expect(sinEquipo.datos.visitante.escudo).toBeNull();
   });
 
   it("sin relieve los escudos marcados en 3D; con relieve el resto", () => {

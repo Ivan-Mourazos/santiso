@@ -49,7 +49,7 @@ const formulario = (campos: Record<string, string>, foto?: File) => {
   return f;
 };
 
-const base = { id: "", nombre: "Ana", categoria: "Femenino" };
+const base = { id: "", nombre: "Ana", categoria: "Veteranos" };
 
 describe("acciones de jugadores", () => {
   beforeEach(() => {
@@ -66,7 +66,7 @@ describe("acciones de jugadores", () => {
       ok: true,
       datos: {
         nombre: "Ana",
-        categoria: "Femenino",
+        categoria: "Veteranos",
         dorsal: null,
         posicion: null,
         apodo: null,
@@ -141,7 +141,7 @@ describe("acciones de jugadores", () => {
 
     expect(
       await guardarJugador(
-        formulario({ id: creado.datos.id, nombre: "Ana María", categoria: "Femenino" }),
+        formulario({ id: creado.datos.id, nombre: "Ana María", categoria: "Veteranos" }),
       ),
     ).toMatchObject({
       ok: true,
@@ -161,7 +161,7 @@ describe("acciones de jugadores", () => {
 
     expect(
       await guardarJugador(
-        formulario({ id: completo.datos.id, nombre: "Ana", categoria: "Femenino" }),
+        formulario({ id: completo.datos.id, nombre: "Ana", categoria: "Veteranos" }),
       ),
     ).toMatchObject({
       ok: true,
@@ -181,7 +181,7 @@ describe("acciones de jugadores", () => {
         formulario({
           id: completo.datos.id,
           nombre: "Ana",
-          categoria: "Femenino",
+          categoria: "Veteranos",
           dorsal: "7",
           posicion: "DC",
           apodo: "Anita",
@@ -200,7 +200,7 @@ describe("acciones de jugadores", () => {
     await guardarJugador(formulario({ ...base, nombre: "Diez", dorsal: "10" }));
     await guardarJugador(formulario({ ...base, nombre: "Dos", dorsal: "2" }));
 
-    expect((await cargarJugadores("Femenino")).map((j) => j.nombre)).toEqual([
+    expect((await cargarJugadores("Veteranos")).map((j) => j.nombre)).toEqual([
       "Dos",
       "Diez",
       "Sin dorsal",
@@ -211,7 +211,7 @@ describe("acciones de jugadores", () => {
     const { guardarJugador, cargarJugadores } = await entorno();
     await guardarJugador(formulario(base));
     await guardarJugador(formulario({ ...base, nombre: "Senior", categoria: "Senior" }));
-    expect(await cargarJugadores("Femenino")).toHaveLength(1);
+    expect(await cargarJugadores("Veteranos")).toHaveLength(1);
   });
 
   it("sin decir temporada, trabaja en la activa", async () => {
@@ -228,8 +228,8 @@ describe("acciones de jugadores", () => {
       formulario({ ...base, id: antes.datos.id, temporadaId: activa, dorsal: "10" }),
     );
 
-    expect((await cargarJugadores("Femenino", anterior))[0]).toMatchObject({ dorsal: 9 });
-    expect((await cargarJugadores("Femenino", activa))[0]).toMatchObject({
+    expect((await cargarJugadores("Veteranos", anterior))[0]).toMatchObject({ dorsal: 9 });
+    expect((await cargarJugadores("Veteranos", activa))[0]).toMatchObject({
       id: antes.datos.id,
       dorsal: 10,
     });
@@ -249,8 +249,8 @@ describe("acciones de jugadores", () => {
       ok: true,
       datos: null,
     });
-    expect(await cargarJugadores("Femenino", activa)).toHaveLength(0);
-    expect(await cargarJugadores("Femenino", anterior)).toHaveLength(1);
+    expect(await cargarJugadores("Veteranos", activa)).toHaveLength(0);
+    expect(await cargarJugadores("Veteranos", anterior)).toHaveLength(1);
   });
 
   it("quitar al único alta de alguien sin partidos lo borra: era un error", async () => {
@@ -280,14 +280,14 @@ describe("acciones de jugadores", () => {
     await guardarJugador(formulario({ ...base, nombre: "Se fue", temporadaId: anterior }));
     if (!sigue.ok || !cambiaDorsal.ok) throw new Error("no se crearon");
 
-    const candidatos = await cargarCandidatosJugadores("Femenino", activa);
+    const candidatos = await cargarCandidatosJugadores("Veteranos", activa);
     expect(candidatos.origen?.nombre).toBe("2025/26");
     expect(candidatos.jugadores.map((j) => j.nombre).sort()).toEqual(["Cambia", "Se fue", "Sigue"]);
 
     expect(
       await incorporarJugadores({
         temporadaId: activa,
-        categoria: "Femenino",
+        categoria: "Veteranos",
         jugadores: [
           { jugadorId: sigue.datos.id, desdeInscripcionId: sigue.datos.inscripcion_id },
           {
@@ -299,7 +299,7 @@ describe("acciones de jugadores", () => {
       }),
     ).toEqual({ ok: true, datos: 2 });
 
-    const ahora = await cargarJugadores("Femenino", activa);
+    const ahora = await cargarJugadores("Veteranos", activa);
     expect(ahora.find((j) => j.nombre === "Sigue")).toMatchObject({
       dorsal: 9,
       posicion: "DC",
@@ -307,7 +307,7 @@ describe("acciones de jugadores", () => {
     });
     expect(ahora.find((j) => j.nombre === "Cambia")).toMatchObject({ dorsal: 14 });
     // Ya incorporados, dejan de proponerse.
-    expect((await cargarCandidatosJugadores("Femenino", activa)).jugadores.map((j) => j.nombre)).toEqual([
+    expect((await cargarCandidatosJugadores("Veteranos", activa)).jugadores.map((j) => j.nombre)).toEqual([
       "Se fue",
     ]);
   });

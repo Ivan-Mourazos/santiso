@@ -39,5 +39,5 @@ it("no cruza temporadas ni categorías", async () => {
   expect((await listarCompeticionesDeTemporada("anterior", "Veteranos")).map((c) => c.id)).toEqual([
     "vet-25",
   ]);
-  expect(await listarCompeticionesDeTemporada("anterior", "Femenino")).toEqual([]);
+  expect(await listarCompeticionesDeTemporada("actual", "Veteranos")).toEqual([]);
 });

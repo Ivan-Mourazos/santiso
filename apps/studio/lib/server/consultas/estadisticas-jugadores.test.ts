@@ -222,10 +222,10 @@ describe("estadísticas por ámbito", () => {
 
   it("devuelve ámbito vacío sin buscar temporada activa", async () => {
     expect(
-      await leerEstadisticasJugadores(conexion.db, { temporadaId: "vacia", categoria: "Femenino" }),
+      await leerEstadisticasJugadores(conexion.db, { temporadaId: "vacia", categoria: "Veteranos" }),
     ).toEqual({
       filas: [],
-      ambito: { temporadaId: "vacia", categoria: "Femenino" },
+      ambito: { temporadaId: "vacia", categoria: "Veteranos" },
       disponibilidadPenaltis: false,
     });
   });

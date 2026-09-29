@@ -96,7 +96,6 @@ export interface PatrocinadorDto {
 
 /** Todo lo que pinta la pantalla de ajustes del generador de carteles, en una sola respuesta. */
 export interface AjustesCartelDto {
-  escudoClub: string | null;
   logoXunta: string | null;
   logoRfgf: string | null;
   ordenLogos: string;

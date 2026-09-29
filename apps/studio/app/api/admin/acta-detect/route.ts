@@ -28,15 +28,14 @@ Lee el documento y extrae SOLO los siguientes campos del encabezado. Devuelve SO
   "jornada": 30,
   "localTeam": "U.D. SANTISO F.C.",
   "visitorTeam": "C.F. CAÑIZA",
-  "categoria": "Femenino",
-  "competicion": "SEGUNDA DIVISIÓN GALEGA (LGF 2º DIVISIÓN | GRUPO 2)",
+  "categoria": "Senior",
+  "competicion": "TERCEIRA FUTGAL (GRUPO 3)",
   "fecha": "2026-05-31"
 }
 
 Reglas:
-- categoria debe ser exactamente "Senior", "Femenino" o "Veteranos":
-    Si el título contiene "FEMENIN" → "Femenino"
-    Si contiene "VETERAN" → "Veteranos"
+- categoria debe ser exactamente "Senior" o "Veteranos":
+    Si el título contiene "VETERAN" → "Veteranos"
     En otro caso → "Senior"
 - jornada: número entero
 - localTeam y visitorTeam: nombres exactos como aparecen en el acta (equipo LOCAL a la izquierda, VISITANTE a la derecha)

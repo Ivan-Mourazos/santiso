@@ -12,7 +12,6 @@ export type CompetenciaRow = {
 export function normalizeCategoryKey(value: string) {
   const normalized = (value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   if (normalized.startsWith("sen")) return "Senior";
-  if (normalized.startsWith("fem")) return "Femenino";
   if (normalized.startsWith("vet")) return "Veteranos";
   return "Senior";
 }

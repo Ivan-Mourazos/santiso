@@ -226,7 +226,6 @@ export function urlLogo(url: string) {
 /** «Senior» → «SÉNIOR»; en gallego, como el resto de textos del cartel. */
 export function categoriaCartel(categoria: string) {
   if (categoria === "Veteranos") return "VETERANOS";
-  if (categoria === "Femenino") return "FEMININO";
   return "SÉNIOR";
 }
 

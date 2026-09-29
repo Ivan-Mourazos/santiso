@@ -14,7 +14,7 @@ interface Props {
   showConfirm: (msg: string, onConfirm: () => void) => void;
 }
 
-const CATEGORIAS = ["Senior", "Femenino", "Veteranos"];
+const CATEGORIAS = ["Senior", "Veteranos"];
 
 function Dato({
   valor,

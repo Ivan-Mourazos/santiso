@@ -23,8 +23,6 @@ import type {
 import { TEMAS_ANUNCIO } from "./modelo";
 
 export interface RecursosCartel {
-  /** Escudo del club en Ajustes gráficos: solo si su equipo de la categoría no tiene. */
-  escudoClub: string;
   /** Escudo del equipo del Santiso de cada categoría (el que se edita en Equipos). */
   escudosClub: Record<string, string>;
   patrocinadores: string[];
@@ -44,13 +42,9 @@ export interface OpcionesCartel {
 /** Amarillo de la equipación: el color del Santiso en todos los carteles. */
 export const COLOR_CLUB = "#f5c518";
 
-/** Escudo del Santiso para una categoría: el de su equipo; si no, el Senior; si no, el de Ajustes. */
+/** Escudo del Santiso para una categoría: el de su equipo en Equipos; si no tiene, el del Senior. */
 export function escudoClubDe(recursos: RecursosCartel, categoria?: string) {
-  return (
-    (categoria && recursos.escudosClub[categoria]) ||
-    recursos.escudosClub.Senior ||
-    recursos.escudoClub
-  );
+  return (categoria && recursos.escudosClub[categoria]) || recursos.escudosClub.Senior || "";
 }
 
 export function nombreClub(categoria: string) {

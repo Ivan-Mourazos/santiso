@@ -1,4 +1,4 @@
-export type ActaCategoria = "Senior" | "Femenino" | "Veteranos";
+export type ActaCategoria = "Senior" | "Veteranos";
 
 export type ActaEventType = "gol" | "tarjeta_amarilla" | "tarjeta_roja" | "cambio";
 

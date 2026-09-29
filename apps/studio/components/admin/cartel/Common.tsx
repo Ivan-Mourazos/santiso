@@ -19,12 +19,10 @@ export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children
 export const CategorySelector: React.FC<{
   value: string;
   onChange: (v: string) => void;
-  includeFemenino?: boolean;
-}> = ({ value, onChange, includeFemenino = false }) => (
+}> = ({ value, onChange }) => (
   <div className={styles.campo}>
     <Select label="Categoría" value={value} onChange={(e) => onChange(e.target.value)}>
       <option value="Senior">Senior</option>
-      {includeFemenino && <option value="Femenino">Femenino</option>}
       <option value="Veteranos">Veteranos</option>
     </Select>
   </div>

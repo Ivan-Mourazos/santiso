@@ -77,7 +77,7 @@ export default function AjustesGraficos({ showToast }: Props) {
   }
 
   const guardada =
-    (campo: "escudoClub" | "logoXunta" | "logoRfgf", titulo: string) => (url: string) => {
+    (campo: "logoXunta" | "logoRfgf", titulo: string) => (url: string) => {
       setAjustes((actual) => (actual ? { ...actual, [campo]: url } : actual));
       showToast(`${titulo} guardado`);
     };
@@ -110,24 +110,11 @@ export default function AjustesGraficos({ showToast }: Props) {
       <div className={styles.cabecera}>
         <h3>Ajustes gráficos</h3>
         <p>
-          Las imágenes fijas de los carteles. Lo que cambies aquí sale en los carteles que generes a
+          Las imágenes fijas de los carteles. El escudo del Santiso sale del equipo de cada
+          categoría, en <Link href="/admin/equipos">Equipos</Link>. Lo que cambies aquí sale en los carteles que generes a
           partir de ahora; los ya descargados no cambian.
         </p>
       </div>
-
-      <section className={styles.bloque} aria-labelledby="ajustes-club">
-        <h4 id="ajustes-club" className={styles.titulo}>
-          Club
-        </h4>
-        <ImagenAjuste
-          clave="club.escudo"
-          titulo="Escudo del club"
-          descripcion="Sale en los carteles, en el lado del Santiso."
-          actual={ajustes.escudoClub}
-          onGuardada={guardada("escudoClub", "Escudo del club")}
-          onError={fallo}
-        />
-      </section>
 
       <section className={styles.bloque} aria-labelledby="ajustes-cabecera">
         <h4 id="ajustes-cabecera" className={styles.titulo}>

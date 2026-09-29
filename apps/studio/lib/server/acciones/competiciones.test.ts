@@ -90,7 +90,7 @@ describe("acciones de competiciones", () => {
     const { acciones } = await entorno();
     await acciones.crearCompeticion({ nombre: "Liga", categoria: "Senior", formato: "liga" });
     expect(
-      await acciones.crearCompeticion({ nombre: "Liga", categoria: "Femenino", formato: "liga" }),
+      await acciones.crearCompeticion({ nombre: "Liga", categoria: "Veteranos", formato: "liga" }),
     ).toMatchObject({ ok: true });
   });
 
