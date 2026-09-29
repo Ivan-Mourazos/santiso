@@ -80,7 +80,6 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 18px;
 }
 
 .golesLocal {
@@ -93,13 +92,14 @@
   text-align: right;
 }
 
+/* Una fila por goleador; `--fila-gol` lo calcula el componente para que quepan todos. */
 .goles li {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: 12px;
-  row-gap: 2px;
-  line-height: 1.05;
+  align-items: center;
+  column-gap: 10px;
+  height: var(--fila-gol);
+  line-height: 1;
+  white-space: nowrap;
   text-shadow: 0 3px 14px rgb(0 0 0 / 70%);
 }
 
@@ -108,33 +108,24 @@
 }
 
 .goles li svg {
-  align-self: center;
   flex: none;
 }
 
 .goleador {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-weight: 800;
   font-style: italic;
-  font-size: 38px;
+  font-size: calc(var(--fila-gol) * 0.7);
 }
 
 .minutos {
+  flex: none;
   font-weight: 600;
-  font-size: 30px;
+  font-size: calc(var(--fila-gol) * 0.56);
   color: rgb(245 197 24 / 90%);
   letter-spacing: 0.04em;
-}
-
-.golesMuchos {
-  gap: 10px;
-}
-
-.golesMuchos .goleador {
-  font-size: 28px;
-}
-
-.golesMuchos .minutos {
-  font-size: 24px;
 }
 
 .pie {
@@ -148,16 +139,16 @@
 }
 
 /* Con foto: la parte de arriba es para la foto; marcador y goles bajan a la mitad inferior,
-   donde la foto ya está oscurecida. */
+   donde la foto ya está oscurecida. Goles de 880 a 1130. */
 .conFoto .etiqueta {
-  top: 620px;
+  top: 560px;
 }
 
 .conFoto .escudoLocal,
 .conFoto .escudoVisitante {
-  width: 210px;
-  height: 210px;
-  top: 676px;
+  width: 200px;
+  height: 200px;
+  top: 612px;
 }
 
 .conFoto .escudoLocal {
@@ -169,24 +160,15 @@
 }
 
 .conFoto .marcador {
-  top: 672px;
-  font-size: 200px !important;
+  top: 606px;
+  font-size: 190px !important;
 }
 
 .conFoto .nombreLocal,
 .conFoto .nombreVisitante {
-  top: 900px;
+  top: 826px;
 }
 
 .conFoto .goles {
-  top: 960px;
-  gap: 8px;
-}
-
-.conFoto .goleador {
-  font-size: 30px;
-}
-
-.conFoto .minutos {
-  font-size: 24px;
+  top: 880px;
 }

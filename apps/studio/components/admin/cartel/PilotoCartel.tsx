@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Cartel } from "@/components/cartel2/Cartel";
 import { Button } from "@/components/ui/foundation/Button";
-import { Select } from "@/components/ui/foundation/Fields";
 import { aHex, COLOR_RIVAL_RESERVA, colorDominante } from "@/lib/cartel2/color";
 import { peticionDeFormulario } from "@/lib/cartel2/formulario";
 import {
@@ -82,9 +81,11 @@ export default function PilotoCartel({
   const [composicion, setComposicion] = useState<Composicion>("diagonal");
   const [colores, setColores] = useState<Record<string, string>>({});
   const [foto, setFoto] = useState<string | null>(null);
-  const [ancho, setAncho] = useState(0);
+  const [hueco, setHueco] = useState({ ancho: 0, alto: 0 });
   const [exportando, setExportando] = useState(false);
   const caja = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLElement>(null);
+  const [altoPanel, setAltoPanel] = useState<number | null>(null);
 
   // Colores de los escudos del formulario, leídos una vez por URL.
   const pendientes = escudosDelFormulario(form).filter((u) => !(u in colores));
@@ -114,12 +115,31 @@ export default function PilotoCartel({
     };
   }, [foto]);
 
-  // La vista previa se escala al ancho disponible.
+  // El panel llega hasta el borde de abajo de la ventana desde donde empieza, para que el cartel
+  // se vea entero nada más abrir la pantalla (y siga a la vista al desplazarse: es «sticky»).
+  useEffect(() => {
+    const nodo = panel.current;
+    if (!nodo) return;
+    const medir = () => {
+      const arriba = nodo.getBoundingClientRect().top + window.scrollY;
+      setAltoPanel(
+        Math.max(420, window.innerHeight - Math.min(arriba, window.innerHeight / 2) - 16),
+      );
+    };
+    medir();
+    window.addEventListener("resize", medir);
+    return () => window.removeEventListener("resize", medir);
+  }, []);
+
+  // La vista previa se ajusta al hueco (alto de la ventana y ancho de la columna): el cartel
+  // se ve entero sin desplazarse.
   useEffect(() => {
     const nodo = caja.current;
     if (!nodo) return;
     const observador = new ResizeObserver(([entrada]) => {
-      if (entrada) setAncho(entrada.contentRect.width);
+      if (entrada) {
+        setHueco({ ancho: entrada.contentRect.width, alto: entrada.contentRect.height });
+      }
     });
     observador.observe(nodo);
     return () => observador.disconnect();
@@ -146,7 +166,11 @@ export default function PilotoCartel({
       ),
     [tipo, form, recursos, colores, composicion, foto],
   );
-  const escala = ancho ? ancho / MEDIDAS.ancho : 0;
+  const escala =
+    hueco.ancho && hueco.alto
+      ? Math.min(hueco.ancho / MEDIDAS.ancho, hueco.alto / MEDIDAS.alto)
+      : 0;
+  const margenIzquierdo = (hueco.ancho - MEDIDAS.ancho * escala) / 2;
 
   async function descargar() {
     setExportando(true);
@@ -172,35 +196,35 @@ export default function PilotoCartel({
   }
 
   return (
-    <section className={styles.piloto} aria-label="Cartel nuevo (piloto)">
+    <section
+      ref={panel}
+      className={styles.piloto}
+      aria-label="Previsualización del cartel"
+      style={altoPanel ? { height: altoPanel } : undefined}
+    >
+      {/* Una sola fila: título, opciones de la plantilla y descarga. Deja el alto al cartel. */}
       <div className={styles.cabecera}>
-        <div>
-          <h3>Cartel nuevo · piloto</h3>
-          <p>Mismos datos del formulario.</p>
-        </div>
-        <Button onClick={() => void descargar()} disabled={exportando}>
-          {exportando ? "Generando…" : "Descargar PNG"}
-        </Button>
-      </div>
-      {(tipo === "partido" || tipo === "resumo") && (
-        <div className={styles.opciones}>
+        <h3>Previsualización</h3>
+        <div className={styles.controles}>
           {tipo === "partido" && (
-            <Select
-              label="Composición"
-              value={composicion}
-              onChange={(e) => setComposicion(e.target.value as Composicion)}
-            >
+            <div className={styles.grupo} role="group" aria-label="Composición">
               {COMPOSICIONES.map((c) => (
-                <option key={c.id} value={c.id}>
+                <Button
+                  key={c.id}
+                  size="sm"
+                  variant={composicion === c.id ? "primary" : "secondary"}
+                  aria-pressed={composicion === c.id}
+                  onClick={() => setComposicion(c.id)}
+                >
                   {c.nombre}
-                </option>
+                </Button>
               ))}
-            </Select>
+            </div>
           )}
           {tipo === "resumo" && (
-            <div className={styles.foto}>
-              <label>
-                Foto de fondo (opcional)
+            <>
+              <label className={styles.botonFoto}>
+                {foto ? "Cambiar foto" : "Foto de fondo"}
                 <input
                   type="file"
                   accept="image/*"
@@ -215,19 +239,18 @@ export default function PilotoCartel({
                   Quitar foto
                 </Button>
               )}
-            </div>
+            </>
           )}
+          <Button size="sm" onClick={() => void descargar()} disabled={exportando}>
+            {exportando ? "Generando…" : "Descargar PNG"}
+          </Button>
         </div>
-      )}
-      <div
-        ref={caja}
-        className={styles.vista}
-        style={{ height: escala ? MEDIDAS.alto * escala : undefined }}
-      >
+      </div>
+      <div ref={caja} className={styles.vista}>
         {escala > 0 && (
           <div
             className={styles.escalado}
-            style={{ transform: `scale(${escala})` }}
+            style={{ left: margenIzquierdo, transform: `scale(${escala})` }}
             data-vista-cartel
           >
             <Cartel peticion={peticion} />

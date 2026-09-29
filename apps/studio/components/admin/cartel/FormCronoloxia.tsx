@@ -5,7 +5,7 @@
 
 import React from "react";
 import { Field } from "@/components/ui/foundation/Fields";
-import type { CronEvent } from "@/lib/cartel-draw";
+import type { CronEvent } from "@/lib/cartel/types";
 import { CategorySelector, MatchSelector } from "./Common";
 import type { SelectorMatch } from "./Common";
 import { RivalSelector } from "./FormPartido";

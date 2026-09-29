@@ -24,7 +24,10 @@ export function CartelAnuncio({ datos }: { datos: DatosAnuncio }) {
       institucionales={datos.institucionales}
       patrocinadores={datos.patrocinadores}
     >
-      <div className={s.contenido} style={estilo}>
+      <div
+        className={`${s.contenido} ${imagenes.length === 0 ? s.sinImagenes : ""}`}
+        style={estilo}
+      >
         <div className={s.etiqueta}>{tema.etiqueta}</div>
         <h1
           className={`${b.display} ${s.titulo} ${datos.tema === "celebracion" ? s.tituloAcento : ""}`}

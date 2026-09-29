@@ -1,5 +1,12 @@
+/* Panel fijo a la altura de la ventana: el cartel se ve entero mientras se rellena el formulario. */
 .piloto {
-  display: grid;
+  position: sticky;
+  top: 16px;
+  /* El alto exacto lo pone el componente según lo que se ve; esto es solo el valor inicial. */
+  height: calc(100dvh - 180px);
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
   gap: var(--ui-space-3, 0.75rem);
   margin-bottom: var(--ui-space-4, 1rem);
   padding: var(--ui-space-4, 1rem);
@@ -34,9 +41,10 @@
 
 .vista {
   position: relative;
+  flex: 1;
+  min-height: 0;
   width: 100%;
   overflow: hidden;
-  border-radius: 0.5rem;
 }
 
 .escalado {
@@ -57,4 +65,42 @@
   display: grid;
   gap: 0.35rem;
   font-weight: 700;
+}
+
+.controles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2, 0.5rem);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.grupo {
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* Botón de subir foto: el input queda oculto dentro de su etiqueta. */
+.botonFoto {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 0.9rem;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.botonFoto:focus-within {
+  outline: 2px solid var(--ui-accent, #facc15);
+  outline-offset: 2px;
+}
+
+.botonFoto input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }

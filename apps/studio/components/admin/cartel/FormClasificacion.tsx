@@ -10,7 +10,7 @@ import { useCompeticiones } from "@/lib/useCompeticiones";
 import AvisoError from "../AvisoError";
 import { CategorySelector, SectionLabel, Toggle } from "./Common";
 import styles from "./Formularios.module.css";
-import type { FilaCartelClasificacion } from "@/lib/cartel/templates/clasificacion";
+import type { FilaCartelClasificacion } from "@/lib/cartel/types";
 import type { FormState } from "./types";
 
 interface Props {

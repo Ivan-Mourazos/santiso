@@ -35,7 +35,8 @@
 .titulo {
   margin: 22px 0 0;
   font-weight: 400;
-  line-height: 0.92;
+  /* Las mayúsculas con tilde (Ó, Á) necesitan aire entre líneas. */
+  line-height: 1.18;
   letter-spacing: -0.01em;
   text-shadow: 0 8px 36px rgb(0 0 0 / 60%);
   overflow-wrap: anywhere;
@@ -82,4 +83,15 @@
 
 .dos img:last-child {
   transform: rotate(1.5deg);
+}
+
+/* Sin imágenes, el comunicado se centra en vertical en vez de dejar medio cartel vacío. */
+.sinImagenes {
+  justify-content: center;
+  padding-bottom: 60px;
+}
+
+.sinImagenes .texto {
+  font-size: 38px;
+  -webkit-line-clamp: 9;
 }

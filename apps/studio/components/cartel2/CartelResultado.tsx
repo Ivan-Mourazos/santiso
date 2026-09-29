@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
+import type { CSSProperties } from "react";
 import {
   categoriaCartel,
   cuerpo,
@@ -20,7 +21,11 @@ export function CartelResultado({ datos }: { datos: DatosResultado }) {
     local: goleadores(datos.goles, "local"),
     visitante: goleadores(datos.goles, "visitante"),
   };
-  const muchos = Math.max(golesPorLado.local.length, golesPorLado.visitante.length) > 5;
+  // Cada goleador ocupa una fila: se reparten el hueco (más pequeño con foto) sin salirse.
+  const filas = Math.max(golesPorLado.local.length, golesPorLado.visitante.length, 1);
+  const hueco = datos.foto ? 250 : 400;
+  const fila = Math.max(26, Math.min(datos.foto ? 44 : 52, Math.floor(hueco / filas)));
+  const estiloGoles = { "--fila-gol": `${fila}px` } as CSSProperties;
   const cuerpoMarcador = Math.max(datos.golesLocal, datos.golesVisitante) >= 10 ? 190 : 250;
   const nombre = (texto: string) => ({ fontSize: cuerpo(texto, 360, 36, 22, 0.5) });
   const pie = [fechaCorta(datos.fecha), datos.campo.toUpperCase()].filter(Boolean).join("  ·  ");
@@ -70,11 +75,12 @@ export function CartelResultado({ datos }: { datos: DatosResultado }) {
       {(["local", "visitante"] as const).map((lado) => (
         <ul
           key={lado}
-          className={`${s.goles} ${lado === "local" ? s.golesLocal : s.golesVisitante} ${muchos ? s.golesMuchos : ""}`}
+          className={`${s.goles} ${lado === "local" ? s.golesLocal : s.golesVisitante}`}
+          style={estiloGoles}
         >
           {golesPorLado[lado].map((g) => (
             <li key={g.nombre}>
-              <Balon tamano={muchos ? 22 : 26} />
+              <Balon tamano={Math.round(fila * 0.5)} />
               <span className={s.goleador}>{g.nombre.toUpperCase()}</span>
               <span className={s.minutos}>{g.minutos.join(", ")}</span>
             </li>

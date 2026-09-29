@@ -5,10 +5,11 @@ import { vigilarSalidasAInternet } from "./red";
  * Generador de carteles contra la base de datos real. **Solo lectura**: se cambia de plantilla y
  * se escribe en el formulario, que vive en memoria; nada de esto se guarda.
  */
-const lienzo = (page: Page) => page.locator("canvas");
+/** El cartel de la previsualización (motor HTML/CSS). */
+const lienzo = (page: Page) => page.locator("[data-vista-cartel] [data-cartel]");
 const plantilla = (page: Page) => page.getByLabel("Plantilla de cartel", { exact: true });
 
-test("la pantalla monta el lienzo y las acciones de cada plantilla", async ({ page }) => {
+test("la pantalla monta el cartel y las acciones de cada plantilla", async ({ page }) => {
   const errores: string[] = [];
   const externas = vigilarSalidasAInternet(page);
   page.on("pageerror", (error) => errores.push(error.message));
@@ -17,18 +18,14 @@ test("la pantalla monta el lienzo y las acciones de cada plantilla", async ({ pa
   await expect(plantilla(page)).toBeVisible({ timeout: 20000 });
   await expect(lienzo(page)).toBeVisible({ timeout: 20000 });
 
-  // El lienzo se dibuja al doble de tamaño para que Instagram no lo estropee.
-  await expect(lienzo(page)).toHaveAttribute("width", "2160");
-  await expect(lienzo(page)).toHaveAttribute("height", "2700");
-
-  await expect(page.getByRole("button", { name: /Descargar JPG/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Descargar PNG" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Limpiar datos" })).toBeVisible();
 
   expect(errores).toEqual([]);
   expect(externas).toEqual([]);
 });
 
-test("cambiar de plantilla cambia el formulario y conserva el lienzo", async ({ page }) => {
+test("cambiar de plantilla cambia el formulario y el cartel", async ({ page }) => {
   await page.goto("/admin/carteles");
   await expect(plantilla(page)).toBeVisible({ timeout: 20000 });
 
@@ -48,7 +45,8 @@ test("cambiar de plantilla cambia el formulario y conserva el lienzo", async ({ 
   await expect(lienzo(page)).toBeVisible();
 });
 
-for (const ancho of [360, 1280]) {
+// Solo escritorio (decisión del usuario, 28/09/2026): de monitor pequeño en adelante.
+for (const ancho of [1280, 1920]) {
   test(`la pantalla de carteles cabe a ${ancho}px`, async ({ page }) => {
     await page.setViewportSize({ width: ancho, height: 900 });
     await page.goto("/admin/carteles");
@@ -100,16 +98,14 @@ test("«Próximos encuentros» tiene dos huecos y desde Jornada se rellena solo"
     .toBe(true);
 });
 
-test("el cartel nuevo (piloto) se previsualiza y se descarga en PNG a 2160×2700", async ({
-  page,
-}) => {
+test("el cartel se previsualiza y se descarga en PNG a 2160×2700", async ({ page }) => {
   test.setTimeout(120000);
   await page.goto("/admin/carteles?plantilla=partido");
-  const piloto = page.getByRole("region", { name: "Cartel nuevo (piloto)" });
+  const piloto = page.getByRole("region", { name: "Previsualización del cartel" });
   await expect(piloto).toBeVisible({ timeout: 30000 });
   await expect(piloto.locator("[data-vista-cartel] [data-cartel]")).toBeVisible();
 
-  await piloto.getByLabel("Composición", { exact: true }).selectOption("enfrentados");
+  await piloto.getByRole("button", { name: "Enfrentados", exact: true }).click();
   await expect(piloto.locator("[data-cartel]")).toHaveClass(/enfrentados/);
 
   const descarga = page.waitForEvent("download", { timeout: 90000 });
@@ -123,7 +119,7 @@ test("el cartel nuevo (piloto) se previsualiza y se descarga en PNG a 2160×2700
   expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([2160, 2700]);
 });
 
-test("las siete plantillas tienen su cartel nuevo en el Estudio", async ({ page }) => {
+test("las siete plantillas tienen su cartel en el Estudio", async ({ page }) => {
   test.setTimeout(120000);
   for (const plantilla of [
     "partido",
@@ -135,7 +131,7 @@ test("las siete plantillas tienen su cartel nuevo en el Estudio", async ({ page 
     "clasificacion",
   ]) {
     await page.goto(`/admin/carteles?plantilla=${plantilla}`);
-    const piloto = page.getByRole("region", { name: "Cartel nuevo (piloto)" });
+    const piloto = page.getByRole("region", { name: "Previsualización del cartel" });
     await expect(piloto.locator("[data-vista-cartel] [data-cartel]"), plantilla).toBeVisible({
       timeout: 30000,
     });

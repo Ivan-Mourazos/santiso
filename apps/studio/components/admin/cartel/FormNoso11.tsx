@@ -5,7 +5,7 @@
 
 import React from "react";
 import { Field } from "@/components/ui/foundation/Fields";
-import type { Player } from "@/lib/cartel-draw";
+import type { Player } from "@/lib/cartel/types";
 import { SectionLabel, CategorySelector, Deslizador, MatchSelector, Toggle } from "./Common";
 import type { SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";

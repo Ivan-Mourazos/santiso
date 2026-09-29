@@ -3,8 +3,13 @@
  * motor nuevo. Puro: los colores de los escudos llegan ya calculados en `color`.
  */
 import { claveNombre } from "@santiso/domain";
-import type { CronEvent, NextMatch, Player } from "@/lib/cartel/types";
-import type { FilaCartelClasificacion, RondaCartel } from "@/lib/cartel/templates/clasificacion";
+import type {
+  CronEvent,
+  FilaCartelClasificacion,
+  NextMatch,
+  Player,
+  RondaCartel,
+} from "@/lib/cartel/types";
 import type { FormState, TemplateId } from "@/components/admin/cartel/types";
 import type {
   Composicion,
