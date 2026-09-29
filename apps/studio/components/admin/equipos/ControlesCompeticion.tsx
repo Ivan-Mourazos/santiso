@@ -186,8 +186,8 @@ export default function ControlesCompeticion({
             </fieldset>
           ) : (
             <p>
-              ¿Eliminar «{objetivo?.nombre}»? Solo se puede eliminar si no tiene jornadas. Sus equipos
-              permanecerán en la biblioteca.
+              ¿Eliminar «{objetivo?.nombre}»? Solo se puede eliminar si no tiene jornadas. Sus
+              equipos permanecerán en la biblioteca.
             </p>
           )}
         </Dialog>

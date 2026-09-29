@@ -57,11 +57,21 @@ export function Escudo({
   src,
   className,
   style,
+  relieve = true,
 }: {
   src: string;
   className?: string;
   style?: CSSProperties;
+  /** `false` si el escudo ya tiene volumen: solo lleva la sombra. */
+  relieve?: boolean;
 }) {
+  if (!relieve) {
+    return (
+      <div className={`${e.escudo} ${className ?? ""}`} style={style}>
+        <img className={e.imagen} src={src} alt="" />
+      </div>
+    );
+  }
   const forma = { maskImage: `url("${src}")`, WebkitMaskImage: `url("${src}")` } as CSSProperties;
   return (
     <div className={`${e.escudo} ${className ?? ""}`} style={style}>

@@ -58,7 +58,14 @@ function formulario(cambios: Partial<FormState> = {}): FormState {
       { id: "2", minuto: "20", tipo: "gol", equipo: "local", jugador: "Bareto" },
       { id: "3", minuto: "30", tipo: "penalti", equipo: "local", jugador: "Bareto" },
       { id: "4", minuto: "40", tipo: "amarela", equipo: "local", jugador: "Moncho" },
-      { id: "5", minuto: "60", tipo: "cambio", equipo: "local", jugador: "Pío", jugadorEntra: "Tato" },
+      {
+        id: "5",
+        minuto: "60",
+        tipo: "cambio",
+        equipo: "local",
+        jugador: "Pío",
+        jugadorEntra: "Tato",
+      },
       { id: "6", minuto: "", tipo: "amarela", equipo: "rival", jugador: "" },
     ],
     categoriasText: "",
@@ -98,7 +105,17 @@ function formulario(cambios: Partial<FormState> = {}): FormState {
     clasificacionNombre: "",
     clasificacionData: [
       { posicion: 1, nombre: "S.D. Cruces", pj: 1, pg: 1, pe: 0, pp: 0, gf: 6, gc: 1, pts: 3 },
-      { posicion: 2, nombre: "U.D. Santiso F.C.", pj: 1, pg: 0, pe: 0, pp: 1, gf: 1, gc: 3, pts: 0 },
+      {
+        posicion: 2,
+        nombre: "U.D. Santiso F.C.",
+        pj: 1,
+        pg: 0,
+        pe: 0,
+        pp: 1,
+        gf: 1,
+        gc: 3,
+        pts: 0,
+      },
     ],
     showAssets: true,
     ...cambios,
@@ -107,8 +124,10 @@ function formulario(cambios: Partial<FormState> = {}): FormState {
 
 const recursos = {
   escudoClub: "/media/club.webp",
+  escudosClub: { Senior: "/media/santiso-senior.webp" } as Record<string, string>,
   patrocinadores: ["/media/p.webp"],
   institucionales: ["/media/rfgf.webp"],
+  escudosEn3d: [] as string[],
 };
 const opciones = {
   color: (url: string | null) => (url ? "#d32f2f" : "#64748b"),
@@ -173,7 +192,11 @@ describe("peticionDeFormulario", () => {
     const p = peticionDeFormulario("partido", formulario(), recursos, opciones);
     if (p.plantilla !== "partido") throw new Error("plantilla");
     expect(p.datos.local).toMatchObject({ nombre: "C.D. Berres", propio: false, color: "#d32f2f" });
-    expect(p.datos.visitante).toMatchObject({ nombre: "UD Santiso FC", propio: true, color: "#f5c518" });
+    expect(p.datos.visitante).toMatchObject({
+      nombre: "UD Santiso FC",
+      propio: true,
+      color: "#f5c518",
+    });
   });
 
   it("resultado: goles con el lado del marcador y solo los goles", () => {
@@ -191,7 +214,13 @@ describe("peticionDeFormulario", () => {
   it("cronoloxía: todos los hechos con nombre, con los tipos traducidos", () => {
     const p = peticionDeFormulario("cronoloxia", formulario(), recursos, opciones);
     if (p.plantilla !== "cronoloxia") throw new Error("plantilla");
-    expect(p.datos.eventos.map((e) => e.tipo)).toEqual(["gol", "gol", "penalti", "amarilla", "cambio"]);
+    expect(p.datos.eventos.map((e) => e.tipo)).toEqual([
+      "gol",
+      "gol",
+      "penalti",
+      "amarilla",
+      "cambio",
+    ]);
     expect(p.datos.eventos[4]).toMatchObject({ jugador: "Pío", entra: "Tato", lado: "visitante" });
   });
 
@@ -231,9 +260,50 @@ describe("peticionDeFormulario", () => {
   });
 });
 
+describe("escudos del club y relieve", () => {
+  it("el Santiso usa el escudo de su equipo de la categoría; si no hay, el Senior o el de Ajustes", () => {
+    const vet = peticionDeFormulario(
+      "partido",
+      formulario({ categoria: "Veteranos" }),
+      { ...recursos, escudosClub: { Veteranos: "/media/vet.webp", Senior: "/media/sen.webp" } },
+      opciones,
+    );
+    if (vet.plantilla !== "partido") throw new Error("plantilla");
+    expect(vet.datos.visitante.escudo).toBe("/media/vet.webp");
+    const sinEquipo = peticionDeFormulario(
+      "partido",
+      formulario(),
+      { ...recursos, escudosClub: {} },
+      opciones,
+    );
+    if (sinEquipo.plantilla !== "partido") throw new Error("plantilla");
+    expect(sinEquipo.datos.visitante.escudo).toBe("/media/club.webp");
+  });
+
+  it("sin relieve los escudos marcados en 3D; con relieve el resto", () => {
+    const p = peticionDeFormulario(
+      "partido",
+      formulario(),
+      { ...recursos, escudosEn3d: ["/media/escudos/berres.webp"] },
+      opciones,
+    );
+    if (p.plantilla !== "partido") throw new Error("plantilla");
+    expect(p.datos.local.relieve).toBe(false);
+    expect(p.datos.visitante.relieve).toBe(true);
+  });
+});
+
 describe("leerPeticion", () => {
   it("acepta la petición de cada plantilla sacada del formulario", () => {
-    const tipos = ["partido", "resumo", "cronoloxia", "proximos", "noso11", "multiusos", "clasificacion"] as const;
+    const tipos = [
+      "partido",
+      "resumo",
+      "cronoloxia",
+      "proximos",
+      "noso11",
+      "multiusos",
+      "clasificacion",
+    ] as const;
     const plantillas = tipos.map((t) => {
       const p = peticionDeFormulario(t, formulario(), recursos, opciones);
       expect(leerPeticion(JSON.parse(JSON.stringify(p))), t).not.toBeNull();

@@ -26,7 +26,8 @@ export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: 
   const [pendiente, setPendiente] = useState(false);
   const operacion = useRef(false);
   const nombreRef = useRef<HTMLInputElement>(null);
-  const sucio = nombre !== inicial.nombre || foto !== null;
+  const [escudo3d, setEscudo3d] = useState(inicial.escudo3d);
+  const sucio = nombre !== inicial.nombre || foto !== null || escudo3d !== inicial.escudo3d;
   useUnsavedChanges(sucio);
   function cerrar() {
     if (operacion.current) return;
@@ -46,7 +47,7 @@ export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: 
     try {
       const imagen = foto ? await prepararImagen(foto) : null;
       const resultado = await guardarEquipo(
-        formularioDeEquipo({ id: inicial.id, nombre }, destino, imagen),
+        formularioDeEquipo({ id: inicial.id, nombre, escudo3d }, destino, imagen),
       );
       if (!resultado.ok) {
         setError(resultado.error);
@@ -123,6 +124,15 @@ export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: 
             etiqueta="Escudo del equipo"
             deshabilitado={pendiente}
           />
+          <label className={styles.casilla}>
+            <input
+              className={styles.check}
+              type="checkbox"
+              checked={escudo3d}
+              onChange={(e) => setEscudo3d(e.target.checked)}
+            />
+            Escudo ya en 3D (los carteles no le añaden relieve)
+          </label>
         </fieldset>
       </form>
     </Dialog>

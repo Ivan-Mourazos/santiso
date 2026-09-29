@@ -262,6 +262,7 @@ export default function GeneradorCartel({
             tipo={tipoForAssets}
             form={form}
             recursos={assetUrls}
+            equipos={equipos}
             showToast={showToast}
           />
           <div className={styles.pie}>

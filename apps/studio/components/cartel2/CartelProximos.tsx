@@ -1,4 +1,3 @@
- 
 import type { CSSProperties } from "react";
 import {
   categoriaCartel,
@@ -31,10 +30,18 @@ function Banda({ partido, uno }: { partido: PartidoProximo; uno: boolean }) {
       <div className={s.color} />
       <div className={s.corte} />
       {partido.local.escudo && (
-        <Escudo className={`${b.escudo} ${s.escudoLocal}`} src={partido.local.escudo} />
+        <Escudo
+          className={`${b.escudo} ${s.escudoLocal}`}
+          src={partido.local.escudo}
+          relieve={partido.local.relieve}
+        />
       )}
       {partido.visitante.escudo && (
-        <Escudo className={`${b.escudo} ${s.escudoVisitante}`} src={partido.visitante.escudo} />
+        <Escudo
+          className={`${b.escudo} ${s.escudoVisitante}`}
+          src={partido.visitante.escudo}
+          relieve={partido.visitante.relieve}
+        />
       )}
       <div className={`${b.nombre} ${s.nombreLocal}`} style={nombre(partido.local.nombre)}>
         {partido.local.nombre.toUpperCase()}

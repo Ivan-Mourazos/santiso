@@ -36,6 +36,8 @@ export interface EquipoDto {
   categoria: string;
   escudo_url: string | null;
   es_propio: boolean;
+  /** El escudo ya tiene volumen: los carteles no le añaden relieve. */
+  escudo_3d: boolean;
 }
 
 /** Fila de la clasificación calculada, ya con los datos de presentación del equipo. */

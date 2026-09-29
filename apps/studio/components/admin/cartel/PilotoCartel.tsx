@@ -13,6 +13,7 @@ import {
 } from "@/lib/cartel2/modelo";
 import styles from "./PilotoCartel.module.css";
 import type { AssetUrls, FormState, TemplateId } from "./types";
+import type { CartelTeam } from "./useCartelForm";
 
 /** Color dominante de un escudo, leído en un lienzo pequeño; `null` si no se puede. */
 async function colorDeEscudo(url: string): Promise<string | null> {
@@ -71,11 +72,14 @@ export default function PilotoCartel({
   tipo,
   form,
   recursos,
+  equipos,
   showToast,
 }: {
   tipo: TemplateId;
   form: FormState;
   recursos: AssetUrls;
+  /** Equipos de las tres categorías: de aquí salen el escudo del Santiso y los marcados en 3D. */
+  equipos: CartelTeam[];
   showToast: (msg: string, type?: "success" | "error") => void;
 }) {
   const [composicion, setComposicion] = useState<Composicion>("diagonal");
@@ -152,6 +156,12 @@ export default function PilotoCartel({
         form,
         {
           escudoClub: recursos.santiso,
+          escudosClub: Object.fromEntries(
+            equipos
+              .filter((e) => e.es_propio && e.escudo_url)
+              .map((e) => [e.categoria, e.escudo_url]),
+          ),
+          escudosEn3d: equipos.filter((e) => e.escudo_3d && e.escudo_url).map((e) => e.escudo_url),
           patrocinadores: recursos.sponsors,
           institucionales: (recursos.xuntaIsLeft
             ? [recursos.xunta, recursos.rfgf]
@@ -164,7 +174,7 @@ export default function PilotoCartel({
           foto,
         },
       ),
-    [tipo, form, recursos, colores, composicion, foto],
+    [tipo, form, recursos, equipos, colores, composicion, foto],
   );
   const escala =
     hueco.ancho && hueco.alto

@@ -26,11 +26,14 @@ interface CartelPlayer {
   categoria?: string | null;
 }
 
-interface CartelTeam {
+export interface CartelTeam {
   id: string;
   nombre: string;
   escudo_url: string;
   categoria: string;
+  es_propio?: boolean;
+  /** El escudo ya tiene volumen: el cartel no le añade relieve. */
+  escudo_3d?: boolean;
 }
 
 interface CartelField {
