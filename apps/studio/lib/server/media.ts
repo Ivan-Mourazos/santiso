@@ -19,6 +19,13 @@ const TIPOS_MEDIA: Readonly<Record<string, string>> = {
 
 const MAX_BYTES_IMAGEN = 15 * 1024 * 1024;
 const LADO_MAXIMO = 1200;
+/**
+ * Fotos de personas: en «O noso 11» el jugador ocupa casi todo el alto del cartel, que se
+ * exporta a 2700 px. Con 1200 px se veía ampliada y blanda.
+ */
+const LADO_MAXIMO_FOTOS = 2400;
+const ladoMaximo = (carpeta: CarpetaMedia) =>
+  carpeta === "jugadores" || carpeta === "staff" ? LADO_MAXIMO_FOTOS : LADO_MAXIMO;
 const UMBRAL_ALFA = 15;
 const MARGEN = 0.05;
 const TRANSPARENTE = { r: 0, g: 0, b: 0, alpha: 0 };
@@ -47,7 +54,7 @@ export const tipoMedia = (ruta: string): string | null =>
  * Normaliza una imagen y la guarda en `<raiz>/<carpeta>/<uuid>.webp`. Devuelve la clave relativa.
  * Mismo resultado que el antiguo proceso del navegador: recorta los bordes transparentes
  * (alfa > 15), la centra en un cuadrado con un 5 % de margen transparente y la reduce a un
- * máximo de 1200 px en WebP.
+ * máximo de 1200 px en WebP (2400 px las fotos de jugadores y staff).
  */
 export async function guardarImagen(
   bytes: Uint8Array,
@@ -105,7 +112,10 @@ export async function guardarImagen(
   }
 
   const salida = await imagen
-    .resize(LADO_MAXIMO, LADO_MAXIMO, { fit: "inside", withoutEnlargement: true })
+    .resize(ladoMaximo(carpeta), ladoMaximo(carpeta), {
+      fit: "inside",
+      withoutEnlargement: true,
+    })
     .webp({ quality: 82 })
     .toBuffer();
 
