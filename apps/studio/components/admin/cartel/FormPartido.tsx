@@ -5,7 +5,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
-import { Field, Select } from "@/components/ui/foundation/Fields";
+import { Field } from "@/components/ui/foundation/Fields";
 import { competitionsForCategory, type CompetenciaRow } from "@/lib/competition";
 import { CategorySelector, type SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
@@ -72,20 +72,6 @@ export const RivalSelector = ({
             <option key={eq.id} value={eq.nombre} />
           ))}
         </datalist>
-        {filtered.length > 0 && (
-          <Select
-            label="O elegir de la lista de equipos"
-            value={filtered.some((e) => e.nombre === rivalNombre) ? rivalNombre : ""}
-            onChange={(e) => handleRivalSelect(e.target.value)}
-          >
-            <option value="">Sin elegir</option>
-            {filtered.map((eq) => (
-              <option key={eq.id} value={eq.nombre}>
-                {eq.nombre}
-              </option>
-            ))}
-          </Select>
-        )}
       </div>
       <div className={styles.campo}>
         <span className={styles.etiqueta}>Escudo del rival</span>
@@ -191,32 +177,27 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
 
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
 
+      {/* Un solo campo: sugiere las del catálogo y admite cualquier otra (Amigable…). */}
       <div className={styles.campo}>
         <Field
           label="Competición"
-          placeholder="Escribe la competición (Liga da Costa, Amigable…)"
+          list="competiciones-cartel"
+          placeholder="Elige o escribe (Liga da Costa, Amigable…)"
           value={form.competicion}
-          onChange={(e) => set("competicion", e.target.value)}
+          onChange={(e) => {
+            const nombre = e.target.value;
+            set("competicion", nombre);
+            const delCatalogo = competitionsForCategory(competiciones, form.categoria).find(
+              (c) => c.nombre === nombre,
+            );
+            set("competicion_id", delCatalogo?.id ?? "");
+          }}
         />
-        {competitionsForCategory(competiciones, form.categoria).length > 0 && (
-          <Select
-            label="O elegir del catálogo"
-            value={form.competicion_id}
-            onChange={(e) => {
-              const selId = e.target.value;
-              set("competicion_id", selId);
-              const found = competiciones.find((c) => c.id === selId);
-              if (found) set("competicion", found.nombre);
-            }}
-          >
-            <option value="">Sin elegir</option>
-            {competitionsForCategory(competiciones, form.categoria).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre}
-              </option>
-            ))}
-          </Select>
-        )}
+        <datalist id="competiciones-cartel">
+          {competitionsForCategory(competiciones, form.categoria).map((c) => (
+            <option key={c.id} value={c.nombre} />
+          ))}
+        </datalist>
       </div>
 
       <div className={styles.pareja}>
@@ -243,27 +224,20 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
           onChange={(e) => set("jornada", e.target.value)}
         />
         <div>
-          <Select
-            label="Estadio o campo"
-            value={campos?.find((c) => c.nombre === form.lugar)?.id || ""}
-            onChange={(e) => {
-              const selected = campos?.find((c) => c.id === e.target.value);
-              if (selected) set("lugar", selected.nombre);
-            }}
-          >
-            <option value="">Sin elegir</option>
-            {campos?.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre} ({c.poblacion || "S/P"})
-              </option>
-            ))}
-          </Select>
           <Field
-            label="O escribirlo a mano"
-            placeholder="Nombre del campo"
+            label="Estadio o campo"
+            list="campos-cartel"
+            placeholder="Elige o escribe"
             value={form.lugar}
             onChange={(e) => set("lugar", e.target.value)}
           />
+          <datalist id="campos-cartel">
+            {campos?.map((c) => (
+              <option key={c.id} value={c.nombre}>
+                {c.poblacion || ""}
+              </option>
+            ))}
+          </datalist>
         </div>
       </div>
 

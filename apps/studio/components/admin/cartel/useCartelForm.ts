@@ -176,9 +176,7 @@ export function useCartelForm(partidoInicial?: string | null) {
         if (sedes.length > 0) setCampos(sedes as unknown as typeof campos);
 
         const equiposDeTodas = (
-          await Promise.all(
-            ["Senior", "Veteranos"].map((c) => cargarEquiposDeCategoria(c)),
-          )
+          await Promise.all(["Senior", "Veteranos"].map((c) => cargarEquiposDeCategoria(c)))
         ).flat();
         setEquipos(equiposDeTodas as unknown as typeof equipos);
         setDbMatches(partidos as unknown as SelectorMatch[]);

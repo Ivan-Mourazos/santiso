@@ -115,38 +115,41 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
           </Button>
         </div>
       </header>
-      <ControlesCompeticion
-        contexto={contexto}
-        categoria={categoria}
-        onMutado={() => {
-          showToast("Competición actualizada");
-          void recargar(true);
-        }}
-      />
-      {!competicion && (
-        <p className={styles.detalle}>
-          No hay competición seleccionada. Puedes gestionar la biblioteca; crea una competición para
-          inscribir equipos.
-        </p>
-      )}
-      <div className={styles.vistas} role="group" aria-label="Vista de equipos">
-        <Button
-          size="sm"
-          variant={verBiblioteca ? "secondary" : "primary"}
-          aria-pressed={!verBiblioteca}
-          disabled={!competicion}
-          onClick={() => setBiblioteca(false)}
-        >
-          Esta competición
-        </Button>
-        <Button
-          size="sm"
-          variant={verBiblioteca ? "primary" : "secondary"}
-          aria-pressed={verBiblioteca}
-          onClick={() => setBiblioteca(true)}
-        >
-          Biblioteca de {categoria}
-        </Button>
+      {/* Competición y vista en una sola fila. */}
+      <div className={styles.barra}>
+        <ControlesCompeticion
+          contexto={contexto}
+          categoria={categoria}
+          onMutado={() => {
+            showToast("Competición actualizada");
+            void recargar(true);
+          }}
+        />
+        {!competicion && (
+          <p className={styles.detalle}>
+            No hay competición seleccionada. Puedes gestionar la biblioteca; crea una competición
+            para inscribir equipos.
+          </p>
+        )}
+        <div className={styles.vistas} role="group" aria-label="Vista de equipos">
+          <Button
+            size="sm"
+            variant={verBiblioteca ? "secondary" : "primary"}
+            aria-pressed={!verBiblioteca}
+            disabled={!competicion}
+            onClick={() => setBiblioteca(false)}
+          >
+            Esta competición
+          </Button>
+          <Button
+            size="sm"
+            variant={verBiblioteca ? "primary" : "secondary"}
+            aria-pressed={verBiblioteca}
+            onClick={() => setBiblioteca(true)}
+          >
+            Biblioteca de {categoria}
+          </Button>
+        </div>
       </div>
       {error ? (
         <ErrorState
@@ -174,10 +177,10 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
               />
               Sin escudo
             </label>
+            <p role="status" className={styles.contador}>
+              {visibles.length} de {base.length} equipos
+            </p>
           </div>
-          <p role="status" className={styles.contador}>
-            {visibles.length} de {base.length} equipos
-          </p>
           {base.length === 0 ? (
             <EmptyState
               title={
