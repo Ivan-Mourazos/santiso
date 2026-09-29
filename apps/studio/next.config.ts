@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   // (hydration mismatch: el cliente pierde las clases scoped). Se reactivará
   // tras migrar el admin a CSS global (sin styled-jsx) en el sistema de diseño.
   // Los paquetes internos exportan TypeScript sin compilar (`exports` → `src/*.ts`).
+  // El indicador de Next tapaba el menú lateral; los errores se siguen mostrando.
+  devIndicators: false,
   transpilePackages: ["@santiso/db", "@santiso/domain"],
   experimental: {
     // El navegador ya no comprime: manda la imagen original (hasta 15 MB, ver

@@ -2,7 +2,7 @@ import type { ComponentPropsWithRef } from "react";
 import styles from "./Button.module.css";
 export type ButtonProps = ComponentPropsWithRef<"button"> & {
   variant?: "primary" | "secondary" | "danger";
-  /** `sm`: para acciones dentro de filas de tabla. En pantallas táctiles vuelve a 44 px. */
+  /** `sm`: para acciones dentro de filas de tabla y controles secundarios. */
   size?: "md" | "sm";
   pending?: boolean;
   pendingLabel?: string;

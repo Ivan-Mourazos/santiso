@@ -123,95 +123,119 @@ export default function FilaPartido({
   }
 
   return (
-    <section className={styles.partido} aria-label={nombre} data-cambios={conCambios}>
-      {contexto && <p className={styles.contextoFila}>{contexto}</p>}
-      <div className={styles.marcador}>
-        <div className={styles.equipo}>
-          <span>{local}</span>
-          {escudoLocal && (
-            // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
-            <img src={escudoLocal} alt="" />
-          )}
-        </div>
-        <div className={styles.goles}>
-          <Field
-            label={`Goles de ${local}`}
-            type="number"
-            min={0}
-            inputMode="numeric"
-            value={golesAlCampo(p.goles_local)}
-            onChange={(e) => onEditar({ goles_local: golesDelCampo(e.target.value) })}
-            disabled={ocupada}
-          />
-          <span aria-hidden="true">–</span>
-          <Field
-            label={`Goles de ${visitante}`}
-            type="number"
-            min={0}
-            inputMode="numeric"
-            value={golesAlCampo(p.goles_visitante)}
-            onChange={(e) => onEditar({ goles_visitante: golesDelCampo(e.target.value) })}
-            disabled={ocupada}
-          />
-        </div>
-        <div className={styles.equipo}>
-          {escudoVisitante && (
-            // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
-            <img src={escudoVisitante} alt="" />
-          )}
-          <span>{visitante}</span>
-        </div>
+    <section
+      className={styles.partido}
+      aria-label={nombre}
+      data-cambios={conCambios}
+      data-contexto={contexto !== undefined}
+    >
+      {contexto !== undefined && <span className={styles.contextoFila}>{contexto}</span>}
+      <div className={`${styles.equipo} ${styles.local}`}>
+        <span>{local}</span>
+        {escudoLocal && (
+          // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
+          <img src={escudoLocal} alt="" />
+        )}
       </div>
-
-      <div className={styles.detalle}>
-        <Select
-          label="Campo"
-          value={p.campo_id || ""}
-          onChange={(e) => onEditar({ campo_id: e.target.value })}
-          disabled={ocupada}
-        >
-          <option value="">Sin asignar</option>
-          {campos.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nombre}
-            </option>
-          ))}
-        </Select>
+      <div className={styles.goles}>
         <Field
-          label="Fecha y hora"
-          type="datetime-local"
-          value={matchDateTimeLocalInput(p.fecha)}
-          onChange={(e) => onEditar({ fecha: e.target.value })}
+          label={`Goles de ${local}`}
+          type="number"
+          min={0}
+          inputMode="numeric"
+          value={golesAlCampo(p.goles_local)}
+          onChange={(e) => onEditar({ goles_local: golesDelCampo(e.target.value) })}
           disabled={ocupada}
         />
-        <Select
-          label="Estado"
-          value={p.estado ?? "programado"}
-          onChange={(e) => void cambiarEstado(e.target.value)}
+        <span aria-hidden="true">–</span>
+        <Field
+          label={`Goles de ${visitante}`}
+          type="number"
+          min={0}
+          inputMode="numeric"
+          value={golesAlCampo(p.goles_visitante)}
+          onChange={(e) => onEditar({ goles_visitante: golesDelCampo(e.target.value) })}
           disabled={ocupada}
-        >
-          {ESTADOS.map((e) => (
-            <option key={e.valor} value={e.valor}>
-              {e.etiqueta}
-            </option>
-          ))}
-        </Select>
+        />
       </div>
-
-      <div className={styles.pieFila}>
-        {conCambios && <p className={styles.nota}>Cambios sin guardar</p>}
-        <Button onClick={() => void guardar()} pending={ocupada} pendingLabel="Guardando…">
+      <div className={styles.equipo}>
+        {escudoVisitante && (
+          // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
+          <img src={escudoVisitante} alt="" />
+        )}
+        <span>{visitante}</span>
+      </div>
+      <Select
+        label="Campo"
+        value={p.campo_id || ""}
+        onChange={(e) => onEditar({ campo_id: e.target.value })}
+        disabled={ocupada}
+      >
+        <option value="">Sin asignar</option>
+        {campos.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.nombre}
+          </option>
+        ))}
+      </Select>
+      <Field
+        label="Fecha y hora"
+        type="datetime-local"
+        value={matchDateTimeLocalInput(p.fecha)}
+        onChange={(e) => onEditar({ fecha: e.target.value })}
+        disabled={ocupada}
+      />
+      <Select
+        label="Estado"
+        value={p.estado ?? "programado"}
+        onChange={(e) => void cambiarEstado(e.target.value)}
+        disabled={ocupada}
+      >
+        {ESTADOS.map((e) => (
+          <option key={e.valor} value={e.valor}>
+            {e.etiqueta}
+          </option>
+        ))}
+      </Select>
+      <div className={styles.accionesFila}>
+        {conCambios && <span className={styles.oculto}>Cambios sin guardar</span>}
+        <Button
+          size="sm"
+          variant={conCambios ? "primary" : "secondary"}
+          onClick={() => void guardar()}
+          pending={ocupada}
+          pendingLabel="Guardando…"
+        >
           Guardar
         </Button>
         <Button
-          variant="danger"
+          size="sm"
+          variant="secondary"
+          className={styles.borrar}
           onClick={borrar}
           disabled={ocupada}
           aria-label={`Borrar ${nombre}`}
+          title="Borrar partido"
         >
-          Borrar
+          ✕
         </Button>
       </div>
     </section>
+  );
+}
+
+/** Nombres de columna de la lista de partidos: una vez arriba, no en cada fila. */
+export function CabeceraPartidos({ conContexto = false }: { conContexto?: boolean }) {
+  return (
+    <div className={styles.partidoCabecera} data-contexto={conContexto} aria-hidden="true">
+      {conContexto && <span>Jornada</span>}
+      <span className={styles.local}>Local</span>
+      <span className={styles.centro}>Resultado</span>
+      <span>Visitante</span>
+      <span>Campo</span>
+      <span>Fecha y hora</span>
+      <span>Estado</span>
+      <span />
+    </div>
   );
 }

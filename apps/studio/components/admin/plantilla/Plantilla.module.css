@@ -5,7 +5,7 @@
   background: var(--ui-surface, #171717);
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: var(--ui-radius-lg, 1.125rem);
-  padding: var(--ui-space-6, 2rem);
+  padding: 1.25rem 1.5rem;
 }
 @media (max-width: 640px) {
   .panel {
@@ -83,7 +83,7 @@
   border-bottom: 1px solid var(--ui-border, #666);
 }
 .tabla td {
-  padding: 0.4rem 0.75rem;
+  padding: 0.25rem 0.75rem;
   border-bottom: 1px solid rgb(255 255 255 / 6%);
   vertical-align: middle;
 }
@@ -91,8 +91,8 @@
   background: rgb(255 255 255 / 3%);
 }
 .foto {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   object-fit: cover;
   display: block;
@@ -106,12 +106,13 @@
 .repetido {
   color: var(--ui-warning, #f59e0b);
 }
-.nombre strong {
-  display: block;
-}
+/* Apodo en la misma línea que el nombre: una fila por jugador, siempre de la misma altura. */
 .nombre span {
   color: var(--ui-muted, #aaa);
   font-size: var(--ui-text-sm, 0.875rem);
+}
+.nombre span::before {
+  content: " · ";
 }
 .tabla th:last-child {
   text-align: right;

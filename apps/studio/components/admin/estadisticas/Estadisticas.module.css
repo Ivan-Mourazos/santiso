@@ -4,7 +4,7 @@
   background: var(--ui-surface, #171717);
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: var(--ui-radius-lg, 1.125rem);
-  padding: var(--ui-space-6, 2rem);
+  padding: 1.25rem 1.5rem;
 }
 .cabecera h3 {
   margin: 0;
@@ -92,7 +92,7 @@
   color: var(--ui-accent, #facc15);
 }
 .tabla td {
-  padding: 0.55rem 0.6rem;
+  padding: 0.35rem 0.6rem;
   border-bottom: 1px solid rgb(255 255 255 / 6%);
   text-align: right;
   font-variant-numeric: tabular-nums;

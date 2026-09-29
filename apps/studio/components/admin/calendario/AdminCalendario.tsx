@@ -10,7 +10,7 @@ import { borrarJornada } from "@/lib/server/acciones/calendario";
 import Descansos from "./Descansos";
 import DialogoJornadas from "./DialogoJornadas";
 import DialogoReglas from "./DialogoReglas";
-import FilaPartido from "./FilaPartido";
+import FilaPartido, { CabeceraPartidos } from "./FilaPartido";
 import NuevoPartido from "./NuevoPartido";
 import { useCalendario } from "./useCalendario";
 import styles from "./Calendario.module.css";
@@ -111,30 +111,30 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
               ))}
             </Select>
           )}
-        </div>
-
-        {/* Para corregir horas y campos de toda la temporada sin ir jornada a jornada. */}
-        <div className={styles.acciones} role="group" aria-label="Qué partidos">
-          <Button
-            size="sm"
-            variant={c.vista === "jornada" ? "primary" : "secondary"}
-            aria-pressed={c.vista === "jornada"}
-            onClick={() => c.setVista("jornada")}
-          >
-            Por jornada
-          </Button>
-          <Button
-            size="sm"
-            variant={c.vista === "santiso" ? "primary" : "secondary"}
-            aria-pressed={c.vista === "santiso"}
-            onClick={() => c.setVista("santiso")}
-          >
-            Partidos del Santiso
-          </Button>
+          {/* Para corregir horas y campos de toda la temporada sin ir jornada a jornada. */}
+          <div className={styles.vistas} role="group" aria-label="Qué partidos">
+            <Button
+              size="sm"
+              variant={c.vista === "jornada" ? "primary" : "secondary"}
+              aria-pressed={c.vista === "jornada"}
+              onClick={() => c.setVista("jornada")}
+            >
+              Por jornada
+            </Button>
+            <Button
+              size="sm"
+              variant={c.vista === "santiso" ? "primary" : "secondary"}
+              aria-pressed={c.vista === "santiso"}
+              onClick={() => c.setVista("santiso")}
+            >
+              Partidos del Santiso
+            </Button>
+          </div>
         </div>
 
         <div className={styles.acciones}>
           <Button
+            size="sm"
             variant="secondary"
             onClick={() => setDialogo("jornadas")}
             disabled={!c.selectedCompetitionId}
@@ -142,6 +142,7 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
             Jornadas…
           </Button>
           <Button
+            size="sm"
             variant="secondary"
             onClick={() => setDialogo("reglas")}
             disabled={!c.selectedCompetitionId}
@@ -149,7 +150,7 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
             Zonas de la clasificación
           </Button>
           {jornada && c.vista === "jornada" && (
-            <Button variant="danger" onClick={borrarLaJornada}>
+            <Button size="sm" variant="danger" onClick={borrarLaJornada}>
               Borrar jornada
             </Button>
           )}
@@ -181,6 +182,7 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
             </p>
           ) : (
             <div className={`${styles.partidos} ${styles.vacio}`}>
+              <CabeceraPartidos conContexto />
               {c.partidos.map((p) => {
                 const suJornada = c.jornadas.find((j) => j.id === p.jornada_id);
                 return (
@@ -221,6 +223,7 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
               <p className={styles.nota}>No hay partidos registrados en esta jornada.</p>
             ) : (
               <div className={styles.partidos}>
+                <CabeceraPartidos />
                 {c.partidos.map((p) => (
                   <FilaPartido
                     key={p.id}
