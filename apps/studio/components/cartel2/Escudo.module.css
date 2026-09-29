@@ -1,0 +1,36 @@
+/*
+ * Escudo con relieve (ver `Escudo.tsx`). El contenedor lo coloca y mide cada plantilla; la
+ * imagen y el brillo ocupan todo el contenedor y se ajustan igual («contain», centrados).
+ */
+
+.escudo {
+  filter: drop-shadow(0 28px 34px rgb(0 0 0 / 55%)) drop-shadow(0 6px 8px rgb(0 0 0 / 35%));
+}
+
+.imagen {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Brillo de arriba abajo, solo dentro de la forma del escudo: luz arriba, sombra abajo. */
+.brillo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    168deg,
+    rgb(255 255 255 / 38%) 0%,
+    rgb(255 255 255 / 8%) 38%,
+    transparent 55%,
+    rgb(0 0 0 / 28%) 100%
+  );
+  mix-blend-mode: soft-light;
+  mask-size: contain;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+}
