@@ -76,8 +76,8 @@ function Texto({ evento }: { evento: EventoCartel }) {
  * sobre la línea y los hechos de cada equipo a su lado. Las filas se aprietan si hay muchos.
  */
 export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
-  const eventos = [...datos.eventos].sort((a, c) => orden(a.minuto) - orden(c.minuto)).slice(0, 18);
-  const alto = Math.max(40, Math.min(78, Math.floor(700 / Math.max(eventos.length, 1))));
+  const eventos = [...datos.eventos].sort((a, c) => orden(a.minuto) - orden(c.minuto)).slice(0, 26);
+  const alto = Math.max(27, Math.min(78, Math.floor(720 / Math.max(eventos.length, 1))));
   const estiloFila = { "--fila": `${alto}px` } as CSSProperties;
   const pie = [fechaCorta(datos.fecha), datos.campo.toUpperCase()].filter(Boolean).join("  ·  ");
 
@@ -118,6 +118,7 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
         )}
       </div>
 
+      {eventos.length === 0 && <div className={s.vacia}>SEN INCIDENCIAS REXISTRADAS</div>}
       <ol className={s.linea} style={estiloFila}>
         {eventos.map((e, i) => (
           <li key={`${e.minuto}-${i}`} className={e.lado === "local" ? s.izquierda : s.derecha}>

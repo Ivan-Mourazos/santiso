@@ -73,14 +73,22 @@ function Tabla({ datos }: { datos: Extract<DatosClasificacion, { tipo: "liga" }>
 function Cuadro({ datos }: { datos: Extract<DatosClasificacion, { tipo: "copa" }> }) {
   // Las últimas rondas son las que interesan: como mucho cuatro.
   const rondas = datos.rondas.slice(-4);
+  // Con pocos partidos (una final, unas semifinales) todo va en grande y en una columna.
+  const pocos = rondas.reduce((n, r) => n + r.partidos.length, 0) <= 4;
+  const esSantiso = (nombre: string) => nombre.toLowerCase().includes("santiso");
   return (
-    <div className={s.cuadro}>
+    <div className={`${s.cuadro} ${pocos ? s.cuadroGrande : ""}`}>
       {rondas.map((r) => (
         <section key={r.nombre} className={s.ronda}>
           <h2 className={b.display}>{r.nombre.toUpperCase()}</h2>
           <ul>
             {r.partidos.map((p, i) => (
-              <li key={`${p.local}-${p.visitante}-${i}`}>
+              <li
+                key={`${p.local}-${p.visitante}-${i}`}
+                className={
+                  esSantiso(p.local) || esSantiso(p.visitante) ? s.partidoPropio : undefined
+                }
+              >
                 <span className={s.equipoCopa}>{p.local.toUpperCase()}</span>
                 <span className={`${b.display} ${s.marcadorCopa}`}>
                   {p.golesLocal === null || p.golesVisitante === null

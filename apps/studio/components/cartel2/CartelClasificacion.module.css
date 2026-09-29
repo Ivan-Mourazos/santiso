@@ -132,7 +132,7 @@
   background: rgb(255 255 255 / 6%);
   font-weight: 800;
   font-style: italic;
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .equipoCopa {
@@ -149,4 +149,36 @@
   font-style: normal;
   font-size: 30px;
   color: var(--amarillo);
+}
+
+/* El partido del Santiso, en amarillo con letra negra. */
+.partidoPropio {
+  background: var(--amarillo) !important;
+  color: var(--tinta);
+}
+
+.partidoPropio .marcadorCopa {
+  color: var(--tinta);
+}
+
+/* Pocos partidos: una columna, centrada y en grande. */
+.cuadroGrande {
+  grid-template-columns: 1fr;
+  align-content: center;
+  gap: 48px;
+}
+
+.cuadroGrande .ronda h2 {
+  font-size: 72px;
+  text-align: center;
+}
+
+.cuadroGrande .ronda li {
+  padding: 22px 28px;
+  border-radius: 16px;
+  font-size: 40px;
+}
+
+.cuadroGrande .marcadorCopa {
+  font-size: 84px;
 }

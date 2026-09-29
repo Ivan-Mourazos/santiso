@@ -160,3 +160,16 @@
   text-align: center;
   font-size: 26px;
 }
+
+.vacia {
+  position: absolute;
+  z-index: 6;
+  top: 640px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: 0.3em;
+  color: rgb(255 255 255 / 60%);
+}

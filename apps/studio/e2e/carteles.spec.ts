@@ -105,7 +105,7 @@ test("el cartel se previsualiza y se descarga en PNG a 2160×2700", async ({ pag
   await expect(piloto).toBeVisible({ timeout: 30000 });
   await expect(piloto.locator("[data-vista-cartel] [data-cartel]")).toBeVisible();
 
-  await piloto.getByLabel("Composición", { exact: true }).selectOption("enfrentados");
+  await piloto.getByRole("button", { name: "Enfrentados", exact: true }).click();
   await expect(piloto.locator("[data-cartel]")).toHaveClass(/enfrentados/);
 
   const descarga = page.waitForEvent("download", { timeout: 90000 });
