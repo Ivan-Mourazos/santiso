@@ -23,9 +23,14 @@ import type {
 import { TEMAS_ANUNCIO } from "./modelo";
 
 export interface RecursosCartel {
+  /** Escudo del club en Ajustes gráficos: solo si su equipo de la categoría no tiene. */
   escudoClub: string;
+  /** Escudo del equipo del Santiso de cada categoría (el que se edita en Equipos). */
+  escudosClub: Record<string, string>;
   patrocinadores: string[];
   institucionales: string[];
+  /** URL de los escudos marcados en Equipos como «ya en 3D»: sin relieve en el cartel. */
+  escudosEn3d: string[];
 }
 
 export interface OpcionesCartel {
@@ -38,6 +43,15 @@ export interface OpcionesCartel {
 
 /** Amarillo de la equipación: el color del Santiso en todos los carteles. */
 export const COLOR_CLUB = "#f5c518";
+
+/** Escudo del Santiso para una categoría: el de su equipo; si no, el Senior; si no, el de Ajustes. */
+export function escudoClubDe(recursos: RecursosCartel, categoria?: string) {
+  return (
+    (categoria && recursos.escudosClub[categoria]) ||
+    recursos.escudosClub.Senior ||
+    recursos.escudoClub
+  );
+}
 
 export function nombreClub(categoria: string) {
   return categoria === "Veteranos" ? "UD Santiso FC Solaina" : "UD Santiso FC";
@@ -53,17 +67,20 @@ function equipos(
   recursos: RecursosCartel,
   color: OpcionesCartel["color"],
 ) {
+  const escudoClub = escudoClubDe(recursos, categoria);
   const club: EquipoCartel = {
     nombre: nombreClub(categoria),
-    escudo: recursos.escudoClub || null,
+    escudo: escudoClub || null,
     propio: true,
     color: COLOR_CLUB,
+    relieve: !recursos.escudosEn3d.includes(escudoClub),
   };
   const rival: EquipoCartel = {
     nombre: rivalNombre.trim() || "Rival",
     escudo: rivalEscudo || null,
     propio: false,
     color: color(rivalEscudo || null),
+    relieve: !recursos.escudosEn3d.includes(rivalEscudo),
   };
   const santisoLocal = santisoSide === "left";
   return {
@@ -250,7 +267,7 @@ export function peticionDeFormulario(
           titulo: form.multiusosTitulo.trim(),
           texto: form.multiusosTexto.trim(),
           imagenes: [form.multiusosImg1Url, form.multiusosImg2Url].filter(Boolean),
-          escudoClub: recursos.escudoClub || null,
+          escudoClub: escudoClubDe(recursos) || null,
         },
       };
     case "clasificacion": {
@@ -258,7 +275,7 @@ export function peticionDeFormulario(
         ...logos,
         categoria: form.categoria,
         titulo: form.clasificacionNombre.trim() || form.competicion,
-        escudoClub: recursos.escudoClub || null,
+        escudoClub: escudoClubDe(recursos, form.categoria) || null,
       };
       if (form.clasificacionTipo === "copa") {
         const rondas = form.clasificacionData as RondaCartel[];

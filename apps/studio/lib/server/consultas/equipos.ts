@@ -13,6 +13,7 @@ const columnas = {
   categoria: schema.equipos.categoria,
   escudo: schema.equipos.escudo,
   esPropio: schema.equipos.esPropio,
+  escudo3d: schema.equipos.escudo3d,
 };
 
 const aDto = (fila: {
@@ -21,12 +22,14 @@ const aDto = (fila: {
   categoria: string;
   escudo: string | null;
   esPropio: boolean;
+  escudo3d: boolean;
 }): EquipoDto => ({
   id: fila.id,
   nombre: fila.nombre,
   categoria: fila.categoria,
   escudo_url: fila.escudo ? urlMedia(fila.escudo) : null,
   es_propio: fila.esPropio,
+  escudo_3d: fila.escudo3d,
 });
 
 /** Equipos inscritos en una competición, por nombre. */

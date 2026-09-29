@@ -31,6 +31,8 @@ export interface EquipoCartel {
   propio: boolean;
   /** `#rrggbb`: sacado del escudo en el navegador; el club usa el amarillo de su equipación. */
   color: string;
+  /** Añadir relieve al escudo. No si ya tiene volumen (el del club, o marcado en Equipos). */
+  relieve: boolean;
 }
 
 /** Lo que llevan todos los carteles: logos institucionales (RFGF, Xunta) y patrocinadores. */

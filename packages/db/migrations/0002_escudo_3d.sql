@@ -1,0 +1,1 @@
+ALTER TABLE `equipos` ADD `escudo_3d` integer DEFAULT false NOT NULL;

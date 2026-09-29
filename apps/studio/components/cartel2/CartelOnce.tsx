@@ -48,7 +48,11 @@ export function CartelOnce({ datos }: { datos: DatosOnce }) {
           />
         ) : (
           datos.club.escudo && (
-            <Escudo className={`${b.escudo} ${s.escudoClub}`} src={datos.club.escudo} />
+            <Escudo
+              className={`${b.escudo} ${s.escudoClub}`}
+              src={datos.club.escudo}
+              relieve={datos.club.relieve}
+            />
           )
         )}
       </div>

@@ -16,6 +16,8 @@ export const equipos = sqliteTable(
     esPropio: integer("es_propio", { mode: "boolean" }).notNull().default(false),
     /** Clave de media relativa a `data/media`. */
     escudo: text("escudo"),
+    /** El escudo ya tiene volumen (retocado en 3D): los carteles no le añaden relieve. */
+    escudo3d: integer("escudo_3d", { mode: "boolean" }).notNull().default(false),
     ...marcasTiempo(),
   },
   (t) => [

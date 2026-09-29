@@ -1,4 +1,3 @@
- 
 import type { CSSProperties } from "react";
 import {
   categoriaCartel,
@@ -52,10 +51,18 @@ export function CartelResultado({ datos }: { datos: DatosResultado }) {
       <div className={s.etiqueta}>RESULTADO FINAL</div>
 
       {datos.local.escudo && (
-        <Escudo className={`${b.escudo} ${s.escudoLocal}`} src={datos.local.escudo} />
+        <Escudo
+          className={`${b.escudo} ${s.escudoLocal}`}
+          src={datos.local.escudo}
+          relieve={datos.local.relieve}
+        />
       )}
       {datos.visitante.escudo && (
-        <Escudo className={`${b.escudo} ${s.escudoVisitante}`} src={datos.visitante.escudo} />
+        <Escudo
+          className={`${b.escudo} ${s.escudoVisitante}`}
+          src={datos.visitante.escudo}
+          relieve={datos.visitante.relieve}
+        />
       )}
 
       <div className={`${b.display} ${s.marcador}`} style={{ fontSize: cuerpoMarcador }}>

@@ -1,4 +1,3 @@
- 
 import type { CSSProperties } from "react";
 import {
   categoriaCartel,
@@ -101,7 +100,7 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
 
       <div className={s.marcador}>
         {datos.local.escudo ? (
-          <Escudo className={s.escudo} src={datos.local.escudo} />
+          <Escudo className={s.escudo} src={datos.local.escudo} relieve={datos.local.relieve} />
         ) : (
           <span className={s.escudo} />
         )}
@@ -113,7 +112,11 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
           </span>
         </div>
         {datos.visitante.escudo ? (
-          <Escudo className={s.escudo} src={datos.visitante.escudo} />
+          <Escudo
+            className={s.escudo}
+            src={datos.visitante.escudo}
+            relieve={datos.visitante.relieve}
+          />
         ) : (
           <span className={s.escudo} />
         )}

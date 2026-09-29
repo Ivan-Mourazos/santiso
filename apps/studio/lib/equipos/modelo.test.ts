@@ -13,6 +13,7 @@ const lista: EquipoCatalogo[] = [
     categoria: "Senior",
     escudo_url: null,
     es_propio: false,
+    escudo_3d: false,
     competiciones: [],
     numeroPartidos: 0,
   },
@@ -22,6 +23,7 @@ const lista: EquipoCatalogo[] = [
     categoria: "Veteranos",
     escudo_url: "/media/escudo.webp",
     es_propio: false,
+    escudo_3d: false,
     competiciones: [],
     numeroPartidos: 2,
   },
@@ -57,7 +59,7 @@ describe("modelo de equipos", () => {
     expect(form.has("competicionId")).toBe(false);
     expect(
       formularioDeEquipo(
-        { id: "", nombre: "Nuevo" },
+        { id: "", nombre: "Nuevo", escudo3d: false },
         { categoria: "Senior", competicionId: "liga" },
         null,
       ).get("competicionId"),

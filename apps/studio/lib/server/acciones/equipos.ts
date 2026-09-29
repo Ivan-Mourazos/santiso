@@ -88,6 +88,8 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
       categoria,
       esPropio: esEquipoPropio(nombre),
       ...(imagen.datos ? { escudo: imagen.datos } : {}),
+      // Solo si el formulario lo trae: quien no lo manda no lo cambia.
+      ...(formulario.has("escudo3d") ? { escudo3d: formulario.get("escudo3d") === "1" } : {}),
     };
     const columnas = {
       id: schema.equipos.id,
@@ -95,6 +97,7 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
       categoria: schema.equipos.categoria,
       escudo: schema.equipos.escudo,
       esPropio: schema.equipos.esPropio,
+      escudo3d: schema.equipos.escudo3d,
     };
     const [fila] = id
       ? await db
@@ -120,6 +123,7 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
     categoria: fila.categoria,
     escudo_url: fila.escudo ? urlMedia(fila.escudo) : null,
     es_propio: fila.esPropio,
+    escudo_3d: fila.escudo3d,
   });
 }
 
