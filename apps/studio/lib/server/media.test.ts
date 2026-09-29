@@ -3,7 +3,16 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
-import { guardarImagen, leerImagenDeFormulario, resolverRutaMedia, tipoMedia } from "./media";
+import {
+  anchoDeVariante,
+  focoDeFoto,
+  guardarFotoPartido,
+  guardarImagen,
+  leerImagenDeFormulario,
+  resolverRutaMedia,
+  tipoMedia,
+  varianteDeImagen,
+} from "./media";
 
 const raizTemporal = () => mkdtempSync(path.join(tmpdir(), "santiso-media-"));
 
@@ -161,5 +170,81 @@ describe("leerImagenDeFormulario", () => {
       ok: false,
       error: "La imagen supera los 15 MB.",
     });
+  });
+});
+
+/** Foto de prueba: fondo gris liso y un «jugador» (bloque con detalle y color) en `x`, `y`. */
+async function fotoCon(ancho: number, alto: number, x: number, y: number) {
+  const lado = Math.round(Math.min(ancho, alto) / 3);
+  const detalle = await sharp({
+    create: { width: lado, height: lado, channels: 3, background: { r: 230, g: 40, b: 30 } },
+  })
+    .composite([
+      {
+        input: await sharp({
+          create: {
+            width: Math.round(lado / 2),
+            height: Math.round(lado / 2),
+            channels: 3,
+            background: { r: 250, g: 210, b: 30 },
+          },
+        })
+          .png()
+          .toBuffer(),
+        left: Math.round(lado / 4),
+        top: Math.round(lado / 4),
+      },
+    ])
+    .png()
+    .toBuffer();
+  return await sharp({
+    create: { width: ancho, height: alto, channels: 3, background: { r: 120, g: 120, b: 120 } },
+  })
+    .composite([{ input: detalle, left: Math.round(x - lado / 2), top: Math.round(y - lado / 2) }])
+    .jpeg()
+    .toBuffer();
+}
+
+describe("fotos de partido", () => {
+  it("el foco sigue al motivo: en horizontal, en el eje X", async () => {
+    const derecha = await focoDeFoto(await fotoCon(1600, 900, 1250, 450));
+    expect(derecha.focoX).toBeGreaterThan(0.6);
+    expect(derecha.focoY).toBe(0.5);
+    const izquierda = await focoDeFoto(await fotoCon(1600, 900, 350, 450));
+    expect(izquierda.focoX).toBeLessThan(0.4);
+  });
+
+  it("en vertical alargada, en el eje Y", async () => {
+    const abajo = await focoDeFoto(await fotoCon(800, 1800, 400, 1450));
+    expect(abajo.focoX).toBe(0.5);
+    expect(abajo.focoY).toBeGreaterThan(0.6);
+  });
+
+  it("si ya es 4:5 no hay recorte: foco por defecto", async () => {
+    expect(await focoDeFoto(await fotoCon(800, 1000, 700, 900))).toEqual({
+      focoX: 0.5,
+      focoY: 0.4,
+    });
+  });
+
+  it("guarda la foto entera, sin margen, a 3000 px como mucho", async () => {
+    const raiz = raizTemporal();
+    const foto = await guardarFotoPartido(await fotoCon(4000, 2250, 3000, 1100), raiz);
+    expect(foto.clave).toMatch(/^partidos\/[0-9a-f-]{36}\.webp$/);
+    expect([foto.ancho, foto.alto]).toEqual([3000, 1688]);
+    const meta = await sharp(readFileSync(path.join(raiz, foto.clave))).metadata();
+    expect([meta.width, meta.height, meta.format]).toEqual([3000, 1688, "webp"]);
+    expect(foto.focoX).toBeGreaterThan(0.6);
+  });
+
+  it("las variantes usan anchos fijos y no amplían", async () => {
+    expect(anchoDeVariante(100)).toBe(480);
+    expect(anchoDeVariante(1080)).toBe(1080);
+    expect(anchoDeVariante(1500)).toBe(2160);
+    expect(anchoDeVariante(9000)).toBe(2160);
+    const foto = await fotoCon(3000, 2000, 1500, 1000);
+    expect((await sharp(await varianteDeImagen(foto, 1080)).metadata()).width).toBe(1080);
+    const pequena = await fotoCon(600, 400, 300, 200);
+    expect((await sharp(await varianteDeImagen(pequena, 2160)).metadata()).width).toBe(600);
   });
 });

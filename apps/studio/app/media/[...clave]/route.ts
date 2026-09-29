@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
-import { resolverRutaMedia, tipoMedia } from "@/lib/server/media";
+import { resolverRutaMedia, tipoMedia, varianteDeImagen } from "@/lib/server/media";
 
 const noEncontrado = () => new Response("No encontrado", { status: 404 });
 
@@ -11,6 +11,8 @@ const esFicheroInexistente = (error: unknown) =>
  * Sirve `data/media/<clave>`. Revalida también claves heredadas que conservan el nombre tras una restauración.
  * Con `?recorte=1` devuelve la imagen recortada a su contenido (PNG): los logos se guardan
  * centrados en un cuadrado con margen, y en un cartel un logo ancho se veía diminuto.
+ * Con `?ancho=N`, una versión reducida en WebP (ver `ANCHOS_VARIANTE`): las fotos de partido
+ * se guardan grandes y la vista previa no necesita cargarlas enteras.
  */
 export async function GET(
   solicitud: Request,
@@ -22,7 +24,15 @@ export async function GET(
   if (!ruta || !tipo) return noEncontrado();
   try {
     const contenido = await readFile(ruta);
-    if (new URL(solicitud.url).searchParams.has("recorte")) {
+    const parametros = new URL(solicitud.url).searchParams;
+    const ancho = Number(parametros.get("ancho"));
+    if (ancho > 0) {
+      const variante = await varianteDeImagen(contenido, ancho);
+      return new Response(new Uint8Array(variante), {
+        headers: { "Content-Type": "image/webp", "Cache-Control": "no-cache" },
+      });
+    }
+    if (parametros.has("recorte")) {
       const recortada = await sharp(contenido).trim().png().toBuffer();
       return new Response(new Uint8Array(recortada), {
         headers: { "Content-Type": "image/png", "Cache-Control": "no-cache" },

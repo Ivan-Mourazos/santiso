@@ -27,6 +27,8 @@ export interface FormState {
   jugadorZoom: number;
   showCarouselIndicator: boolean;
   // Partido / Resumo / Cronoloxia
+  /** Partido cargado desde la liga (vacío si se rellenó a mano): su galería de fotos. */
+  partido_id: string;
   competicion_id: string;
   /** Nombre visible (sincronizado con catálogo o partido cargado). */
   competicion: string;

@@ -15,6 +15,7 @@ import type {
   Composicion,
   EquipoCartel,
   EventoCartel,
+  FotoCartel,
   JugadorOnce,
   PeticionCartel,
   TemaAnuncio,
@@ -35,8 +36,8 @@ export interface OpcionesCartel {
   /** Color `#rrggbb` del escudo de esa URL (o el de reserva si no tiene). */
   color: (url: string | null) => string;
   composicion: Composicion;
-  /** Foto de fondo del cartel de resultado. */
-  foto: string | null;
+  /** Foto de fondo del cartel de resultado, con su foco y estilo. */
+  foto: FotoCartel | null;
 }
 
 /** Amarillo de la equipación: el color del Santiso en todos los carteles. */

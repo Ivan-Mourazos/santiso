@@ -29,6 +29,13 @@
       "when": 1790713182243,
       "tag": "0003_sin-femenino",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1790719888805,
+      "tag": "0004_fotos-partido",
+      "breakpoints": true
     }
   ]
 }

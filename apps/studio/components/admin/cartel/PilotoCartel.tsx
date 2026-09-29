@@ -4,11 +4,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Cartel } from "@/components/cartel2/Cartel";
 import { Button } from "@/components/ui/foundation/Button";
 import { aHex, COLOR_RIVAL_RESERVA, colorDominante } from "@/lib/cartel2/color";
+import GaleriaPartido from "@/components/admin/fotos/GaleriaPartido";
 import { peticionDeFormulario } from "@/lib/cartel2/formulario";
 import {
   COMPOSICIONES,
+  ESTILOS_FOTO,
   MEDIDAS,
   type Composicion,
+  type FotoCartel,
   type PeticionCartel,
 } from "@/lib/cartel2/modelo";
 import styles from "./PilotoCartel.module.css";
@@ -84,7 +87,8 @@ export default function PilotoCartel({
 }) {
   const [composicion, setComposicion] = useState<Composicion>("diagonal");
   const [colores, setColores] = useState<Record<string, string>>({});
-  const [foto, setFoto] = useState<string | null>(null);
+  const [foto, setFoto] = useState<FotoCartel | null>(null);
+  const [galeria, setGaleria] = useState(false);
   const [hueco, setHueco] = useState({ ancho: 0, alto: 0 });
   const [exportando, setExportando] = useState(false);
   const caja = useRef<HTMLDivElement>(null);
@@ -112,12 +116,13 @@ export default function PilotoCartel({
     };
   }, [clavePendientes]);
 
-  // La foto de fondo se libera al cambiarla o al salir.
+  // Una foto subida a mano (`blob:`) se libera al cambiarla o al salir.
+  const urlSubida = foto?.url.startsWith("blob:") ? foto.url : null;
   useEffect(() => {
     return () => {
-      if (foto) URL.revokeObjectURL(foto);
+      if (urlSubida) URL.revokeObjectURL(urlSubida);
     };
-  }, [foto]);
+  }, [urlSubida]);
 
   // El panel llega hasta el borde de abajo de la ventana desde donde empieza, para que el cartel
   // se vea entero nada más abrir la pantalla (y siga a la vista al desplazarse: es «sticky»).
@@ -232,21 +237,52 @@ export default function PilotoCartel({
           )}
           {tipo === "resumo" && (
             <>
-              <label className={styles.botonFoto}>
-                {foto ? "Cambiar foto" : "Foto de fondo"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const fichero = e.target.files?.[0];
-                    setFoto(fichero ? URL.createObjectURL(fichero) : null);
-                  }}
-                />
-              </label>
-              {foto && (
-                <Button variant="secondary" size="sm" onClick={() => setFoto(null)}>
-                  Quitar foto
+              {/* Con el partido cargado, de su galería; si no, una foto suelta del equipo. */}
+              {form.partido_id ? (
+                <Button size="sm" variant="secondary" onClick={() => setGaleria(true)}>
+                  {foto ? "Cambiar foto" : "Foto de fondo"}
                 </Button>
+              ) : (
+                <label className={styles.botonFoto}>
+                  {foto ? "Cambiar foto" : "Foto de fondo"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const fichero = e.target.files?.[0];
+                      setFoto(
+                        fichero
+                          ? {
+                              url: URL.createObjectURL(fichero),
+                              x: 0.5,
+                              y: 0.4,
+                              estilo: foto?.estilo ?? "color",
+                            }
+                          : null,
+                      );
+                    }}
+                  />
+                </label>
+              )}
+              {foto && (
+                <>
+                  <div className={styles.grupo} role="group" aria-label="Estilo de la foto">
+                    {ESTILOS_FOTO.map((e) => (
+                      <Button
+                        key={e.id}
+                        size="sm"
+                        variant={foto.estilo === e.id ? "primary" : "secondary"}
+                        aria-pressed={foto.estilo === e.id}
+                        onClick={() => setFoto({ ...foto, estilo: e.id })}
+                      >
+                        {e.nombre}
+                      </Button>
+                    ))}
+                  </div>
+                  <Button variant="secondary" size="sm" onClick={() => setFoto(null)}>
+                    Quitar foto
+                  </Button>
+                </>
               )}
             </>
           )}
@@ -266,6 +302,23 @@ export default function PilotoCartel({
           </div>
         )}
       </div>
+      {galeria && form.partido_id && (
+        <GaleriaPartido
+          partidoId={form.partido_id}
+          partido={`${form.rivalNombre ? `Santiso – ${form.rivalNombre}` : "Partido"}${form.fecha ? ` · ${form.fecha}` : ""}`}
+          onCerrar={() => setGaleria(false)}
+          showToast={showToast}
+          onElegir={(elegida) => {
+            setFoto({
+              url: elegida.url,
+              x: elegida.foco_x,
+              y: elegida.foco_y,
+              estilo: foto?.estilo ?? "color",
+            });
+            setGaleria(false);
+          }}
+        />
+      )}
     </section>
   );
 }

@@ -125,12 +125,95 @@ export async function guardarImagen(
   return clave;
 }
 
+/** Lado mayor de las fotos de partido: el cartel se exporta a 2160 × 2700 y se recorta. */
+const LADO_MAXIMO_PARTIDO = 3000;
+/** Proporción del cartel (4:5): el foco se busca para ese recorte. */
+const PROPORCION_CARTEL = 4 / 5;
+
+export interface FotoGuardada {
+  clave: string;
+  ancho: number;
+  alto: number;
+  /** Punto de interés (0–1) según el recorte automático de sharp («attention»). */
+  focoX: number;
+  focoY: number;
+}
+
+/**
+ * Punto de interés de una foto para un recorte 4:5: sharp elige la ventana con más «atención»
+ * (piel, contraste, saturación) y el foco es su centro. En el eje que no se recorta queda al
+ * centro (0,5) o, en vertical sin recorte, algo por encima (0,4), donde suelen ir las caras.
+ */
+export async function focoDeFoto(bytes: Uint8Array): Promise<{ focoX: number; focoY: number }> {
+  const muestra = await sharp(bytes)
+    .rotate()
+    .resize(480, 480, { fit: "inside" })
+    .toBuffer({ resolveWithObject: true });
+  const { width: w, height: h } = muestra.info;
+  const horizontal = w / h > PROPORCION_CARTEL;
+  const ventana = horizontal
+    ? { width: Math.max(1, Math.round(h * PROPORCION_CARTEL)), height: h }
+    : { width: w, height: Math.max(1, Math.round(w / PROPORCION_CARTEL)) };
+  if (ventana.width >= w && ventana.height >= h) return { focoX: 0.5, focoY: 0.4 };
+  const { info } = await sharp(muestra.data)
+    .resize({ ...ventana, fit: "cover", position: sharp.strategy.attention })
+    .toBuffer({ resolveWithObject: true });
+  const izquierda = Math.abs(info.cropOffsetLeft ?? 0);
+  const arriba = Math.abs(info.cropOffsetTop ?? 0);
+  const limitar = (v: number) => Math.min(1, Math.max(0, Math.round(v * 1000) / 1000));
+  return horizontal
+    ? { focoX: limitar((izquierda + ventana.width / 2) / w), focoY: 0.5 }
+    : { focoX: 0.5, focoY: limitar((arriba + ventana.height / 2) / h) };
+}
+
+/**
+ * Foto de un partido: sin recortar ni añadir margen (es una foto, no un logo), orientada según
+ * su EXIF, reducida a 3000 px de lado mayor y en WebP de buena calidad. Devuelve su foco.
+ */
+export async function guardarFotoPartido(
+  bytes: Uint8Array,
+  raiz = DIR_MEDIA,
+): Promise<FotoGuardada> {
+  const { data, info } = await sharp(bytes)
+    .rotate()
+    .resize(LADO_MAXIMO_PARTIDO, LADO_MAXIMO_PARTIDO, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 88 })
+    .toBuffer({ resolveWithObject: true });
+  const foco = await focoDeFoto(bytes);
+  const clave = `partidos/${randomUUID()}.webp`;
+  await mkdir(path.join(raiz, "partidos"), { recursive: true });
+  await writeFile(path.join(raiz, clave), data);
+  return { clave, ancho: info.width, alto: info.height, ...foco };
+}
+
+/**
+ * Anchos que sirve `/media/...?ancho=`: vista previa pequeña, cartel a 1× y a 2× (exportación).
+ * Una lista cerrada: cualquier otro ancho pedido se sube al siguiente de la lista.
+ */
+export const ANCHOS_VARIANTE = [480, 1080, 2160] as const;
+
+export function anchoDeVariante(pedido: number): number {
+  return ANCHOS_VARIANTE.find((a) => a >= pedido) ?? ANCHOS_VARIANTE[ANCHOS_VARIANTE.length - 1];
+}
+
+/** La imagen reducida a `ancho` (sin ampliar), en WebP. */
+export async function varianteDeImagen(contenido: Uint8Array, ancho: number): Promise<Buffer> {
+  return await sharp(contenido)
+    .resize({ width: anchoDeVariante(ancho), withoutEnlargement: true })
+    .webp({ quality: 86 })
+    .toBuffer();
+}
+
 /** Extrae y valida la imagen de un campo de formulario enviado a una acción de servidor. */
 export async function leerImagenDeFormulario(
   formulario: FormData,
   campo: string,
 ): Promise<Resultado<Uint8Array>> {
-  const valor = formulario.get(campo);
+  return await leerImagen(formulario.get(campo));
+}
+
+/** Valida un valor de formulario como imagen (tipo y 15 MB como mucho) y devuelve sus bytes. */
+export async function leerImagen(valor: FormDataEntryValue | null): Promise<Resultado<Uint8Array>> {
   if (!(valor instanceof File) || valor.size === 0) return fallo("Selecciona una imagen.");
   if (!valor.type.startsWith("image/")) return fallo("El fichero debe ser una imagen.");
   if (valor.size > MAX_BYTES_IMAGEN) return fallo("La imagen supera los 15 MB.");
