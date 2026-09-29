@@ -1,10 +1,10 @@
 .button {
-  min-height: 44px;
+  min-height: 38px;
   max-width: 100%;
-  padding: 0.625rem 1rem;
+  padding: 0.4rem 0.9rem;
   border: 1px solid transparent;
   border-radius: var(--ui-radius);
-  font: 800 1rem var(--ui-font-body);
+  font: 800 0.95rem var(--ui-font-body);
   line-height: 1.35;
   cursor: pointer;
   overflow-wrap: anywhere;
@@ -12,15 +12,9 @@
 }
 /* Acciones de fila: más bajas para que quepan más filas por pantalla. */
 .sm {
-  min-height: 36px;
-  padding: 0.35rem 0.75rem;
-  font-size: 0.875rem;
-}
-/* Con dedo, el objetivo vuelve a 44 px. */
-@media (pointer: coarse) {
-  .sm {
-    min-height: 44px;
-  }
+  min-height: 32px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.85rem;
 }
 .primary {
   background: var(--ui-accent);

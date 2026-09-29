@@ -2,13 +2,13 @@
 
 .panel {
   display: grid;
-  gap: var(--ui-space-5, 1.5rem);
+  gap: 1rem;
 }
 .bloque {
   background: var(--ui-surface, #171717);
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: var(--ui-radius-lg, 1.125rem);
-  padding: var(--ui-space-5, 1.5rem);
+  padding: 1rem 1.25rem;
 }
 .titulo {
   margin: 0 0 var(--ui-space-3, 0.75rem);
@@ -31,16 +31,21 @@
 /* ─── Cabecera: selección y accesos ─── */
 .selectores {
   display: grid;
-  grid-template-columns: minmax(9rem, 12rem) minmax(0, 1.6fr) minmax(9rem, 1fr);
+  grid-template-columns: minmax(9rem, 11rem) minmax(0, 1.6fr) minmax(9rem, 1fr) auto;
   gap: var(--ui-space-3, 0.75rem);
   align-items: end;
+}
+.vistas {
+  display: flex;
+  gap: 0.4rem;
+  padding-bottom: 0.2rem;
 }
 .acciones {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ui-space-2, 0.5rem);
-  margin-top: var(--ui-space-4, 1rem);
+  margin-top: 0.75rem;
 }
 .acciones .nota {
   margin-left: auto;
@@ -77,61 +82,84 @@
   font-weight: 700;
 }
 
-/* ─── Partidos ─── */
+/* ─── Partidos: una línea por partido, columnas nombradas una vez arriba ─── */
 .partidos {
   display: grid;
-  gap: var(--ui-space-3, 0.75rem);
+  gap: 0.35rem;
+}
+.partido,
+.partidoCabecera {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) 6rem minmax(0, 1fr) minmax(7rem, 9.5rem) 10.75rem 6.75rem
+    auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+.partido[data-contexto="true"],
+.partidoCabecera[data-contexto="true"] {
+  grid-template-columns:
+    4.5rem minmax(0, 1fr) 6rem minmax(0, 1fr) minmax(7rem, 9.5rem) 10.75rem
+    6.75rem auto;
+}
+.partidoCabecera {
+  padding: 0 0.6rem;
+  color: var(--ui-muted, #aaa);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 .partido {
-  display: grid;
-  gap: var(--ui-space-3, 0.75rem);
-  padding: var(--ui-space-4, 1rem);
-  border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius, 0.75rem);
+  padding: 0.35rem 0.6rem;
+  border: 1px solid rgb(255 255 255 / 6%);
+  border-radius: 0.6rem;
   background: var(--ui-raised, #242424);
 }
 .partido[data-cambios="true"] {
-  border-color: rgb(245 158 11 / 55%);
+  border-color: rgb(245 158 11 / 65%);
 }
-.marcador {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--ui-space-3, 0.75rem);
+.local {
+  justify-content: flex-end;
+  text-align: right;
+}
+.centro {
+  text-align: center;
 }
 .equipo {
   display: flex;
   align-items: center;
-  gap: var(--ui-space-2, 0.5rem);
+  gap: 0.4rem;
   min-width: 0;
   font-weight: 800;
-}
-.equipo:first-child {
-  justify-content: flex-end;
-  text-align: right;
+  font-size: 0.85rem;
+  line-height: 1.15;
 }
 .equipo span {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 .equipo img {
-  width: 2rem;
-  height: 2rem;
+  width: 1.5rem;
+  height: 1.5rem;
   object-fit: contain;
   flex: none;
 }
 .goles {
   display: flex;
   align-items: center;
-  gap: var(--ui-space-2, 0.5rem);
+  justify-content: center;
+  gap: 0.25rem;
 }
 .goles input {
-  width: 3.5rem;
+  width: 2.6rem;
+  padding-inline: 0.25rem;
   text-align: center;
   font-weight: 900;
-  font-size: 1.1rem;
 }
-/* La etiqueta de cada marcador existe para el lector de pantalla; a la vista la dan los nombres. */
-.goles label {
+/* En la fila las etiquetas existen para el lector de pantalla; a la vista las da la cabecera. */
+.partido label,
+.oculto {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -139,25 +167,25 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+.partido > div,
 .goles > div {
   margin: 0;
+  min-width: 0;
 }
-.detalle {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: var(--ui-space-3, 0.75rem);
-  align-items: end;
+.partido input,
+.partido select {
+  min-height: 2rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.85rem;
 }
-.pieFila {
+.accionesFila {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--ui-space-2, 0.5rem);
+  gap: 0.3rem;
   justify-content: flex-end;
-  align-items: center;
 }
-.pieFila .nota {
-  margin-right: auto;
-  color: var(--ui-warning, #f59e0b);
+.borrar:hover {
+  color: var(--ui-danger, #f87171);
+  border-color: currentColor;
 }
 
 /* ─── Zonas ─── */
@@ -224,15 +252,6 @@
   .acciones .nota {
     margin-left: 0;
   }
-  .marcador {
-    grid-template-columns: 1fr;
-    justify-items: center;
-  }
-  .equipo,
-  .equipo:first-child {
-    justify-content: center;
-    text-align: center;
-  }
   .zonas li {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -243,7 +262,7 @@
 
 .contextoFila {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;

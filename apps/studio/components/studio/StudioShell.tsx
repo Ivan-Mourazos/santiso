@@ -71,7 +71,6 @@ export function StudioShell({ children }: { children: ReactNode }) {
           <strong>Studio</strong>
         </Link>
         {navigation()}
-        <p className={styles.local}>Herramienta local · Carteles y equipo</p>
       </aside>
       <div className={styles.main}>
         <header className={styles.header}>
@@ -91,6 +90,7 @@ export function StudioShell({ children }: { children: ReactNode }) {
               {categories.map((value) => (
                 <Button
                   key={value}
+                  size="sm"
                   variant={category === value ? "primary" : "secondary"}
                   aria-pressed={category === value}
                   onClick={() => setParams({ categoria: value })}

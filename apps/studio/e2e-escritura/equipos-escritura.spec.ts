@@ -80,7 +80,8 @@ test("un equipo con partidos ofrece quitar y conserva el historial", async ({ pa
   await page.getByRole("dialog").getByRole("button", { name: "Confirmar quitar" }).click();
   await expect(fila(page, "Histórico Ficticio")).toHaveCount(0);
   await page.getByRole("button", { name: "Biblioteca de Senior", exact: true }).click();
-  await expect(fila(page, "Histórico Ficticio")).toContainText("1 partido");
+  // Columna «Partidos»: sigue con su partido aunque ya no esté en la competición.
+  await expect(fila(page, "Histórico Ficticio").getByRole("cell").nth(2)).toHaveText("1");
 });
 
 test("fallo de guardado conserva nombre y escudo y permite reintentar", async ({ page }) => {

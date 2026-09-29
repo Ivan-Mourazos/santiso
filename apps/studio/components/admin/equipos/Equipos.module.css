@@ -1,6 +1,6 @@
 /* Catálogo deportivo: misma paleta y tipografía que Plantilla, con contexto por competición. */
 .panel {
-  padding: var(--ui-space-5, 1.5rem);
+  padding: 1.25rem 1.5rem;
   background: var(--ui-surface, #171717);
   border: 1px solid var(--ui-border, #666);
   border-radius: var(--ui-radius, 0.75rem);
@@ -77,7 +77,7 @@
 }
 .tabla th,
 .tabla td {
-  padding: 0.5rem 0.5rem;
+  padding: 0.3rem 0.5rem;
   border-bottom: 1px solid rgb(255 255 255 / 8%);
   vertical-align: middle;
   overflow-wrap: anywhere;
@@ -90,7 +90,15 @@
   overflow-wrap: normal;
 }
 .tabla th:first-child {
-  width: 68px;
+  width: 64px;
+}
+.tabla th:nth-child(2) {
+  width: 32%;
+}
+.tabla .numero {
+  width: 5.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 /* Acciones de fila en una línea, a la derecha. En móvil se reparten (ver más abajo). */
 .tabla .acciones {
@@ -104,8 +112,8 @@
 }
 .escudo {
   display: block;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   object-fit: contain;
   background: var(--ui-raised, #242424);
   border-radius: 0.5rem;
