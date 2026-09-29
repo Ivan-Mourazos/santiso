@@ -91,16 +91,33 @@ describe("guardarImagen", () => {
     expect(alfa).toBe(255);
   });
 
-  it("reduce a un máximo de 1200 px y no amplía las pequeñas", async () => {
+  it("reduce a 1200 px escudos y logos, y a 2400 px las fotos de personas", async () => {
     const raiz = raizTemporal();
     const grande = await sharp({
       create: { width: 3000, height: 1000, channels: 3, background: { r: 0, g: 80, b: 160 } },
     })
       .jpeg()
       .toBuffer();
-    const clave = await guardarImagen(grande, "jugadores", raiz);
+    const lado = async (carpeta: "escudos" | "jugadores" | "staff") => {
+      const clave = await guardarImagen(grande, carpeta, raiz);
+      const meta = await sharp(readFileSync(path.join(raiz, clave))).metadata();
+      return [meta.width, meta.height];
+    };
+    expect(await lado("escudos")).toEqual([1200, 1200]);
+    expect(await lado("jugadores")).toEqual([2400, 2400]);
+    expect(await lado("staff")).toEqual([2400, 2400]);
+  });
+
+  it("no amplía las imágenes pequeñas", async () => {
+    const raiz = raizTemporal();
+    const pequena = await sharp({
+      create: { width: 300, height: 300, channels: 3, background: { r: 0, g: 80, b: 160 } },
+    })
+      .png()
+      .toBuffer();
+    const clave = await guardarImagen(pequena, "jugadores", raiz);
     const meta = await sharp(readFileSync(path.join(raiz, clave))).metadata();
-    expect([meta.width, meta.height]).toEqual([1200, 1200]);
+    expect(meta.width).toBeLessThanOrEqual(330);
   });
 
   it("rechaza bytes que no son una imagen", async () => {
