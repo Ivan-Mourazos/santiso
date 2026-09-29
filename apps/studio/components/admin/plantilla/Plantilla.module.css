@@ -28,7 +28,11 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--ui-space-4, 1rem);
-  margin-bottom: var(--ui-space-5, 1.5rem);
+  margin-bottom: 1rem;
+}
+/* La temporada va en la cabecera, empujando las acciones a la derecha. */
+.temporada {
+  margin-left: auto;
 }
 .cabecera h2,
 .cabecera h3 {
@@ -49,7 +53,7 @@
 /* ─── Herramientas: buscador, filtros y contador ─── */
 .herramientas {
   display: grid;
-  grid-template-columns: minmax(12rem, 2fr) minmax(10rem, 1fr) auto;
+  grid-template-columns: minmax(12rem, 26rem) minmax(10rem, 14rem) auto 1fr;
   align-items: end;
   gap: var(--ui-space-3, 0.75rem);
   margin-bottom: var(--ui-space-3, 0.75rem);
@@ -59,11 +63,13 @@
   justify-content: flex-start;
   align-items: center;
   gap: var(--ui-space-2, 0.5rem);
-  min-height: 44px;
+  min-height: 38px;
   white-space: nowrap;
 }
 .contador {
-  margin: 0 0 var(--ui-space-3, 0.75rem);
+  margin: 0 0 0.55rem;
+  justify-self: end;
+  grid-column: -2;
   color: var(--ui-muted, #aaa);
   font-size: var(--ui-text-sm, 0.875rem);
 }

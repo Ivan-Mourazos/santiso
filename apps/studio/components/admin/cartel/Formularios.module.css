@@ -10,13 +10,13 @@
 }
 
 .campo {
-  margin-bottom: var(--ui-space-4, 1rem);
+  margin-bottom: 0.75rem;
 }
 
 /* Autocompletar desde el calendario ya guardado. */
 .desdeLiga {
-  margin-bottom: var(--ui-space-4, 1rem);
-  padding: var(--ui-space-4, 1rem);
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
   border: 1px dashed rgb(250 204 21 / 40%);
   border-radius: var(--ui-radius, 0.75rem);
   background: rgb(250 204 21 / 5%);
@@ -59,7 +59,7 @@
   grid-template-columns: 1fr 1fr;
   align-items: start;
   gap: var(--ui-space-3, 0.75rem);
-  margin-bottom: var(--ui-space-4, 1rem);
+  margin-bottom: 0.75rem;
 }
 .aviso {
   margin: var(--ui-space-2, 0.5rem) 0 0;

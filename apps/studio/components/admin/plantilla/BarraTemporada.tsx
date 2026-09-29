@@ -27,7 +27,6 @@ export default function BarraTemporada({
         flexWrap: "wrap",
         alignItems: "end",
         gap: "1rem",
-        marginBottom: "1rem",
       }}
     >
       <div style={{ minWidth: "12rem" }}>

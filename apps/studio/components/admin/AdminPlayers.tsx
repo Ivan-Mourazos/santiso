@@ -253,12 +253,12 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
             />
             Solo sin foto
           </label>
+          <p className={styles.contador} role="status">
+            {visibles.length === jugadores.length
+              ? `${jugadores.length} jugadores`
+              : `${visibles.length} de ${jugadores.length} jugadores`}
+          </p>
         </div>
-        <p className={styles.contador} role="status">
-          {visibles.length === jugadores.length
-            ? `${jugadores.length} jugadores`
-            : `${visibles.length} de ${jugadores.length} jugadores`}
-        </p>
 
         {visibles.length === 0 ? (
           <EmptyState
@@ -339,16 +339,17 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
 
   return (
     <div className={styles.panel}>
-      <BarraTemporada
-        temporadas={temporadas}
-        seleccionada={temporadaId}
-        onCambiar={(id) => setParams({ temporada: id })}
-      />
-
       <div className={styles.cabecera}>
         <div>
           <h3>Plantilla {categoria}</h3>
           <p>Jugadores, dorsales, posiciones y fotos de la temporada elegida.</p>
+        </div>
+        <div className={styles.temporada}>
+          <BarraTemporada
+            temporadas={temporadas}
+            seleccionada={temporadaId}
+            onCambiar={(id) => setParams({ temporada: id })}
+          />
         </div>
         {listo && jugadores.length > 0 && (
           <div className={styles.acciones}>

@@ -191,12 +191,12 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
           />
+          <p className={styles.contador} role="status">
+            {visibles.length === staff.length
+              ? `${staff.length} ${plural}`
+              : `${visibles.length} de ${staff.length} ${plural}`}
+          </p>
         </div>
-        <p className={styles.contador} role="status">
-          {visibles.length === staff.length
-            ? `${staff.length} ${plural}`
-            : `${visibles.length} de ${staff.length} ${plural}`}
-        </p>
         {visibles.length === 0 ? (
           <EmptyState
             title="Nadie coincide con la búsqueda."
@@ -266,16 +266,17 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
 
   return (
     <div className={styles.panel}>
-      <BarraTemporada
-        temporadas={temporadas}
-        seleccionada={temporadaId}
-        onCambiar={(id) => setParams({ temporada: id })}
-      />
-
       <div className={styles.cabecera}>
         <div>
           <h3>{titulo}</h3>
           <p>Nombres, cargos y fotos de la temporada elegida.</p>
+        </div>
+        <div className={styles.temporada}>
+          <BarraTemporada
+            temporadas={temporadas}
+            seleccionada={temporadaId}
+            onCambiar={(id) => setParams({ temporada: id })}
+          />
         </div>
         {listo && staff.length > 0 && (
           <div className={styles.acciones}>
