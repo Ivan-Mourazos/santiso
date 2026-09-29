@@ -172,11 +172,11 @@ export default function PilotoCartel({
   }
 
   return (
-    <section className={styles.piloto} aria-label="Cartel nuevo (piloto)">
+    <section className={styles.piloto} aria-label="Previsualización del cartel">
       <div className={styles.cabecera}>
         <div>
-          <h3>Cartel nuevo · piloto</h3>
-          <p>Mismos datos del formulario.</p>
+          <h3>Previsualización</h3>
+          <p>PNG de 2160 × 2700 para Instagram.</p>
         </div>
         <Button onClick={() => void descargar()} disabled={exportando}>
           {exportando ? "Generando…" : "Descargar PNG"}

@@ -3,8 +3,7 @@
  * UI-specific types for the poster generator.
  */
 
-import type { CronEvent, Player, NextMatch } from "@/lib/cartel-draw";
-import type { DatosClasificacion } from "@/lib/cartel/templates/clasificacion";
+import type { CronEvent, DatosClasificacion, NextMatch, Player } from "@/lib/cartel/types";
 
 export const TEMPLATES = [
   { id: "partido", label: "Cartel de Partido", emoji: "⚽" },

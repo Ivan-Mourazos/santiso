@@ -120,9 +120,6 @@ importers:
         specifier: 'catalog:'
         version: 4.6.4
     devDependencies:
-      '@napi-rs/canvas':
-        specifier: ^1.0.1
-        version: 1.0.1
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.61.1
@@ -3825,6 +3822,7 @@ snapshots:
       '@napi-rs/canvas-linux-x64-musl': 1.0.1
       '@napi-rs/canvas-win32-arm64-msvc': 1.0.1
       '@napi-rs/canvas-win32-x64-msvc': 1.0.1
+    optional: true
 
   '@napi-rs/wasm-runtime@0.2.12':
     dependencies:

@@ -28,7 +28,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@napi-rs/canvas": "^1.0.1",
     "@playwright/test": "catalog:",
     "@types/node": "^20",
     "@types/react": "^19",

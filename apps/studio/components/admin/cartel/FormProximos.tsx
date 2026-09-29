@@ -6,7 +6,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select } from "@/components/ui/foundation/Fields";
-import type { NextMatch } from "@/lib/cartel-draw";
+import type { NextMatch } from "@/lib/cartel/types";
 import { elegirProximos } from "@/lib/jornada/proximos";
 import { SectionLabel, Toggle, type SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
