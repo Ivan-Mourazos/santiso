@@ -55,7 +55,7 @@
   width: 440px;
   height: 440px;
   left: 40px;
-  top: 300px;
+  top: 250px;
 }
 
 .diagonal .escudoVisitante {
@@ -76,9 +76,13 @@
     8px 8px 0 var(--tinta);
 }
 
+/*
+ * Simetría en diagonal: el escudo de arriba lleva el nombre debajo y el de abajo, encima; los
+ * dos nombres quedan hacia el centro del cartel, uno a cada lado del «VS».
+ */
 .diagonal .nombreLocal {
   left: 64px;
-  top: 244px;
+  top: 704px;
 }
 
 .diagonal .nombreVisitante {
