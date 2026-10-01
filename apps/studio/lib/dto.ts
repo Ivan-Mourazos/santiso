@@ -38,6 +38,8 @@ export interface EquipoDto {
   es_propio: boolean;
   /** El escudo ya tiene volumen: los carteles no le añaden relieve. */
   escudo_3d: boolean;
+  /** `#rrggbb` elegido en Equipos; `null` = se saca del escudo. */
+  color: string | null;
 }
 
 /** Fila de la clasificación calculada, ya con los datos de presentación del equipo. */

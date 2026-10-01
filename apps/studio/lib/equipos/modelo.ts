@@ -20,6 +20,8 @@ export interface BorradorEquipo {
   nombre: string;
   /** El escudo ya tiene volumen: los carteles no le añaden relieve. */
   escudo3d: boolean;
+  /** `#rrggbb` o vacío (se saca del escudo). */
+  color: string;
 }
 
 export function filtrarEquipos(lista: EquipoCatalogo[], filtro: FiltroEquipos): EquipoCatalogo[] {
@@ -34,6 +36,7 @@ export function borradorDeEquipo(equipo: EquipoDto | null): BorradorEquipo {
     id: equipo?.id ?? "",
     nombre: equipo?.nombre ?? "",
     escudo3d: equipo?.escudo_3d ?? false,
+    color: equipo?.color ?? "",
   };
 }
 export function formularioDeEquipo(
@@ -46,6 +49,7 @@ export function formularioDeEquipo(
   form.set("nombre", borrador.nombre);
   form.set("categoria", destino.categoria);
   form.set("escudo3d", borrador.escudo3d ? "1" : "0");
+  form.set("color", borrador.color);
   if (destino.competicionId) form.set("competicionId", destino.competicionId);
   if (escudo) form.set("escudo", escudo);
   return form;

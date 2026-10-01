@@ -30,6 +30,8 @@ export interface RecursosCartel {
   institucionales: string[];
   /** URL de los escudos marcados en Equipos como «ya en 3D»: sin relieve en el cartel. */
   escudosEn3d: string[];
+  /** Colores elegidos en Equipos, por `claveNombre` del equipo: mandan sobre el del escudo. */
+  coloresEquipo: Record<string, string>;
 }
 
 export interface OpcionesCartel {
@@ -74,7 +76,7 @@ function equipos(
     nombre: rivalNombre.trim() || "Rival",
     escudo: rivalEscudo || null,
     propio: false,
-    color: color(rivalEscudo || null),
+    color: recursos.coloresEquipo[claveNombre(rivalNombre)] ?? color(rivalEscudo || null),
     relieve: !recursos.escudosEn3d.includes(rivalEscudo),
   };
   const santisoLocal = santisoSide === "left";

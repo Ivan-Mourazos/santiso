@@ -78,6 +78,12 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
     return fallo("Ya existe un equipo con ese nombre en esta categoría.", { nombre: "Repetido" });
   }
 
+  // Color del equipo: vacío lo quita (vuelve a sacarse del escudo).
+  const colorEscrito = formulario.has("color") ? String(formulario.get("color") ?? "").trim() : null;
+  if (colorEscrito && !/^#[0-9a-f]{6}$/i.test(colorEscrito)) {
+    return fallo("El color debe ser #rrggbb.", { color: "No válido" });
+  }
+
   const imagen = await guardarImagenOpcional(formulario, "escudo", "escudos");
   if (!imagen.ok) return imagen;
 
@@ -90,6 +96,7 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
       ...(imagen.datos ? { escudo: imagen.datos } : {}),
       // Solo si el formulario lo trae: quien no lo manda no lo cambia.
       ...(formulario.has("escudo3d") ? { escudo3d: formulario.get("escudo3d") === "1" } : {}),
+      ...(colorEscrito !== null ? { color: colorEscrito.toLowerCase() || null } : {}),
     };
     const columnas = {
       id: schema.equipos.id,
@@ -98,6 +105,7 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
       escudo: schema.equipos.escudo,
       esPropio: schema.equipos.esPropio,
       escudo3d: schema.equipos.escudo3d,
+      color: schema.equipos.color,
     };
     const [fila] = id
       ? await db
@@ -124,6 +132,7 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
     escudo_url: fila.escudo ? urlMedia(fila.escudo) : null,
     es_propio: fila.esPropio,
     escudo_3d: fila.escudo3d,
+    color: fila.color,
   });
 }
 

@@ -90,6 +90,25 @@ describe("acciones de equipos", () => {
     ).toMatchObject({ ok: false, error: "Ya existe un equipo con ese nombre en esta categoría." });
   });
 
+  it("guarda el color del equipo, lo quita vacío y rechaza uno mal escrito", async () => {
+    const { acciones } = await entorno();
+    const creado = await acciones.guardarEquipo(
+      formulario({ id: "", nombre: "S.D. Touro", categoria: "Senior", color: "#1D4ED8" }),
+    );
+    expect(creado).toMatchObject({ ok: true, datos: { color: "#1d4ed8" } });
+    if (!creado.ok) throw new Error("no se creó");
+    expect(
+      await acciones.guardarEquipo(
+        formulario({ id: creado.datos.id, nombre: "S.D. Touro", categoria: "Senior", color: "azul" }),
+      ),
+    ).toMatchObject({ ok: false, error: "El color debe ser #rrggbb." });
+    expect(
+      await acciones.guardarEquipo(
+        formulario({ id: creado.datos.id, nombre: "S.D. Touro", categoria: "Senior", color: "" }),
+      ),
+    ).toMatchObject({ ok: true, datos: { color: null } });
+  });
+
   it("admite el mismo nombre en otra categoría", async () => {
     const { acciones } = await entorno();
     await acciones.guardarEquipo(formulario({ id: "", nombre: "S.D. Touro", categoria: "Senior" }));
