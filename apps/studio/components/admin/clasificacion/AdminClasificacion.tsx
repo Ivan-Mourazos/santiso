@@ -9,6 +9,7 @@ import type { FilaClasificacion } from "@/lib/dto";
 import { cargarPantallaClasificacion } from "@/lib/server/acciones/clasificacion";
 import { useStudio } from "@/components/studio/StudioContext";
 import { useCompeticiones } from "@/lib/useCompeticiones";
+import DialogoZonas from "./DialogoZonas";
 import styles from "./Clasificacion.module.css";
 
 interface Props {
@@ -34,7 +35,8 @@ const conColor = (color: string) => ({ "--color-regla": color }) as CSSPropertie
  * La pantalla no calcula nada: pinta la tabla y marca las zonas que define la competición.
  */
 export default function AdminClasificacion({ categoria }: Props) {
-  const { setParams } = useStudio();
+  const { setParams, showToast } = useStudio();
+  const [editandoZonas, setEditandoZonas] = useState(false);
   const {
     temporadas,
     selectedSeasonId,
@@ -264,9 +266,36 @@ export default function AdminClasificacion({ categoria }: Props) {
             ))}
           </Select>
         )}
+        {competicion && (
+          <div className={styles.accionZonas}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setEditandoZonas(true)}
+              disabled={cargando}
+            >
+              Zonas de la clasificación
+            </Button>
+          </div>
+        )}
       </div>
 
       {contenido}
+
+      {editandoZonas && competicion && (
+        <DialogoZonas
+          competicionId={competicion.id}
+          competicion={competicion.nombre}
+          equipos={filas.length}
+          zonas={reglas}
+          onCerrar={() => setEditandoZonas(false)}
+          onGuardadas={(zonas) => {
+            setReglas(zonas);
+            setEditandoZonas(false);
+          }}
+          showToast={showToast}
+        />
+      )}
     </div>
   );
 }

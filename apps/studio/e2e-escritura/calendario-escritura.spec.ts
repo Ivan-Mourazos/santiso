@@ -149,21 +149,20 @@ test("borrar un partido y borrar una jornada piden confirmación", async ({ page
   expect((await opciones(page, "Jornada")).join()).not.toContain("Jornada 4");
 });
 
-test("las zonas de la clasificación se guardan y las pinta Clasificación", async ({ page }) => {
-  await abrir(page);
-  await page.getByRole("button", { name: "Zonas de la clasificación" }).click();
-  const dialogo = page.getByRole("dialog", { name: "Zonas de la clasificación" });
-  await dialogo.getByLabel("Nombre de la zona").fill("Ascenso ficticio");
-  await dialogo.getByLabel("Puestos").fill("1, 2");
-  await dialogo.getByRole("button", { name: "Añadir zona" }).click();
-  await dialogo.getByRole("button", { name: "Guardar zonas" }).click();
-  await expect(page.getByText("Reglas de liga guardadas")).toBeVisible();
-
+test("las zonas se editan en Clasificación y la tabla las pinta al guardar", async ({ page }) => {
   await page.goto("/admin/clasificacion?categoria=Veteranos");
   await page.getByLabel("Competición", { exact: true }).selectOption({ label: "Copa Calendario" });
+  await page.getByRole("button", { name: "Zonas de la clasificación" }).click();
+  const dialogo = page.getByRole("dialog", { name: "Zonas de la clasificación" });
+  await dialogo.getByRole("button", { name: "Añadir zona" }).click();
+  await dialogo.getByLabel("Nombre de la zona 1").fill("Ascenso ficticio");
+  await dialogo.getByLabel("Hasta el puesto (zona 1)").fill("2");
+  await dialogo.getByRole("button", { name: "Guardar zonas" }).click();
+  await expect(page.getByText("Zonas guardadas")).toBeVisible();
+  await expect(dialogo).toHaveCount(0);
   await expect(
     page.getByRole("list", { name: "Zonas de la clasificación" }).getByText(/Ascenso ficticio/),
-  ).toBeVisible({ timeout: 30000 });
+  ).toBeVisible();
 });
 
 test("los accesos a temporadas y competiciones llevan a su pantalla", async ({ page }) => {

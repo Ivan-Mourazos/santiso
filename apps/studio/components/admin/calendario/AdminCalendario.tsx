@@ -9,7 +9,6 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation
 import { borrarJornada } from "@/lib/server/acciones/calendario";
 import Descansos from "./Descansos";
 import DialogoJornadas from "./DialogoJornadas";
-import DialogoReglas from "./DialogoReglas";
 import FilaPartido, { CabeceraPartidos } from "./FilaPartido";
 import NuevoPartido from "./NuevoPartido";
 import { useCalendario } from "./useCalendario";
@@ -33,7 +32,7 @@ const nombreJornada = (j: { numero: number; nombre_fase?: string | null }) =>
 export default function AdminCalendario({ showToast, showConfirm, categoria }: Props) {
   const c = useCalendario(categoria);
   const { setParams } = useStudio();
-  const [dialogo, setDialogo] = useState<"jornadas" | "reglas" | null>(null);
+  const [dialogo, setDialogo] = useState<"jornadas" | null>(null);
   useUnsavedChanges(c.partidos.some(c.conCambios));
 
   const competicion = c.competicionesEnCategoria.find((x) => x.id === c.selectedCompetitionId);
@@ -140,14 +139,6 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
             disabled={!c.selectedCompetitionId}
           >
             Jornadas…
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setDialogo("reglas")}
-            disabled={!c.selectedCompetitionId}
-          >
-            Zonas de la clasificación
           </Button>
           {jornada && c.vista === "jornada" && (
             <Button size="sm" variant="danger" onClick={borrarLaJornada}>
@@ -275,14 +266,6 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
           competicion={competicion.nombre}
           onCerrar={() => setDialogo(null)}
           onCreadas={c.cargarJornadas}
-          showToast={showToast}
-        />
-      )}
-      {dialogo === "reglas" && competicion && (
-        <DialogoReglas
-          competicionId={competicion.id}
-          competicion={competicion.nombre}
-          onCerrar={() => setDialogo(null)}
           showToast={showToast}
         />
       )}
