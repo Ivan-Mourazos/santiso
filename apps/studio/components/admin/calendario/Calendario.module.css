@@ -188,57 +188,6 @@
   border-color: currentColor;
 }
 
-/* ─── Zonas ─── */
-.zonas {
-  display: grid;
-  gap: var(--ui-space-2, 0.5rem);
-  margin: var(--ui-space-3, 0.75rem) 0;
-  padding: 0;
-  list-style: none;
-}
-.zonas li {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(0, 8rem) auto;
-  gap: var(--ui-space-2, 0.5rem);
-  align-items: end;
-  padding: var(--ui-space-2, 0.5rem) var(--ui-space-3, 0.75rem);
-  border-left: 3px solid var(--color-regla);
-  border-radius: var(--ui-radius, 0.75rem);
-  background: var(--ui-raised, #242424);
-}
-.muestra {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 4px;
-  background: var(--color-regla);
-  align-self: center;
-}
-.paleta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-.paleta legend {
-  margin-bottom: 0.35rem;
-  font-size: var(--ui-text-sm, 0.875rem);
-  font-weight: 700;
-}
-.color {
-  width: 1.75rem;
-  height: 1.75rem;
-  padding: 0;
-  border: 2px solid transparent;
-  border-radius: 999px;
-  background: var(--color-regla);
-  cursor: pointer;
-}
-.color[aria-pressed="true"] {
-  border-color: #fff;
-  box-shadow: 0 0 0 2px var(--color-regla);
-}
 .separador {
   margin: var(--ui-space-4, 1rem) 0;
   border: 0;
@@ -251,9 +200,6 @@
   }
   .acciones .nota {
     margin-left: 0;
-  }
-  .zonas li {
-    grid-template-columns: auto minmax(0, 1fr);
   }
 }
 .vacio {
