@@ -1,4 +1,18 @@
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Nunito:wght@400;600;700;800;900&display=swap");
+/* Fuentes locales (ver app/fonts/README.md): la herramienta funciona sin conexión a internet. */
+@font-face {
+  font-family: "Outfit";
+  src: url("./fonts/Outfit-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito";
+  src: url("./fonts/Nunito-latin.woff2") format("woff2");
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --background: #000000;

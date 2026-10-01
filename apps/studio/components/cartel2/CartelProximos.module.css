@@ -8,20 +8,20 @@
   position: absolute;
   z-index: 6;
   top: 136px;
-  left: 0;
-  right: 0;
-  text-align: center;
+  left: 64px;
+  right: 64px;
+  text-align: left;
 }
 
 .cabecera > :last-child {
-  font-size: 104px;
+  font-size: 100px;
 }
 
 .antetitulo {
   margin-bottom: 8px;
   font-weight: 800;
   font-size: 28px;
-  letter-spacing: 0.4em;
+  letter-spacing: 0.22em;
   color: rgb(255 255 255 / 80%);
 }
 
@@ -34,14 +34,14 @@
   height: 870px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 28px;
 }
 
 .banda {
   position: relative;
   flex: 1;
   overflow: hidden;
-  clip-path: polygon(0 5%, 100% 0, 100% 95%, 0 100%);
+  clip-path: none;
 }
 
 /* Los colores de cada equipo, partidos en diagonal dentro de la banda. */
@@ -51,6 +51,7 @@
   background:
     radial-gradient(40% 70% at 16% 50%, var(--l-luz), transparent 75%),
     linear-gradient(160deg, var(--l-base), #06080b 90%);
+  mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
 }
 
 .color::after {
@@ -70,7 +71,7 @@
   background:
     radial-gradient(28% 60% at 50% 50%, rgb(6 8 11 / 78%), transparent 100%),
     repeating-linear-gradient(-62deg, var(--amarillo) 0 16px, var(--negro) 16px 32px);
-  clip-path: polygon(59% 0, 61% 0, 41% 100%, 39% 100%);
+  clip-path: polygon(59.5% 0, 60.5% 0, 40.5% 100%, 39.5% 100%);
 }
 
 .escudoLocal,
@@ -81,34 +82,37 @@
 }
 
 .escudoLocal {
-  left: 50px;
+  left: 64px;
 }
 
 .escudoVisitante {
-  right: 50px;
+  right: 64px;
 }
 
 .nombreLocal,
 .nombreVisitante {
   top: calc(50% + 112px);
-  width: 330px;
+  width: 280px;
   text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.1;
 }
 
 .nombreLocal {
-  left: 10px;
+  left: 64px;
 }
 
 .nombreVisitante {
-  right: 10px;
+  right: 64px;
 }
 
 .centro {
   position: absolute;
   z-index: 5;
   top: 50%;
-  left: 330px;
-  right: 330px;
+  left: 372px;
+  right: 372px;
   transform: translateY(-50%);
   text-align: center;
   text-shadow: 0 4px 18px rgb(0 0 0 / 70%);
@@ -118,7 +122,7 @@
   margin-bottom: 10px;
   font-weight: 800;
   font-size: 26px;
-  letter-spacing: 0.35em;
+  letter-spacing: 0.2em;
   color: var(--amarillo);
 }
 
@@ -127,14 +131,15 @@
 }
 
 .hora {
-  font-size: 96px;
+  font-size: 104px;
   color: var(--amarillo);
 }
 
 .campo {
   margin-top: 8px;
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 /* Un solo partido: la banda ocupa todo y todo crece. */
@@ -146,17 +151,17 @@
 }
 
 .uno .escudoLocal {
-  left: 30px;
+  left: 64px;
 }
 
 .uno .escudoVisitante {
-  right: 30px;
+  right: 64px;
 }
 
 .uno .nombreLocal,
 .uno .nombreVisitante {
-  top: calc(50% + 150px);
-  width: 420px;
+  top: calc(50% + 140px);
+  width: 380px;
 }
 
 .uno .centro {
@@ -180,5 +185,5 @@
 }
 
 .bandasUna .banda {
-  clip-path: polygon(0 3%, 100% 0, 100% 97%, 0 100%);
+  clip-path: none;
 }
