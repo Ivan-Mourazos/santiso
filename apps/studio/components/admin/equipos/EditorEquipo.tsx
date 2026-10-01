@@ -27,7 +27,12 @@ export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: 
   const operacion = useRef(false);
   const nombreRef = useRef<HTMLInputElement>(null);
   const [escudo3d, setEscudo3d] = useState(inicial.escudo3d);
-  const sucio = nombre !== inicial.nombre || foto !== null || escudo3d !== inicial.escudo3d;
+  const [color, setColor] = useState(inicial.color);
+  const sucio =
+    nombre !== inicial.nombre ||
+    foto !== null ||
+    escudo3d !== inicial.escudo3d ||
+    color !== inicial.color;
   useUnsavedChanges(sucio);
   function cerrar() {
     if (operacion.current) return;
@@ -47,7 +52,7 @@ export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: 
     try {
       const imagen = foto ? await prepararImagen(foto) : null;
       const resultado = await guardarEquipo(
-        formularioDeEquipo({ id: inicial.id, nombre, escudo3d }, destino, imagen),
+        formularioDeEquipo({ id: inicial.id, nombre, escudo3d, color }, destino, imagen),
       );
       if (!resultado.ok) {
         setError(resultado.error);
@@ -133,6 +138,31 @@ export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: 
             />
             Escudo ya en 3D (los carteles no le añaden relieve)
           </label>
+          {/* Sin color elegido, los carteles lo sacan del escudo. */}
+          <div className={styles.color}>
+            <label className={styles.casilla}>
+              <input
+                className={styles.check}
+                type="checkbox"
+                checked={color !== ""}
+                onChange={(e) => setColor(e.target.checked ? "#64748b" : "")}
+                disabled={pendiente}
+              />
+              Color del equipo en los carteles
+            </label>
+            {color ? (
+              <input
+                type="color"
+                className={styles.muestra}
+                aria-label="Color del equipo"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                disabled={pendiente}
+              />
+            ) : (
+              <span className={styles.detalle}>Se saca del escudo</span>
+            )}
+          </div>
         </fieldset>
       </form>
     </Dialog>

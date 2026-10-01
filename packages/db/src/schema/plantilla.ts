@@ -18,6 +18,8 @@ export const equipos = sqliteTable(
     escudo: text("escudo"),
     /** El escudo ya tiene volumen (retocado en 3D): los carteles no le añaden relieve. */
     escudo3d: integer("escudo_3d", { mode: "boolean" }).notNull().default(false),
+    /** Color del equipo (`#rrggbb`) para los carteles; sin él se saca del escudo. */
+    color: text("color"),
     ...marcasTiempo(),
   },
   (t) => [

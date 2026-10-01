@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { claveNombre } from "@santiso/domain";
 import { Cartel } from "@/components/cartel2/Cartel";
 import { Button } from "@/components/ui/foundation/Button";
 import { aHex, COLOR_RIVAL_RESERVA, colorDominante } from "@/lib/cartel2/color";
@@ -166,6 +167,9 @@ export default function PilotoCartel({
               .map((e) => [e.categoria, e.escudo_url]),
           ),
           escudosEn3d: equipos.filter((e) => e.escudo_3d && e.escudo_url).map((e) => e.escudo_url),
+          coloresEquipo: Object.fromEntries(
+            equipos.filter((e) => e.color).map((e) => [claveNombre(e.nombre), e.color as string]),
+          ),
           patrocinadores: recursos.sponsors,
           institucionales: (recursos.xuntaIsLeft
             ? [recursos.xunta, recursos.rfgf]

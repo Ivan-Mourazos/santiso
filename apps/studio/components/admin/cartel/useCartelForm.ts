@@ -34,6 +34,8 @@ export interface CartelTeam {
   es_propio?: boolean;
   /** El escudo ya tiene volumen: el cartel no le añade relieve. */
   escudo_3d?: boolean;
+  /** `#rrggbb` elegido en Equipos; sin él, el cartel lo saca del escudo. */
+  color?: string | null;
 }
 
 interface CartelField {

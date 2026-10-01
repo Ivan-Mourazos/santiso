@@ -127,6 +127,7 @@ const recursos = {
   patrocinadores: ["/media/p.webp"],
   institucionales: ["/media/rfgf.webp"],
   escudosEn3d: [] as string[],
+  coloresEquipo: {} as Record<string, string>,
 };
 const opciones = {
   color: (url: string | null) => (url ? "#d32f2f" : "#64748b"),
@@ -285,6 +286,18 @@ describe("escudos del club y relieve", () => {
     );
     if (sinEquipo.plantilla !== "partido") throw new Error("plantilla");
     expect(sinEquipo.datos.visitante.escudo).toBeNull();
+  });
+
+  it("el color elegido en Equipos manda sobre el del escudo", () => {
+    const p = peticionDeFormulario(
+      "partido",
+      formulario(),
+      { ...recursos, coloresEquipo: { "c d berres": "#1d4ed8" } },
+      opciones,
+    );
+    if (p.plantilla !== "partido") throw new Error("plantilla");
+    const rival = p.datos.local.propio ? p.datos.visitante : p.datos.local;
+    expect(rival.color).toBe("#1d4ed8");
   });
 
   it("sin relieve los escudos marcados en 3D; con relieve el resto", () => {
