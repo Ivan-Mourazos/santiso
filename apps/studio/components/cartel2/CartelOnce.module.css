@@ -10,7 +10,7 @@
   top: 0;
   bottom: 150px;
   left: 0;
-  width: 600px;
+  width: 620px;
   overflow: hidden;
   mask-image:
     linear-gradient(90deg, #000 62%, transparent), linear-gradient(0deg, transparent, #000 18%);
@@ -36,19 +36,20 @@
   z-index: 6;
   top: 150px;
   right: 64px;
-  width: 470px;
+  width: 500px;
   text-shadow: 0 3px 14px rgb(0 0 0 / 70%);
 }
 
 .categoria {
   font-weight: 800;
-  font-size: 26px;
-  letter-spacing: 0.3em;
+  font-size: 24px;
+  letter-spacing: 0.18em;
   color: rgb(255 255 255 / 80%);
 }
 
 .titulo {
   font-size: 118px;
+  line-height: 1.05;
   color: var(--amarillo);
 }
 
@@ -56,15 +57,14 @@
   margin-top: 6px;
   font-weight: 800;
   font-style: italic;
-  font-size: 26px;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 24px;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .titulares {
-  margin: 22px 0 0;
+  margin: 18px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -73,14 +73,14 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  border-bottom: 1px solid rgb(255 255 255 / 10%);
+  border-bottom: 1px solid rgb(255 255 255 / 7%);
 }
 
 .dorsal {
-  width: 60px;
+  width: 64px;
   flex: none;
   text-align: right;
-  font-size: 44px;
+  font-size: 50px;
   color: var(--amarillo);
 }
 
@@ -88,10 +88,9 @@
   flex: 0 1 auto;
   min-width: 0;
   font-weight: 800;
-  font-style: italic;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.1;
 }
 
 .capitan {
@@ -100,9 +99,7 @@
   place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: 50%;
-  background: var(--amarillo);
-  color: var(--tinta);
+  color: var(--amarillo);
   font-weight: 800;
   font-size: 22px;
   text-shadow: none;
@@ -111,9 +108,10 @@
 .suplentes {
   margin-top: 18px;
   font-weight: 600;
-  font-size: 20px;
-  line-height: 1.35;
-  color: rgb(255 255 255 / 78%);
+  font-size: 22px;
+  line-height: 1.25;
+  color: rgb(255 255 255 / 88%);
+  overflow-wrap: anywhere;
 }
 
 .etiquetaSuplentes {
