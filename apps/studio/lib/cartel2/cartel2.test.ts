@@ -2,6 +2,7 @@ import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 import type { FormState } from "@/components/admin/cartel/types";
 import { aHex, colorDominante, oscurecer } from "./color";
+import { dataLonga, textoInstagram } from "@/lib/cartel/instagram";
 import { leerPeticion } from "./esquema";
 import { peticionDeFormulario } from "./formulario";
 import { categoriaCartel, fechaCartel, goleadores, PLANTILLAS, urlFoto } from "./modelo";
@@ -359,3 +360,62 @@ describe("urlFoto", () => {
     expect(urlFoto("data:image/png;base64,AAA")).toBe("data:image/png;base64,AAA");
   });
 });
+
+describe("texto de Instagram", () => {
+  it("fecha en gallego, legible", () => {
+    expect(dataLonga("2026-10-04")).toBe("Domingo 4 de outubro");
+    expect(dataLonga("")).toBe("");
+  });
+
+  it("previa: cruce en su orden, fecha, hora y campo", () => {
+    const texto = textoInstagram("partido", formulario());
+    expect(texto).toContain("SÉNIOR · Xornada 2 · Tercera Futgal - Grupo 3");
+    expect(texto).toContain("🆚 C.D. Berres – UD Santiso FC");
+    expect(texto).toContain("Domingo 4 de outubro · 17:00 h");
+    expect(texto).toContain("📍 Pardiñeiro");
+    expect(texto).toContain("#UDSantiso #Senior");
+  });
+
+  it("resultado: vitoria fóra, goles agrupados con penalti y tarxetas nosas", () => {
+    const texto = textoInstagram("resumo", formulario());
+    expect(texto.split("\n")[0]).toBe(
+      "✅ VITORIA | Sénior · Xornada 2 · Tercera Futgal - Grupo 3",
+    );
+    expect(texto).toContain("⚽ C.D. Berres 1-3 UD Santiso FC");
+    expect(texto).toContain("💛 Bareto (20', 30' pen.)");
+    expect(texto).toContain("C.D. Berres: Rival Uno (10')");
+    expect(texto).toContain("🟨 Moncho (40')");
+    expect(texto).toContain("Desliza");
+    // Cronoloxía: mismo texto sin la invitación a deslizar.
+    expect(textoInstagram("cronoloxia", formulario())).not.toContain("Desliza");
+  });
+
+  it("próximos: solo partidos con rival, máximo dos", () => {
+    const texto = textoInstagram("proximos", formulario());
+    expect(texto).toContain("UD Santiso FC Solaina – Melide");
+    expect(texto).toContain("Sábado 3 de outubro · 19:00 h");
+    expect(texto).toContain("#Veteranos");
+  });
+
+  it("once: dorsal, capitán y suplentes", () => {
+    const texto = textoInstagram("noso11", formulario());
+    expect(texto).toContain("📋 O NOSO 11 | Sénior vs C.D. Berres");
+    expect(texto).toContain("4. Iago SR (C)");
+  });
+
+  it("clasificación: posto e puntos do Santiso", () => {
+    const texto = textoInstagram(
+      "clasificacion",
+      formulario({
+        clasificacionTipo: "liga",
+        clasificacionNombre: "Tercera Futgal - Grupo 3",
+        clasificacionData: [
+          { nombre: "Rival", posicion: 1, pj: 2, pg: 2, pe: 0, pp: 0, gf: 4, gc: 1, pts: 6 },
+          { nombre: "U.D. Santiso F.C.", posicion: 2, pj: 2, pg: 1, pe: 1, pp: 0, gf: 3, gc: 2, pts: 4 },
+        ],
+      }),
+    );
+    expect(texto).toContain("Imos 2º con 4 puntos (1V 1E 0D).");
+  });
+});
+
