@@ -212,8 +212,8 @@
 /* Franjas amarillas y negras (la equipación) a lo largo del corte. */
 .diagonal .franja {
   z-index: 2;
-  clip-path: polygon(66.5% 0, 68% 0, 32% 100%, 30.5% 100%);
-  background: linear-gradient(180deg, var(--amarillo), #ad8910 70%, var(--amarillo));
+  clip-path: polygon(66.2% 0, 68.8% 0, 32.8% 100%, 30.2% 100%);
+  background: repeating-linear-gradient(-58deg, var(--amarillo) 0 22px, var(--negro) 22px 44px);
 }
 
 .centro .fondo {
