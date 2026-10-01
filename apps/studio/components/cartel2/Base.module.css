@@ -35,7 +35,7 @@
 /* Grano de película: textura en vez de degradados planos de «plantilla». */
 .grano {
   z-index: 8;
-  opacity: 0.22;
+  opacity: 0.12;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
@@ -55,7 +55,7 @@
   height: 1150px;
   object-fit: contain;
   filter: blur(46px) saturate(1.5);
-  opacity: 0.42;
+  opacity: 0.3;
 }
 
 /* El Santiso juega de amarillo y negro: su eco va en gris, sin el verde del escudo. */
@@ -110,7 +110,7 @@
       rgb(6 8 11 / 70%) 0%,
       transparent 28%,
       transparent 45%,
-      rgb(6 8 11 / 92%) 78%
+      rgb(6 8 11 / 92%) 72%
     ),
     linear-gradient(135deg, rgb(245 197 24 / 18%), transparent 55%);
 }
@@ -121,9 +121,9 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background-image: radial-gradient(rgb(255 255 255 / 16%) 1.6px, transparent 2.2px);
-  background-size: 16px 16px;
-  mask-image: linear-gradient(0deg, #000 0%, transparent 45%);
+  background-image: radial-gradient(rgb(255 255 255 / 12%) 1px, transparent 1.6px);
+  background-size: 12px 12px;
+  mask-image: linear-gradient(0deg, #000 0%, transparent 55%);
 }
 
 /* Focos de estadio: dos haces de luz desde las esquinas de arriba. */
@@ -134,8 +134,8 @@
   width: 520px;
   height: 1100px;
   pointer-events: none;
-  background: linear-gradient(180deg, rgb(255 255 255 / 22%), transparent 75%);
-  filter: blur(34px);
+  background: linear-gradient(180deg, rgb(255 255 255 / 12%), transparent 65%);
+  filter: blur(50px);
   mix-blend-mode: screen;
 }
 
@@ -156,8 +156,8 @@
   width: 100%;
   height: 100%;
   fill: none;
-  stroke: rgb(255 255 255 / 9%);
-  stroke-width: 5;
+  stroke: rgb(255 255 255 / 6%);
+  stroke-width: 2;
   pointer-events: none;
 }
 
@@ -212,15 +212,15 @@
 /* Franjas amarillas y negras (la equipación) a lo largo del corte. */
 .diagonal .franja {
   z-index: 2;
-  clip-path: polygon(66.2% 0, 68.8% 0, 32.8% 100%, 30.2% 100%);
-  background: repeating-linear-gradient(-58deg, var(--amarillo) 0 22px, var(--negro) 22px 44px);
+  clip-path: polygon(66.5% 0, 68% 0, 32% 100%, 30.5% 100%);
+  background: linear-gradient(180deg, var(--amarillo), #ad8910 70%, var(--amarillo));
 }
 
 .centro .fondo {
   background:
-    radial-gradient(46% 32% at 24% 42%, var(--izquierda-luz), transparent 72%),
-    radial-gradient(46% 32% at 76% 42%, var(--derecha-luz), transparent 72%),
-    linear-gradient(180deg, #0d1117, var(--tinta));
+    radial-gradient(42% 38% at 18% 38%, var(--izquierda-luz), transparent 76%),
+    radial-gradient(42% 38% at 82% 46%, var(--derecha-luz), transparent 76%),
+    linear-gradient(155deg, #171719, var(--tinta) 65%);
 }
 
 /* Aquí los ecos se juntan en el centro: más suaves para que no hagan «camuflaje». */
@@ -258,16 +258,31 @@
 .club .fondo {
   background:
     radial-gradient(
-      60% 40% at 50% 30%,
+      70% 52% at 8% 28%,
       color-mix(in srgb, #f5c518 30%, transparent),
       transparent 72%
     ),
-    linear-gradient(180deg, #0d1117, var(--tinta));
+    linear-gradient(155deg, #171719, var(--tinta) 65%);
 }
 
 .club .ecoIzquierda img {
-  left: -35px;
-  top: 60px;
+  left: -520px;
+  top: 120px;
+}
+
+/* Franjas de la camiseta: profundidad lateral, sin invadir los datos. */
+.club .fondo::after,
+.centro .fondo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    112deg,
+    transparent 0 116px,
+    rgb(255 255 255 / 3%) 116px 152px,
+    transparent 152px 200px
+  );
+  mask-image: linear-gradient(90deg, transparent 35%, #000);
 }
 
 .conFoto .fondo {
@@ -311,16 +326,19 @@
   z-index: 6;
   left: 64px;
   right: 64px;
-  bottom: 40px;
+  bottom: 60px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
   padding-top: 24px;
-  border-top: 2px solid rgb(255 255 255 / 18%);
+  border-top: 1px solid rgb(255 255 255 / 18%);
 }
 
 .patrocinadores img {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 0;
   height: 70px;
   max-width: 172px;
   object-fit: contain;
@@ -340,22 +358,24 @@
   z-index: 6;
   top: 64px;
   left: 64px;
+  max-width: 570px;
 }
 
 .xornada {
   font-family: var(--display);
   font-size: 76px;
-  line-height: 0.9;
+  line-height: 1.05;
   color: var(--amarillo);
 }
 
 .competicion {
   margin-top: 14px;
   font-weight: 600;
-  font-size: 27px;
-  letter-spacing: 0.14em;
+  font-size: 25px;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
   color: rgb(255 255 255 / 82%);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .nombre {
