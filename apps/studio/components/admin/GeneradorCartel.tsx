@@ -2,12 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import {
-  generateProximosText,
-  generateResultadoText,
-  generateMultiusosText,
-  generateClasificacionText,
-} from "@/lib/cartel/instagram";
+import { LIMITE_INSTAGRAM, textoInstagram } from "@/lib/cartel/instagram";
 
 // UI Components & Hooks
 import { TEMPLATES, type TemplateId } from "./cartel/types";
@@ -75,44 +70,13 @@ export default function GeneradorCartel({
     : "partido";
   const assetUrls = useCartelAssets(tipoForAssets);
 
-  // ── Instagram Text ──────────────────────────────────────────────────────────
-  const instagramText = useMemo(() => {
-    if (tipo === "proximos") return generateProximosText(form);
-    if (tipo === "resumo") return generateResultadoText(form);
-    if (tipo === "multiusos") return generateMultiusosText(form);
-    if (tipo === "clasificacion") return generateClasificacionText(form);
-    return null;
-  }, [tipo, form]);
-  const instagramMeta = useMemo(() => {
-    if (tipo === "proximos") {
-      return {
-        title: "Agenda fin de semana",
-        detail: "Usa rival, categoría, fecha, hora, localía e campo de cada partido.",
-      };
-    }
-    if (tipo === "resumo") {
-      return {
-        title: "Resultado da xornada",
-        detail:
-          form.events.length > 0
-            ? "Usa marcador, competición, data, rival, goles e tarxetas cargadas."
-            : "Usa marcador e datos básicos. Engade eventos para listar goleadores e tarxetas.",
-      };
-    }
-    if (tipo === "multiusos") {
-      return {
-        title: "Comunicado o Aviso",
-        detail: "Genera el texto de aviso y hashtags según categoría e información proporcionada.",
-      };
-    }
-    if (tipo === "clasificacion") {
-      return {
-        title: "Clasificación",
-        detail: "Genera el texto para mostrar que se publica la clasificación actualizada.",
-      };
-    }
-    return null;
-  }, [tipo, form.events.length]);
+  // ── Texto de Instagram: se genera del formulario y se puede retocar antes de copiarlo. Lo
+  // retocado vale mientras el texto generado no cambie; si cambian los datos, manda el nuevo.
+  const textoGenerado = useMemo(() => textoInstagram(tipoForAssets, form), [tipoForAssets, form]);
+  const [edicion, setEdicion] = useState<{ base: string; texto: string } | null>(null);
+  const instagramText =
+    edicion && edicion.base === textoGenerado ? edicion.texto : textoGenerado;
+  const retocado = instagramText !== textoGenerado;
 
   function handleCopyInstagram() {
     if (!instagramText) return;
@@ -237,22 +201,38 @@ export default function GeneradorCartel({
             </Button>
           </div>
 
-          {instagramText && (
+          {textoGenerado && (
             <section className={styles.instagram} aria-label="Texto para Instagram">
               <div className={styles.instagramCabecera}>
                 <div>
                   <h4>Texto para Instagram</h4>
-                  {instagramMeta && (
-                    <p>
-                      {instagramMeta.title}: {instagramMeta.detail}
-                    </p>
-                  )}
+                  <p>
+                    Sale de los datos del cartel. Puedes retocarlo aquí antes de copiarlo.
+                  </p>
                 </div>
-                <Button variant="secondary" onClick={handleCopyInstagram}>
-                  {copied ? "Copiado" : "Copiar"}
-                </Button>
+                <div className={styles.instagramAcciones}>
+                  {retocado && (
+                    <Button variant="secondary" size="sm" onClick={() => setEdicion(null)}>
+                      Restablecer
+                    </Button>
+                  )}
+                  <Button size="sm" onClick={handleCopyInstagram}>
+                    {copied ? "Copiado" : "Copiar"}
+                  </Button>
+                </div>
               </div>
-              <textarea readOnly value={instagramText} aria-label="Texto generado" />
+              <textarea
+                value={instagramText}
+                onChange={(e) => setEdicion({ base: textoGenerado, texto: e.target.value })}
+                aria-label="Texto para Instagram"
+                rows={Math.min(18, instagramText.split("\n").length + 1)}
+              />
+              <p
+                className={styles.instagramContador}
+                data-excede={instagramText.length > LIMITE_INSTAGRAM}
+              >
+                {instagramText.length} / {LIMITE_INSTAGRAM} caracteres
+              </p>
             </section>
           )}
         </div>
