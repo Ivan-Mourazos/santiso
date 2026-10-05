@@ -1,0 +1,231 @@
+/*
+ * Alineación antes del partido. Pensada primero para el móvil: una columna, filas grandes
+ * para tocar con el pulgar y la barra de acciones siempre a mano, abajo.
+ */
+
+.panel {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  /* Hueco para la barra fija de abajo. */
+  padding-bottom: 5rem;
+}
+
+.partido {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--ui-radius-lg, 1.125rem);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+  box-shadow: var(--ui-panel-shadow, none);
+}
+
+.cruce {
+  margin: 0.25rem 0 0;
+  font: 800 1.15rem/1.2 var(--ui-font-title, sans-serif);
+  overflow-wrap: anywhere;
+}
+
+.detalle {
+  margin: 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+
+.aviso {
+  margin: 0.25rem 0 0;
+  color: var(--ui-warning, #f59e0b);
+  font-size: var(--ui-text-sm, 0.875rem);
+  font-weight: 700;
+}
+
+.contador {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0;
+  padding: 0 0.25rem;
+  color: var(--ui-muted, #aaa);
+  font-variant-numeric: tabular-nums;
+}
+
+.contador strong {
+  color: var(--ui-text, #fff);
+  font-size: 1.05rem;
+}
+
+.contador strong[data-completo="true"] {
+  color: var(--ui-success, #4ade80);
+}
+
+/* ─── Plantilla ─── */
+
+.jugadores {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jugadores li {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.jugador {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 2.25rem 2.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 3.25rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--ui-border, #444);
+  border-radius: 0.75rem;
+  background: var(--ui-control-face, #242424);
+  color: var(--ui-text, #fff);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.jugador:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.dorsal {
+  font: 900 1.25rem var(--ui-font-title, sans-serif);
+  color: var(--ui-accent, #f5c518);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.foto {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  object-position: top;
+  background: rgb(255 255 255 / 6%);
+}
+
+.nombre {
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.papel {
+  min-width: 4.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  color: var(--ui-muted, #aaa);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* Titular: en amarillo, hundido. Suplente: marcado sin gritar. */
+li[data-papel="titular"] .jugador {
+  border-color: var(--ui-accent, #f5c518);
+  background: color-mix(in srgb, var(--ui-accent, #f5c518) 14%, #1a1a1a);
+  box-shadow: var(--ui-control-pressed, none);
+}
+
+li[data-papel="titular"] .papel {
+  background: var(--ui-accent, #f5c518);
+  color: var(--ui-on-accent, #000);
+}
+
+li[data-papel="suplente"] .jugador {
+  border-color: rgb(255 255 255 / 45%);
+}
+
+li[data-papel="suplente"] .papel {
+  background: rgb(255 255 255 / 14%);
+  color: var(--ui-text, #fff);
+}
+
+.capitan {
+  flex: none;
+  width: 3.25rem;
+  border: 1px solid var(--ui-border, #444);
+  border-radius: 0.75rem;
+  background: var(--ui-control-face, #242424);
+  color: var(--ui-muted, #aaa);
+  font: 900 1.05rem var(--ui-font-title, sans-serif);
+  cursor: pointer;
+}
+
+.capitan[aria-pressed="true"] {
+  border-color: var(--ui-accent, #f5c518);
+  background: var(--ui-accent, #f5c518);
+  color: var(--ui-on-accent, #000);
+}
+
+.jugador:focus-visible,
+.capitan:focus-visible {
+  outline: 3px solid var(--ui-accent, #f5c518);
+  outline-offset: 2px;
+}
+
+/* ─── Barra de acciones: fija abajo, por encima de la zona segura del iPhone ─── */
+
+.barra {
+  position: fixed;
+  z-index: 20;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--ui-border, #444);
+  background: color-mix(in srgb, var(--ui-bg, #0b0b0c) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.barra > button {
+  flex: 1;
+  max-width: 16rem;
+  min-height: 2.9rem;
+}
+
+/* En escritorio el menú lateral ocupa la izquierda: la barra se queda bajo el contenido. */
+@media (min-width: 901px) {
+  .barra {
+    left: 216px;
+  }
+}
+
+/* ─── Historia generada ─── */
+
+.historia {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+}
+
+.historia img {
+  width: min(100%, 22rem);
+  height: auto;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 50%);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.acciones > button {
+  min-height: 2.9rem;
+}

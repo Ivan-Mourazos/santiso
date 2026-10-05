@@ -345,6 +345,15 @@
   filter: drop-shadow(0 2px 8px rgb(0 0 0 / 45%));
 }
 
+/* Historia (9:16): Instagram tapa unos 250 px arriba y abajo; los logos se meten hacia dentro. */
+.historia .institucionalesCentro {
+  top: 268px;
+}
+
+.historia .patrocinadores {
+  bottom: 262px;
+}
+
 /* ─── Tipografía compartida ───────────────────────────────────────────────────────────── */
 
 /* Posición de los escudos; el relieve y la sombra los pone el componente `Escudo`. */

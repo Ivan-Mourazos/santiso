@@ -1,6 +1,6 @@
 import "server-only";
 import { chromium, type Browser } from "playwright";
-import { MEDIDAS, type PeticionCartel } from "@/lib/cartel2/modelo";
+import { medidasDe, type PeticionCartel } from "@/lib/cartel2/modelo";
 
 declare global {
   // Un Chromium por proceso, reutilizado entre exportaciones: arrancarlo cuesta ~1 s.
@@ -25,10 +25,11 @@ async function navegador(): Promise<Browser> {
  * (`/media/...`) y las fuentes se sirven desde él; nada sale a internet.
  */
 export async function renderizarCartel(origen: string, peticion: PeticionCartel): Promise<Buffer> {
+  const medidas = medidasDe(peticion.plantilla);
   const contexto = await (
     await navegador()
   ).newContext({
-    viewport: { width: MEDIDAS.ancho, height: MEDIDAS.alto },
+    viewport: { width: medidas.ancho, height: medidas.alto },
     deviceScaleFactor: 2,
   });
   try {

@@ -263,6 +263,26 @@ async function sembrar() {
     },
   ]);
 
+  // Alineación (`alineacion-escritura.spec.ts`): plantilla de Veteranos de la temporada activa,
+  // que nadie más usa. Su partido es el Norte – Sur de «Copa Calendario», todavía sin jugar.
+  const alineables = await db
+    .insert(schema.jugadores)
+    .values([
+      { nombre: "Uno Aliñación Ficticio" },
+      { nombre: "Dous Aliñación Ficticio", apodo: "Dous" },
+      { nombre: "Tres Aliñación Ficticio" },
+    ])
+    .returning({ id: schema.jugadores.id });
+  await db.insert(schema.jugadoresTemporada).values(
+    alineables.map((j, i) => ({
+      temporadaId: activa.id,
+      jugadorId: j.id,
+      categoria: "Veteranos" as const,
+      dorsal: i + 1,
+      capitania: i === 1 ? 1 : null,
+    })),
+  );
+
   cerrar();
   console.log(`Datos de prueba en ${DIR_ESCRITURA}`);
 }

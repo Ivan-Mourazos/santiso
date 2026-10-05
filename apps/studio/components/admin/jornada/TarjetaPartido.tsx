@@ -193,6 +193,7 @@ export default function TarjetaPartido({ partido: p, categoria }: Props) {
             <Accion href={conPartido("partido")} principal={!jugado}>
               Cartel de partido
             </Accion>
+            <Accion href={`/admin/alineacion?categoria=${cat}&partido=${p.id}`}>Alineación</Accion>
             <Accion
               href={`/admin/calendario?categoria=${cat}&competicion=${p.competicionId}&jornada=${p.jornadaId}`}
             >

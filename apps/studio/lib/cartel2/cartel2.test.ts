@@ -330,7 +330,8 @@ describe("leerPeticion", () => {
       expect(leerPeticion(JSON.parse(JSON.stringify(p))), t).not.toBeNull();
       return p.plantilla;
     });
-    expect(plantillas.sort()).toEqual([...PLANTILLAS].sort());
+    // La alineación no sale del formulario del Estudio: tiene su pantalla (lib/alineacion).
+    expect(plantillas.sort()).toEqual(PLANTILLAS.filter((p) => p !== "alineacion").sort());
   });
 
   it("resultado: la foto va con su foco y estilo, y el foco no sale de 0–1", () => {

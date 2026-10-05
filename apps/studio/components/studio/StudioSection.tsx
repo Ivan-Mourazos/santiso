@@ -21,6 +21,9 @@ const Staff = dynamic(() => import("@/components/admin/AdminStaff"), { loading }
 const Teams = dynamic(() => import("@/components/admin/AdminEquipos"), { loading });
 const Sponsors = dynamic(() => import("@/components/admin/AdminSponsors"), { loading });
 const Seasons = dynamic(() => import("@/components/admin/AdminTemporadas"), { loading });
+const Lineup = dynamic(() => import("@/components/admin/alineacion/AdminAlineacion"), {
+  loading,
+});
 const Posters = dynamic(() => import("@/components/admin/GeneradorCartel"), { loading });
 const Acta = dynamic(() => import("@/components/admin/AdminActaImporter"), { loading });
 const Batch = dynamic(() => import("@/components/admin/AdminActaBatch"), { loading });
@@ -66,6 +69,13 @@ export function StudioSection({ section }: { section: Seccion }) {
       {section === "equipos" && <Teams {...feedback} categoria={category} />}
       {section === "patrocinadores" && <Sponsors {...feedback} />}
       {section === "temporadas" && <Seasons {...feedback} />}
+      {section === "alineacion" && (
+        <Lineup
+          categoria={category}
+          partidoInicial={params.get("partido")}
+          showToast={showToast}
+        />
+      )}
       {section === "carteles" && (
         <Posters
           templateId={template}

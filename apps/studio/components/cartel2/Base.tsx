@@ -2,6 +2,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import {
   MEDIDAS,
+  MEDIDAS_HISTORIA,
   urlFoto,
   urlLogo,
   type EquipoCartel,
@@ -53,6 +54,7 @@ export function Base({
   derecha,
   foto = null,
   lineas = false,
+  historia = false,
   logosArriba = "derecha",
   institucionales,
   patrocinadores,
@@ -64,6 +66,8 @@ export function Base({
   derecha?: Lado | null;
   foto?: FotoCartel | null;
   lineas?: boolean;
+  /** Lienzo 9:16 de historia; los logos se apartan de lo que tapa Instagram. */
+  historia?: boolean;
   logosArriba?: "derecha" | "centro" | "ninguno";
   institucionales: string[];
   patrocinadores: string[];
@@ -78,12 +82,12 @@ export function Base({
     "--derecha-base": d.base,
     "--derecha-luz": d.luz,
     width: MEDIDAS.ancho,
-    height: MEDIDAS.alto,
+    height: historia ? MEDIDAS_HISTORIA.alto : MEDIDAS.alto,
   } as CSSProperties;
 
   return (
     <div
-      className={`${b.cartel} ${b[variante]} ${foto ? b.conFoto : ""} ${anton.variable} ${barlow.variable} ${className}`}
+      className={`${b.cartel} ${b[variante]} ${foto ? b.conFoto : ""} ${historia ? b.historia : ""} ${anton.variable} ${barlow.variable} ${className}`}
       style={estilo}
       data-cartel
     >

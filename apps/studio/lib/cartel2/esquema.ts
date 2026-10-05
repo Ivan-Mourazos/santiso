@@ -139,6 +139,22 @@ const once = z.object({
   }),
 });
 
+const alineacion = z.object({
+  plantilla: z.literal("alineacion"),
+  datos: z.object({
+    ...logos,
+    ...cabecera,
+    club: equipo,
+    rival: equipo,
+    local: z.boolean(),
+    fecha: texto(10),
+    hora: texto(5),
+    campo: texto(),
+    titulares: z.array(jugador).max(11),
+    suplentes: z.array(jugador).max(12),
+  }),
+});
+
 const anuncio = z.object({
   plantilla: z.literal("anuncio"),
   datos: z.object({
@@ -206,6 +222,7 @@ const peticion = z.discriminatedUnion("plantilla", [
   once,
   anuncio,
   clasificacion,
+  alineacion,
 ]);
 
 /** La petición validada, o `null` si no tiene la forma de ningún cartel. */
