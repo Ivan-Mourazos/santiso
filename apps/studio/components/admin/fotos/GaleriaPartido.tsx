@@ -39,6 +39,8 @@ export default function GaleriaPartido({
   const [error, setError] = useState<string | null>(null);
   const [subiendo, setSubiendo] = useState(false);
   const [enfocando, setEnfocando] = useState<string | null>(null);
+  const [guardando, setGuardando] = useState(false);
+  const ocupada = subiendo || guardando;
 
   useEffect(() => {
     let vigente = true;
@@ -60,6 +62,7 @@ export default function GaleriaPartido({
     try {
       const r = await subirFotosPartido(partidoId, formulario);
       if (!r.ok) return showToast(r.error, "error");
+      setError(null);
       setFotos((antes) => [...(antes ?? []), ...r.datos.fotos]);
       const n = r.datos.fotos.length;
       showToast(
@@ -73,16 +76,30 @@ export default function GaleriaPartido({
     }
   }
 
-  async function enfocar(foto: FotoPartidoDto, evento: React.MouseEvent<HTMLImageElement>) {
+  async function enfocar(foto: FotoPartidoDto, evento: React.MouseEvent<HTMLButtonElement>) {
     const caja = evento.currentTarget.getBoundingClientRect();
-    const x = Math.min(1, Math.max(0, (evento.clientX - caja.left) / caja.width));
-    const y = Math.min(1, Math.max(0, (evento.clientY - caja.top) / caja.height));
-    const r = await cambiarFocoFoto(foto.id, x, y);
-    if (!r.ok) return showToast(r.error, "error");
-    setFotos((antes) =>
-      (antes ?? []).map((f) => (f.id === foto.id ? { ...f, foco_x: x, foco_y: y } : f)),
-    );
-    setEnfocando(null);
+    // El clic sintetizado por un toque trae coordenadas; Enter/Espacio marca el centro.
+    const x =
+      evento.detail === 0
+        ? 0.5
+        : Math.min(1, Math.max(0, (evento.clientX - caja.left) / caja.width));
+    const y =
+      evento.detail === 0
+        ? 0.5
+        : Math.min(1, Math.max(0, (evento.clientY - caja.top) / caja.height));
+    setGuardando(true);
+    try {
+      const r = await cambiarFocoFoto(foto.id, x, y);
+      if (!r.ok) return showToast(r.error, "error");
+      setFotos((antes) =>
+        (antes ?? []).map((f) => (f.id === foto.id ? { ...f, foco_x: x, foco_y: y } : f)),
+      );
+      setEnfocando(null);
+    } catch {
+      showToast("No se pudo guardar el encuadre. Vuelve a intentarlo.", "error");
+    } finally {
+      setGuardando(false);
+    }
   }
 
   async function quitar(foto: FotoPartidoDto) {
@@ -101,13 +118,26 @@ export default function GaleriaPartido({
     >
       <div className={styles.galeria}>
         <div className={styles.barra}>
-          <label className={styles.subir} aria-disabled={subiendo}>
+          <label className={styles.subir} aria-disabled={ocupada}>
             {subiendo ? "Subiendo…" : "Subir fotos"}
             <input
               type="file"
               accept="image/*"
               multiple
-              disabled={subiendo}
+              disabled={ocupada}
+              onChange={(e) => {
+                void subir(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          <label className={`${styles.subir} ${styles.camara}`} aria-disabled={ocupada}>
+            Tomar foto
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              disabled={ocupada}
               onChange={(e) => {
                 void subir(e.target.files);
                 e.target.value = "";
@@ -116,7 +146,7 @@ export default function GaleriaPartido({
           </label>
           <p className={styles.nota}>
             Originales, no las de WhatsApp. Para cambiar el encuadre pulsa «Encuadre» y haz clic en
-            lo importante de la foto.
+            lo importante de la foto. En móvil, toca ese punto.
           </p>
         </div>
 
@@ -131,20 +161,27 @@ export default function GaleriaPartido({
             {fotos.map((foto, i) => (
               <li key={foto.id} className={styles.foto} data-enfocando={enfocando === foto.id}>
                 <div className={styles.marco}>
-                  <img
-                    src={`${foto.url}?ancho=480`}
-                    alt={`Foto ${i + 1}`}
-                    onClick={enfocando === foto.id ? (e) => void enfocar(foto, e) : undefined}
-                  />
+                  <img src={`${foto.url}?ancho=480`} alt={`Foto ${i + 1}`} />
+                  {enfocando === foto.id && (
+                    <button
+                      type="button"
+                      className={styles.marcar}
+                      aria-label={`Marcar encuadre de foto ${i + 1}`}
+                      disabled={guardando}
+                      aria-busy={guardando || undefined}
+                      onClick={(e) => void enfocar(foto, e)}
+                    />
+                  )}
                   <span
                     className={styles.foco}
+                    data-foco
                     style={{ left: `${foto.foco_x * 100}%`, top: `${foto.foco_y * 100}%` }}
                     aria-hidden
                   />
                 </div>
                 <div className={styles.acciones}>
                   {onElegir && (
-                    <Button size="sm" onClick={() => onElegir(foto)}>
+                    <Button size="sm" disabled={ocupada} onClick={() => onElegir(foto)}>
                       Usar en el cartel
                     </Button>
                   )}
@@ -152,6 +189,7 @@ export default function GaleriaPartido({
                     size="sm"
                     variant="secondary"
                     aria-pressed={enfocando === foto.id}
+                    disabled={ocupada}
                     onClick={() => setEnfocando(enfocando === foto.id ? null : foto.id)}
                   >
                     {enfocando === foto.id ? "Haz clic en la foto" : "Encuadre"}
@@ -160,6 +198,7 @@ export default function GaleriaPartido({
                     size="sm"
                     variant="secondary"
                     aria-label={`Quitar foto ${i + 1}`}
+                    disabled={ocupada}
                     onClick={() => void quitar(foto)}
                   >
                     Quitar

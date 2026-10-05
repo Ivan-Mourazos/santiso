@@ -4,6 +4,9 @@
   display: grid;
   gap: var(--ui-space-4, 1rem);
 }
+.pestanas {
+  display: none;
+}
 .columnas {
   display: grid;
   grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
@@ -182,10 +185,6 @@
   .columnas {
     grid-template-columns: 1fr;
   }
-  /* En móvil manda ver el cartel: la previsualización va arriba. */
-  .previsualizacion {
-    order: -1;
-  }
   .marco {
     position: static;
   }
@@ -194,5 +193,47 @@
   }
   .formulario {
     padding: var(--ui-space-4, 1rem);
+  }
+}
+
+@media (max-width: 900px) {
+  .pestanas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .formulario[data-activo="false"],
+  .previsualizacion[data-activo="false"] {
+    display: none;
+  }
+  .formulario :is(input, select, textarea) {
+    /* Algunos formularios legados fijan tamaños en línea. Evita zoom de iOS. */
+    font-size: 1rem !important;
+    min-width: 0;
+  }
+  .formulario
+    :is(
+      button,
+      select,
+      textarea,
+      input:not([type="checkbox"]):not([type="radio"]):not([type="file"])
+    ) {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+  .formulario :global(.file-input-label) {
+    min-height: 44px;
+  }
+  .instagramAcciones {
+    width: 100%;
+  }
+  .instagramAcciones button {
+    flex: 1;
+    min-height: 44px;
+  }
+  .pie a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 }

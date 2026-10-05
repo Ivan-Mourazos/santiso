@@ -227,6 +227,7 @@ export const FormCronoloxia: React.FC<Props & { tipo: string }> = ({
                 gap: "0.55rem",
                 alignItems: "center",
               }}
+              className={styles.filaEventoCabecera}
             >
               <input
                 type="text"
@@ -268,6 +269,7 @@ export const FormCronoloxia: React.FC<Props & { tipo: string }> = ({
                 gap: "0.55rem",
                 alignItems: "center",
               }}
+              className={styles.filaEventoDatos}
             >
               <select
                 value={ev.tipo}

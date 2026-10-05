@@ -103,3 +103,43 @@
   flex-wrap: wrap;
   gap: 0.3rem;
 }
+
+.camara {
+  display: none;
+}
+
+.marcar {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+.marcar:focus-visible {
+  outline: 3px solid var(--ui-accent, #facc15);
+  outline-offset: -3px;
+}
+
+@media (max-width: 900px) {
+  .galeria {
+    width: 100%;
+  }
+  .rejilla {
+    grid-template-columns: 1fr;
+    max-height: none;
+    overflow-y: visible;
+  }
+  .subir {
+    min-height: 44px;
+  }
+  .camara {
+    display: inline-flex;
+  }
+  .acciones button {
+    min-height: 44px;
+  }
+}
