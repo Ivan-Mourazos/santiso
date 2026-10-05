@@ -1,4 +1,5 @@
 <!-- BEGIN:tooling-env -->
+
 # Tooling & environment
 
 - **Monorepo pnpm:** `apps/studio` (Next.js), `packages/*` (domain, db), `tools/*` (migración). Solo `pnpm`; nunca `npm`/`yarn`.
@@ -14,23 +15,27 @@
 - Las pruebas que **escriben** van en `apps/studio/e2e-escritura/` y se lanzan con `pnpm e2e:escritura`: siembran una base de datos de juguete en una carpeta temporal y arrancan su propio servidor en el 3111. Ninguna prueba debe escribir en `data/`. Con `pnpm dev` abierto no arrancan (Next no admite dos `next dev` en la misma carpeta).
 - La base real solo guarda la temporada activa (2025/26 se retiró el 28/09/2026 con `pnpm db:limpiar-temporada`; archivo en `data/backups/`). Las pruebas de solo lectura no pueden contar con temporadas pasadas ni con actas: lo que necesite historial va en `e2e-escritura/`, con datos sembrados en `sembrar.ts`.
 - Textos de equipos, campos, competiciones y personas: reglas en `@santiso/domain` (`normalizar*`). Lo que se guarde nuevo debe pasar por ellas.
-- **Solo escritorio** (decisión del usuario, 28/09/2026): la web se diseña y se prueba desde 1280×720 en adelante; nada de móvil. Los carteles sí se piensan para verse en el móvil (Instagram).
+- **Escritorio y móvil** (decisión del usuario, 05/10/2026): la web se diseña y se prueba en escritorio desde 1280×720 y en móvil desde 360 px de ancho. Actas e Importar jornada siguen siendo solo de escritorio. Los carteles se piensan para verse en el móvil (Instagram).
 - Las capturas de `data/referencias/antes-fase-2/` son la referencia visual para validar las Fases 2B y 2C. Cubren las 9 secciones del panel (escritorio y móvil) y 3 de las 7 plantillas de cartel: partido, proximos y resumo.
+
 <!-- END:tooling-env -->
 
 <!-- BEGIN:nextjs-agent-rules -->
+
 # This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
 <!-- BEGIN:caveman-rules -->
+
 # Modo Cavernícola (Full) - Español
 
-- Ser breve. 
-- Ahorrar token. 
+- Ser breve.
+- Ahorrar token.
 - Sin charla. Sin relleno.
 - Sin artículos ("el", "la") si no necesario.
 - Solo técnico. Solo acción.
 - Estilo: "[cosa] [acción]. [resultado]. [próximo]."
+
 <!-- END:caveman-rules -->
