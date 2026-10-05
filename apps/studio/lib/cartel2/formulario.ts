@@ -38,7 +38,7 @@ export interface OpcionesCartel {
   /** Color `#rrggbb` del escudo de esa URL (o el de reserva si no tiene). */
   color: (url: string | null) => string;
   composicion: Composicion;
-  /** Foto de fondo del cartel de resultado, con su foco y estilo. */
+  /** Foto de la galería: fondo del cartel de resultado (con estilo) o foto de «O noso 11». */
   foto: FotoCartel | null;
 }
 
@@ -242,14 +242,23 @@ export function peticionDeFormulario(
           campo: form.estadio || form.lugar,
           titulares: jugadores(form.titulares),
           suplentes: jugadores(form.suplentes),
-          foto: form.jugadorFotoUrl
+          // Una foto elegida de la galería del partido manda sobre la del jugador; se encuadra
+          // por su foco y conserva el zoom del formulario.
+          foto: opciones.foto
             ? {
+                url: opciones.foto.url,
+                x: opciones.foto.x,
+                y: opciones.foto.y,
+                zoom: form.jugadorZoom,
+              }
+            : form.jugadorFotoUrl
+              ? {
                 url: form.jugadorFotoUrl,
                 x: form.jugadorXOffset,
                 y: form.jugadorYOffset,
-                zoom: form.jugadorZoom,
-              }
-            : null,
+                  zoom: form.jugadorZoom,
+                }
+              : null,
           invertido: form.noso11Flip,
         },
       };

@@ -328,6 +328,19 @@ export default function PilotoCartel({
               )}
             </>
           )}
+          {/* O noso 11: en vez de la foto del jugador, una de la galería del partido cargado. */}
+          {tipo === "noso11" && form.partido_id && (
+            <>
+              <Button size="sm" variant="secondary" onClick={() => setGaleria(true)}>
+                {foto ? "Cambiar foto del partido" : "Foto del partido"}
+              </Button>
+              {foto && (
+                <Button variant="secondary" size="sm" onClick={() => setFoto(null)}>
+                  Quitar foto
+                </Button>
+              )}
+            </>
+          )}
           <div className={styles.movil}>
             {pngActual ? (
               <Button size="sm" onClick={() => void compartir()} disabled={compartiendo}>
