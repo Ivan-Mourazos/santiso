@@ -13,6 +13,13 @@ export type Composicion = (typeof COMPOSICIONES)[number]["id"];
 
 /** Solo publicación 4:5, a ×2 al exportar (2160 × 2700): lo que Instagram muestra sin recortar. */
 export const MEDIDAS = { ancho: 1080, alto: 1350 } as const;
+/** Historia de Instagram 9:16, también a ×2 (2160 × 3840). Solo la plantilla de alineación. */
+export const MEDIDAS_HISTORIA = { ancho: 1080, alto: 1920 } as const;
+/**
+ * Franja de arriba y de abajo que la interfaz de Instagram tapa en una historia (perfil,
+ * barra de respuesta): ahí no va nada que haya que leer.
+ */
+export const MARGEN_HISTORIA = 250;
 
 export const PLANTILLAS = [
   "partido",
@@ -22,8 +29,14 @@ export const PLANTILLAS = [
   "once",
   "anuncio",
   "clasificacion",
+  "alineacion",
 ] as const;
 export type Plantilla = (typeof PLANTILLAS)[number];
+
+/** Tamaño del lienzo de cada plantilla (antes de la exportación a ×2). */
+export function medidasDe(plantilla: Plantilla) {
+  return plantilla === "alineacion" ? MEDIDAS_HISTORIA : MEDIDAS;
+}
 
 export interface EquipoCartel {
   nombre: string;
@@ -156,6 +169,19 @@ export interface DatosOnce extends Logos, Competicion {
   invertido: boolean;
 }
 
+/** Alineación anunciada antes del partido, en formato historia. */
+export interface DatosAlineacion extends Logos, Competicion {
+  club: EquipoCartel;
+  rival: EquipoCartel;
+  /** El Santiso juega en casa. */
+  local: boolean;
+  fecha: string;
+  hora: string;
+  campo: string;
+  titulares: JugadorOnce[];
+  suplentes: JugadorOnce[];
+}
+
 export const TEMAS_ANUNCIO = {
   celebracion: { etiqueta: "CELEBRACIÓN", acento: "#f5c518" },
   medico: { etiqueta: "PARTE MÉDICO", acento: "#ef4444" },
@@ -210,7 +236,8 @@ export type PeticionCartel =
   | { plantilla: "proximos"; datos: DatosProximos }
   | { plantilla: "once"; datos: DatosOnce }
   | { plantilla: "anuncio"; datos: DatosAnuncio }
-  | { plantilla: "clasificacion"; datos: DatosClasificacion };
+  | { plantilla: "clasificacion"; datos: DatosClasificacion }
+  | { plantilla: "alineacion"; datos: DatosAlineacion };
 
 const DIAS = ["DOMINGO", "LUNS", "MARTES", "MÉRCORES", "XOVES", "VENRES", "SÁBADO"];
 const MESES = ["XAN", "FEB", "MAR", "ABR", "MAI", "XUÑ", "XUL", "AGO", "SET", "OUT", "NOV", "DEC"];

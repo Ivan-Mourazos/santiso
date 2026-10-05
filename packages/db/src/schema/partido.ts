@@ -102,3 +102,27 @@ export const fotosPartido = sqliteTable(
     ),
   ],
 );
+
+/**
+ * Alineación anunciada antes del partido (historia de Instagram). Va aparte de
+ * `partido_participaciones`, que es lo que dice el acta: una previa no cuenta como acta ni
+ * entra en las estadísticas. `orden` es el de la lista del cartel.
+ */
+export const partidoAlineaciones = sqliteTable(
+  "partido_alineaciones",
+  {
+    partidoId: text("partido_id")
+      .notNull()
+      .references(() => partidos.id, { onDelete: "cascade" }),
+    jugadorId: text("jugador_id")
+      .notNull()
+      .references(() => jugadores.id, { onDelete: "cascade" }),
+    titular: integer("titular", { mode: "boolean" }).notNull(),
+    capitan: integer("capitan", { mode: "boolean" }).notNull().default(false),
+    orden: integer("orden").notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ columns: [t.partidoId, t.jugadorId] }),
+    check("partido_alineaciones_capitan_titular_ck", condicion(`not "capitan" or "titular"`)),
+  ],
+);
