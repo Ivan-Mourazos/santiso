@@ -30,6 +30,7 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
   const [biblioteca, setBiblioteca] = useState(false);
   const [texto, setTexto] = useState("");
   const [sinEscudo, setSinEscudo] = useState(false);
+  const [masFiltros, setMasFiltros] = useState(false);
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
   const generacion = useRef(0);
   const competicion = contexto.competicionesEnCategoria.find(
@@ -116,7 +117,7 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
         </div>
       </header>
       {/* Competición y vista en una sola fila. */}
-      <div className={styles.barra}>
+      <div className={styles.barra} data-mas={masFiltros}>
         <ControlesCompeticion
           contexto={contexto}
           categoria={categoria}
@@ -160,7 +161,12 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
         <LoadingState title="Cargando equipos…" />
       ) : (
         <>
-          <div className={styles.herramientas} role="search" aria-label="Filtrar equipos">
+          <div
+            className={styles.herramientas}
+            role="search"
+            aria-label="Filtrar equipos"
+            data-mas={masFiltros}
+          >
             <Field
               label="Buscar equipo"
               type="search"
@@ -168,7 +174,16 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
               onChange={(e) => setTexto(e.target.value)}
               placeholder="Nombre del equipo"
             />
-            <label className={styles.casilla}>
+            {/* Solo en móvil: lo poco usado se pliega para que la lista empiece antes. */}
+            <button
+              type="button"
+              className={styles.masFiltros}
+              aria-expanded={masFiltros}
+              onClick={() => setMasFiltros((v) => !v)}
+            >
+              {masFiltros ? "Menos opciones" : "Más opciones"}
+            </button>
+            <label className={`${styles.casilla} ${styles.filtroExtra}`}>
               <input
                 className={styles.check}
                 type="checkbox"
