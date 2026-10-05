@@ -114,6 +114,43 @@ for (const ancho of [360, 390]) {
   });
 }
 
+for (const ancho of [360, 390]) {
+  test(`clasificación: cinco columnas, detalle y borrador de zonas a ${ancho}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: ancho, height: 844 });
+    await abrir(page, "clasificacion");
+    const tabla = page.getByRole("table", { name: /^Clasificación de / });
+    await expect(tabla).toBeVisible();
+    await expect(tabla.getByRole("columnheader")).toHaveText(["#", "Equipo", "PTS", "PJ", "DG"]);
+    const detalle = tabla.getByRole("button", { name: /^Ver estadísticas de / }).first();
+    await detalle.click();
+    await expect(detalle).toHaveAttribute("aria-expanded", "true");
+    await expect(tabla.getByRole("region")).toContainText("Goles a favor");
+    await comprobarAncho(page);
+    await detalle.click();
+    await expect(detalle).toHaveAttribute("aria-expanded", "false");
+    await page.getByRole("button", { name: "Zonas de la clasificación", exact: true }).click();
+    const dialogo = page.getByRole("dialog", { name: "Zonas de la clasificación", exact: true });
+    // Solo borrador local: no se pulsa Guardar zonas contra datos reales.
+    await dialogo.getByRole("button", { name: "Añadir zona", exact: true }).click();
+    const rect = (await dialogo.boundingBox())!;
+    expect(rect.width).toBeLessThanOrEqual(ancho);
+    for (const control of await dialogo
+      .locator("input:visible, select:visible, button:visible")
+      .all()) {
+      const box = (await control.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.x + box.width).toBeLessThanOrEqual(ancho + 1);
+    }
+    page.once("dialog", (confirmacion) => confirmacion.accept());
+    await dialogo.getByRole("button", { name: "Cancelar", exact: true }).click();
+    await expect(dialogo).toBeHidden();
+    await comprobarAncho(page);
+  });
+}
+
 test("categoría conserva contexto y diálogo de edición cabe en móvil", async ({ page }) => {
   await abrir(page, "equipos");
   await page.getByRole("button", { name: "Veteranos", exact: true }).click();
@@ -137,6 +174,37 @@ test("categoría conserva contexto y diálogo de edición cabe en móvil", async
   await dialog.getByRole("button", { name: "Cancelar", exact: true }).click();
   await expect(dialog).toBeHidden();
 });
+
+for (const ancho of [360, 390]) {
+  test(`estadísticas: métricas, detalle y ordenación a ${ancho}px`, async ({ page }) => {
+    await page.setViewportSize({ width: ancho, height: 844 });
+    await abrir(page, "estadisticas");
+    const tabla = page.getByRole("table", { name: /^Estadísticas de / });
+    if ((await tabla.count()) === 0) {
+      await expect(page.getByText(/^Todavía no hay datos de /)).toBeVisible();
+      return;
+    }
+    const fila = tabla.locator("tbody tr").first();
+    for (const etiqueta of ["Convocatorias", "Goles", "Amarillas", "Rojas"]) {
+      await expect(fila.locator(`td[data-etiqueta="${etiqueta}"]`)).toBeVisible();
+    }
+    await expect(fila.locator('td[data-etiqueta="Titularidades"]')).toBeHidden();
+    const detalle = fila.getByRole("button", { name: /^Más estadísticas de / });
+    await detalle.click();
+    await expect(fila.locator('td[data-etiqueta="Titularidades"]')).toBeVisible();
+    await detalle.click();
+    await expect(fila.locator('td[data-etiqueta="Titularidades"]')).toBeHidden();
+    await page.getByLabel("Ordenar por", { exact: true }).selectOption("goles");
+    const sentido = page.getByRole("button", {
+      name: "Cambiar sentido de ordenación",
+      exact: true,
+    });
+    await expect(sentido).toHaveText("Descendente");
+    await sentido.click();
+    await expect(sentido).toHaveText("Ascendente");
+    await comprobarAncho(page);
+  });
+}
 
 for (const seccion of ["actas", "importar-jornada"]) {
   test(`${seccion}: reservada a escritorio`, async ({ page }) => {

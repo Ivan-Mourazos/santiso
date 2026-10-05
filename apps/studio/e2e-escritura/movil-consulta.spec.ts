@@ -102,3 +102,35 @@ test("clasificación móvil prioriza columnas, despliega detalle y guarda varias
     page.getByRole("list", { name: "Zonas de la clasificación", exact: true }),
   ).toContainText("Zona móvil 2");
 });
+
+test("estadísticas móviles muestran métricas principales, detalle, orden y búsqueda", async ({
+  page,
+}) => {
+  await abrirConsulta(page, "estadisticas");
+  const tabla = page.getByRole("table", { name: "Estadísticas de Veteranos", exact: true });
+  const fila = tabla
+    .getByRole("row")
+    .filter({ hasText: "Xoán Xogador de Proba Móbil con Nome Moi Longo" });
+  await expect(fila).toBeVisible();
+  for (const etiqueta of ["Convocatorias", "Goles", "Amarillas", "Rojas"]) {
+    await expect(fila.locator(`td[data-etiqueta="${etiqueta}"]`)).toBeVisible();
+  }
+  await expect(fila.locator('td[data-etiqueta="Titularidades"]')).toBeHidden();
+  const detalle = fila.getByRole("button", { name: /^Más estadísticas de / });
+  await detalle.click();
+  await expect(detalle).toHaveAttribute("aria-expanded", "true");
+  await expect(fila.locator('td[data-etiqueta="Titularidades"]')).toContainText("1");
+  await expect(fila.locator('td[data-etiqueta="Amarillas"]')).toHaveText("1");
+  await expect(fila.locator('td[data-etiqueta="Rojas"]')).toHaveText("1");
+  await comprobarControles(page, tabla);
+  const ordenar = page.getByLabel("Ordenar por", { exact: true });
+  await ordenar.selectOption("jugador");
+  await expect(tabla.locator("tbody tr").first()).toContainText("Antón Consulta Móbil");
+  await page.getByRole("button", { name: "Cambiar sentido de ordenación", exact: true }).click();
+  await expect(tabla.locator("tbody tr").first()).toContainText("Xoán Xogador");
+  await page.getByLabel("Buscar", { exact: true }).fill("sin-coincidencias");
+  await expect(
+    page.getByText("Ningún jugador coincide con la búsqueda.", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Buscar", { exact: true })).toBeVisible();
+});

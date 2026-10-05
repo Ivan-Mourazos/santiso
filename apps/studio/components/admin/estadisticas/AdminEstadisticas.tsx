@@ -44,6 +44,7 @@ const COLUMNAS_TABLA: { clave: ColumnaNumerica; etiqueta: string; corta: string 
   { clave: "amarillas", etiqueta: "Amarillas", corta: "Amar." },
   { clave: "rojas", etiqueta: "Rojas", corta: "Rojas" },
 ];
+const PRINCIPALES = new Set<ColumnaNumerica>(["convocados", "goles", "amarillas", "rojas"]);
 
 const VACIA: PantallaEstadisticas = {
   temporadas: [],
@@ -64,6 +65,7 @@ export default function AdminEstadisticas({ showToast, categoria }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [texto, setTexto] = useState("");
   const [orden, setOrden] = useState<{ columna: Columna; descendente: boolean } | null>(null);
+  const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
   // Lo elegido manda sobre lo que devolvió la carga anterior, que puede ser de otra categoría.
   const [temporadaPedida, setTemporadaPedida] = useState<string | null>(null);
   const [competicionPedida, setCompeticionPedida] = useState<string | null>(null);
@@ -84,6 +86,7 @@ export default function AdminEstadisticas({ showToast, categoria }: Props) {
     async (temporadaId: string | null, competicionId: string | null) => {
       const esta = ++generacion.current;
       setCargando(true);
+      setExpandidos(new Set());
       try {
         const resultado = await cargarPantallaEstadisticas(categoria, temporadaId, competicionId);
         if (esta !== generacion.current) return;
@@ -256,6 +259,39 @@ export default function AdminEstadisticas({ showToast, categoria }: Props) {
               : `${visibles.length} de ${pantalla.filas.length} jugadores`}
           </p>
 
+          <div className={styles.ordenMovil}>
+            <Select
+              label="Ordenar por"
+              value={orden?.columna ?? ""}
+              disabled={cargando}
+              onChange={(e) => {
+                const columna = e.target.value as Columna;
+                setOrden(columna ? { columna, descendente: columna !== "jugador" } : null);
+              }}
+            >
+              <option value="">Orden original</option>
+              <option value="jugador">Jugador</option>
+              <option value="dorsal">Dorsal</option>
+              {COLUMNAS_TABLA.map((c) => (
+                <option key={c.clave} value={c.clave}>
+                  {c.etiqueta}
+                </option>
+              ))}
+            </Select>
+            <Button
+              variant="secondary"
+              aria-label="Cambiar sentido de ordenación"
+              disabled={cargando || !orden}
+              onClick={() =>
+                setOrden((actual) =>
+                  actual ? { ...actual, descendente: !actual.descendente } : null,
+                )
+              }
+            >
+              {orden?.descendente ? "Descendente" : "Ascendente"}
+            </Button>
+          </div>
+
           {visibles.length === 0 ? (
             <EmptyState
               title="Ningún jugador coincide con la búsqueda."
@@ -295,7 +331,7 @@ export default function AdminEstadisticas({ showToast, categoria }: Props) {
                 </thead>
                 <tbody>
                   {visibles.map((fila) => (
-                    <tr key={fila.jugadorId}>
+                    <tr key={fila.jugadorId} data-expandido={expandidos.has(fila.jugadorId)}>
                       <td className={styles.dorsal} data-etiqueta="Dorsal">
                         {fila.dorsal ?? "—"}
                       </td>
@@ -304,10 +340,37 @@ export default function AdminEstadisticas({ showToast, categoria }: Props) {
                         {fila.inscripcionAusente && <small>Sin inscripción esta temporada</small>}
                       </td>
                       {COLUMNAS_TABLA.map((c) => (
-                        <td key={c.clave} data-etiqueta={c.etiqueta}>
+                        <td
+                          key={c.clave}
+                          data-etiqueta={c.etiqueta}
+                          data-prioridad={PRINCIPALES.has(c.clave)}
+                          id={`estadisticas-${fila.jugadorId}-${c.clave}`}
+                        >
                           {fila[c.clave]}
                         </td>
                       ))}
+                      <td className={styles.detalleAccion} colSpan={9}>
+                        <Button
+                          variant="secondary"
+                          aria-label={`Más estadísticas de ${nombreVisible(fila)}`}
+                          aria-expanded={expandidos.has(fila.jugadorId)}
+                          aria-controls={COLUMNAS_TABLA.filter((c) => !PRINCIPALES.has(c.clave))
+                            .map((c) => `estadisticas-${fila.jugadorId}-${c.clave}`)
+                            .join(" ")}
+                          onClick={() =>
+                            setExpandidos((actuales) => {
+                              const siguientes = new Set(actuales);
+                              if (siguientes.has(fila.jugadorId)) siguientes.delete(fila.jugadorId);
+                              else siguientes.add(fila.jugadorId);
+                              return siguientes;
+                            })
+                          }
+                        >
+                          {expandidos.has(fila.jugadorId)
+                            ? "Menos estadísticas"
+                            : "Más estadísticas"}
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
