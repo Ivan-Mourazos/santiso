@@ -208,6 +208,15 @@ export default function TarjetaPartido({ partido: p, categoria }: Props) {
           tono={acta ? "hecho" : jugado ? "pendiente" : "espera"}
         >
           {resumenActa && <p className={styles.detalle}>{resumenActa}</p>}
+          {acta && (
+            <div className={styles.botones}>
+              <Accion
+                href={`/admin/actas?categoria=${cat}&competicion=${p.competicionId}&partido=${p.id}`}
+              >
+                Corregir acta
+              </Accion>
+            </div>
+          )}
           {!acta && (
             <div className={styles.botones}>
               <Accion

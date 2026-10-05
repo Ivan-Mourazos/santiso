@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ErrorActa, eventosDeActa, participacionesDeActa } from "./transformar";
+import { actaDeGuardado, ErrorActa, eventosDeActa, participacionesDeActa } from "./transformar";
+import type { EventoGuardado } from "./transformar";
 import type { ActaEvent, ActaPlayerRef, ParsedActa } from "./types";
 
 const jugador = (id: string, dorsal = "1"): ActaPlayerRef => ({
@@ -185,5 +186,76 @@ describe("eventosDeActa", () => {
     const uno = evento({ jugador: jugador("a") });
     const otro = evento({ id: "e2", jugador: jugador("a") });
     expect(eventosDeActa(acta({ eventos: [uno, otro] }))).toHaveLength(1);
+  });
+});
+
+describe("actaDeGuardado", () => {
+  const jugadores = [
+    { id: "j1", nombre: "Miguel Pampín", apodo: "Miky", dorsal: 1, titular: true },
+    { id: "j4", nombre: "Iago Castro", apodo: "Iago SR", dorsal: 4, titular: true },
+    { id: "j9", nombre: "Tiago Dias", apodo: null, dorsal: null, titular: false },
+    { id: "j12", nombre: "Aitor Cuesta", apodo: null, dorsal: 12, titular: false },
+  ];
+  const fila = (
+    id: string,
+    tipo: "gol" | "tarjeta_amarilla" | "tarjeta_roja" | "cambio",
+    extra: Partial<EventoGuardado> = {},
+  ) => ({
+    id,
+    tipo,
+    lado: "propio" as const,
+    propia: false,
+    minuto: 10 as number | null,
+    jugadorId: null as string | null,
+    jugadorSaleId: null as string | null,
+    nombreRival: null as string | null,
+    ...extra,
+  });
+  const eventos = [
+    fila("e1", "gol", { jugadorId: "j4", minuto: 12 }),
+    fila("e2", "gol", { propia: true, nombreRival: "Rival Uno", minuto: 20 }),
+    fila("e3", "gol", { lado: "rival", propia: true, jugadorId: "j1", minuto: 30 }),
+    fila("e4", "gol", { lado: "rival", nombreRival: "Rival Dos", minuto: null }),
+    fila("e5", "tarjeta_amarilla", { jugadorId: "j4", minuto: 40 }),
+    fila("e6", "tarjeta_roja", { lado: "rival", nombreRival: "Rival Tres", minuto: 80 }),
+    fila("e7", "cambio", { jugadorId: "j9", jugadorSaleId: "j4", minuto: 60 }),
+  ];
+  const acta = actaDeGuardado({ golesLocal: 2, golesVisitante: 2, campoId: "campo" }, jugadores, eventos);
+
+  it("reconstruye marcador, titulares y suplentes con dorsal y nombre visible", () => {
+    expect(acta).toMatchObject({ marcadorLocal: "2", marcadorVisitante: "2", campoId: "campo" });
+    expect(acta.titulares.map((j) => [j.dorsal, j.displayName])).toEqual([
+      ["1", "Miky"],
+      ["4", "Iago SR"],
+    ]);
+    expect(acta.suplentes.map((j) => [j.dorsal, j.displayName])).toEqual([
+      ["", "Tiago Dias"],
+      ["12", "Aitor Cuesta"],
+    ]);
+  });
+
+  it("guardarla sin tocar nada deja las mismas filas", () => {
+    expect(eventosDeActa(acta)).toEqual(eventos.map(({ id: _id, ...resto }) => resto));
+    expect(participacionesDeActa(acta)).toEqual([
+      { jugadorId: "j1", titular: true, jugo: true },
+      { jugadorId: "j4", titular: true, jugo: true },
+      // Entró en el cambio del 60': suplente que jugó.
+      { jugadorId: "j9", titular: false, jugo: true },
+      { jugadorId: "j12", titular: false, jugo: false },
+    ]);
+  });
+
+  it("corregir un titular mal puesto: pasa a suplente y deja de contar como titular", () => {
+    const corregida = {
+      ...acta,
+      titulares: acta.titulares.filter((j) => j.jugadorId !== "j1"),
+      suplentes: [...acta.suplentes, ...acta.titulares.filter((j) => j.jugadorId === "j1")],
+    };
+    // Sigue contando como que jugó: tiene un evento (el gol en propia del 30').
+    expect(participacionesDeActa(corregida).find((p) => p.jugadorId === "j1")).toEqual({
+      jugadorId: "j1",
+      titular: false,
+      jugo: true,
+    });
   });
 });

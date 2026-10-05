@@ -1,8 +1,13 @@
 "use server";
 
 import { schema } from "@santiso/db";
-import { eq } from "drizzle-orm";
-import { ErrorActa, eventosDeActa, participacionesDeActa } from "@/lib/actas/transformar";
+import { asc, eq } from "drizzle-orm";
+import {
+  actaDeGuardado,
+  ErrorActa,
+  eventosDeActa,
+  participacionesDeActa,
+} from "@/lib/actas/transformar";
 import type { ParsedActa } from "@/lib/actas/types";
 import type { CampoDto, JugadorDto, PartidoActaDto } from "@/lib/dto";
 import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
@@ -40,6 +45,44 @@ export async function cargarEventosDePartido(partidoId: string) {
 
 export async function cargarParticipacionesDePartido(partidoId: string) {
   return partidoId ? participacionesDePartido(partidoId) : [];
+}
+
+/**
+ * El acta guardada de un partido, en la forma del formulario de revisión, para corregirla.
+ * `null` si el partido todavía no tiene convocatoria ni eventos.
+ */
+export async function cargarActaGuardada(partidoId: string): Promise<Resultado<ParsedActa | null>> {
+  return capturar("No se pudo abrir el acta guardada.", async () => {
+    const { db } = await obtenerDb();
+    const [partido] = await db
+      .select({
+        golesLocal: schema.partidos.golesLocal,
+        golesVisitante: schema.partidos.golesVisitante,
+        campoId: schema.partidos.campoId,
+      })
+      .from(schema.partidos)
+      .where(eq(schema.partidos.id, partidoId));
+    if (!partido) return null;
+    const [convocados, eventos] = await Promise.all([
+      participacionesDePartido(partidoId),
+      db
+        .select({
+          id: schema.partidoEventos.id,
+          tipo: schema.partidoEventos.tipo,
+          lado: schema.partidoEventos.lado,
+          propia: schema.partidoEventos.propia,
+          minuto: schema.partidoEventos.minuto,
+          jugadorId: schema.partidoEventos.jugadorId,
+          jugadorSaleId: schema.partidoEventos.jugadorSaleId,
+          nombreRival: schema.partidoEventos.nombreRival,
+        })
+        .from(schema.partidoEventos)
+        .where(eq(schema.partidoEventos.partidoId, partidoId))
+        .orderBy(asc(schema.partidoEventos.minuto)),
+    ]);
+    if (convocados.length === 0 && eventos.length === 0) return null;
+    return actaDeGuardado(partido, convocados, eventos);
+  });
 }
 
 /**
