@@ -13,6 +13,7 @@ import {
   importeDeMulta,
   NOMBRE_GRUPO,
   opcionesDeTexto,
+  OTRO_MOTIVO,
   resumirMultas,
   unidadesDe,
   type ConceptoMulta,
@@ -126,6 +127,9 @@ function Registro({
 } & Props) {
   const [personaClave, setPersonaClave] = useState("");
   const [conceptoId, setConceptoId] = useState("");
+  /** Motivo escrito a mano, cuando no está en las normas. */
+  const [motivo, setMotivo] = useState("");
+  const libre = conceptoId === OTRO_MOTIVO;
   const [unidades, setUnidades] = useState("1");
   /** Opciones marcadas del concepto («Medias 1ª», «Peto»…): cada una es una unidad. */
   const [elegidas, setElegidas] = useState<string[]>([]);
@@ -165,6 +169,8 @@ function Registro({
     e.preventDefault();
     if (!personaClave) return showToast("Elige a quién.", "error");
     if (!conceptoId) return showToast("Elige el motivo de la multa.", "error");
+    if (libre && !motivo.trim()) return showToast("Escribe el motivo de la multa.", "error");
+    if (libre && aMano === null) return showToast("Escribe el importe de la multa.", "error");
     const importe = aMano === null ? null : centimosDe(aMano);
     if (aMano !== null && importe === null) return showToast("El importe no es válido.", "error");
     setOcupada(true);
@@ -172,6 +178,7 @@ function Registro({
       const r = await ponerMulta({
         personaClave,
         conceptoId,
+        motivo,
         unidades: Number(unidades) || 1,
         opciones: elegidas,
         importeCentimos: importe,
@@ -259,7 +266,16 @@ function Registro({
                 ))}
             </optgroup>
           ))}
+          <option value={OTRO_MOTIVO}>Otro motivo (escribirlo)…</option>
         </Select>
+        {libre && (
+          <Field
+            label="Motivo de la multa"
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            placeholder="Non poñer bote no bar…"
+          />
+        )}
         {concepto?.porUnidad && concepto.opciones.length > 0 && (
           <fieldset className={styles.opciones}>
             <legend>Qué falta ({euros(concepto.importeCentimos)} cada una)</legend>

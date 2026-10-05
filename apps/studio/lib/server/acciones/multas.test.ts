@@ -123,6 +123,30 @@ describe("multas del club", () => {
     ]);
   });
 
+  it("admite un motivo que no está en las normas, con su importe a mano", async () => {
+    const { acciones, jugador } = await entorno();
+    const libre = { personaClave: jugador, conceptoId: "otro", unidades: 1, fecha: "2026-10-04" };
+    expect(await acciones.ponerMulta({ ...libre, importeCentimos: 250 })).toMatchObject({
+      ok: false,
+      error: "Escribe el motivo de la multa.",
+    });
+    expect(await acciones.ponerMulta({ ...libre, motivo: "Non poñer bote no bar" })).toMatchObject({
+      ok: false,
+      error: "Escribe el importe de la multa.",
+    });
+    expect(
+      await acciones.ponerMulta({
+        ...libre,
+        motivo: "  Non poñer bote no bar ",
+        importeCentimos: 250,
+      }),
+    ).toEqual({ ok: true, datos: null });
+    expect((await pantalla(acciones)).multas[0]).toMatchObject({
+      concepto: "Non poñer bote no bar",
+      importeCentimos: 250,
+    });
+  });
+
   it("valida persona, motivo, fecha e importe", async () => {
     const { acciones, jugador } = await entorno();
     const { conceptos } = await pantalla(acciones);

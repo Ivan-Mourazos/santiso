@@ -9,6 +9,7 @@ import {
   esDia,
   GRUPOS_MULTA,
   importeDeMulta,
+  OTRO_MOTIVO,
   textoDeConcepto,
   unidadesDe,
   type ConceptoMulta,
@@ -166,7 +167,10 @@ export async function cargarPantallaMultas(): Promise<Resultado<PantallaMultas>>
 export interface NuevaMulta {
   /** `jugador:<id>` o `staff:<id>`. */
   personaClave: string;
+  /** Concepto de las normas, o `OTRO_MOTIVO` con `motivo` e importe escritos a mano. */
   conceptoId: string;
+  /** Motivo libre: solo con `OTRO_MOTIVO`. */
+  motivo?: string;
   /** Solo cuenta en conceptos por unidad sin opciones. */
   unidades: number;
   /** Opciones marcadas («Medias 1ª», «Peto»): cada una es una unidad. */
@@ -188,11 +192,16 @@ export async function ponerMulta(entrada: NuevaMulta): Promise<Resultado<null>> 
     .from(schema.temporadas)
     .where(eq(schema.temporadas.activa, true));
   if (!temporada) return fallo("No hay temporada activa.");
-  const [concepto] = await db
-    .select(COLUMNAS_CONCEPTO)
-    .from(schema.multasConceptos)
-    .where(eq(schema.multasConceptos.id, entrada.conceptoId));
-  if (!concepto) return fallo("Elige el motivo de la multa.");
+  const libre = entrada.conceptoId === OTRO_MOTIVO;
+  const motivo = entrada.motivo?.trim() ?? "";
+  if (libre && !motivo) return fallo("Escribe el motivo de la multa.");
+  const [concepto] = libre
+    ? []
+    : await db
+        .select(COLUMNAS_CONCEPTO)
+        .from(schema.multasConceptos)
+        .where(eq(schema.multasConceptos.id, entrada.conceptoId));
+  if (!libre && !concepto) return fallo("Elige el motivo de la multa.");
   const gente = await personas(db, temporada.id);
   const persona = gente.find((p) => p.clave === entrada.personaClave);
   if (!persona) return fallo("Esa persona no está en la plantilla de esta temporada.");
@@ -201,17 +210,25 @@ export async function ponerMulta(entrada: NuevaMulta): Promise<Resultado<null>> 
   if (aMano !== undefined && aMano !== null && !(Number.isInteger(aMano) && aMano > 0)) {
     return fallo("El importe no es válido.");
   }
-  const elegidas = (entrada.opciones ?? []).filter((o) => concepto.opciones.includes(o));
-  const unidades = unidadesDe(concepto, entrada.unidades, elegidas);
-  const importeCentimos = aMano ?? importeDeMulta(concepto, unidades, persona.adestrador);
+  // Motivo libre: no hay norma de la que sacar el importe, así que hay que escribirlo.
+  let texto = motivo;
+  let importeCentimos = aMano ?? null;
+  if (concepto) {
+    const elegidas = (entrada.opciones ?? []).filter((o) => concepto.opciones.includes(o));
+    const unidades = unidadesDe(concepto, entrada.unidades, elegidas);
+    texto = textoDeConcepto(concepto, unidades, elegidas);
+    importeCentimos ??= importeDeMulta(concepto, unidades, persona.adestrador);
+  }
+  if (importeCentimos === null) return fallo("Escribe el importe de la multa.");
+  const importe = importeCentimos;
 
   return capturar("No se pudo guardar la multa.", async () => {
     await db.insert(schema.multas).values({
       temporadaId: temporada.id,
       jugadorId: tipo === "jugador" ? personaId : null,
       staffId: tipo === "staff" ? personaId : null,
-      concepto: textoDeConcepto(concepto, unidades, elegidas),
-      importeCentimos,
+      concepto: texto,
+      importeCentimos: importe,
       fecha: entrada.fecha,
       nota: entrada.nota?.trim() || null,
     });
