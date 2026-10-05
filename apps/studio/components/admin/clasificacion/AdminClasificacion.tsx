@@ -206,7 +206,10 @@ export default function AdminClasificacion({ categoria }: Props) {
                           <img src={fila.escudoUrl} alt="" />
                         )}
                       </td>
-                      <td className={styles.equipo} aria-label={fila.nombre}>
+                      <td
+                        className={styles.equipo}
+                        aria-label={regla ? `${fila.nombre} · ${regla.nombre}` : fila.nombre}
+                      >
                         <span className={styles.nombreEscritorio}>{fila.nombre}</span>
                         <button
                           type="button"

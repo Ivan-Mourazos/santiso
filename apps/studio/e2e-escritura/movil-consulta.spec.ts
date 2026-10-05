@@ -20,7 +20,7 @@ async function abrirConsulta(page: Page, seccion: string) {
 
 async function comprobarControles(page: Page, contenedor: Locator) {
   for (const control of await contenedor
-    .locator("input:visible, select:visible, button:visible")
+    .locator("input:visible, select:visible, button:visible, a:visible")
     .all()) {
     const rect = (await control.boundingBox())!;
     expect(rect.width).toBeGreaterThanOrEqual(44);
@@ -46,6 +46,7 @@ test("calendario móvil guarda marcador, campo y fecha y mantiene tarjeta con co
   const tarjeta = page.getByRole("region", { name: `${LOCAL} - ${VISITANTE}`, exact: true });
   await expect(tarjeta).toBeVisible();
   await comprobarControles(page, tarjeta);
+  await comprobarControles(page, page.getByRole("region", { name: "Qué se ve", exact: true }));
   const goles = tarjeta.getByLabel(`Goles de ${LOCAL}`);
   const originales = await goles.inputValue();
   const nuevos = originales === "2" ? "3" : "2";
@@ -101,6 +102,9 @@ test("clasificación móvil prioriza columnas, despliega detalle y guarda varias
   await expect(
     page.getByRole("list", { name: "Zonas de la clasificación", exact: true }),
   ).toContainText("Zona móvil 2");
+  await expect(
+    tabla.getByRole("cell", { name: `${LOCAL} · Zona móvil 1`, exact: true }),
+  ).toBeVisible();
 });
 
 test("estadísticas móviles muestran métricas principales, detalle, orden y búsqueda", async ({
