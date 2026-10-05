@@ -216,6 +216,47 @@ for (const seccion of ["actas", "importar-jornada"]) {
 }
 
 for (const ancho of [360, 390]) {
+  test(`equipos: escudo y datos completos a ${ancho}px`, async ({ page }) => {
+    await page.setViewportSize({ width: ancho, height: 844 });
+    await abrir(page, "equipos");
+    const fila = page
+      .getByRole("table", { name: /^Equipos / })
+      .locator("tbody tr")
+      .first();
+    await expect(fila).toBeVisible();
+    const escudo = (await fila.locator("td:first-child > *").boundingBox())!;
+    expect(escudo.width).toBeGreaterThanOrEqual(44);
+    expect(escudo.height).toBeGreaterThanOrEqual(44);
+    expect(
+      await fila.locator("td:nth-child(4) span").evaluate((el) => getComputedStyle(el).whiteSpace),
+    ).toBe("normal");
+    await expect(fila.locator("td:nth-child(3)")).toContainText("Partidos");
+    await page.getByLabel("Buscar equipo", { exact: true }).fill("zzz-sin-coincidencias");
+    await expect(page.getByLabel("Buscar equipo", { exact: true })).toBeVisible();
+    await comprobarAncho(page);
+  });
+
+  test(`patrocinadores: enlaces y orden táctiles a ${ancho}px`, async ({ page }) => {
+    await page.setViewportSize({ width: ancho, height: 844 });
+    await abrir(page, "patrocinadores");
+    const tabla = page.getByRole("table", { name: "Patrocinadores y logos" });
+    for (const enlace of await tabla.getByRole("link").all()) {
+      expect((await enlace.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
+    const orden = page.getByRole("list", { name: "Orden de los logos" });
+    await expect(orden).toBeVisible();
+    for (const boton of await orden.getByRole("button").all()) {
+      const rect = (await boton.boundingBox())!;
+      expect(rect.width).toBeGreaterThanOrEqual(44);
+      expect(rect.height).toBeGreaterThanOrEqual(44);
+    }
+    await page.getByLabel("Buscar", { exact: true }).fill("zzz-sin-coincidencias");
+    await expect(page.getByLabel("Buscar", { exact: true })).toBeVisible();
+    await comprobarAncho(page);
+  });
+}
+
+for (const ancho of [360, 390]) {
   for (const seccion of ["jugadores", "tecnicos", "directiva"]) {
     test(`${seccion}: ficha con dato principal y foto legible a ${ancho}px`, async ({ page }) => {
       await page.setViewportSize({ width: ancho, height: 844 });

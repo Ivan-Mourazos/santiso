@@ -214,6 +214,8 @@
     margin-bottom: 0.75rem;
     border: 1px solid rgb(255 255 255 / 8%);
     border-radius: var(--ui-radius, 0.75rem);
+    background: var(--ui-panel-face, var(--ui-surface, #171717));
+    box-shadow: var(--ui-panel-shadow, none);
   }
   .tabla td {
     padding: 0;
@@ -224,6 +226,8 @@
   }
   .celdaNombre {
     grid-area: nombre;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .celdaEstado {
     grid-area: estado;
@@ -233,8 +237,40 @@
   }
   .filaAcciones {
     justify-content: stretch;
+    flex-wrap: wrap;
   }
   .filaAcciones > * {
-    flex: 1;
+    flex: 1 1 6rem;
+  }
+  .nombre a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    min-width: 44px;
+    overflow-wrap: anywhere;
+  }
+  .posicion {
+    display: grid;
+    grid-template-columns: 2rem 56px minmax(0, 1fr);
+    overflow-wrap: anywhere;
+  }
+  .posicion > span {
+    min-width: 0;
+  }
+  .flechas {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+  .panel button,
+  .editor button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .grupo {
+    min-width: 0;
+  }
+  .grupo > * {
+    min-width: 0;
   }
 }

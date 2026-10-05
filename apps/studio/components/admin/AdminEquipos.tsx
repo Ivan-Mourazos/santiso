@@ -238,7 +238,10 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
                     <td>
                       <span className={styles.nombre}>{equipo.nombre}</span>
                     </td>
-                    <td className={styles.numero}>{equipo.numeroPartidos}</td>
+                    <td className={styles.numero}>
+                      <span className={styles.soloMovil}>Partidos: </span>
+                      {equipo.numeroPartidos}
+                    </td>
                     <td>
                       {/* Una línea: con varias competiciones la fila crecía sin control. Completo al
                           pasar el ratón. */}
