@@ -51,6 +51,26 @@ test.describe("estadísticas de la temporada pasada", () => {
     await expect(page.getByText(/no distingue los goles de penalti/)).toBeVisible();
   });
 
+  test("el nombre abre la ficha: totales y partidos, en el ámbito elegido", async ({ page }) => {
+    await abrir(page);
+    await page.getByRole("button", { name: /^Ver ficha de Brais/ }).click();
+    const ficha = page.getByRole("dialog", { name: /Brais/ });
+    await expect(ficha.getByRole("list", { name: "Partidos" })).toBeVisible();
+    const partidos = ficha.getByRole("list", { name: "Partidos" }).getByRole("listitem");
+    const enTodas = await partidos.count();
+    expect(enTodas).toBeGreaterThan(1);
+    await expect(ficha.getByText("Convocado", { exact: true })).toBeVisible();
+    await ficha.getByRole("button", { name: "Cerrar diálogo" }).click();
+
+    // Con una competición elegida, la ficha solo cuenta esa.
+    await page.getByLabel("Competición", { exact: true }).selectOption({ label: "Copa Histórica" });
+    await expect(totalGoles(page, 1)).toBeVisible();
+    await page.getByRole("button", { name: /^Ver ficha de Brais/ }).click();
+    const enCopa = page.getByRole("dialog", { name: /Brais/ });
+    await expect(enCopa.getByText("Convocado", { exact: true })).toBeVisible();
+    expect(await enCopa.getByRole("listitem").count()).toBeLessThan(enTodas);
+  });
+
   test("ordenar por goles pone al máximo goleador primero y lo dice", async ({ page }) => {
     await abrir(page);
     const cabecera = page.getByRole("columnheader", { name: "Ordenar por goles" });

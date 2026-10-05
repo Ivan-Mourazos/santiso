@@ -237,3 +237,147 @@
     min-height: 44px;
   }
 }
+
+/* ─── Ficha del jugador ─── */
+
+/* El nombre en la tabla abre la ficha: se ve como el nombre, con subrayado al pasar. */
+.nombreFicha {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.nombreFicha:hover strong,
+.nombreFicha:focus-visible strong {
+  text-decoration: underline;
+  text-decoration-color: var(--ui-accent, #f5c518);
+  text-underline-offset: 3px;
+}
+
+.ficha {
+  display: grid;
+  gap: 0.9rem;
+  min-width: 0;
+}
+.fichaCabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.fichaCabecera > div {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.fichaCabecera span {
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.fichaFoto {
+  flex: none;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 0.75rem;
+  object-fit: cover;
+  object-position: top;
+  background: var(--ui-raised, #242424);
+}
+.fichaTotales {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+}
+.fichaTotales > div {
+  padding: 0.5rem 0.6rem;
+  border-radius: 0.6rem;
+  background: var(--ui-raised, #242424);
+}
+.fichaTotales dt {
+  color: var(--ui-muted, #aaa);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.fichaTotales dd {
+  margin: 0;
+  font: 900 1.35rem var(--ui-font-title, sans-serif);
+  color: var(--ui-accent, #f5c518);
+  font-variant-numeric: tabular-nums;
+}
+.fichaPartidos {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fichaPartidos li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.6rem;
+  background: var(--ui-raised, #242424);
+}
+.fichaPartidos li[data-jugo="false"] {
+  opacity: 0.65;
+}
+.fichaPartido {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.fichaPartido strong {
+  overflow-wrap: anywhere;
+}
+.fichaPartido span {
+  color: var(--ui-muted, #aaa);
+  font-size: 0.8rem;
+}
+.fichaResultado {
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.fichaResultado[data-letra="V"] {
+  color: var(--ui-success, #4ade80);
+}
+.fichaResultado[data-letra="D"] {
+  color: var(--ui-danger, #f87171);
+}
+.fichaHechos {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.amarilla,
+.roja {
+  padding: 0 0.4rem;
+  border-radius: 0.25rem;
+  color: #000;
+  font-weight: 800;
+}
+.amarilla {
+  background: #f5c518;
+}
+.roja {
+  background: #ef4444;
+}
+
+/* En móvil el nombre es un objetivo táctil como los demás. */
+@media (max-width: 640px), (pointer: coarse) {
+  .nombreFicha {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
