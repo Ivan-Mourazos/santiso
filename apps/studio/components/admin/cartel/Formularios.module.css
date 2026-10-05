@@ -167,3 +167,52 @@
   color: var(--ui-muted, #94a3b8);
   font-size: 0.875rem;
 }
+
+.filaClasificacion > label {
+  display: contents;
+}
+.etiquetaMovil {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .filaTitulares,
+  .filaSuplentes {
+    grid-template-columns: 55px minmax(0, 1fr) !important;
+  }
+  .filaTitulares > button {
+    grid-column: 1;
+  }
+  .filaTitulares > div:last-child,
+  .filaSuplentes > div:last-child {
+    grid-column: 2;
+    justify-content: flex-end;
+  }
+  .filaEventoCabecera {
+    grid-template-columns: 58px minmax(0, 1fr) 44px !important;
+  }
+  .filaEventoDatos {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .filaClasificacion {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .filaClasificacion > label {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+  .filaClasificacion > label:first-of-type {
+    grid-column: 1 / -1;
+  }
+  .filaClasificacion > button {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+  .etiquetaMovil {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 700;
+  }
+}

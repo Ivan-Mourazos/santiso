@@ -104,3 +104,40 @@
   height: 1px;
   opacity: 0;
 }
+
+.movil {
+  display: none;
+}
+.descarga {
+  display: contents;
+}
+
+@media (max-width: 900px) {
+  .piloto {
+    position: static;
+    height: auto !important;
+    min-height: 0;
+    padding: 0.75rem;
+  }
+  .vista {
+    flex: none;
+    aspect-ratio: 4 / 5;
+  }
+  .controles {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .grupo {
+    flex-wrap: wrap;
+  }
+  .controles button,
+  .botonFoto {
+    min-height: 44px;
+  }
+  .movil {
+    display: flex;
+  }
+  .descarga[data-listo="false"] {
+    display: none;
+  }
+}

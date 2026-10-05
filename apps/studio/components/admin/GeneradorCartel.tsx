@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useId } from "react";
 import Link from "next/link";
 import { LIMITE_INSTAGRAM, textoInstagram } from "@/lib/cartel/instagram";
 
@@ -64,6 +64,8 @@ export default function GeneradorCartel({
 
   const tipo = templateId || "partido";
   const [copied, setCopied] = useState(false);
+  const [vistaMovil, setVistaMovil] = useState("datos");
+  const panelId = useId();
 
   const tipoForAssets: TemplateId = TEMPLATES.some((t) => t.id === tipo)
     ? (tipo as TemplateId)
@@ -74,8 +76,7 @@ export default function GeneradorCartel({
   // retocado vale mientras el texto generado no cambie; si cambian los datos, manda el nuevo.
   const textoGenerado = useMemo(() => textoInstagram(tipoForAssets, form), [tipoForAssets, form]);
   const [edicion, setEdicion] = useState<{ base: string; texto: string } | null>(null);
-  const instagramText =
-    edicion && edicion.base === textoGenerado ? edicion.texto : textoGenerado;
+  const instagramText = edicion && edicion.base === textoGenerado ? edicion.texto : textoGenerado;
   const retocado = instagramText !== textoGenerado;
 
   function handleCopyInstagram() {
@@ -92,8 +93,47 @@ export default function GeneradorCartel({
   return (
     <div className={styles.pantalla}>
       <AvisoError mensaje={errorDatos} />
+      <div className={styles.pestanas} role="tablist" aria-label="Editor de cartel">
+        {[
+          ["datos", "Datos"],
+          ["vista", "Vista previa"],
+        ].map(([id, nombre]) => (
+          <Button
+            key={id}
+            id={`${panelId}-${id}-tab`}
+            role="tab"
+            aria-selected={vistaMovil === id}
+            aria-controls={`${panelId}-${id}`}
+            tabIndex={vistaMovil === id ? 0 : -1}
+            variant={vistaMovil === id ? "primary" : "secondary"}
+            onClick={() => setVistaMovil(id)}
+            onKeyDown={(evento) => {
+              if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(evento.key)) return;
+              evento.preventDefault();
+              const siguiente =
+                evento.key === "Home"
+                  ? "datos"
+                  : evento.key === "End"
+                    ? "vista"
+                    : id === "datos"
+                      ? "vista"
+                      : "datos";
+              setVistaMovil(siguiente);
+              document.getElementById(`${panelId}-${siguiente}-tab`)?.focus();
+            }}
+          >
+            {nombre}
+          </Button>
+        ))}
+      </div>
       <div className={styles.columnas}>
-        <div className={styles.formulario}>
+        <div
+          id={`${panelId}-datos`}
+          role="tabpanel"
+          aria-labelledby={`${panelId}-datos-tab`}
+          className={styles.formulario}
+          data-activo={vistaMovil === "datos"}
+        >
           {/* Template-specific fields */}
           {tipo === "partido" && (
             <FormPartido
@@ -206,9 +246,7 @@ export default function GeneradorCartel({
               <div className={styles.instagramCabecera}>
                 <div>
                   <h4>Texto para Instagram</h4>
-                  <p>
-                    Sale de los datos del cartel. Puedes retocarlo aquí antes de copiarlo.
-                  </p>
+                  <p>Sale de los datos del cartel. Puedes retocarlo aquí antes de copiarlo.</p>
                 </div>
                 <div className={styles.instagramAcciones}>
                   {retocado && (
@@ -237,7 +275,13 @@ export default function GeneradorCartel({
           )}
         </div>
 
-        <div className={styles.previsualizacion}>
+        <div
+          id={`${panelId}-vista`}
+          role="tabpanel"
+          aria-labelledby={`${panelId}-vista-tab`}
+          className={styles.previsualizacion}
+          data-activo={vistaMovil === "vista"}
+        >
           <PilotoCartel
             tipo={tipoForAssets}
             form={form}

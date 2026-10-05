@@ -92,6 +92,9 @@ export default function PilotoCartel({
   const [galeria, setGaleria] = useState(false);
   const [hueco, setHueco] = useState({ ancho: 0, alto: 0 });
   const [exportando, setExportando] = useState(false);
+  const [png, setPng] = useState<{ clave: string; archivo: File } | null>(null);
+  const [compartiendo, setCompartiendo] = useState(false);
+  const compartiendoRef = useRef(false);
   const caja = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLElement>(null);
   const [altoPanel, setAltoPanel] = useState<number | null>(null);
@@ -189,8 +192,11 @@ export default function PilotoCartel({
       ? Math.min(hueco.ancho / MEDIDAS.ancho, hueco.alto / MEDIDAS.alto)
       : 0;
   const margenIzquierdo = (hueco.ancho - MEDIDAS.ancho * escala) / 2;
+  const nombrePng = `${peticion.plantilla}-${form.fecha || "cartel"}.png`;
+  const clavePng = JSON.stringify([peticion, nombrePng]);
+  const pngActual = png?.clave === clavePng ? png.archivo : null;
 
-  async function descargar() {
+  async function generar(): Promise<File | null> {
     setExportando(true);
     try {
       const respuesta = await fetch("/api/carteles/png", {
@@ -199,17 +205,49 @@ export default function PilotoCartel({
         body: JSON.stringify(await exportable(peticion)),
       });
       if (!respuesta.ok) throw new Error(String(respuesta.status));
-      const url = URL.createObjectURL(await respuesta.blob());
-      const enlace = document.createElement("a");
-      enlace.href = url;
-      enlace.download = `${peticion.plantilla}-${form.fecha || "cartel"}.png`;
-      enlace.click();
-      URL.revokeObjectURL(url);
-      showToast("Cartel descargado");
+      const archivo = new File([await respuesta.blob()], nombrePng, { type: "image/png" });
+      setPng({ clave: clavePng, archivo });
+      return archivo;
     } catch {
       showToast("No se pudo generar el PNG. Vuelve a intentarlo.", "error");
+      return null;
     } finally {
       setExportando(false);
+    }
+  }
+
+  function guardar(archivo: File) {
+    const url = URL.createObjectURL(archivo);
+    const enlace = document.createElement("a");
+    enlace.href = url;
+    enlace.download = archivo.name;
+    enlace.click();
+    // Safari necesita que la URL siga viva al empezar la descarga.
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast("Cartel descargado");
+  }
+
+  async function descargar() {
+    const archivo = pngActual ?? (await generar());
+    if (archivo) guardar(archivo);
+  }
+
+  async function compartir() {
+    if (!pngActual || compartiendoRef.current) return;
+    compartiendoRef.current = true;
+    setCompartiendo(true);
+    try {
+      if (!navigator.share || !navigator.canShare?.({ files: [pngActual] })) {
+        guardar(pngActual);
+        return;
+      }
+      // Sin espera de red antes de share: conserva la activación del toque.
+      await navigator.share({ files: [pngActual] });
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) guardar(pngActual);
+    } finally {
+      compartiendoRef.current = false;
+      setCompartiendo(false);
     }
   }
 
@@ -290,9 +328,26 @@ export default function PilotoCartel({
               )}
             </>
           )}
-          <Button size="sm" onClick={() => void descargar()} disabled={exportando}>
-            {exportando ? "Generando…" : "Descargar PNG"}
-          </Button>
+          <div className={styles.movil}>
+            {pngActual ? (
+              <Button size="sm" onClick={() => void compartir()} disabled={compartiendo}>
+                {compartiendo ? "Compartiendo…" : "Compartir"}
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => void generar()} disabled={exportando}>
+                {exportando ? "Generando…" : "Preparar PNG"}
+              </Button>
+            )}
+          </div>
+          <div className={styles.descarga} data-listo={!!pngActual}>
+            <Button
+              size="sm"
+              onClick={() => void descargar()}
+              disabled={exportando || compartiendo}
+            >
+              {exportando ? "Generando…" : "Descargar PNG"}
+            </Button>
+          </div>
         </div>
       </div>
       <div ref={caja} className={styles.vista}>

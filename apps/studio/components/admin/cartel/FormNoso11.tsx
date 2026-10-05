@@ -182,6 +182,7 @@ export const FormNoso11: React.FC<Props> = ({
               gap: "0.5rem",
               alignItems: "center",
             }}
+            className={styles.filaTitulares}
           >
             <input
               type="text"
@@ -269,6 +270,7 @@ export const FormNoso11: React.FC<Props> = ({
               gap: "0.5rem",
               alignItems: "center",
             }}
+            className={styles.filaSuplentes}
           >
             <input
               type="text"

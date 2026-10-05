@@ -267,6 +267,7 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
                   padding: "0.4rem 0.6rem",
                   borderRadius: "8px",
                 }}
+                className={styles.filaClasificacion}
               >
                 <span
                   style={{
@@ -278,34 +279,45 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
                 >
                   #{idx + 1}
                 </span>
-                <input
-                  type="text"
-                  value={eq.nombre || ""}
-                  onChange={(e) => handleUpdateManualTeam(idx, "nombre", e.target.value)}
-                  aria-label={`Nombre del equipo ${idx + 1}`}
-                  placeholder="Nombre equipo"
-                  style={{ padding: "0.3rem 0.5rem", fontSize: "0.75rem" }}
-                />
-                <input
-                  type="number"
-                  value={eq.pts ?? 0}
-                  onChange={(e) =>
-                    handleUpdateManualTeam(idx, "pts", parseInt(e.target.value) || 0)
-                  }
-                  aria-label={`Puntos del equipo ${idx + 1}`}
-                  placeholder="Pts"
-                  title="Puntos"
-                  style={{ padding: "0.3rem 0.3rem", fontSize: "0.75rem", textAlign: "center" }}
-                />
-                <input
-                  type="number"
-                  value={eq.pj ?? 0}
-                  onChange={(e) => handleUpdateManualTeam(idx, "pj", parseInt(e.target.value) || 0)}
-                  aria-label={`Partidos jugados del equipo ${idx + 1}`}
-                  placeholder="PJ"
-                  title="Partidos Jugados"
-                  style={{ padding: "0.3rem 0.3rem", fontSize: "0.75rem", textAlign: "center" }}
-                />
+                <label>
+                  <span className={styles.etiquetaMovil}>Equipo</span>
+                  <input
+                    type="text"
+                    value={eq.nombre || ""}
+                    onChange={(e) => handleUpdateManualTeam(idx, "nombre", e.target.value)}
+                    aria-label={`Nombre del equipo ${idx + 1}`}
+                    placeholder="Nombre equipo"
+                    style={{ padding: "0.3rem 0.5rem", fontSize: "0.75rem" }}
+                  />
+                </label>
+                <label>
+                  <span className={styles.etiquetaMovil}>Puntos</span>
+                  <input
+                    type="number"
+                    value={eq.pts ?? 0}
+                    onChange={(e) =>
+                      handleUpdateManualTeam(idx, "pts", parseInt(e.target.value) || 0)
+                    }
+                    aria-label={`Puntos del equipo ${idx + 1}`}
+                    placeholder="Pts"
+                    title="Puntos"
+                    style={{ padding: "0.3rem 0.3rem", fontSize: "0.75rem", textAlign: "center" }}
+                  />
+                </label>
+                <label>
+                  <span className={styles.etiquetaMovil}>Partidos jugados</span>
+                  <input
+                    type="number"
+                    value={eq.pj ?? 0}
+                    onChange={(e) =>
+                      handleUpdateManualTeam(idx, "pj", parseInt(e.target.value) || 0)
+                    }
+                    aria-label={`Partidos jugados del equipo ${idx + 1}`}
+                    placeholder="PJ"
+                    title="Partidos Jugados"
+                    style={{ padding: "0.3rem 0.3rem", fontSize: "0.75rem", textAlign: "center" }}
+                  />
+                </label>
                 <button
                   type="button"
                   onClick={() => handleRemoveManualTeam(idx)}
