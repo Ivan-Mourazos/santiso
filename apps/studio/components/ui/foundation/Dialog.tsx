@@ -13,6 +13,8 @@ export interface DialogProps {
   closeLabel?: string;
   pending?: boolean;
   initialFocusRef?: RefObject<HTMLElement | null>;
+  id?: string;
+  mobilePresentation?: "fullscreen" | "sheet";
 }
 
 export function Dialog({
@@ -25,6 +27,8 @@ export function Dialog({
   closeLabel = "Cerrar diálogo",
   pending = false,
   initialFocusRef,
+  id: dialogId,
+  mobilePresentation = "fullscreen",
 }: DialogProps) {
   const id = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -38,10 +42,14 @@ export function Dialog({
     const dialog = dialogRef.current;
     if (!open || !dialog) return;
     const previous = dialog.ownerDocument.activeElement;
+    const body = dialog.ownerDocument.body;
+    const previousOverflow = body.style.overflow;
+    body.style.overflow = "hidden";
     dialog.showModal();
     (focusRef.current?.current ?? headingRef.current)?.focus();
     return () => {
       dialog.close();
+      body.style.overflow = previousOverflow;
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
     };
   }, [open]);
@@ -67,8 +75,9 @@ export function Dialog({
 
   return (
     <dialog
+      id={dialogId}
       ref={dialogRef}
-      className={styles.dialog}
+      className={`${styles.dialog} ${mobilePresentation === "sheet" ? styles.sheet : ""}`}
       aria-labelledby={id + "-title"}
       aria-describedby={description ? id + "-description" : undefined}
       aria-busy={pending || undefined}

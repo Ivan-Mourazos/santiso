@@ -1,4 +1,4 @@
-/* Solo escritorio: controles de 38 px, sin el mínimo táctil de 44. */
+/* Controles de escritorio; el mínimo táctil se aplica según el puntero. */
 .field {
   display: grid;
   gap: 0.3rem;
@@ -53,6 +53,12 @@ select.control:not([multiple]) {
 .control::placeholder {
   color: var(--ui-muted);
   opacity: 1;
+}
+@media (pointer: coarse) {
+  .control {
+    min-height: 44px;
+    font-size: 16px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .control {

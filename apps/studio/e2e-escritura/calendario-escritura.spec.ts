@@ -152,6 +152,12 @@ test("borrar un partido y borrar una jornada piden confirmación", async ({ page
 test("las zonas se editan en Clasificación y la tabla las pinta al guardar", async ({ page }) => {
   await page.goto("/admin/clasificacion?categoria=Veteranos");
   await page.getByLabel("Competición", { exact: true }).selectOption({ label: "Copa Calendario" });
+  // Cambiar de competición remonta la pantalla: abrir antes puede usar la instancia anterior.
+  await expect(
+    page
+      .getByRole("table", { name: "Clasificación de Copa Calendario", exact: true })
+      .getByRole("cell", { name: "Norte Calendario", exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Zonas de la clasificación" }).click();
   const dialogo = page.getByRole("dialog", { name: "Zonas de la clasificación" });
   await dialogo.getByRole("button", { name: "Añadir zona" }).click();
