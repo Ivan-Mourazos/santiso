@@ -32,7 +32,8 @@
   padding: 1.25rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
-  background: var(--ui-surface);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+  box-shadow: var(--ui-panel-shadow, none);
 }
 .active {
   border-color: var(--ui-accent);
@@ -57,7 +58,8 @@
   padding: 1.5rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
-  background: var(--ui-surface);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+  box-shadow: var(--ui-panel-shadow, none);
 }
 .form {
   display: grid;

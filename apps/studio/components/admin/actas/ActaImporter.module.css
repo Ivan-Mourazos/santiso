@@ -2,7 +2,8 @@
   display: grid;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
-  background: var(--ui-surface, #171717);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+  box-shadow: var(--ui-panel-shadow, none);
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: var(--ui-radius-lg, 1.125rem);
   min-width: 0;
@@ -17,7 +18,8 @@
   padding: var(--ui-space-5);
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius-lg);
-  background: var(--ui-surface);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+  box-shadow: var(--ui-panel-shadow, none);
 }
 .section,
 .fullSection {
@@ -161,7 +163,8 @@
   padding: var(--ui-space-4);
   border: 1px solid var(--ui-accent);
   border-radius: var(--ui-radius);
-  background: var(--ui-surface);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+  box-shadow: var(--ui-panel-shadow, none);
 }
 .progress p {
   margin: 0;
