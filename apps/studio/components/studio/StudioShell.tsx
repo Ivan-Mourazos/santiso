@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { SECCIONES, categoriaDe, rutaSeccion } from "@/lib/navigation/contexto";
 import { TEMPLATES } from "@/components/admin/cartel/types";
 import { Button } from "@/components/ui/foundation/Button";
@@ -13,7 +13,9 @@ export function StudioShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { params, navigate, setParams } = useStudio();
   const [menu, setMenu] = useState(false);
+  const menuId = useId();
   const section = SECCIONES.find((item) => pathname === `/admin/${item.id}`);
+  const desktopOnly = section?.id === "actas" || section?.id === "importar-jornada";
   const category = categoriaDe(params);
   const categories = ["Senior", "Veteranos"];
   const showCategory = [
@@ -76,7 +78,17 @@ export function StudioShell({ children }: { children: ReactNode }) {
         <header className={styles.header}>
           <div className={styles.heading}>
             <div className={styles.mobileButton}>
-              <Button variant="secondary" aria-expanded={menu} onClick={() => setMenu(true)}>
+              <Button
+                variant="secondary"
+                aria-expanded={menu}
+                aria-controls={menuId}
+                aria-haspopup="dialog"
+                onClick={(event) => {
+                  // Safari no enfoca los botones al tocarlos: conserva el destino de retorno.
+                  event.currentTarget.focus();
+                  setMenu(true);
+                }}
+              >
                 Menú
               </Button>
             </div>
@@ -121,10 +133,25 @@ export function StudioShell({ children }: { children: ReactNode }) {
           )}
         </header>
         <main id="contenido" tabIndex={-1} className={styles.content}>
-          {children}
+          {desktopOnly ? (
+            <>
+              <p role="status" className={styles.desktopNotice}>
+                Esta sección se usa solo en escritorio (desde 1280 × 720).
+              </p>
+              <div className={styles.desktopOnly}>{children}</div>
+            </>
+          ) : (
+            children
+          )}
         </main>
       </div>
-      <Dialog open={menu} onClose={() => setMenu(false)} title="Menú de Studio">
+      <Dialog
+        id={menuId}
+        open={menu}
+        onClose={() => setMenu(false)}
+        title="Menú de Studio"
+        mobilePresentation="sheet"
+      >
         {navigation()}
       </Dialog>
     </div>
