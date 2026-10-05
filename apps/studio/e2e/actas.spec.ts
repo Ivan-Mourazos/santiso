@@ -26,7 +26,8 @@ async function etiquetasAsociadas(contenedor: Locator) {
   expect(sinEtiqueta).toEqual([]);
 }
 
-for (const ancho of [360, 1280]) {
+// Actas se usa solo en escritorio; movil.spec.ts comprueba el aviso en móvil.
+for (const ancho of [1280]) {
   test(`Acta individual: campos asociados y edición local a ${ancho}px`, async ({
     page,
   }, testInfo) => {
