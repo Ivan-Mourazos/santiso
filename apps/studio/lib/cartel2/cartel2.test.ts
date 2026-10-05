@@ -245,6 +245,21 @@ describe("peticionDeFormulario", () => {
       { dorsal: "4", nombre: "Iago SR", capitan: true },
     ]);
     expect(p.datos.foto).toEqual({ url: "/media/foto.webp", x: 0.5, y: 0.4, zoom: 1.2 });
+
+    // Una foto de la galería del partido manda sobre la del jugador, con su foco.
+    const conGaleria = peticionDeFormulario(
+      "noso11",
+      formulario({ jugadorFotoUrl: "/media/foto.webp" }),
+      recursos,
+      { ...opciones, foto: { url: "/media/partidos/g.webp", x: 0.7, y: 0.3, estilo: "color" } },
+    );
+    if (conGaleria.plantilla !== "once") throw new Error("plantilla");
+    expect(conGaleria.datos.foto).toEqual({
+      url: "/media/partidos/g.webp",
+      x: 0.7,
+      y: 0.3,
+      zoom: 1.2,
+    });
   });
 
   it("anuncio: tema e imágenes que hay", () => {
