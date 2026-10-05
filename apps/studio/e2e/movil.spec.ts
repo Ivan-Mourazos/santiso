@@ -230,7 +230,12 @@ for (const ancho of [360, 390]) {
     expect(
       await fila.locator("td:nth-child(4) span").evaluate((el) => getComputedStyle(el).whiteSpace),
     ).toBe("normal");
-    await expect(fila.locator("td:nth-child(3)")).toContainText("Partidos");
+    await expect(fila.locator("td:nth-child(3)")).toHaveAttribute("aria-label", /^Partidos: \d+$/);
+    expect(
+      await fila
+        .locator("td:nth-child(3)")
+        .evaluate((el) => getComputedStyle(el, "::before").content),
+    ).toBe('"Partidos: "');
     await page.getByLabel("Buscar equipo", { exact: true }).fill("zzz-sin-coincidencias");
     await expect(page.getByLabel("Buscar equipo", { exact: true })).toBeVisible();
     await comprobarAncho(page);

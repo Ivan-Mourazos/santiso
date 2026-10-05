@@ -137,9 +137,6 @@
 .nombre {
   font-weight: 800;
 }
-.soloMovil {
-  display: none;
-}
 .editor {
   display: grid;
   gap: 1rem;
@@ -264,8 +261,8 @@
     width: auto;
     text-align: left;
   }
-  .soloMovil {
-    display: inline;
+  .tabla .numero::before {
+    content: "Partidos: ";
   }
   .unaLinea {
     white-space: normal;

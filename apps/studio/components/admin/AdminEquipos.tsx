@@ -238,8 +238,7 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
                     <td>
                       <span className={styles.nombre}>{equipo.nombre}</span>
                     </td>
-                    <td className={styles.numero}>
-                      <span className={styles.soloMovil}>Partidos: </span>
+                    <td className={styles.numero} aria-label={`Partidos: ${equipo.numeroPartidos}`}>
                       {equipo.numeroPartidos}
                     </td>
                     <td>
