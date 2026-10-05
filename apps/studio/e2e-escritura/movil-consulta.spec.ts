@@ -66,3 +66,39 @@ test("calendario móvil guarda marcador, campo y fecha y mantiene tarjeta con co
   await expect(tarjeta.getByText("Jornada 1", { exact: true })).toBeVisible();
   await comprobarControles(page, tarjeta);
 });
+
+test("clasificación móvil prioriza columnas, despliega detalle y guarda varias zonas", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 844 });
+  await abrirConsulta(page, "clasificacion");
+  const tabla = page.getByRole("table", {
+    name: "Clasificación de Copa Móvil Consulta",
+    exact: true,
+  });
+  await expect(tabla.getByRole("cell", { name: LOCAL, exact: true })).toBeVisible();
+  await expect(tabla.getByRole("columnheader")).toHaveText(["#", "Equipo", "PTS", "PJ", "DG"]);
+  const detalle = tabla.getByRole("button", { name: `Ver estadísticas de ${LOCAL}`, exact: true });
+  await detalle.click();
+  await expect(detalle).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    tabla.getByRole("region", { name: `Estadísticas de ${LOCAL}`, exact: true }),
+  ).toContainText("Goles a favor");
+  await comprobarControles(page, tabla);
+  await detalle.click();
+  await expect(detalle).toHaveAttribute("aria-expanded", "false");
+  await page.getByRole("button", { name: "Zonas de la clasificación", exact: true }).click();
+  const dialogo = page.getByRole("dialog", { name: "Zonas de la clasificación", exact: true });
+  for (let i = 1; i <= 2; i++) {
+    await dialogo.getByRole("button", { name: "Añadir zona", exact: true }).click();
+    await dialogo.getByLabel(`Nombre de la zona ${i}`).fill(`Zona móvil ${i}`);
+  }
+  await dialogo.getByLabel("Color de la zona 2").selectOption("#ef4444");
+  await comprobarControles(page, dialogo);
+  await dialogo.getByRole("button", { name: "Guardar zonas", exact: true }).click();
+  await expect(page.getByText("Zonas guardadas", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("list", { name: "Zonas de la clasificación", exact: true }),
+  ).toContainText("Zona móvil 2");
+});

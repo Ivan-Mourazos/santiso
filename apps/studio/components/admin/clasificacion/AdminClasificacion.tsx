@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import type { ReglaClasificacion } from "@santiso/domain";
 import { Button } from "@/components/ui/foundation/Button";
 import { Select } from "@/components/ui/foundation/Fields";
@@ -26,6 +34,7 @@ const COLUMNAS: { clave: keyof FilaClasificacion; corta: string; nombre: string 
   { clave: "golesFavor", corta: "GF", nombre: "Goles a favor" },
   { clave: "golesContra", corta: "GC", nombre: "Goles en contra" },
 ];
+const esPrioritaria = (clave: keyof FilaClasificacion) => clave === "puntos" || clave === "jugados";
 
 /** El color de la zona es un dato de la competición: viaja como variable, no como estilo. */
 const conColor = (color: string) => ({ "--color-regla": color }) as CSSProperties;
@@ -51,12 +60,15 @@ export default function AdminClasificacion({ categoria }: Props) {
   const [reglas, setReglas] = useState<ReglaClasificacion[]>([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
+  const [competicionCargada, setCompeticionCargada] = useState<string | null>(null);
   const generacion = useRef(0);
 
   // Tabla y reglas llegan en una sola acción: Next despacha las del cliente de una en una.
   const cargar = useCallback(async (competicionId: string) => {
     const esta = ++generacion.current;
     setCargando(true);
+    setExpandidos(new Set());
     try {
       const pantalla = await cargarPantallaClasificacion(competicionId);
       if (esta !== generacion.current) return;
@@ -66,6 +78,7 @@ export default function AdminClasificacion({ categoria }: Props) {
       }
       setFilas(pantalla.datos.filas);
       setReglas(pantalla.datos.reglas);
+      setCompeticionCargada(competicionId);
       setError(null);
     } catch (e) {
       console.error(e);
@@ -157,12 +170,17 @@ export default function AdminClasificacion({ categoria }: Props) {
                 <th scope="col">
                   <abbr title="Posición">#</abbr>
                 </th>
-                <th scope="col">
+                <th scope="col" className={styles.escudo}>
                   <span className={styles.oculto}>Escudo</span>
                 </th>
                 <th scope="col">Equipo</th>
                 {COLUMNAS.map((c) => (
-                  <th key={c.clave} scope="col" aria-label={c.nombre}>
+                  <th
+                    key={c.clave}
+                    scope="col"
+                    aria-label={c.nombre}
+                    data-prioridad={esPrioritaria(c.clave)}
+                  >
                     <abbr title={c.nombre}>{c.corta}</abbr>
                   </th>
                 ))}
@@ -176,42 +194,89 @@ export default function AdminClasificacion({ categoria }: Props) {
                 const puesto = indice + 1;
                 const regla = reglaDe(puesto);
                 return (
-                  <tr
-                    key={fila.equipoId}
-                    className={regla ? styles.enZona : undefined}
-                    style={regla ? conColor(regla.color) : undefined}
-                  >
-                    <td className={styles.posicion}>{puesto}</td>
-                    <td className={styles.escudo}>
-                      {fila.escudoUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
-                        <img src={fila.escudoUrl} alt="" />
-                      )}
-                    </td>
-                    <td className={styles.equipo}>
-                      {fila.nombre}
-                      {regla && <span className={styles.oculto}> · {regla.nombre}</span>}
-                    </td>
-                    {COLUMNAS.map((c) => (
-                      <td
-                        key={c.clave}
-                        className={c.clave === "puntos" ? styles.puntos : undefined}
-                      >
-                        {fila[c.clave]}
-                      </td>
-                    ))}
-                    <td
-                      className={
-                        fila.diferencia > 0
-                          ? styles.positiva
-                          : fila.diferencia < 0
-                            ? styles.negativa
-                            : undefined
-                      }
+                  <Fragment key={fila.equipoId}>
+                    <tr
+                      className={regla ? styles.enZona : undefined}
+                      style={regla ? conColor(regla.color) : undefined}
                     >
-                      {fila.diferencia > 0 ? `+${fila.diferencia}` : fila.diferencia}
-                    </td>
-                  </tr>
+                      <td className={styles.posicion}>{puesto}</td>
+                      <td className={styles.escudo}>
+                        {fila.escudoUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
+                          <img src={fila.escudoUrl} alt="" />
+                        )}
+                      </td>
+                      <td className={styles.equipo} aria-label={fila.nombre}>
+                        <span className={styles.nombreEscritorio}>{fila.nombre}</span>
+                        <button
+                          type="button"
+                          className={styles.verDetalle}
+                          aria-label={`Ver estadísticas de ${fila.nombre}`}
+                          aria-expanded={expandidos.has(fila.equipoId)}
+                          aria-controls={
+                            expandidos.has(fila.equipoId)
+                              ? `clasificacion-${fila.equipoId}`
+                              : undefined
+                          }
+                          disabled={cargando || competicionCargada !== selectedCompetitionId}
+                          onClick={() =>
+                            setExpandidos((actuales) => {
+                              const siguientes = new Set(actuales);
+                              if (siguientes.has(fila.equipoId)) siguientes.delete(fila.equipoId);
+                              else siguientes.add(fila.equipoId);
+                              return siguientes;
+                            })
+                          }
+                        >
+                          {fila.nombre}
+                          <span aria-hidden="true">
+                            {expandidos.has(fila.equipoId) ? "▴" : "▾"}
+                          </span>
+                        </button>
+                        {regla && <span className={styles.oculto}> · {regla.nombre}</span>}
+                      </td>
+                      {COLUMNAS.map((c) => (
+                        <td
+                          key={c.clave}
+                          data-prioridad={esPrioritaria(c.clave)}
+                          className={c.clave === "puntos" ? styles.puntos : undefined}
+                        >
+                          {fila[c.clave]}
+                        </td>
+                      ))}
+                      <td
+                        className={
+                          fila.diferencia > 0
+                            ? styles.positiva
+                            : fila.diferencia < 0
+                              ? styles.negativa
+                              : undefined
+                        }
+                      >
+                        {fila.diferencia > 0 ? `+${fila.diferencia}` : fila.diferencia}
+                      </td>
+                    </tr>
+                    {expandidos.has(fila.equipoId) && (
+                      <tr className={styles.detalleFila}>
+                        <td colSpan={5}>
+                          <div
+                            id={`clasificacion-${fila.equipoId}`}
+                            role="region"
+                            aria-label={`Estadísticas de ${fila.nombre}`}
+                          >
+                            <dl className={styles.detalleDatos}>
+                              {COLUMNAS.filter((c) => !esPrioritaria(c.clave)).map((c) => (
+                                <div key={c.clave}>
+                                  <dt>{c.nombre}</dt>
+                                  <dd>{fila[c.clave]}</dd>
+                                </div>
+                              ))}
+                            </dl>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>
@@ -272,7 +337,7 @@ export default function AdminClasificacion({ categoria }: Props) {
               size="sm"
               variant="secondary"
               onClick={() => setEditandoZonas(true)}
-              disabled={cargando}
+              disabled={cargando || competicionCargada !== selectedCompetitionId}
             >
               Zonas de la clasificación
             </Button>
