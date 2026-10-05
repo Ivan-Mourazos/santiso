@@ -214,3 +214,29 @@ for (const seccion of ["actas", "importar-jornada"]) {
     await comprobarAncho(page);
   });
 }
+
+for (const ancho of [360, 390]) {
+  for (const seccion of ["jugadores", "tecnicos", "directiva"]) {
+    test(`${seccion}: ficha con dato principal y foto legible a ${ancho}px`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: 844 });
+      await abrir(page, seccion);
+      const fila = page.locator("main table tbody tr").first();
+      await expect(fila).toBeVisible();
+      const foto = fila.locator("td:first-child > *").first();
+      const imagen = (await foto.boundingBox())!;
+      expect(imagen.width).toBeGreaterThanOrEqual(44);
+      expect(imagen.height).toBeGreaterThanOrEqual(44);
+      if (seccion !== "jugadores") {
+        const nombre = (await fila.locator("td:nth-child(2)").boundingBox())!;
+        expect(nombre.x - (imagen.x + imagen.width)).toBeLessThanOrEqual(20);
+      } else {
+        const posicion = (await fila.locator("td:nth-child(4)").textContent())!;
+        await expect(fila.locator("td:nth-child(3)")).toContainText(posicion);
+      }
+      const buscar = page.getByLabel("Buscar", { exact: true });
+      await buscar.fill("zzz-sin-coincidencias");
+      await expect(buscar).toBeVisible();
+      await comprobarAncho(page);
+    });
+  }
+}
