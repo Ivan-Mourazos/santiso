@@ -281,3 +281,35 @@ for (const ancho of [360, 390]) {
     });
   }
 }
+
+test.describe("formularios móviles también con puntero preciso", () => {
+  test.use({ hasTouch: false, isMobile: false });
+  for (const ancho of [360, 390]) {
+    test(`temporadas: crear y activar accesibles a ${ancho}px`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: 844 });
+      await abrir(page, "temporadas");
+      const nombre = page.getByLabel("Nombre de temporada", { exact: true });
+      expect((await nombre.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      expect(
+        await nombre.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
+      ).toBeGreaterThanOrEqual(16);
+      for (const boton of await page.locator("main button").all()) {
+        expect((await boton.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      }
+      await comprobarAncho(page);
+    });
+    test(`ajustes: selector y enlaces táctiles a ${ancho}px`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: 844 });
+      await abrir(page, "ajustes-graficos");
+      const selectores = page.locator("main .file-input-label");
+      expect(await selectores.count()).toBeGreaterThan(0);
+      for (const selector of await selectores.all()) {
+        expect((await selector.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      }
+      for (const control of await page.locator("main button, main a").all()) {
+        expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      }
+      await comprobarAncho(page);
+    });
+  }
+});

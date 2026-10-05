@@ -82,3 +82,22 @@
     padding: 1rem;
   }
 }
+
+@media (max-width: 640px) {
+  .layout > *,
+  .identity {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .row button,
+  .form button {
+    width: 100%;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .form input {
+    min-width: 0;
+    min-height: 44px;
+    font-size: 16px;
+  }
+}

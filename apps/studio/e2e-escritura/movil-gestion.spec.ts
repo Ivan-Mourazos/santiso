@@ -213,3 +213,91 @@ for (const seccion of ["tecnicos", "directiva"]) {
     ).toBeVisible();
   });
 }
+
+test("temporada móvil valida borrador, crea y activa con confirmación", async ({ page }) => {
+  await page.goto("/admin/temporadas");
+  const entrada = page.getByLabel("Nombre de temporada", { exact: true });
+  const invalido = "Temporada de Proba Móbil con Nome Moi Longo";
+  await entrada.fill(invalido);
+  await page.getByRole("button", { name: "Crear temporada", exact: true }).click();
+  await expect(
+    page.getByText("El nombre debe tener la forma 2025/26.", { exact: true }),
+  ).toBeVisible();
+  await expect(entrada).toHaveValue(invalido);
+  await comprobarAncho(page);
+  await entrada.fill("2027/28");
+  await page.getByRole("button", { name: "Crear temporada", exact: true }).click();
+  const nueva = page.locator("main li").filter({ hasText: "2027/28" });
+  await expect(nueva).toBeVisible();
+  await nueva
+    .getByRole("button", { name: "Usar 2027/28 como temporada activa", exact: true })
+    .click();
+  const confirmacion = page.getByRole("dialog", { name: "Confirmar acción" });
+  await comprobarFormulario(page, confirmacion);
+  await confirmacion.getByRole("button", { name: "Confirmar", exact: true }).click();
+  await expect(nueva.getByText("Activa", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(nueva.getByText("Activa", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Usar 2026/27 como temporada activa", exact: true })
+    .click();
+  await confirmacion.getByRole("button", { name: "Confirmar", exact: true }).click();
+  await expect(
+    page.locator("main li").filter({ hasText: "2026/27" }).getByText("Activa", { exact: true }),
+  ).toBeVisible();
+  await comprobarAncho(page);
+});
+
+test("ajustes móviles descartan selección y guardan imagen grande explícitamente", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/admin/ajustes-graficos");
+  const logo = page.getByRole("region", { name: "Xunta de Galicia" });
+  await expect(logo).toBeVisible();
+  const anterior = (await logo.locator("img").count())
+    ? await logo.locator("img").getAttribute("src")
+    : null;
+  const archivo = logo.locator('input[type="file"]');
+  await expect(archivo).toHaveAttribute("accept", "image/*");
+  await expect(archivo).not.toHaveAttribute("capture");
+  const buffer = await sharp({
+    create: {
+      width: 2048,
+      height: 1536,
+      channels: 4,
+      background: { r: 245, g: 197, b: 24, alpha: 1 },
+    },
+  })
+    .png()
+    .toBuffer();
+  const foto = {
+    name: "fotografia-grande-con-nombre-muy-largo-desde-galeria-del-movil.png",
+    mimeType: "image/png",
+    buffer,
+  };
+  await archivo.setInputFiles(foto);
+  await expect(logo.getByRole("status")).toContainText("todavía no se ha guardado");
+  for (const boton of await logo.getByRole("button").all()) {
+    expect((await boton.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  }
+  await logo.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await page.reload();
+  if (anterior) await expect(logo.locator("img")).toHaveAttribute("src", anterior);
+  else await expect(logo.getByText("Sin imagen")).toBeVisible();
+  await archivo.setInputFiles(foto);
+  await comprobarAncho(page);
+  await logo.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(logo.locator("img")).toHaveAttribute("src", /^\/media\/cartel\/.+\.webp$/);
+  await expect(logo.getByRole("status")).toBeHidden();
+  const guardada = await logo.locator("img").getAttribute("src");
+  await page.reload();
+  await expect(logo.locator("img")).toHaveAttribute("src", guardada!);
+  const orden = page.getByRole("group", { name: "Qué logo va a la izquierda" });
+  const rfgf = orden.getByRole("button", { name: "RFGF a la izquierda", exact: true });
+  await rfgf.click();
+  await expect(rfgf).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  await expect(rfgf).toHaveAttribute("aria-pressed", "true");
+  await comprobarAncho(page);
+});
