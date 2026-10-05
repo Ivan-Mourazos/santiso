@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "pnpm --filter @santiso/studio dev",
     "build": "pnpm --filter @santiso/studio build",
+    "movil": "pnpm --filter @santiso/studio build && pnpm --filter @santiso/studio start:movil",
     "lint:studio": "pnpm --filter @santiso/studio lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "eslint packages tools --no-error-on-unmatched-pattern && pnpm --filter @santiso/studio lint",
