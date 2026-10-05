@@ -165,38 +165,44 @@ export default function FilaPartido({
         )}
         <span>{visitante}</span>
       </div>
-      <Select
-        label="Campo"
-        value={p.campo_id || ""}
-        onChange={(e) => onEditar({ campo_id: e.target.value })}
-        disabled={ocupada}
-      >
-        <option value="">Sin asignar</option>
-        {campos.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.nombre}
-          </option>
-        ))}
-      </Select>
-      <Field
-        label="Fecha y hora"
-        type="datetime-local"
-        value={matchDateTimeLocalInput(p.fecha)}
-        onChange={(e) => onEditar({ fecha: e.target.value })}
-        disabled={ocupada}
-      />
-      <Select
-        label="Estado"
-        value={p.estado ?? "programado"}
-        onChange={(e) => void cambiarEstado(e.target.value)}
-        disabled={ocupada}
-      >
-        {ESTADOS.map((e) => (
-          <option key={e.valor} value={e.valor}>
-            {e.etiqueta}
-          </option>
-        ))}
-      </Select>
+      <div className={styles.campo}>
+        <Select
+          label="Campo"
+          value={p.campo_id || ""}
+          onChange={(e) => onEditar({ campo_id: e.target.value })}
+          disabled={ocupada}
+        >
+          <option value="">Sin asignar</option>
+          {campos.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.nombre}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <div className={styles.fecha}>
+        <Field
+          label="Fecha y hora"
+          type="datetime-local"
+          value={matchDateTimeLocalInput(p.fecha)}
+          onChange={(e) => onEditar({ fecha: e.target.value })}
+          disabled={ocupada}
+        />
+      </div>
+      <div className={styles.estado}>
+        <Select
+          label="Estado"
+          value={p.estado ?? "programado"}
+          onChange={(e) => void cambiarEstado(e.target.value)}
+          disabled={ocupada}
+        >
+          {ESTADOS.map((e) => (
+            <option key={e.valor} value={e.valor}>
+              {e.etiqueta}
+            </option>
+          ))}
+        </Select>
+      </div>
       <div className={styles.accionesFila}>
         {conCambios && <span className={styles.oculto}>Cambios sin guardar</span>}
         <Button

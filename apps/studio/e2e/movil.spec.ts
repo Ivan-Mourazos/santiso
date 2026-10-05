@@ -41,10 +41,6 @@ async function comprobarAncho(page: Page) {
 
 for (const seccion of SECCIONES) {
   test(`${seccion}: sin desbordamiento ni errores de consola`, async ({ page }) => {
-    test.fixme(
-      seccion === "calendario",
-      "Pendiente tarea 2: selectores y filas de Calendario desbordan el viewport móvil.",
-    );
     const errores: string[] = [];
     page.on("pageerror", (error) => errores.push(error.message));
     page.on("console", (mensaje) => {
@@ -53,6 +49,27 @@ for (const seccion of SECCIONES) {
     await abrir(page, seccion);
     await comprobarAncho(page);
     expect(errores).toEqual([]);
+  });
+}
+
+for (const ancho of [360, 390]) {
+  test(`calendario: tarjetas y campos táctiles a ${ancho}px`, async ({ page }) => {
+    await page.setViewportSize({ width: ancho, height: 844 });
+    await abrir(page, "calendario");
+    await comprobarAncho(page);
+    const controles = page.locator("main input:visible, main select:visible, main button:visible");
+    for (const control of await controles.all()) {
+      const rect = (await control.boundingBox())!;
+      expect(rect.width).toBeGreaterThanOrEqual(44);
+      expect(rect.height).toBeGreaterThanOrEqual(44);
+      expect(rect.x).toBeGreaterThanOrEqual(0);
+      expect(rect.x + rect.width).toBeLessThanOrEqual(ancho + 1);
+      if (await control.evaluate((el) => el.matches("input, select"))) {
+        expect(
+          await control.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
+        ).toBeGreaterThanOrEqual(16);
+      }
+    }
   });
 }
 

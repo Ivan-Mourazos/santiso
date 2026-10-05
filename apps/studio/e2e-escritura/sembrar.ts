@@ -283,6 +283,114 @@ async function sembrar() {
     })),
   );
 
+  // Consulta móvil: temporada/categoría independiente para no alterar los recuentos de
+  // plantilla, alineación o historial de las otras pruebas. Nombres largos y acta con tarjetas.
+  const [consulta] = await db
+    .insert(schema.competiciones)
+    .values({
+      temporadaId: anterior!.id,
+      categoria: "Veteranos",
+      nombre: "Copa Móvil Consulta",
+      orden: 20,
+    })
+    .returning();
+  const consultaEquipos = await db
+    .insert(schema.equipos)
+    .values(
+      [
+        "U.D. Santiso de Proba Móbil con Nome Moi Longo",
+        "Rival de Consulta Móbil con Nome Moi Longo",
+        "Terceiro Móbil",
+        "Cuarto Móbil",
+      ].map((nombre, i) => ({
+        nombre,
+        clave: claveNombre(nombre),
+        categoria: "Veteranos" as const,
+        esPropio: i === 0,
+      })),
+    )
+    .returning();
+  await db
+    .insert(schema.competicionEquipos)
+    .values(consultaEquipos.map((e) => ({ equipoId: e.id, competicionId: consulta!.id })));
+  const [consultaJornada] = await db
+    .insert(schema.jornadas)
+    .values({ competicionId: consulta!.id, numero: 1 })
+    .returning();
+  const [consultaCampo] = await db
+    .insert(schema.campos)
+    .values({
+      nombre: "Campo de Consulta Móbil con Nome Moi Longo",
+      clave: claveNombre("Campo de Consulta Móbil con Nome Moi Longo"),
+    })
+    .returning();
+  const [consultaPartido] = await db
+    .insert(schema.partidos)
+    .values({
+      jornadaId: consultaJornada!.id,
+      equipoLocalId: consultaEquipos[0]!.id,
+      equipoVisitanteId: consultaEquipos[1]!.id,
+      golesLocal: 2,
+      golesVisitante: 1,
+      estado: "finalizado",
+      fecha: "2025-10-05T15:00:00.000Z",
+      campoId: consultaCampo!.id,
+    })
+    .returning();
+  const consultaJugadores = await db
+    .insert(schema.jugadores)
+    .values([
+      { nombre: "Xoán Xogador de Proba Móbil con Nome Moi Longo" },
+      { nombre: "Antón Consulta Móbil" },
+    ])
+    .returning();
+  await db.insert(schema.jugadoresTemporada).values(
+    consultaJugadores.map((j, i) => ({
+      temporadaId: anterior!.id,
+      jugadorId: j.id,
+      categoria: "Veteranos" as const,
+      dorsal: 20 + i,
+    })),
+  );
+  await db.insert(schema.partidoParticipaciones).values(
+    consultaJugadores.map((j) => ({
+      partidoId: consultaPartido!.id,
+      jugadorId: j.id,
+      titular: true,
+      jugo: true,
+    })),
+  );
+  await db.insert(schema.partidoEventos).values([
+    {
+      partidoId: consultaPartido!.id,
+      jugadorId: consultaJugadores[0]!.id,
+      tipo: "gol",
+      lado: "propio",
+      minuto: 10,
+    },
+    {
+      partidoId: consultaPartido!.id,
+      jugadorId: consultaJugadores[0]!.id,
+      tipo: "tarjeta_amarilla",
+      lado: "propio",
+      minuto: 30,
+    },
+    {
+      partidoId: consultaPartido!.id,
+      jugadorId: consultaJugadores[0]!.id,
+      tipo: "tarjeta_roja",
+      lado: "propio",
+      minuto: 80,
+    },
+    {
+      partidoId: consultaPartido!.id,
+      jugadorId: consultaJugadores[1]!.id,
+      tipo: "gol",
+      lado: "propio",
+      minuto: 60,
+    },
+  ]);
+
   cerrar();
   console.log(`Datos de prueba en ${DIR_ESCRITURA}`);
 }
