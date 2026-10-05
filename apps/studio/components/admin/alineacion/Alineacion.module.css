@@ -204,6 +204,17 @@ li[data-papel="suplente"] .papel {
   }
 }
 
+/* En móvil el botón «Menú» del marco va fijo abajo: la barra se coloca justo encima. */
+@media (max-width: 900px) {
+  .panel {
+    padding-bottom: 5.5rem;
+  }
+  .barra {
+    bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 0.6rem;
+  }
+}
+
 /* ─── Historia generada ─── */
 
 .historia {
