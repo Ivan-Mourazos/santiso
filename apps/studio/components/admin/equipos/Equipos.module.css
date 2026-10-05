@@ -297,3 +297,30 @@
     font-size: 16px;
   }
 }
+
+/* «Más opciones»: solo existe en móvil; en escritorio todo está siempre a la vista. */
+.masFiltros {
+  display: none;
+}
+@media (max-width: 640px) {
+  .cabecera .detalle {
+    display: none;
+  }
+  .masFiltros {
+    display: block;
+    min-height: 44px;
+    padding: 0 0.25rem;
+    border: 0;
+    background: none;
+    color: var(--ui-accent, #f5c518);
+    font: inherit;
+    font-weight: 800;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  /* Plegado: fuera «Sin escudo» y crear o eliminar competición (se usan una vez al año). */
+  .herramientas[data-mas="false"] .filtroExtra,
+  .barra[data-mas="false"] .contexto .acciones {
+    display: none;
+  }
+}

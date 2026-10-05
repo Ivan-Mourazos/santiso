@@ -70,6 +70,8 @@ export function StudioShell({ children }: { children: ReactNode }) {
             if (section?.id !== "jornada") navigate(rutaSeccion("jornada", params));
           }}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- icono estático de /public */}
+          <img className={styles.logo} src="/logos/app-192.png" alt="" width={40} height={40} />
           <span>UD SANTISO</span>
           <strong>Studio</strong>
         </Link>

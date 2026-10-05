@@ -16,6 +16,7 @@ import {
   cargarPantallaEstadisticas,
   type PantallaEstadisticas,
 } from "@/lib/server/acciones/estadisticas";
+import FichaJugador from "./FichaJugador";
 import styles from "./Estadisticas.module.css";
 
 interface Props {
@@ -66,6 +67,7 @@ export default function AdminEstadisticas({ showToast, categoria }: Props) {
   const [texto, setTexto] = useState("");
   const [orden, setOrden] = useState<{ columna: Columna; descendente: boolean } | null>(null);
   const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
+  const [ficha, setFicha] = useState<{ id: string; nombre: string } | null>(null);
   // Lo elegido manda sobre lo que devolvió la carga anterior, que puede ser de otra categoría.
   const [temporadaPedida, setTemporadaPedida] = useState<string | null>(null);
   const [competicionPedida, setCompeticionPedida] = useState<string | null>(null);
@@ -336,7 +338,16 @@ export default function AdminEstadisticas({ showToast, categoria }: Props) {
                         {fila.dorsal ?? "—"}
                       </td>
                       <td className={styles.jugador}>
-                        <strong>{nombreVisible(fila)}</strong>
+                        <button
+                          type="button"
+                          className={styles.nombreFicha}
+                          aria-label={`Ver ficha de ${nombreVisible(fila)}`}
+                          onClick={() =>
+                            setFicha({ id: fila.jugadorId, nombre: nombreVisible(fila) })
+                          }
+                        >
+                          <strong>{nombreVisible(fila)}</strong>
+                        </button>
                         {fila.inscripcionAusente && <small>Sin inscripción esta temporada</small>}
                       </td>
                       {COLUMNAS_TABLA.map((c) => (
@@ -398,6 +409,16 @@ export default function AdminEstadisticas({ showToast, categoria }: Props) {
             contados dentro de los goles.
           </p>
         </>
+      )}
+      {ficha && (
+        <FichaJugador
+          jugadorId={ficha.id}
+          nombre={ficha.nombre}
+          categoria={categoria}
+          temporadaId={pantalla.temporadaId}
+          competicionId={pantalla.competicionId}
+          onCerrar={() => setFicha(null)}
+        />
       )}
     </div>
   );

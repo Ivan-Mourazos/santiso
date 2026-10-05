@@ -314,3 +314,29 @@
     min-height: 44px;
   }
 }
+
+/* «Más filtros»: solo existe en móvil; en escritorio todo está siempre a la vista. */
+.masFiltros {
+  display: none;
+}
+@media (max-width: 640px) {
+  .cabecera p {
+    display: none;
+  }
+  .masFiltros {
+    display: block;
+    justify-self: start;
+    min-height: 44px;
+    padding: 0 0.25rem;
+    border: 0;
+    background: none;
+    color: var(--ui-accent, #f5c518);
+    font: inherit;
+    font-weight: 800;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .herramientas[data-mas="false"] .filtroExtra {
+    display: none;
+  }
+}

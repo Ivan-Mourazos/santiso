@@ -2,7 +2,9 @@
 
 import { CATEGORIAS, esValorDe, normalizarCategoria, type Categoria } from "@santiso/domain";
 import type { CompeticionDto, TemporadaDto } from "@/lib/dto";
+import type { FichaJugador } from "@/lib/estadisticas/ficha";
 import { capturar, fallo, type Resultado } from "@/lib/resultado";
+import { fichaDeJugador } from "@/lib/server/consultas/ficha-jugador";
 import { listarCompeticionesDeTemporada } from "@/lib/server/consultas/competiciones";
 import {
   listarEstadisticasJugadores,
@@ -78,4 +80,31 @@ export async function cargarPantallaEstadisticas(
       disponibilidadPenaltis: false as const,
     };
   });
+}
+
+/** La temporada de un jugador partido a partido, en el ámbito que se está viendo en la tabla. */
+export async function cargarFichaJugador(
+  jugadorId: string,
+  categoria: string,
+  temporadaId?: string | null,
+  competicionId?: string | null,
+): Promise<Resultado<FichaJugador>> {
+  let categoriaValida: Categoria;
+  try {
+    categoriaValida = normalizarCategoria(categoria);
+  } catch {
+    return fallo("Categoría desconocida.");
+  }
+  const temporada = await resolverTemporada(temporadaId);
+  if (!temporada) return fallo("No hay temporada.");
+  const resultado = await capturar("No se pudo cargar la ficha del jugador.", () =>
+    fichaDeJugador({
+      jugadorId,
+      temporadaId: temporada.id,
+      categoria: categoriaValida,
+      competicionId: competicionId || null,
+    }),
+  );
+  if (!resultado.ok) return resultado;
+  return resultado.datos ? { ok: true, datos: resultado.datos } : fallo("Ese jugador ya no existe.");
 }
