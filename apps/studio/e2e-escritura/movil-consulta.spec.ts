@@ -1,0 +1,140 @@
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+// Todas las interacciones de escritura usan la base temporal de la configuración escritura.
+const LOCAL = "U.D. Santiso de Proba Móbil con Nome Moi Longo";
+const VISITANTE = "Rival de Consulta Móbil con Nome Moi Longo";
+test.use({
+  viewport: { width: 390, height: 844 },
+  timezoneId: "Europe/Madrid",
+  hasTouch: true,
+  isMobile: true,
+});
+
+async function abrirConsulta(page: Page, seccion: string) {
+  await page.goto(`/admin/${seccion}?categoria=Veteranos`);
+  await page.getByLabel("Temporada", { exact: true }).selectOption({ label: "2025/26" });
+  const competicion = page.getByLabel("Competición", { exact: true });
+  await expect(competicion.locator("option", { hasText: "Copa Móvil Consulta" })).toHaveCount(1);
+  await competicion.selectOption({ label: "Copa Móvil Consulta" });
+}
+
+async function comprobarControles(page: Page, contenedor: Locator) {
+  for (const control of await contenedor
+    .locator("input:visible, select:visible, button:visible, a:visible")
+    .all()) {
+    const rect = (await control.boundingBox())!;
+    expect(rect.width).toBeGreaterThanOrEqual(44);
+    expect(rect.height).toBeGreaterThanOrEqual(44);
+    expect(rect.x).toBeGreaterThanOrEqual(0);
+    expect(rect.x + rect.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
+    if (await control.evaluate((el) => el.matches("input, select"))) {
+      expect(
+        await control.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
+      ).toBeGreaterThanOrEqual(16);
+    }
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
+}
+
+test("calendario móvil guarda marcador, campo y fecha y mantiene tarjeta con contexto", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 844 });
+  await abrirConsulta(page, "calendario");
+  const tarjeta = page.getByRole("region", { name: `${LOCAL} - ${VISITANTE}`, exact: true });
+  await expect(tarjeta).toBeVisible();
+  await comprobarControles(page, tarjeta);
+  await comprobarControles(page, page.getByRole("region", { name: "Qué se ve", exact: true }));
+  const goles = tarjeta.getByLabel(`Goles de ${LOCAL}`);
+  const originales = await goles.inputValue();
+  const nuevos = originales === "2" ? "3" : "2";
+  await goles.fill(nuevos);
+  await tarjeta
+    .getByLabel("Campo", { exact: true })
+    .selectOption({ label: "Campo de Consulta Móbil con Nome Moi Longo" });
+  await tarjeta.getByLabel("Fecha y hora", { exact: true }).fill("2025-11-02T17:30");
+  await tarjeta.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(page.getByText("Cambios guardados", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(goles).toHaveValue(nuevos);
+  await expect(tarjeta.getByLabel("Fecha y hora", { exact: true })).toHaveValue("2025-11-02T17:30");
+  await expect(tarjeta.getByLabel("Campo", { exact: true }).locator("option:checked")).toHaveText(
+    "Campo de Consulta Móbil con Nome Moi Longo",
+  );
+  await page.getByRole("button", { name: "Partidos del Santiso", exact: true }).click();
+  await expect(tarjeta.getByText("Jornada 1", { exact: true })).toBeVisible();
+  await comprobarControles(page, tarjeta);
+});
+
+test("clasificación móvil prioriza columnas, despliega detalle y guarda varias zonas", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 844 });
+  await abrirConsulta(page, "clasificacion");
+  const tabla = page.getByRole("table", {
+    name: "Clasificación de Copa Móvil Consulta",
+    exact: true,
+  });
+  await expect(tabla.getByRole("cell", { name: LOCAL, exact: true })).toBeVisible();
+  await expect(tabla.getByRole("columnheader")).toHaveText(["#", "Equipo", "PTS", "PJ", "DG"]);
+  const detalle = tabla.getByRole("button", { name: `Ver estadísticas de ${LOCAL}`, exact: true });
+  await detalle.click();
+  await expect(detalle).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    tabla.getByRole("region", { name: `Estadísticas de ${LOCAL}`, exact: true }),
+  ).toContainText("Goles a favor");
+  await comprobarControles(page, tabla);
+  await detalle.click();
+  await expect(detalle).toHaveAttribute("aria-expanded", "false");
+  await page.getByRole("button", { name: "Zonas de la clasificación", exact: true }).click();
+  const dialogo = page.getByRole("dialog", { name: "Zonas de la clasificación", exact: true });
+  for (let i = 1; i <= 2; i++) {
+    await dialogo.getByRole("button", { name: "Añadir zona", exact: true }).click();
+    await dialogo.getByLabel(`Nombre de la zona ${i}`).fill(`Zona móvil ${i}`);
+  }
+  await dialogo.getByLabel("Color de la zona 2").selectOption("#ef4444");
+  await comprobarControles(page, dialogo);
+  await dialogo.getByRole("button", { name: "Guardar zonas", exact: true }).click();
+  await expect(page.getByText("Zonas guardadas", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("list", { name: "Zonas de la clasificación", exact: true }),
+  ).toContainText("Zona móvil 2");
+  await expect(
+    tabla.getByRole("cell", { name: `${LOCAL} · Zona móvil 1`, exact: true }),
+  ).toBeVisible();
+});
+
+test("estadísticas móviles muestran métricas principales, detalle, orden y búsqueda", async ({
+  page,
+}) => {
+  await abrirConsulta(page, "estadisticas");
+  const tabla = page.getByRole("table", { name: "Estadísticas de Veteranos", exact: true });
+  const fila = tabla
+    .getByRole("row")
+    .filter({ hasText: "Xoán Xogador de Proba Móbil con Nome Moi Longo" });
+  await expect(fila).toBeVisible();
+  for (const etiqueta of ["Convocatorias", "Goles", "Amarillas", "Rojas"]) {
+    await expect(fila.locator(`td[data-etiqueta="${etiqueta}"]`)).toBeVisible();
+  }
+  await expect(fila.locator('td[data-etiqueta="Titularidades"]')).toBeHidden();
+  const detalle = fila.getByRole("button", { name: /^Más estadísticas de / });
+  await detalle.click();
+  await expect(detalle).toHaveAttribute("aria-expanded", "true");
+  await expect(fila.locator('td[data-etiqueta="Titularidades"]')).toContainText("1");
+  await expect(fila.locator('td[data-etiqueta="Amarillas"]')).toHaveText("1");
+  await expect(fila.locator('td[data-etiqueta="Rojas"]')).toHaveText("1");
+  await comprobarControles(page, tabla);
+  const ordenar = page.getByLabel("Ordenar por", { exact: true });
+  await ordenar.selectOption("jugador");
+  await expect(tabla.locator("tbody tr").first()).toContainText("Antón Consulta Móbil");
+  await page.getByRole("button", { name: "Cambiar sentido de ordenación", exact: true }).click();
+  await expect(tabla.locator("tbody tr").first()).toContainText("Xoán Xogador");
+  await page.getByLabel("Buscar", { exact: true }).fill("sin-coincidencias");
+  await expect(
+    page.getByText("Ningún jugador coincide con la búsqueda.", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Buscar", { exact: true })).toBeVisible();
+});

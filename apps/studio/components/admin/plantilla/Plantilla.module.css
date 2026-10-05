@@ -263,3 +263,54 @@
 .fotoControles input[type="file"] {
   max-width: 100%;
 }
+
+@media (max-width: 640px) {
+  .tabla.staff tr {
+    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-areas: "foto nombre" "acciones acciones";
+  }
+  .foto {
+    width: 44px;
+    height: 44px;
+  }
+  .celdaNombre,
+  .fotoControles,
+  .grupo {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .nombre .soloMovil::before {
+    content: none;
+  }
+  .contador {
+    grid-column: auto;
+    justify-self: start;
+  }
+  .casilla {
+    min-height: 44px;
+    white-space: normal;
+  }
+  .filaAcciones {
+    flex-wrap: wrap;
+  }
+  .filaAcciones button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .fotoEditor {
+    flex-wrap: wrap;
+  }
+  .fotoControles {
+    flex: 1 1 12rem;
+  }
+  .fotoControles input[type="file"] {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .fotoControles button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

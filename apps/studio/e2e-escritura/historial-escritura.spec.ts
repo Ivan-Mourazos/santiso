@@ -24,13 +24,13 @@ test("la temporada pasada trae su clasificación final, ordenada por puntos", as
   });
   await competicion.selectOption({ label: "Liga Histórica" });
 
-  const filas = page.getByRole("table", { name: /Clasificación/ }).locator("tbody tr");
+  const tabla = page.getByRole("table", { name: "Clasificación de Liga Histórica", exact: true });
+  await expect(tabla).not.toHaveAttribute("aria-busy", "true");
+  const filas = tabla.locator("tbody tr");
   await expect(filas.first()).toContainText("U.D. Santiso Ficticio", { timeout: 30000 });
   await expect(filas).toHaveCount(3);
-  const posiciones = await filas.locator("td:nth-child(1)").allTextContents();
-  expect(posiciones.map(Number)).toEqual([1, 2, 3]);
-  const puntos = (await filas.locator("td:nth-child(4)").allTextContents()).map(Number);
-  expect(puntos).toEqual([4, 3, 1]);
+  await expect(filas.locator("td:nth-child(1)")).toHaveText(["1", "2", "3"]);
+  await expect(filas.locator("td:nth-child(4)")).toHaveText(["4", "3", "1"]);
 });
 
 test.describe("estadísticas de la temporada pasada", () => {

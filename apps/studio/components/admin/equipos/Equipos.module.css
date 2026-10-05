@@ -240,3 +240,60 @@
   background: none;
   cursor: pointer;
 }
+
+@media (max-width: 640px) {
+  .tabla tr {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--ui-border, #666);
+    border-radius: var(--ui-radius, 0.75rem);
+    background: var(--ui-panel-face, var(--ui-surface, #171717));
+    box-shadow: var(--ui-panel-shadow, none);
+  }
+  .tabla td {
+    min-width: 0;
+  }
+  .tabla td:nth-child(3),
+  .tabla td:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+  .tabla .numero {
+    width: auto;
+    text-align: left;
+  }
+  .tabla .numero::before {
+    content: "Partidos: ";
+  }
+  .unaLinea {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+  .escudo {
+    width: 44px;
+    height: 44px;
+  }
+  .herramientas {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .herramientas > :first-child {
+    min-width: 0;
+  }
+  .herramientas .contador {
+    margin: 0;
+  }
+  .casilla,
+  .muestra,
+  .panel button {
+    min-height: 44px;
+  }
+  .muestra,
+  .panel button {
+    min-width: 44px;
+  }
+  .muestra {
+    font-size: 16px;
+  }
+}

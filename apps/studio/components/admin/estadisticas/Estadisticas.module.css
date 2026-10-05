@@ -126,13 +126,37 @@
   color: var(--ui-muted, #aaa);
   font-size: var(--ui-text-sm, 0.875rem);
 }
+.ordenMovil,
+.tabla .detalleAccion {
+  display: none;
+}
 
 @media (max-width: 640px) {
   .panel {
     padding: var(--ui-space-4, 1rem);
   }
   .herramientas {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .herramientas > * {
+    min-width: 0;
+  }
+  .ordenMovil {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .ordenMovil > * {
+    min-width: 0;
+  }
+  .ordenMovil button {
+    min-height: 44px;
+  }
+  .ordenMovil select {
+    min-height: 44px;
+    font-size: 16px;
   }
   /* La tabla pasa a fichas: doce columnas no caben en un móvil. */
   .tablaEnvoltorio,
@@ -147,10 +171,15 @@
     display: none;
   }
   .tabla tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 0.75rem;
     padding: 0.75rem;
     margin-bottom: 0.75rem;
     border: 1px solid rgb(255 255 255 / 8%);
     border-radius: var(--ui-radius, 0.75rem);
+    background: var(--ui-panel-face, var(--ui-surface, #171717));
+    box-shadow: var(--ui-panel-shadow, none);
   }
   .tabla td {
     display: flex;
@@ -159,6 +188,7 @@
     padding: 0.2rem 0;
     border: 0;
     text-align: right;
+    min-width: 0;
   }
   .tabla td::before {
     content: attr(data-etiqueta);
@@ -172,5 +202,38 @@
   }
   .tabla td:nth-child(2)::before {
     content: none;
+  }
+  .tabla .dorsal {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    justify-content: flex-start;
+  }
+  .tabla .dorsal::before {
+    content: none;
+  }
+  .tabla .jugador {
+    display: block;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    padding-left: 2.5rem;
+    overflow-wrap: anywhere;
+  }
+  .tabla td[data-prioridad="false"] {
+    grid-column: 1 / -1;
+  }
+  .tabla tr:not([data-expandido="true"]) td[data-prioridad="false"] {
+    display: none;
+  }
+  .tabla .detalleAccion {
+    display: block;
+    grid-column: 1 / -1;
+  }
+  .tabla .detalleAccion::before {
+    content: none;
+  }
+  .detalleAccion button {
+    width: 100%;
+    min-height: 44px;
   }
 }

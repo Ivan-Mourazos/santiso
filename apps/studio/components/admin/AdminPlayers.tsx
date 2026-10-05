@@ -304,6 +304,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
                   <td className={`${styles.nombre} ${styles.celdaNombre}`}>
                     <strong>{j.nombre}</strong>
                     {j.apodo && <span>{j.apodo}</span>}
+                    <span className={styles.soloMovil}>{nombrePosicion(j.posicion)}</span>
                   </td>
                   <td className={styles.celdaPosicion}>{nombrePosicion(j.posicion)}</td>
                   <td className={styles.celdaAcciones}>

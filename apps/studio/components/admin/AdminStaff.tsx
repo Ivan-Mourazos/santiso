@@ -207,7 +207,10 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
             }
           />
         ) : (
-          <table className={styles.tabla} aria-label={`${titulo} ${temporadaNombre}`}>
+          <table
+            className={`${styles.tabla} ${styles.staff}`}
+            aria-label={`${titulo} ${temporadaNombre}`}
+          >
             <thead>
               <tr>
                 <th scope="col">Foto</th>

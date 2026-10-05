@@ -172,3 +172,43 @@
   display: inline-flex;
   padding: 0 1rem;
 }
+
+@media (max-width: 640px) {
+  .pareja {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .imagenTexto {
+    width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .imagenTexto :global(.file-input-label) {
+    max-width: 100%;
+    min-height: 44px;
+    white-space: normal;
+  }
+  .acciones button,
+  .interruptores button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .interruptores {
+    flex-direction: column;
+  }
+  .nota a,
+  .cabecera a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    min-width: 44px;
+    overflow-wrap: anywhere;
+  }
+  .barra li {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .barra img,
+  .barra li::before {
+    flex: none;
+  }
+}

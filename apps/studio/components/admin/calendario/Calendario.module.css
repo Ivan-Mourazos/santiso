@@ -196,11 +196,94 @@
 }
 
 @media (max-width: 760px) {
+  .panel,
+  .bloque,
+  .selectores > *,
+  .fila > * {
+    min-width: 0;
+  }
   .selectores {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .vistas {
+    flex-wrap: wrap;
   }
   .acciones .nota {
     margin-left: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .acciones .nota a {
+    display: inline-flex;
+    align-items: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .partidoCabecera {
+    display: none;
+  }
+  .partidos {
+    gap: 0.75rem;
+  }
+  .partido,
+  .partido[data-contexto="true"] {
+    grid-template-columns: minmax(0, 1fr) 6.25rem minmax(0, 1fr);
+    align-items: center;
+    padding: 0.75rem;
+    gap: 0.75rem 0.5rem;
+    box-shadow: var(--ui-panel-shadow, none);
+  }
+  .partido > * {
+    min-width: 0;
+  }
+  .equipo {
+    flex-direction: column;
+    text-align: center;
+  }
+  .equipo span {
+    overflow-wrap: anywhere;
+  }
+  .contextoFila,
+  .campo,
+  .fecha,
+  .estado,
+  .accionesFila {
+    grid-column: 1 / -1;
+  }
+  .partido .campo label,
+  .partido .fecha label,
+  .partido .estado label {
+    position: static;
+    width: auto;
+    height: auto;
+    clip: auto;
+    white-space: normal;
+  }
+  .partido input,
+  .partido select {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .goles input {
+    width: 44px;
+  }
+  .partido button,
+  .selectores button,
+  .acciones button,
+  .fila button,
+  .descansos button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .accionesFila {
+    flex-wrap: wrap;
+  }
+  .accionesFila > button:first-of-type {
+    flex: 1;
   }
 }
 .vacio {
