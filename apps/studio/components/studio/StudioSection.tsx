@@ -24,6 +24,7 @@ const Seasons = dynamic(() => import("@/components/admin/AdminTemporadas"), { lo
 const Lineup = dynamic(() => import("@/components/admin/alineacion/AdminAlineacion"), {
   loading,
 });
+const Fines = dynamic(() => import("@/components/admin/multas/AdminMultas"), { loading });
 const Posters = dynamic(() => import("@/components/admin/GeneradorCartel"), { loading });
 const Acta = dynamic(() => import("@/components/admin/AdminActaImporter"), { loading });
 const Batch = dynamic(() => import("@/components/admin/AdminActaBatch"), { loading });
@@ -76,6 +77,7 @@ export function StudioSection({ section }: { section: Seccion }) {
           showToast={showToast}
         />
       )}
+      {section === "multas" && <Fines {...feedback} />}
       {section === "carteles" && (
         <Posters
           templateId={template}

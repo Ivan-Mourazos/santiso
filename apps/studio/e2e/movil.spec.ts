@@ -8,6 +8,7 @@ const SECCIONES = [
   "jugadores",
   "tecnicos",
   "directiva",
+  "multas",
   "alineacion",
   "carteles",
   "actas",
