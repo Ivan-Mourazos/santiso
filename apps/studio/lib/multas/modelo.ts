@@ -98,6 +98,12 @@ export const CONCEPTOS_DEL_CLUB: Omit<ConceptoMulta, "id" | "activo">[] = [
   fijo("partido", "Non ir no bus", 2000),
 ];
 
+/**
+ * Valor del selector de motivo para una multa que no está en las normas («No puso bote en el
+ * bar»): el motivo y el importe se escriben a mano.
+ */
+export const OTRO_MOTIVO = "otro";
+
 /** «Os adestradores pagan o dobre». */
 export const FACTOR_ADESTRADOR = 2;
 
