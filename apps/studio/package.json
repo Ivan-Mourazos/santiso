@@ -6,6 +6,7 @@
     "dev": "next dev -H 127.0.0.1",
     "build": "next build",
     "start": "next start -H 127.0.0.1",
+    "start:movil": "next start -H 127.0.0.1 -p 3100",
     "lint": "eslint --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",
