@@ -6,7 +6,8 @@
   padding: var(--ui-space-5);
   overflow: auto;
   color: var(--ui-text);
-  background: var(--ui-surface);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+  box-shadow: var(--ui-panel-shadow, none);
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
   font-family: var(--ui-font-body);

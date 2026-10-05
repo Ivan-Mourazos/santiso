@@ -51,6 +51,17 @@
   transform: translateY(2px);
   box-shadow: var(--ui-control-pressed);
 }
+/* Botones de selección (Senior/Veteranos, Diagonal/Enfrentados…): el elegido se queda hundido. */
+.button[aria-pressed="true"]:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: var(--ui-control-pressed);
+}
+.primary[aria-pressed="true"]:not(:disabled) {
+  background: linear-gradient(180deg, #d4a90f, var(--ui-accent));
+  box-shadow:
+    inset 0 2px 4px rgb(0 0 0 / 35%),
+    0 1px 0 #b8900f;
+}
 @media (prefers-reduced-motion: reduce) {
   .button {
     transition: none;

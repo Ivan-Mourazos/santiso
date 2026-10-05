@@ -12,7 +12,8 @@
 }
 .formulario {
   min-width: 0;
-  background: var(--ui-surface, #171717);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+  box-shadow: var(--ui-panel-shadow, none);
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: var(--ui-radius-lg, 1.125rem);
   padding: var(--ui-space-5, 1.5rem);
@@ -99,7 +100,8 @@
 .marco {
   position: sticky;
   top: 88px;
-  background: var(--ui-surface, #171717);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+  box-shadow: var(--ui-panel-shadow, none);
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: var(--ui-radius-lg, 1.125rem);
   overflow: hidden;

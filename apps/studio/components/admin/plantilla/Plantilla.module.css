@@ -2,7 +2,8 @@
 
 /* Sustituye a `.card` global, que lleva 3rem de relleno a cualquier ancho. */
 .panel {
-  background: var(--ui-surface, #171717);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+  box-shadow: var(--ui-panel-shadow, none);
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: var(--ui-radius-lg, 1.125rem);
   padding: 1.25rem 1.5rem;
@@ -159,7 +160,8 @@
     margin-bottom: 0.75rem;
     border: 1px solid rgb(255 255 255 / 8%);
     border-radius: var(--ui-radius, 0.75rem);
-    background: var(--ui-surface, #171717);
+    background: var(--ui-panel-face, var(--ui-surface, #171717));
+    box-shadow: var(--ui-panel-shadow, none);
   }
   .tabla td {
     padding: 0;
