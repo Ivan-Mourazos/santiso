@@ -16,10 +16,20 @@
   height: 100dvh;
   overflow-y: auto;
 }
+/* Logo a la izquierda; a su derecha, «UD SANTISO» sobre «Studio». */
 .brand {
   display: grid;
-  gap: 0.1rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0 0.6rem;
   padding: 0 0.75rem 0.9rem;
+}
+.logo {
+  grid-row: span 2;
+  width: 40px;
+  height: 40px;
+  border-radius: 0.6rem;
+  box-shadow: var(--ui-control-shadow, none);
 }
 .brand span {
   font: 800 0.7rem var(--ui-font-body);

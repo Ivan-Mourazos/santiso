@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#facc15" />
+        <meta name="theme-color" content="#0b0b0c" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="UD Santiso" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
