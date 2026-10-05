@@ -140,3 +140,74 @@ export function eventosDeActa(acta: ParsedActa): EventoActa[] {
     return true;
   });
 }
+
+/** Marca de un acta cargada desde la base de datos (no leída de un documento). */
+export const ACTA_GUARDADA = "__guardada__";
+
+/** Un jugador de la convocatoria guardada, con lo que enseña el formulario del acta. */
+export interface JugadorGuardado {
+  id: string;
+  nombre: string;
+  apodo: string | null;
+  dorsal: number | null;
+  titular: boolean;
+}
+
+export interface EventoGuardado extends EventoActa {
+  id: string;
+}
+
+/**
+ * Lo contrario de `participacionesDeActa` y `eventosDeActa`: reconstruye el acta revisable a
+ * partir de lo guardado, para poder corregirla (un titular mal puesto, un gol de otro) y
+ * volver a guardarla. Pasada otra vez por esas funciones da las mismas filas.
+ */
+export function actaDeGuardado(
+  marcador: { golesLocal: number | null; golesVisitante: number | null; campoId: string | null },
+  jugadores: readonly JugadorGuardado[],
+  eventos: readonly EventoGuardado[],
+): ParsedActa {
+  const refs = new Map(
+    jugadores.map((j) => [
+      j.id,
+      {
+        id: j.id,
+        dorsal: j.dorsal === null ? "" : String(j.dorsal),
+        rawName: j.nombre,
+        jugadorId: j.id,
+        displayName: j.apodo?.trim() || j.nombre,
+      },
+    ]),
+  );
+  const ref = (id: string | null) => (id ? refs.get(id) : undefined);
+  return {
+    ...(marcador.campoId ? { campoId: marcador.campoId } : {}),
+    marcadorLocal: String(marcador.golesLocal ?? 0),
+    marcadorVisitante: String(marcador.golesVisitante ?? 0),
+    campoNombre: "",
+    campoPoblacion: "",
+    titulares: jugadores.filter((j) => j.titular).map((j) => refs.get(j.id)!),
+    suplentes: jugadores.filter((j) => !j.titular).map((j) => refs.get(j.id)!),
+    eventos: eventos.map((e): ActaEvent => {
+      const base = {
+        id: e.id,
+        tipo: e.tipo,
+        minuto: e.minuto === null ? "" : String(e.minuto),
+        isRival: e.lado === "rival",
+        confidence: "alta" as const,
+        ...(e.nombreRival ? { nombreRival: e.nombreRival } : {}),
+      };
+      if (e.tipo === "cambio") {
+        return { ...base, jugadorEntra: ref(e.jugadorId), jugadorSale: ref(e.jugadorSaleId) };
+      }
+      if (e.tipo === "gol" && e.propia) {
+        return e.lado === "propio"
+          ? { ...base, esPropia: true }
+          : { ...base, esPropiaSantiso: true, jugador: ref(e.jugadorId) };
+      }
+      return { ...base, jugador: ref(e.jugadorId) };
+    }),
+    warnings: [],
+    rawText: ACTA_GUARDADA,
+  };
+}

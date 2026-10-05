@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { cargarPantallaActa, guardarActa } from "@/lib/server/acciones/actas";
+import { cargarActaGuardada, cargarPantallaActa, guardarActa } from "@/lib/server/acciones/actas";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
 import { PageHeader } from "@/components/ui/foundation/PageHeader";
@@ -565,6 +565,20 @@ export default function AdminActaImporter({
     }));
   }
 
+  /** Pasa un jugador de titular a suplente o al revés, sin tener que quitarlo y volver a añadirlo. */
+  function moveLineupPlayer(desde: "titulares" | "suplentes", index: number) {
+    const hacia = desde === "titulares" ? "suplentes" : "titulares";
+    setActa((current) => {
+      const jugador = current[desde][index];
+      if (!jugador) return current;
+      return {
+        ...current,
+        [desde]: current[desde].filter((_, i) => i !== index),
+        [hacia]: [...current[hacia], jugador],
+      };
+    });
+  }
+
   function addEvent() {
     setActa((current) => ({ ...current, eventos: [...current.eventos, makeEvent()] }));
   }
@@ -590,6 +604,21 @@ export default function AdminActaImporter({
   });
   const canSave =
     Boolean(selectedMatchId) && unresolvedLineup.length === 0 && unresolvedEvents.length === 0;
+
+  /** Abre el acta ya guardada del partido para corregirla (un titular mal puesto, un gol…). */
+  async function abrirGuardada() {
+    if (!selectedMatchId) return;
+    setBusy(true);
+    setBusyText("Abriendo el acta guardada...");
+    try {
+      const resultado = await cargarActaGuardada(selectedMatchId);
+      if (!resultado.ok) return showToast(resultado.error, "error");
+      if (!resultado.datos) return showToast("Este partido todavía no tiene acta guardada.", "error");
+      setActa(resultado.datos);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function saveActa() {
     if (!selectedMatchId || !canSave) return;
@@ -752,6 +781,13 @@ export default function AdminActaImporter({
         >
           ✏️ Rellenar manualmente (sin acta)
         </Button>
+        <Button
+          variant="secondary"
+          onClick={() => void abrirGuardada()}
+          disabled={busy || !selectedMatchId}
+        >
+          Corregir acta guardada
+        </Button>
       </div>
 
       {acta.rawText && (
@@ -818,6 +854,7 @@ export default function AdminActaImporter({
                 jugadores={jugadores}
                 onChange={(index, playerId) => setPlayerFromDb("suplentes", index, playerId)}
                 onRemove={(index) => removeLineupPlayer("suplentes", index)}
+                onMove={(index) => moveLineupPlayer("suplentes", index)}
               />
               <Button variant="secondary" onClick={() => addLineupPlayer("suplentes")}>
                 Añadir suplente
@@ -834,6 +871,7 @@ export default function AdminActaImporter({
                 jugadores={jugadores}
                 onChange={(index, playerId) => setPlayerFromDb("titulares", index, playerId)}
                 onRemove={(index) => removeLineupPlayer("titulares", index)}
+                onMove={(index) => moveLineupPlayer("titulares", index)}
               />
               <Button variant="secondary" onClick={() => addLineupPlayer("titulares")}>
                 Añadir titular
@@ -913,12 +951,15 @@ function LineupEditor({
   jugadores,
   onChange,
   onRemove,
+  onMove,
 }: {
   labelPrefix: "Titular" | "Suplente";
   players: ActaPlayerRef[];
   jugadores: ActaPlayerDb[];
   onChange: (index: number, playerId: string) => void;
   onRemove: (index: number) => void;
+  /** Lo cambia de lista: de titular a suplente o al revés. */
+  onMove: (index: number) => void;
 }) {
   return (
     <div className={styles.rows}>
@@ -950,6 +991,13 @@ function LineupEditor({
               </option>
             ))}
           </Select>
+          <Button
+            variant="secondary"
+            aria-label={`Pasar a ${labelPrefix === "Titular" ? "suplente" : "titular"}: ${player.displayName || player.rawName || `${labelPrefix.toLowerCase()} ${index + 1}`}`}
+            onClick={() => onMove(index)}
+          >
+            {labelPrefix === "Titular" ? "A suplente" : "A titular"}
+          </Button>
           <Button
             variant="danger"
             aria-label={`Quitar ${labelPrefix.toLowerCase()} ${index + 1}: ${player.displayName || player.rawName || "sin enlazar"}`}
