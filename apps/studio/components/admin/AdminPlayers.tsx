@@ -60,6 +60,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
   const [incorporando, setIncorporando] = useState(false);
   const [otrasCategorias, setOtrasCategorias] = useState(false);
   const [filtro, setFiltro] = useState<FiltroJugadores>(FILTRO_VACIO);
+  const [masFiltros, setMasFiltros] = useState(false);
   const [editor, setEditor] = useState<EstadoEditor>(null);
   // Cada carga lleva un número: si llega tarde la respuesta de una carga anterior, se descarta.
   const generacion = useRef(0);
@@ -224,7 +225,12 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
   } else {
     contenido = (
       <>
-        <div className={styles.herramientas} role="search" aria-label="Filtrar la plantilla">
+        <div
+          className={styles.herramientas}
+          role="search"
+          aria-label="Filtrar la plantilla"
+          data-mas={masFiltros}
+        >
           <Field
             label="Buscar"
             type="search"
@@ -232,6 +238,16 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
             value={filtro.texto}
             onChange={(e) => setFiltro((f) => ({ ...f, texto: e.target.value }))}
           />
+          {/* Solo en móvil: lo poco usado se pliega para que la lista empiece antes. */}
+          <button
+            type="button"
+            className={styles.masFiltros}
+            aria-expanded={masFiltros}
+            onClick={() => setMasFiltros((v) => !v)}
+          >
+            {masFiltros ? "Menos filtros" : "Más filtros"}
+          </button>
+          <div className={styles.filtroExtra}>
           <Select
             label="Posición"
             value={filtro.posicion}
@@ -244,7 +260,8 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
               </option>
             ))}
           </Select>
-          <label className={styles.casilla}>
+          </div>
+          <label className={`${styles.casilla} ${styles.filtroExtra}`}>
             <input
               type="checkbox"
               className={styles.check}
