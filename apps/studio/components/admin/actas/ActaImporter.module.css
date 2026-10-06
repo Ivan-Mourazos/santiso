@@ -92,6 +92,14 @@
   color: var(--ui-muted);
   font-size: var(--ui-text-sm);
 }
+.capturas {
+  display: grid;
+  gap: var(--ui-space-1);
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
 .detection {
   color: var(--ui-warning);
 }

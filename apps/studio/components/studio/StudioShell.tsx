@@ -15,7 +15,7 @@ export function StudioShell({ children }: { children: ReactNode }) {
   const [menu, setMenu] = useState(false);
   const menuId = useId();
   const section = SECCIONES.find((item) => pathname === `/admin/${item.id}`);
-  const desktopOnly = section?.id === "actas" || section?.id === "importar-jornada";
+  const desktopOnly = section?.id === "importar-jornada";
   const category = categoriaDe(params);
   const categories = ["Senior", "Veteranos"];
   const showCategory = [

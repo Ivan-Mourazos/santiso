@@ -1,3 +1,5 @@
+import { MAX_CAPTURAS } from "@/lib/actas/capturas";
+
 function stripJsonFence(value: string) {
   return value
     .trim()
@@ -14,16 +16,26 @@ export async function POST(request: Request) {
   }
 
   const formData = await request.formData();
-  const image = formData.get("image");
-  if (!(image instanceof File)) {
+  // Con varias capturas la cabecera puede estar en cualquiera: van todas.
+  const archivos = formData
+    .getAll("image")
+    .filter((valor): valor is File => valor instanceof File)
+    .slice(0, MAX_CAPTURAS);
+  if (archivos.length === 0) {
     return Response.json({ error: "Falta imagen" }, { status: 400 });
   }
 
-  const bytes = Buffer.from(await image.arrayBuffer());
-  const base64 = bytes.toString("base64");
+  const imagenes = await Promise.all(
+    archivos.map(async (archivo) => ({
+      inlineData: {
+        mimeType: archivo.type || "application/pdf",
+        data: Buffer.from(await archivo.arrayBuffer()).toString("base64"),
+      },
+    })),
+  );
 
   const prompt = `Eres un lector de cabeceras de actas de Futgal.
-Lee el documento y extrae SOLO los siguientes campos del encabezado. Devuelve SOLO JSON válido, sin markdown:
+Lee el documento (puede llegar como varias capturas de la misma acta) y extrae SOLO los siguientes campos del encabezado. Devuelve SOLO JSON válido, sin markdown:
 {
   "jornada": 30,
   "localTeam": "U.D. SANTISO F.C.",
@@ -40,7 +52,8 @@ Reglas:
 - jornada: número entero
 - localTeam y visitorTeam: nombres exactos como aparecen en el acta (equipo LOCAL a la izquierda, VISITANTE a la derecha)
 - fecha: formato YYYY-MM-DD
-- competicion: texto exacto de la competición tal como aparece`;
+- competicion: texto exacto de la competición tal como aparece
+- Si son capturas de la app de la federación: en la cabecera el LOCAL es el escudo de la izquierda y el VISITANTE el de la derecha; la fecha viene como DD-MM-YYYY y la jornada como "Jornada 2". Si ninguna captura muestra la cabecera, devuelve jornada null.`;
 
   const detectModels = ["gemini-3.1-flash-lite", "gemini-2.5-flash-lite"];
   const requestBody = JSON.stringify({
@@ -50,7 +63,7 @@ Reglas:
         role: "user",
         parts: [
           { text: prompt },
-          { inlineData: { mimeType: image.type || "application/pdf", data: base64 } },
+          ...imagenes,
         ],
       },
     ],

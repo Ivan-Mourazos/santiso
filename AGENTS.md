@@ -15,7 +15,7 @@
 - Las pruebas que **escriben** van en `apps/studio/e2e-escritura/` y se lanzan con `pnpm e2e:escritura`: siembran una base de datos de juguete en una carpeta temporal y arrancan su propio servidor en el 3111. Ninguna prueba debe escribir en `data/`. Con `pnpm dev` abierto no arrancan (Next no admite dos `next dev` en la misma carpeta).
 - La base real solo guarda la temporada activa (2025/26 se retiró el 28/09/2026 con `pnpm db:limpiar-temporada`; archivo en `data/backups/`). Las pruebas de solo lectura no pueden contar con temporadas pasadas ni con actas: lo que necesite historial va en `e2e-escritura/`, con datos sembrados en `sembrar.ts`.
 - Textos de equipos, campos, competiciones y personas: reglas en `@santiso/domain` (`normalizar*`). Lo que se guarde nuevo debe pasar por ellas.
-- **Escritorio y móvil** (decisión del usuario, 05/10/2026): la web se diseña y se prueba en escritorio desde 1280×720 y en móvil desde 360 px de ancho. Actas e Importar jornada siguen siendo solo de escritorio. Los carteles se piensan para verse en el móvil (Instagram).
+- **Escritorio y móvil** (decisión del usuario, 05/10/2026): la web se diseña y se prueba en escritorio desde 1280×720 y en móvil desde 360 px de ancho. Importar jornada sigue siendo solo de escritorio. Actas funciona en móvil desde el 06/10/2026: admite varias capturas de la app de la federación, que el modelo lee juntas. Los carteles se piensan para verse en el móvil (Instagram).
 - Las capturas de `data/referencias/antes-fase-2/` son la referencia visual para validar las Fases 2B y 2C. Cubren las 9 secciones del panel (escritorio y móvil) y 3 de las 7 plantillas de cartel: partido, proximos y resumo.
 
 <!-- END:tooling-env -->
