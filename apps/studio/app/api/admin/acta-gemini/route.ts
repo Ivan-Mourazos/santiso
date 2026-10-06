@@ -1,3 +1,4 @@
+import { MAX_CAPTURAS, sinRepetidos } from "@/lib/actas/capturas";
 import type {
   ActaCampoDb,
   ActaEventType,
@@ -249,6 +250,7 @@ function buildPrompt({
   return `
 Eres un extractor de datos de actas de Futgal para U.D. Santiso.
 Lee TODO el documento completo (todas las páginas si hay varias) y devuelve SOLO JSON válido, sin markdown.
+Puede llegar como VARIAS CAPTURAS de pantalla de la misma acta: trátalas como un único documento. Pueden venir desordenadas y solaparse; lo que aparezca repetido en dos capturas cuéntalo UNA sola vez. Si una captura corta una línea a medias, complétala con la captura siguiente.
 
 Partido seleccionado:
 ${JSON.stringify({
@@ -286,6 +288,19 @@ Reglas CRÍTICAS DE EQUIPO:
 - LOCALIZA los nombres de los equipos en el acta. EXTRAE ÚNICAMENTE los jugadores que están bajo el bando de Santiso.
 - PROHIBIDO: No incluyas jugadores del equipo rival (${santisoLocal ? match.equipo_visitante?.nombre : match.equipo_local?.nombre}) en titulares o suplentes.
 - VALIDACIÓN: Si un dorsal detectado en el acta NO tiene un nombre que coincida razonablemente con la lista de "Jugadores Santiso disponibles", NO lo incluyas en la plantilla de Santiso (podría ser del rival).
+
+CAPTURAS DE LA APP DE LA FEDERACIÓN (RFGF):
+Si lo que recibes son capturas de la app móvil (no el acta en PDF), el formato es este y mandan estas reglas:
+- CABECERA: escudo y nombre del LOCAL a la izquierda, marcador en el centro ("8 - 3" = local 8, visitante 3), VISITANTE a la derecha. Debajo: fecha, competición, jornada y campo (línea con el icono de ubicación).
+- ALINEACIONES: una tarjeta por equipo, encabezada por su escudo y su nombre. Dentro, los bloques "TITULARES" y "SUPLENTES" con dorsal y nombre en formato "APELLIDOS, NOMBRE". Extrae SOLO la tarjeta de Santiso. Una misma tarjeta puede salir partida en dos capturas: únela. Los bloques "ENTRENADOR/A" y "DELEGADO/A EQUIPO" NO son jugadores: no los incluyas. Las etiquetas a la derecha (PT, LI, DFC, MC, MD, DC, MI, LD) son posiciones y "C" es capitán: ignóralas.
+- PESTAÑAS "Goles", "Tarjetas", "Sustituciones" y bloque "Timeline": en todas, lo que está a la IZQUIERDA del icono o del minuto central es del equipo LOCAL y lo que está a la DERECHA es del VISITANTE. Esa posición decide isRival.
+- Timeline: píldora VERDE con minuto y marcador acumulado ("57' 4-1") = gol. Píldora NEGRA con solo el minuto = sustitución o tarjeta. Cuadrado amarillo = tarjeta amarilla; rojo = tarjeta roja.
+- SUSTITUCIÓN en el Timeline: dos nombres juntos. El de la flecha VERDE ">" (en negrita) ENTRA → jugadorEntraId. El de la flecha ROJA "<" (en gris) SALE → jugadorSaleId. El minuto es el de la píldora.
+- Leyenda de goles: balón verde = gol, rejilla verde = gol de penalti (cuenta como gol normal), balón ROJO "G. en PP" = gol en propia puerta (aplica las reglas de propia de más abajo).
+- Los nombres del Timeline salen CORTADOS con "…" ("CASTRO COEGO,…", "VAZQUEZ PEREI…", "MARTINEZ BARA…"). Complétalos con la alineación o con las pestañas, donde salen enteros. Ojo con apellidos parecidos: "VAZQUEZ PEREI…" no es "VAZQUEZ MEND…" ni "VAZQUEZ NOVAS".
+- El mismo gol aparece en la pestaña "Goles" y en el Timeline: es UN solo evento.
+- Las reglas de "dos líneas" de las sustituciones de más abajo valen solo para el acta en PDF.
+- Si falta una parte (por ejemplo no hay captura de la alineación o de las tarjetas), devuelve lo que haya y añade un warning diciendo qué falta.
 
 REGLAS DE EVENTOS — LEE CON ATENCIÓN:
 
@@ -386,18 +401,21 @@ async function getAvailableGenerateContentModels(apiKey: string) {
     });
 }
 
+interface ImagenActa {
+  mimeType: string;
+  data: string;
+}
+
 function buildGeminiBody({
   match,
   jugadores,
   campos,
-  image,
-  base64,
+  imagenes,
 }: {
   match: ActaMatchDb;
   jugadores: ActaPlayerDb[];
   campos: ActaCampoDb[];
-  image: File;
-  base64: string;
+  imagenes: ImagenActa[];
 }) {
   return JSON.stringify({
     generationConfig: {
@@ -409,12 +427,7 @@ function buildGeminiBody({
         role: "user",
         parts: [
           { text: buildPrompt({ match, jugadores, campos }) },
-          {
-            inlineData: {
-              mimeType: image.type || "image/png",
-              data: base64,
-            },
-          },
+          ...imagenes.map((imagen) => ({ inlineData: imagen })),
         ],
       },
     ],
@@ -426,18 +439,16 @@ async function generateWithFallback({
   match,
   jugadores,
   campos,
-  image,
-  base64,
+  imagenes,
 }: {
   apiKey: string;
   match: ActaMatchDb;
   jugadores: ActaPlayerDb[];
   campos: ActaCampoDb[];
-  image: File;
-  base64: string;
+  imagenes: ImagenActa[];
 }) {
   const errors: string[] = [];
-  const body = buildGeminiBody({ match, jugadores, campos, image, base64 });
+  const body = buildGeminiBody({ match, jugadores, campos, imagenes });
   const hardcodedCandidates = getModelCandidates();
   const candidates = [...hardcodedCandidates];
 
@@ -486,20 +497,27 @@ export async function POST(request: Request) {
   }
 
   const formData = await request.formData();
-  const image = formData.get("image");
+  const archivos = formData
+    .getAll("image")
+    .filter((valor): valor is File => valor instanceof File)
+    .slice(0, MAX_CAPTURAS);
   const matchRaw = formData.get("match");
   const jugadoresRaw = formData.get("jugadores");
   const camposRaw = formData.get("campos");
 
-  if (!(image instanceof File) || !matchRaw || !jugadoresRaw || !camposRaw) {
+  if (archivos.length === 0 || !matchRaw || !jugadoresRaw || !camposRaw) {
     return Response.json({ error: "Petición incompleta" }, { status: 400 });
   }
 
   const match = JSON.parse(String(matchRaw)) as ActaMatchDb;
   const jugadores = JSON.parse(String(jugadoresRaw)) as ActaPlayerDb[];
   const campos = JSON.parse(String(camposRaw)) as ActaCampoDb[];
-  const bytes = Buffer.from(await image.arrayBuffer());
-  const base64 = bytes.toString("base64");
+  const imagenes: ImagenActa[] = await Promise.all(
+    archivos.map(async (archivo) => ({
+      mimeType: archivo.type || "image/png",
+      data: Buffer.from(await archivo.arrayBuffer()).toString("base64"),
+    })),
+  );
 
   let result: { model: string; payload: GeminiGenerateResponse };
   try {
@@ -508,8 +526,7 @@ export async function POST(request: Request) {
       match,
       jugadores,
       campos,
-      image,
-      base64,
+      imagenes,
     });
   } catch (error) {
     return Response.json(
@@ -535,7 +552,7 @@ export async function POST(request: Request) {
   try {
     const parsed = JSON.parse(stripJsonFence(text)) as GeminiActaResponse;
     return Response.json({
-      acta: toParsedActa(parsed, jugadores, santisoLocal),
+      acta: sinRepetidos(toParsedActa(parsed, jugadores, santisoLocal)),
       raw: parsed,
       model: result.model,
     });

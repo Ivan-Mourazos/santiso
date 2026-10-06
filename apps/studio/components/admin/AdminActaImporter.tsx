@@ -14,6 +14,7 @@ import {
 } from "@/lib/competition";
 import { fetchCompeticiones } from "@/lib/lecturas-cliente";
 import { parseFutgalActaText } from "@/lib/actas/futgal-parser";
+import { MAX_CAPTURAS, elegirArchivosDeActa } from "@/lib/actas/capturas";
 import { leerFichaPdf } from "@/lib/server/acciones/fichas";
 import type {
   ActaCampoDb,
@@ -257,7 +258,9 @@ export default function AdminActaImporter({
   const [jugadores, setJugadores] = useState<ActaPlayerDb[]>([]);
   const [campos, setCampos] = useState<ActaCampoDb[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState(inicial?.partidoId ?? "");
-  const [file, setFile] = useState<File | null>(null);
+  /** Una ficha PDF, o varias capturas de la misma acta. */
+  const [files, setFiles] = useState<File[]>([]);
+  const file = files[0] ?? null;
   const [ocrText, setOcrText] = useState("");
   const [acta, setActa] = useState<ParsedActa>(() => emptyActa());
   const [busy, setBusy] = useState(false);
@@ -363,7 +366,18 @@ export default function AdminActaImporter({
     };
   }
 
-  async function detectMatch(f: File) {
+  /** Se queda con lo que se puede analizar de lo elegido y busca a qué partido corresponde. */
+  function elegirArchivos(elegidos: File[]) {
+    const { archivos, aviso } = elegirArchivosDeActa(elegidos);
+    setFiles(archivos);
+    if (aviso) showToast(aviso, "error");
+    if (archivos.length > 0) void detectMatch(archivos);
+    else setDetectedMeta(null);
+  }
+
+  async function detectMatch(archivos: File[]) {
+    const f = archivos[0];
+    if (!f) return;
     setIsDetecting(true);
     setDetectedMeta(null);
     try {
@@ -373,7 +387,7 @@ export default function AdminActaImporter({
       }
       if (!data) {
         const formData = new FormData();
-        formData.append("image", f);
+        for (const archivo of archivos) formData.append("image", archivo);
         const res = await fetch("/api/admin/acta-detect", { method: "POST", body: formData });
         if (!res.ok) return;
         data = (await res.json()) as DetectedActaMeta;
@@ -398,11 +412,15 @@ export default function AdminActaImporter({
 
     setBusy(true);
     setProgress(undefined);
-    setBusyText("Analizando acta con Gemini...");
+    setBusyText(
+      files.length > 1
+        ? `Analizando ${files.length} capturas con Gemini...`
+        : "Analizando acta con Gemini...",
+    );
 
     try {
       const formData = new FormData();
-      formData.append("image", file);
+      for (const archivo of files) formData.append("image", archivo);
       formData.append("match", JSON.stringify(selectedMatch));
       formData.append("jugadores", JSON.stringify(jugadores));
       formData.append("campos", JSON.stringify(campos));
@@ -706,11 +724,7 @@ export default function AdminActaImporter({
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
-              const f = e.dataTransfer.files?.[0];
-              if (f) {
-                setFile(f);
-                detectMatch(f);
-              }
+              elegirArchivos(Array.from(e.dataTransfer.files ?? []));
             }}
           >
             <svg
@@ -726,20 +740,29 @@ export default function AdminActaImporter({
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
-            <span>{file ? file.name : "Arrastra la ficha PDF o la captura aquí"}</span>
-            {file && <span>{(file.size / 1024).toFixed(0)} KB</span>}
+            {files.length === 0 && <span>Arrastra aquí la ficha PDF o las capturas del acta</span>}
+            {files.length === 1 && file && (
+              <span>
+                {file.name} · {(file.size / 1024).toFixed(0)} KB
+              </span>
+            )}
+            {files.length > 1 && (
+              <ol className={styles.capturas} aria-label="Capturas elegidas">
+                {files.map((archivo, index) => (
+                  <li key={`${archivo.name}-${index}`}>
+                    {archivo.name} · {(archivo.size / 1024).toFixed(0)} KB
+                  </li>
+                ))}
+              </ol>
+            )}
             <Field
-              label="Captura del acta"
-              hint="Selecciona una ficha PDF o una imagen. También puedes arrastrarla aquí."
+              label="Capturas del acta"
+              hint={`Una ficha PDF, o hasta ${MAX_CAPTURAS} capturas de la misma acta: se leen juntas.`}
               id="acta-file-input"
               type="file"
+              multiple
               accept="image/*,application/pdf"
-              onChange={(e) => {
-                const f = e.target.files?.[0] || null;
-                setFile(f);
-                if (f) detectMatch(f);
-                else setDetectedMeta(null);
-              }}
+              onChange={(e) => elegirArchivos(Array.from(e.target.files ?? []))}
             />
           </div>
           {isDetecting && <LoadingState title="Detectando partido..." />}
@@ -769,7 +792,11 @@ export default function AdminActaImporter({
           onClick={esFicha ? analyzeImage : analyzeWithLocalOcr}
           disabled={busy || !file || !selectedMatchId}
         >
-          {esFicha ? "Probar con Gemini (fallback)" : "Usar OCR local (fallback)"}
+          {esFicha
+            ? "Probar con Gemini (fallback)"
+            : files.length > 1
+              ? "Usar OCR local (solo la primera captura)"
+              : "Usar OCR local (fallback)"}
         </Button>
         <Button
           variant="secondary"

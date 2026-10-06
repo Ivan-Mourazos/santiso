@@ -207,11 +207,69 @@ for (const ancho of [360, 390]) {
   });
 }
 
-for (const seccion of ["actas", "importar-jornada"]) {
-  test(`${seccion}: reservada a escritorio`, async ({ page }) => {
-    await abrir(page, seccion);
-    await expect(page.getByRole("status").filter({ hasText: "solo en escritorio" })).toBeVisible();
-    await expect(page.locator("main input:visible")).toHaveCount(0);
+test("importar-jornada: reservada a escritorio", async ({ page }) => {
+  await abrir(page, "importar-jornada");
+  await expect(page.getByRole("status").filter({ hasText: "solo en escritorio" })).toBeVisible();
+  await expect(page.locator("main input:visible")).toHaveCount(0);
+  await comprobarAncho(page);
+});
+
+const PIXEL = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jM1sAAAAASUVORK5CYII=",
+  "base64",
+);
+
+for (const ancho of [360, 390]) {
+  test(`actas: varias capturas se leen juntas a ${ancho}px`, async ({ page }) => {
+    await page.setViewportSize({ width: ancho, height: 844 });
+    await abrir(page, "actas");
+    await expect(page.getByRole("status").filter({ hasText: "solo en escritorio" })).toHaveCount(0);
+    await expect(page.getByLabel("Partido", { exact: true })).not.toHaveValue("");
+
+    // Nunca se llama al modelo: las dos rutas se responden aquí. No se pulsa «Confirmar».
+    await page.route("**/api/admin/acta-detect", (route) => route.fulfill({ json: {} }));
+    let capturasEnviadas = 0;
+    await page.route("**/api/admin/acta-gemini", (route) => {
+      const cuerpo = route.request().postDataBuffer()?.toString("latin1") ?? "";
+      capturasEnviadas = cuerpo.split('name="image"').length - 1;
+      return route.fulfill({
+        json: {
+          acta: {
+            marcadorLocal: "1",
+            marcadorVisitante: "0",
+            campoNombre: "",
+            campoPoblacion: "",
+            titulares: [{ id: "t1", dorsal: "999", rawName: "Persona ficticia" }],
+            suplentes: [{ id: "s1", dorsal: "998", rawName: "Suplente ficticio" }],
+            eventos: [{ id: "e1", tipo: "gol", minuto: "12", isRival: false, confidence: "baja" }],
+            warnings: [],
+            rawText: "Fixture visual, no guardar",
+          },
+        },
+      });
+    });
+
+    const archivo = page.locator("#acta-file-input");
+    await expect(archivo).toHaveAttribute("multiple", "");
+    await archivo.setInputFiles(
+      ["alineacion.png", "eventos.png", "cambios.png"].map((name) => ({
+        name,
+        mimeType: "image/png",
+        buffer: PIXEL,
+      })),
+    );
+    await expect(page.getByRole("list", { name: "Capturas elegidas" }).getByRole("listitem")).toHaveCount(3);
+
+    await page.getByRole("button", { name: "Analizar con Gemini" }).click();
+    await expect(page.getByRole("button", { name: /^Pasar a suplente/ })).toBeVisible();
+    expect(capturasEnviadas).toBe(3);
+
+    for (const boton of await page.locator("main button:visible").all()) {
+      expect((await boton.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
+    for (const campo of await page.locator("main select:visible, main input:visible:not([type=file])").all()) {
+      expect((await campo.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
     await comprobarAncho(page);
   });
 }
