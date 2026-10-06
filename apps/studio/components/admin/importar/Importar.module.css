@@ -242,7 +242,66 @@
   .panel {
     padding: var(--ui-space-4, 1rem);
   }
+  /*
+   * Revisión compacta: local arriba y visitante abajo, cada uno con sus goles al lado, como en
+   * la app de la federación. Las etiquetas siguen ahí para el lector de pantalla; a la vista
+   * sobran, porque cada control ya dice lo que es.
+   */
+  .tarjetas {
+    gap: var(--ui-space-2, 0.5rem);
+  }
+  .tarjeta {
+    gap: var(--ui-space-2, 0.5rem);
+    padding: var(--ui-space-3, 0.75rem);
+  }
   .cruce {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) 3.5rem;
+    gap: var(--ui-space-2, 0.5rem);
+  }
+  .goles {
+    display: contents;
+  }
+  .cruce > .equipo:first-child {
+    grid-area: 1 / 1;
+  }
+  .cruce > .equipo:last-child {
+    grid-area: 2 / 1;
+  }
+  .goles > :first-child {
+    grid-area: 1 / 2;
+  }
+  .goles > :last-child {
+    grid-area: 2 / 2;
+  }
+  .goles input {
+    width: 100%;
+    padding-inline: 0;
+  }
+  .cruce label,
+  .detalle label,
+  .detalle p {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* Lo leído solo hace falta a la vista cuando no se ha podido enlazar con un equipo. */
+  .equipo[data-enlazado="true"] .leido {
+    display: none;
+  }
+  .equipo .leido {
+    margin: 0 0 0.25rem;
+  }
+  .detalle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ui-space-2, 0.5rem);
+  }
+  /* Fecha y campo ocupan la fila entera; nombre y localidad a mano van a la par. */
+  .detalle > :nth-child(-n + 2) {
+    grid-column: 1 / -1;
   }
 }
