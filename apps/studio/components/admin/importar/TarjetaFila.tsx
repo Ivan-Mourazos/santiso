@@ -80,7 +80,7 @@ export default function TarjetaFila({
       {!leido.descansa && (
         <>
           <div className={styles.cruce}>
-            <div>
+            <div className={styles.equipo} data-enlazado={Boolean(fila.localId)}>
               <p className={styles.leido}>Leído: {leido.localNombre}</p>
               <Select
                 label={`Local de la fila ${numero}`}
@@ -116,7 +116,7 @@ export default function TarjetaFila({
                 disabled={deshabilitada}
               />
             </div>
-            <div>
+            <div className={styles.equipo} data-enlazado={Boolean(fila.visitanteId)}>
               <p className={styles.leido}>Leído: {leido.visitanteNombre}</p>
               <Select
                 label={`Visitante de la fila ${numero}`}
@@ -134,7 +134,7 @@ export default function TarjetaFila({
             </div>
           </div>
 
-          <div className={styles.fila}>
+          <div className={`${styles.fila} ${styles.detalle}`}>
             <Field
               label={`Fecha y hora, fila ${numero}`}
               hint="Formato 2026-11-08T17:00; vale solo el día."
@@ -157,7 +157,7 @@ export default function TarjetaFila({
               }}
               disabled={deshabilitada}
             >
-              <option value="">Escribir a mano</option>
+              <option value="">Campo: escribir a mano</option>
               {campos.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nombre}
@@ -169,12 +169,14 @@ export default function TarjetaFila({
               <>
                 <Field
                   label={`Nombre del campo, fila ${numero}`}
+                  placeholder="Campo"
                   value={fila.campoNombre}
                   onChange={(e) => onCambiar({ campoNombre: e.target.value })}
                   disabled={deshabilitada}
                 />
                 <Field
                   label={`Localidad del campo, fila ${numero}`}
+                  placeholder="Localidad"
                   value={fila.campoPoblacion}
                   onChange={(e) => onCambiar({ campoPoblacion: e.target.value })}
                   disabled={deshabilitada}

@@ -87,6 +87,21 @@ for (const ancho of [360, 390]) {
     const menuBox = (await menuButton.boundingBox())!;
     expect(menuBox.height).toBeGreaterThanOrEqual(44);
     expect(menuBox.y).toBeGreaterThan(650);
+    // El botón va en una barra opaca de lado a lado: lo que pasa por debajo no se ve a través.
+    const barra = await menuButton.evaluate((boton) => {
+      const caja = boton.parentElement!;
+      const rect = caja.getBoundingClientRect();
+      return {
+        izquierda: rect.left,
+        ancho: rect.width,
+        fondo: rect.bottom,
+        color: getComputedStyle(caja).backgroundColor,
+      };
+    });
+    expect(barra.izquierda).toBe(0);
+    expect(barra.ancho).toBe(ancho);
+    expect(barra.fondo).toBe(844);
+    expect(barra.color).toMatch(/^rgb\(/);
     const categories = page.getByRole("group", { name: "Categoría deportiva" });
     for (const category of ["Senior", "Veteranos"]) {
       expect(
@@ -272,6 +287,11 @@ for (const ancho of [360, 390]) {
       page.getByRole("region", { name: "Fila 1: S.D. Bandeira - C.D. Berres" }),
     ).toBeVisible({ timeout: 15000 });
     expect(capturasEnviadas).toBe(2);
+    // Revisión compacta: una jornada de ocho partidos no puede ser una pantalla interminable.
+    const fila = page.getByRole("region", { name: "Fila 1: S.D. Bandeira - C.D. Berres" });
+    expect((await fila.boundingBox())!.height).toBeLessThanOrEqual(380);
+    await expect(fila.getByLabel("Local de la fila 1")).toBeVisible();
+    await expect(fila.getByLabel("Goles del visitante, fila 1")).toBeVisible();
 
     for (const boton of await page.locator("main button:visible").all()) {
       expect((await boton.boundingBox())!.height).toBeGreaterThanOrEqual(44);
