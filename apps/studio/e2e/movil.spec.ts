@@ -87,6 +87,21 @@ for (const ancho of [360, 390]) {
     const menuBox = (await menuButton.boundingBox())!;
     expect(menuBox.height).toBeGreaterThanOrEqual(44);
     expect(menuBox.y).toBeGreaterThan(650);
+    // El botón va en una barra opaca de lado a lado: lo que pasa por debajo no se ve a través.
+    const barra = await menuButton.evaluate((boton) => {
+      const caja = boton.parentElement!;
+      const rect = caja.getBoundingClientRect();
+      return {
+        izquierda: rect.left,
+        ancho: rect.width,
+        fondo: rect.bottom,
+        color: getComputedStyle(caja).backgroundColor,
+      };
+    });
+    expect(barra.izquierda).toBe(0);
+    expect(barra.ancho).toBe(ancho);
+    expect(barra.fondo).toBe(844);
+    expect(barra.color).toMatch(/^rgb\(/);
     const categories = page.getByRole("group", { name: "Categoría deportiva" });
     for (const category of ["Senior", "Veteranos"]) {
       expect(
