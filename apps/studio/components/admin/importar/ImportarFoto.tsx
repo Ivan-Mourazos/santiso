@@ -2,6 +2,7 @@
 
 import { fechaHoraDePartido } from "@santiso/domain";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MAX_CAPTURAS, elegirArchivosDeActa } from "@/lib/actas/capturas";
 import type {
   JornadaGeminiResponse,
   JornadaMatchExtracted,
@@ -90,7 +91,9 @@ export default function ImportarFoto({ showToast, showConfirm, inicial }: Props)
   );
   const [catalogo, setCatalogo] = useState<CompetenciaRow[]>([]);
   const [elegida, setElegida] = useState(inicial?.competicionId ?? "");
-  const [archivo, setArchivo] = useState<File | null>(null);
+  /** Una imagen o PDF, o varias capturas de la misma jornada. */
+  const [archivos, setArchivos] = useState<File[]>([]);
+  const archivo = archivos[0] ?? null;
   const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
   const [equipos, setEquipos] = useState<ConNombre[]>([]);
   const [jornadas, setJornadas] = useState<JornadaCatalogo[]>([]);
@@ -161,8 +164,11 @@ export default function ImportarFoto({ showToast, showConfirm, inicial }: Props)
     return () => window.clearTimeout(id);
   }, [cargarBase]);
 
-  function elegirArchivo(nuevo: File | null) {
-    setArchivo(nuevo);
+  function elegirArchivos(elegidos: File[]) {
+    const { archivos: validos, aviso } = elegirArchivosDeActa(elegidos);
+    if (aviso) showToast(aviso, "error");
+    const nuevo = validos[0] ?? null;
+    setArchivos(validos);
     if (vistaActual.current) URL.revokeObjectURL(vistaActual.current);
     vistaActual.current = nuevo ? URL.createObjectURL(nuevo) : null;
     setVistaPrevia(vistaActual.current);
@@ -172,10 +178,14 @@ export default function ImportarFoto({ showToast, showConfirm, inicial }: Props)
 
   async function analizar() {
     if (!archivo) return showToast("Selecciona una imagen primero", "error");
-    setOcupada("Analizando imagen con Gemini…");
+    setOcupada(
+      archivos.length > 1
+        ? `Analizando ${archivos.length} capturas con Gemini…`
+        : "Analizando imagen con Gemini…",
+    );
     try {
       const fd = new FormData();
-      fd.append("image", archivo);
+      for (const captura of archivos) fd.append("image", captura);
       fd.append("equipos", JSON.stringify(equipos.map((e) => e.nombre)));
       const res = await fetch("/api/admin/jornada-gemini", { method: "POST", body: fd });
       const payload = await res.json();
@@ -316,7 +326,7 @@ export default function ImportarFoto({ showToast, showConfirm, inicial }: Props)
       showToast(`${ok} partido(s) guardados correctamente`);
       setLeido(null);
       setFilas([]);
-      elegirArchivo(null);
+      elegirArchivos([]);
     } else {
       showToast(`${ok} guardados, ${errores} con errores. Revisa la consola.`, "error");
     }
@@ -402,17 +412,17 @@ export default function ImportarFoto({ showToast, showConfirm, inicial }: Props)
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
-          const soltado = e.dataTransfer.files?.[0];
-          if (soltado) elegirArchivo(soltado);
+          elegirArchivos(Array.from(e.dataTransfer.files ?? []));
         }}
       >
         <Field
           id="jornada-file-input"
           label="Captura de la jornada"
-          hint="Imagen o PDF. También puedes arrastrarla aquí."
+          hint={`Imagen o PDF, o hasta ${MAX_CAPTURAS} capturas de la misma jornada: se leen juntas.`}
           type="file"
+          multiple
           accept="image/*,application/pdf"
-          onChange={(e) => elegirArchivo(e.target.files?.[0] ?? null)}
+          onChange={(e) => elegirArchivos(Array.from(e.target.files ?? []))}
           disabled={hayOcupacion}
         />
         <div className={styles.accion}>
@@ -421,7 +431,9 @@ export default function ImportarFoto({ showToast, showConfirm, inicial }: Props)
           </Button>
           {archivo && (
             <span className={styles.nota}>
-              {archivo.name} · {(archivo.size / 1024).toFixed(0)} KB
+              {archivos.length > 1
+                ? `${archivos.length} capturas`
+                : `${archivo.name} · ${(archivo.size / 1024).toFixed(0)} KB`}
             </span>
           )}
         </div>

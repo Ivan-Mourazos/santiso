@@ -19,6 +19,11 @@ const SECCIONES = [
   "ajustes-graficos",
 ] as const;
 
+const PIXEL = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jM1sAAAAASUVORK5CYII=",
+  "base64",
+);
+
 async function abrir(page: Page, seccion: string) {
   // Solo consulta. No se pulsa ninguna acción que guarde en la base real.
   await page.goto(`/admin/${seccion}`);
@@ -207,17 +212,78 @@ for (const ancho of [360, 390]) {
   });
 }
 
-test("importar-jornada: reservada a escritorio", async ({ page }) => {
-  await abrir(page, "importar-jornada");
-  await expect(page.getByRole("status").filter({ hasText: "solo en escritorio" })).toBeVisible();
+test("importar-jornada: el calendario en PDF sigue reservado a escritorio", async ({ page }) => {
+  await abrir(page, "importar-jornada?origen=calendario");
+  const aviso = page.getByRole("status").filter({ hasText: "solo en escritorio" });
+  await expect(aviso).toBeVisible();
   await expect(page.locator("main input:visible")).toHaveCount(0);
   await comprobarAncho(page);
+  // Desde el aviso se vuelve a la captura, que sí vale en móvil.
+  await aviso.getByRole("link", { name: "Importar una captura de jornada" }).click();
+  await expect(page.locator("#jornada-file-input")).toBeVisible();
 });
 
-const PIXEL = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jM1sAAAAASUVORK5CYII=",
-  "base64",
-);
+for (const ancho of [360, 390]) {
+  test(`importar-jornada: varias capturas se leen juntas a ${ancho}px`, async ({ page }) => {
+    await page.setViewportSize({ width: ancho, height: 844 });
+    await abrir(page, "importar-jornada");
+    await expect(page.getByRole("status").filter({ hasText: "solo en escritorio" })).toHaveCount(0);
+
+    // Nunca se llama al modelo ni se guarda: la lectura se responde aquí y no se pulsa «Guardar».
+    let capturasEnviadas = 0;
+    await page.route("**/api/admin/jornada-gemini", (route) => {
+      const cuerpo = route.request().postDataBuffer()?.toString("latin1") ?? "";
+      capturasEnviadas = cuerpo.split('name="image"').length - 1;
+      return route.fulfill({
+        json: {
+          model: "simulado",
+          data: {
+            competicion: "",
+            jornada: "1",
+            partidos: [
+              {
+                localNombre: "S.D. Bandeira",
+                visitanteNombre: "C.D. Berres",
+                golesLocal: "",
+                golesVisitante: "",
+                fecha: "2026-10-18",
+                hora: "17:00",
+                confidence: "alta",
+              },
+            ],
+            warnings: [],
+          },
+        },
+      });
+    });
+
+    const archivo = page.locator("#jornada-file-input");
+    await expect(archivo).toHaveAttribute("multiple", "");
+    await archivo.setInputFiles(
+      ["jornada-1.png", "jornada-2.png"].map((name) => ({
+        name,
+        mimeType: "image/png",
+        buffer: PIXEL,
+      })),
+    );
+    await expect(page.getByText("2 capturas")).toBeVisible();
+    await page.getByRole("button", { name: "Analizar con Gemini" }).click();
+    await expect(
+      page.getByRole("region", { name: "Fila 1: S.D. Bandeira - C.D. Berres" }),
+    ).toBeVisible({ timeout: 15000 });
+    expect(capturasEnviadas).toBe(2);
+
+    for (const boton of await page.locator("main button:visible").all()) {
+      expect((await boton.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
+    for (const campo of await page
+      .locator("main select:visible, main input:visible:not([type=file]):not([type=checkbox])")
+      .all()) {
+      expect((await campo.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
+    await comprobarAncho(page);
+  });
+}
 
 for (const ancho of [360, 390]) {
   test(`actas: varias capturas se leen juntas a ${ancho}px`, async ({ page }) => {
