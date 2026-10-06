@@ -15,7 +15,9 @@ export function StudioShell({ children }: { children: ReactNode }) {
   const [menu, setMenu] = useState(false);
   const menuId = useId();
   const section = SECCIONES.find((item) => pathname === `/admin/${item.id}`);
-  const desktopOnly = section?.id === "importar-jornada";
+  // Solo el calendario en PDF sigue reservado a escritorio; la captura de jornada vale en móvil.
+  const desktopOnly =
+    section?.id === "importar-jornada" && params.get("origen") === "calendario";
   const category = categoriaDe(params);
   const categories = ["Senior", "Veteranos"];
   const showCategory = [
@@ -139,7 +141,10 @@ export function StudioShell({ children }: { children: ReactNode }) {
           {desktopOnly ? (
             <>
               <p role="status" className={styles.desktopNotice}>
-                Esta sección se usa solo en escritorio (desde 1280 × 720).
+                El calendario en PDF se importa solo en escritorio (desde 1280 × 720).{" "}
+                <Link href="/admin/importar-jornada?origen=foto">
+                  Importar una captura de jornada
+                </Link>
               </p>
               <div className={styles.desktopOnly}>{children}</div>
             </>

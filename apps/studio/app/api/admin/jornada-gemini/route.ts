@@ -1,3 +1,6 @@
+import { MAX_CAPTURAS } from "@/lib/actas/capturas";
+import { sinPartidosRepetidos } from "@/lib/importar/repetidos";
+
 interface GeminiGenerateResponse {
   candidates?: Array<{
     content?: {
@@ -92,6 +95,15 @@ Analiza el documento/imagen completo y extrae TODOS los partidos que aparecen.
 Devuelve SOLO JSON válido, sin markdown.
 ${listaEquipos}
 
+CAPTURAS DE LA APP DE LA FEDERACIÓN (lista de una jornada):
+Si recibes capturas de la app móvil, el formato es este:
+- Arriba hay un selector con números de jornada ("1 2 3 4 5"). El número RESALTADO (píldora oscura) es la jornada que se muestra → "jornada".
+- Cada bloque separado por una línea es UN partido con dos filas: el equipo de ARRIBA es el LOCAL y el de ABAJO el VISITANTE.
+- A la IZQUIERDA de cada equipo va su número de goles. Un guion "-" significa que el partido aún no se ha jugado → golesLocal y golesVisitante "".
+- A la DERECHA va la fecha como DD/MM/YYYY → devuélvela como YYYY-MM-DD. Debajo puede ir la hora (HH:MM); si no aparece, hora "". El icono de calendario no es un dato.
+- La competición puede no salir en la captura: entonces competicion "" y temporada "". NO las inventes.
+- Pueden llegar VARIAS capturas de la misma jornada, solapadas: cada partido cuenta UNA sola vez.
+
 Extrae para cada partido:
 - localNombre: nombre equipo local exactamente como aparece
 - visitanteNombre: nombre equipo visitante
@@ -149,8 +161,7 @@ Formato exacto:
 
 async function generateWithFallback(
   apiKey: string,
-  base64: string,
-  mimeType: string,
+  imagenes: Array<{ mimeType: string; data: string }>,
   equiposDB: string[],
 ) {
   const body = JSON.stringify({
@@ -160,7 +171,7 @@ async function generateWithFallback(
         role: "user",
         parts: [
           { text: buildPrompt(equiposDB) },
-          { inlineData: { mimeType: mimeType || "image/png", data: base64 } },
+          ...imagenes.map((imagen) => ({ inlineData: imagen })),
         ],
       },
     ],
@@ -205,10 +216,13 @@ export async function POST(request: Request) {
   }
 
   const formData = await request.formData();
-  const file = formData.get("image");
+  const archivos = formData
+    .getAll("image")
+    .filter((valor): valor is File => valor instanceof File)
+    .slice(0, MAX_CAPTURAS);
   const equiposRaw = formData.get("equipos");
 
-  if (!(file instanceof File)) {
+  if (archivos.length === 0) {
     return Response.json({ error: "Falta archivo (imagen o pdf)" }, { status: 400 });
   }
 
@@ -216,17 +230,16 @@ export async function POST(request: Request) {
     ? (JSON.parse(String(equiposRaw)) as string[])
     : [];
 
-  const bytes = Buffer.from(await file.arrayBuffer());
-  const base64 = bytes.toString("base64");
+  const imagenes = await Promise.all(
+    archivos.map(async (archivo) => ({
+      mimeType: archivo.type || "application/pdf",
+      data: Buffer.from(await archivo.arrayBuffer()).toString("base64"),
+    })),
+  );
 
   let result: { model: string; payload: GeminiGenerateResponse };
   try {
-    result = await generateWithFallback(
-      apiKey,
-      base64,
-      file.type || "application/pdf",
-      equiposDB,
-    );
+    result = await generateWithFallback(apiKey, imagenes, equiposDB);
   } catch (error) {
     return Response.json(
       {
@@ -248,7 +261,8 @@ export async function POST(request: Request) {
 
   try {
     const parsed = JSON.parse(stripJsonFence(text)) as JornadaGeminiResponse;
-    return Response.json({ data: parsed, model: result.model });
+    const partidos = sinPartidosRepetidos(Array.isArray(parsed.partidos) ? parsed.partidos : []);
+    return Response.json({ data: { ...parsed, partidos }, model: result.model });
   } catch (error) {
     return Response.json(
       {

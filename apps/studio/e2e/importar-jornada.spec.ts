@@ -39,7 +39,7 @@ async function abrirFoto(page: Page) {
   ).not.toHaveCount(1, { timeout: 30000 });
 }
 
-// Importar jornada se usa solo en escritorio; movil.spec.ts comprueba el aviso móvil.
+// La captura de jornada en móvil (varias capturas, controles táctiles) se prueba en movil.spec.ts.
 for (const ancho of [1280]) {
   test(`foto de jornada: revisar lo detectado sin guardar a ${ancho}px`, async ({ page }) => {
     await page.setViewportSize({ width: ancho, height: 900 });
