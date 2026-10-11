@@ -47,6 +47,35 @@ async function sembrar() {
   };
 }
 
+describe("sincronización con la federación", () => {
+  it("un enlace por competición, un acta por código y estados conocidos", async () => {
+    const { db } = conexion;
+    const { competicion, jornada, local, visitante } = await sembrar();
+    const [p] = await db
+      .insert(s.partidos)
+      .values({ jornadaId: jornada.id, equipoLocalId: local.id, equipoVisitanteId: visitante.id })
+      .returning();
+    const enlace = { competicionId: competicion.id, enlace: "https://www.futgal.es/x" };
+    await db.insert(s.rfgfCompeticiones).values(enlace);
+    await rechaza(db.insert(s.rfgfCompeticiones).values(enlace));
+    const acta = { codActa: "1444198", competicionId: competicion.id, partidoId: p!.id };
+    await db.insert(s.rfgfActas).values({ ...acta, estado: "guardada" });
+    await rechaza(db.insert(s.rfgfActas).values({ ...acta, estado: "resultado" }));
+    await rechaza(
+      db.insert(s.rfgfActas).values({ ...acta, codActa: "2", estado: "inventado" as "error" }),
+    );
+    // Borrar el partido no borra la constancia del acta: solo la deja sin partido.
+    await db.delete(s.partidos).where(eq(s.partidos.id, p!.id));
+    const [resto] = await db.select().from(s.rfgfActas);
+    expect(resto).toMatchObject({ codActa: "1444198", partidoId: null });
+    // Borrar la competición se lo lleva todo.
+    await db.delete(s.jornadas).where(eq(s.jornadas.id, jornada.id));
+    await db.delete(s.competiciones).where(eq(s.competiciones.id, competicion.id));
+    expect(await db.select().from(s.rfgfActas)).toHaveLength(0);
+    expect(await db.select().from(s.rfgfCompeticiones)).toHaveLength(0);
+  });
+});
+
 describe("convocatorias previas", () => {
   it("partido único, par jugador único y borrado en cascada, aparte del acta", async () => {
     const { db } = conexion;
