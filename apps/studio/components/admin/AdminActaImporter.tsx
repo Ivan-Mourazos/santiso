@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { DeteccionCapturas } from "@/lib/importar/tipo";
 import { cargarActaGuardada, cargarPantallaActa, guardarActa } from "@/lib/server/acciones/actas";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
@@ -32,6 +33,10 @@ interface AdminActaImporterProps {
   showConfirm: (msg: string, onConfirm: () => void) => void;
   /** Partido ya elegido al abrir, desde la pantalla «Jornada». Solo cuenta al montar. */
   inicial?: { categoria?: string | null; competicionId?: string | null; partidoId?: string | null };
+  /** Capturas ya elegidas en «Importar». Solo cuentan al montar. */
+  archivosIniciales?: File[];
+  /** Cabecera ya leída en «Importar», para no pedirla otra vez. */
+  deteccionInicial?: DeteccionCapturas | null;
 }
 
 const CATEGORIES: ActaCategoria[] = ["Senior", "Veteranos"];
@@ -248,6 +253,8 @@ export default function AdminActaImporter({
   showToast,
   showConfirm,
   inicial,
+  archivosIniciales,
+  deteccionInicial,
 }: AdminActaImporterProps) {
   const [categoria, setCategoria] = useState<ActaCategoria>(
     () => CATEGORIES.find((c) => c === inicial?.categoria) ?? "Veteranos",
@@ -375,6 +382,31 @@ export default function AdminActaImporter({
     else setDetectedMeta(null);
   }
 
+  function aplicarDeteccion(data: DetectedActaMeta) {
+    setDetectedMeta(data);
+    if (data.categoria && CATEGORIES.includes(data.categoria as ActaCategoria)) {
+      setCategoria(data.categoria as ActaCategoria);
+    }
+  }
+
+  // Al llegar desde «Importar» las capturas ya están elegidas y su cabecera, leída.
+  const arranque = useRef(false);
+  useEffect(() => {
+    if (!archivosIniciales?.length) return;
+    // La marca se pone dentro del temporizador: en desarrollo React monta dos veces y cancela
+    // el primero; si se marcara antes, el segundo no haría nada.
+    const id = window.setTimeout(() => {
+      if (arranque.current) return;
+      arranque.current = true;
+      setFiles(archivosIniciales);
+      if (deteccionInicial?.jornada) aplicarDeteccion(deteccionInicial as DetectedActaMeta);
+      else void detectMatch(archivosIniciales);
+    }, 0);
+    return () => window.clearTimeout(id);
+    // Solo al montar: lo elegido después manda.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function detectMatch(archivos: File[]) {
     const f = archivos[0];
     if (!f) return;
@@ -393,10 +425,7 @@ export default function AdminActaImporter({
         data = (await res.json()) as DetectedActaMeta;
       }
       if (!data.jornada) return;
-      setDetectedMeta(data);
-      if (data.categoria && CATEGORIES.includes(data.categoria as ActaCategoria)) {
-        setCategoria(data.categoria as ActaCategoria);
-      }
+      aplicarDeteccion(data);
     } catch {
       // silent — user selects manually
     } finally {

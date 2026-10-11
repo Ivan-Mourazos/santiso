@@ -11,6 +11,7 @@ const SECCIONES = [
   "multas",
   "alineacion",
   "carteles",
+  "importar",
   "actas",
   "importar-jornada",
   "equipos",

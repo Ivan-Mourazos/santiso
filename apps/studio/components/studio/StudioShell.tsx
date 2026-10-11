@@ -2,7 +2,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useId, useState, type ReactNode } from "react";
-import { SECCIONES, categoriaDe, rutaSeccion } from "@/lib/navigation/contexto";
+import {
+  SECCIONES,
+  SECCIONES_MENU,
+  categoriaDe,
+  rutaSeccion,
+} from "@/lib/navigation/contexto";
 import { TEMPLATES } from "@/components/admin/cartel/types";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
@@ -17,8 +22,8 @@ const PESTANAS = [
     icono: "M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z",
   },
   {
-    id: "actas",
-    label: "Actas",
+    id: "importar",
+    label: "Importar",
     icono: "M9 4h6v3H9zM8 5H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2M9 12h6M9 16h4",
   },
   {
@@ -70,10 +75,10 @@ export function StudioShell({ children }: { children: ReactNode }) {
   function navigation() {
     return (
       <nav aria-label="Navegación principal" className={styles.nav}>
-        {[...new Set(SECCIONES.map((item) => item.grupo))].map((group) => (
+        {[...new Set(SECCIONES_MENU.map((item) => item.grupo))].map((group) => (
           <section key={group}>
             <h2 className={styles.group}>{group}</h2>
-            {SECCIONES.filter((item) => item.grupo === group).map((item) => (
+            {SECCIONES_MENU.filter((item) => item.grupo === group).map((item) => (
               <Link
                 key={item.id}
                 href={rutaSeccion(item.id, params)}

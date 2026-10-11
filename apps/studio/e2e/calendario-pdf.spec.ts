@@ -10,9 +10,10 @@ test("el calendario PDF enseña el plan antes de escribir nada", async ({ page }
   const externas = vigilarSalidasAInternet(page);
   page.on("pageerror", (error) => errores.push(error.message));
 
+  // Se entra por «Importar»: el calendario en PDF es uno de sus enlaces de ordenador.
   await page.goto("/admin");
-  await page.getByText("Importar jornada", { exact: true }).first().click();
-  await page.getByLabel("Origen de la jornada").selectOption("calendario");
+  await page.getByText("Importar", { exact: true }).first().click();
+  await page.getByRole("link", { name: "calendario completo en PDF" }).click();
 
   const competicion = page.locator("#cal-competicion");
   await expect(competicion).toBeVisible();

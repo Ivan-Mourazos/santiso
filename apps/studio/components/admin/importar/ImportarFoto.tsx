@@ -38,6 +38,8 @@ interface Props {
   showConfirm: (msg: string, onConfirm: () => void) => void;
   /** Destino ya elegido al abrir, desde la pantalla «Jornada». Solo cuenta al montar. */
   inicial?: { categoria?: string | null; competicionId?: string | null; jornadaId?: string | null };
+  /** Capturas ya elegidas en «Importar». Solo cuentan al montar. */
+  archivosIniciales?: File[];
 }
 
 interface JornadaCatalogo {
@@ -85,7 +87,12 @@ function construirFilas(
  * enlaza equipos y campos con el catálogo y se revisa antes de guardar. La lógica viene tal
  * cual de `AdminJornadaImporter` (hasta la 6H); el destino se ve ya antes de analizar.
  */
-export default function ImportarFoto({ showToast, showConfirm, inicial }: Props) {
+export default function ImportarFoto({
+  showToast,
+  showConfirm,
+  inicial,
+  archivosIniciales,
+}: Props) {
   const [categoria, setCategoria] = useState(
     () => CATEGORIAS.find((c) => c === inicial?.categoria) ?? "Senior",
   );
@@ -175,6 +182,22 @@ export default function ImportarFoto({ showToast, showConfirm, inicial }: Props)
     setLeido(null);
     setFilas([]);
   }
+
+  // Al llegar desde «Importar» las capturas ya están elegidas.
+  const arranque = useRef(false);
+  useEffect(() => {
+    if (!archivosIniciales?.length) return;
+    // La marca se pone dentro del temporizador: en desarrollo React monta dos veces y cancela
+    // el primero; si se marcara antes, el segundo no haría nada.
+    const id = window.setTimeout(() => {
+      if (arranque.current) return;
+      arranque.current = true;
+      elegirArchivos(archivosIniciales);
+    }, 0);
+    return () => window.clearTimeout(id);
+    // Solo al montar: lo elegido después manda.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function analizar() {
     if (!archivo) return showToast("Selecciona una imagen primero", "error");
