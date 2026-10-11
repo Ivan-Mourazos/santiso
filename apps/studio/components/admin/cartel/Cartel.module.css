@@ -197,7 +197,17 @@
 }
 
 @media (max-width: 900px) {
+  .pantalla {
+    padding-top: 56px;
+  }
   .pestanas {
+    position: fixed;
+    top: 52px;
+    left: max(0.75rem, env(safe-area-inset-left));
+    right: max(0.75rem, env(safe-area-inset-right));
+    z-index: 5;
+    background: var(--ui-bg, #0b0b0c);
+    padding-block: 0.25rem;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
@@ -205,6 +215,36 @@
   .formulario[data-activo="false"],
   .previsualizacion[data-activo="false"] {
     display: none;
+  }
+  .formulario {
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: none;
+  }
+  .formulario :is(summary, button, input, select, textarea) {
+    scroll-margin-block: 120px;
+  }
+  .formulario > * {
+    margin-bottom: 0.5rem;
+  }
+  .formulario .acciones,
+  .formulario .instagram,
+  .lado {
+    margin-top: 0.5rem;
+  }
+  .instagram {
+    padding: 0.5rem;
+  }
+  .instagramCabecera p {
+    display: none;
+  }
+  .instagram textarea {
+    min-height: 6rem;
+    max-height: 12rem;
+  }
+  .lado > span {
+    margin-bottom: 0.25rem;
   }
   .formulario :is(input, select, textarea) {
     /* Algunos formularios legados fijan tamaños en línea. Evita zoom de iOS. */

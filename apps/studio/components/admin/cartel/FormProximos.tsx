@@ -11,6 +11,7 @@ import { huecoProximo } from "@/lib/jornada/proximos";
 import { elegirAxenda } from "@/lib/cartel2/seleccion-axenda";
 import { SectionLabel, Toggle, type SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
+import { PlegableMovil } from "./PlegableMovil";
 import type { FormState } from "./types";
 
 function normalizeText(value: string) {
@@ -85,159 +86,174 @@ export const FormProximos: React.FC<Props> = ({
           </p>
         )}
       </div>
-      <SectionLabel>Sénior y veteranos</SectionLabel>
-      <p className={styles.nota}>
-        Un partido sin rival no sale en el cartel: déjalo vacío si esa categoría descansa.
-      </p>
+      <PlegableMovil titulo="Ayuda para rellenar">
+        <SectionLabel>Sénior y veteranos</SectionLabel>
+        <p className={styles.nota}>
+          Un partido sin rival no sale en el cartel: déjalo vacío si esa categoría descansa.
+        </p>
+      </PlegableMovil>
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {form.matches.map((m, i) => (
-          <div key={i} className={styles.tarjetaPartido}>
-            <h5 className={styles.seccion}>Partido {i + 1}</h5>
+          <PlegableMovil
+            key={i}
+            grupo="axenda-partidos"
+            partido
+            titulo={`${m.categoria} · ${m.rival || "Sin rival"} · ${m.fecha ? m.fecha.split("-").reverse().slice(0, 2).join("/") : "Sin fecha"} ${m.hora || ""}`}
+          >
+            <div className={styles.tarjetaPartido}>
+              <h5 className={styles.seccion}>Partido {i + 1}</h5>
 
-            <div className={styles.parejaAncha}>
-              <div>
+              <div className={styles.parejaAncha}>
+                <div>
+                  <Field
+                    label={`Rival del partido ${i + 1}`}
+                    list={`rival-list-${i}`}
+                    placeholder="Nombre del rival…"
+                    value={m.rival}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const found = equipos.find(
+                        (eq) => eq.nombre.toLowerCase() === val.toLowerCase(),
+                      );
+                      updateMatch(i, {
+                        rival: val,
+                        ...(found ? { rivalEscudoUrl: found.escudo_url } : {}),
+                      });
+                    }}
+                  />
+                  <datalist id={`rival-list-${i}`}>
+                    {equipos
+                      .filter(
+                        (e) => categoriaKey(e.categoria || "") === categoriaKey(m.categoria || ""),
+                      )
+                      .map((e) => (
+                        <option key={e.id} value={e.nombre} />
+                      ))}
+                  </datalist>
+                  <PlegableMovil titulo={`Escudo del partido ${i + 1}`}>
+                    <div className={styles.escudo}>
+                      <label className="file-input-label">
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                        </svg>
+                        Subir escudo
+                        <input
+                          type="file"
+                          className="hidden-input"
+                          accept="image/*"
+                          onChange={(e) => {
+                            if (e.target.files?.[0] && handleMatchRivalFile) {
+                              handleMatchRivalFile(i, e.target.files[0]);
+                            }
+                          }}
+                        />
+                      </label>
+                      {m.rivalEscudoUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
+                        <img
+                          className={styles.escudoImagen}
+                          src={m.rivalEscudoUrl}
+                          alt="Escudo del rival"
+                        />
+                      )}
+                    </div>
+                  </PlegableMovil>
+                </div>
+                <Select
+                  label="Categoría"
+                  value={m.categoria}
+                  onChange={(e) =>
+                    updateMatch(i, { categoria: e.target.value, rival: "", rivalEscudoUrl: "" })
+                  }
+                >
+                  <option value="Senior">Sénior</option>
+                  <option value="Veteranos">Veteranos</option>
+                </Select>
+              </div>
+
+              <div className={styles.pareja}>
                 <Field
-                  label={`Rival del partido ${i + 1}`}
-                  list={`rival-list-${i}`}
-                  placeholder="Nombre del rival…"
-                  value={m.rival}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const found = equipos.find(
-                      (eq) => eq.nombre.toLowerCase() === val.toLowerCase(),
-                    );
-                    updateMatch(i, {
-                      rival: val,
-                      ...(found ? { rivalEscudoUrl: found.escudo_url } : {}),
-                    });
-                  }}
+                  label="Fecha"
+                  type="date"
+                  value={m.fecha}
+                  onChange={(e) => updateMatch(i, { fecha: e.target.value })}
                 />
-                <datalist id={`rival-list-${i}`}>
-                  {equipos
-                    .filter(
-                      (e) => categoriaKey(e.categoria || "") === categoriaKey(m.categoria || ""),
+                <Field
+                  label="Hora"
+                  type="time"
+                  value={m.hora || "18:00"}
+                  onChange={(e) => updateMatch(i, { hora: e.target.value })}
+                />
+              </div>
+
+              <Field
+                label="Campo o estadio"
+                value={m.lugar || ""}
+                placeholder="A Merced"
+                onChange={(e) => updateMatch(i, { lugar: e.target.value })}
+              />
+              <div className={styles.pareja}>
+                <Field
+                  label={`Competición del partido ${i + 1}`}
+                  value={m.competicion ?? ""}
+                  onChange={(e) =>
+                    updateMatch(i, { competicion: e.target.value, partidoId: undefined })
+                  }
+                />
+                <Field
+                  label={`Jornada del partido ${i + 1}`}
+                  value={m.jornada ?? ""}
+                  inputMode="numeric"
+                  onChange={(e) => updateMatch(i, { jornada: e.target.value })}
+                />
+              </div>
+              <Field
+                label={`Localidad del partido ${i + 1}`}
+                value={m.localidad ?? ""}
+                onChange={(e) => updateMatch(i, { localidad: e.target.value })}
+              />
+              {i > 1 && (
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    set(
+                      "matches",
+                      form.matches.filter((_, n) => n !== i),
                     )
-                    .map((e) => (
-                      <option key={e.id} value={e.nombre} />
-                    ))}
-                </datalist>
-                <div className={styles.escudo}>
-                  <label className="file-input-label">
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-                    </svg>
-                    Subir escudo
-                    <input
-                      type="file"
-                      className="hidden-input"
-                      accept="image/*"
-                      onChange={(e) => {
-                        if (e.target.files?.[0] && handleMatchRivalFile) {
-                          handleMatchRivalFile(i, e.target.files[0]);
-                        }
-                      }}
-                    />
-                  </label>
-                  {m.rivalEscudoUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
-                    <img
-                      className={styles.escudoImagen}
-                      src={m.rivalEscudoUrl}
-                      alt="Escudo del rival"
-                    />
-                  )}
+                  }
+                >
+                  Quitar partido {i + 1}
+                </Button>
+              )}
+
+              <div
+                className={styles.campo}
+                role="group"
+                aria-label={`Localía del partido ${i + 1}`}
+              >
+                <span className={styles.etiqueta}>Localía</span>
+                <div className={styles.interruptores}>
+                  <Toggle
+                    label="Local"
+                    active={m.santisoSide === "left"}
+                    onClick={() => updateMatch(i, { santisoSide: "left" })}
+                  />
+                  <Toggle
+                    label="Visitante"
+                    active={m.santisoSide === "right"}
+                    onClick={() => updateMatch(i, { santisoSide: "right" })}
+                  />
                 </div>
               </div>
-              <Select
-                label="Categoría"
-                value={m.categoria}
-                onChange={(e) =>
-                  updateMatch(i, { categoria: e.target.value, rival: "", rivalEscudoUrl: "" })
-                }
-              >
-                <option value="Senior">Sénior</option>
-                <option value="Veteranos">Veteranos</option>
-              </Select>
             </div>
-
-            <div className={styles.pareja}>
-              <Field
-                label="Fecha"
-                type="date"
-                value={m.fecha}
-                onChange={(e) => updateMatch(i, { fecha: e.target.value })}
-              />
-              <Field
-                label="Hora"
-                type="time"
-                value={m.hora || "18:00"}
-                onChange={(e) => updateMatch(i, { hora: e.target.value })}
-              />
-            </div>
-
-            <Field
-              label="Campo o estadio"
-              value={m.lugar || ""}
-              placeholder="A Merced"
-              onChange={(e) => updateMatch(i, { lugar: e.target.value })}
-            />
-            <div className={styles.pareja}>
-              <Field
-                label={`Competición del partido ${i + 1}`}
-                value={m.competicion ?? ""}
-                onChange={(e) =>
-                  updateMatch(i, { competicion: e.target.value, partidoId: undefined })
-                }
-              />
-              <Field
-                label={`Jornada del partido ${i + 1}`}
-                value={m.jornada ?? ""}
-                inputMode="numeric"
-                onChange={(e) => updateMatch(i, { jornada: e.target.value })}
-              />
-            </div>
-            <Field
-              label={`Localidad del partido ${i + 1}`}
-              value={m.localidad ?? ""}
-              onChange={(e) => updateMatch(i, { localidad: e.target.value })}
-            />
-            {i > 1 && (
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  set(
-                    "matches",
-                    form.matches.filter((_, n) => n !== i),
-                  )
-                }
-              >
-                Quitar partido {i + 1}
-              </Button>
-            )}
-
-            <div className={styles.campo} role="group" aria-label={`Localía del partido ${i + 1}`}>
-              <span className={styles.etiqueta}>Localía</span>
-              <div className={styles.interruptores}>
-                <Toggle
-                  label="Local"
-                  active={m.santisoSide === "left"}
-                  onClick={() => updateMatch(i, { santisoSide: "left" })}
-                />
-                <Toggle
-                  label="Visitante"
-                  active={m.santisoSide === "right"}
-                  onClick={() => updateMatch(i, { santisoSide: "right" })}
-                />
-              </div>
-            </div>
-          </div>
+          </PlegableMovil>
         ))}
       </div>
       {form.matches.length < 4 && (

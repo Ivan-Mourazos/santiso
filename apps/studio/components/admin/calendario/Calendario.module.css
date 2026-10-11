@@ -421,6 +421,53 @@
   margin-top: var(--ui-space-3, 0.75rem);
 }
 
+@media (max-width: 900px) {
+  .resumenPropio {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 64px;
+    padding: 0.5rem;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    text-align: left;
+    cursor: pointer;
+  }
+  .resumenPropio:focus-visible {
+    outline: 3px solid var(--ui-accent);
+    outline-offset: 2px;
+  }
+  .textoPropio {
+    display: grid;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0;
+  }
+  .textoPropio > * {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .textoPropio strong {
+    font-size: 0.875rem;
+  }
+  .textoPropio > span {
+    font-size: 0.75rem;
+    color: var(--ui-muted);
+  }
+  .marcadorPropio {
+    flex-shrink: 0;
+    color: var(--ui-accent);
+    font-size: 1rem;
+  }
+  .partido.detallePropio .desplegar {
+    display: none;
+  }
+}
+
 .contextoFila {
   margin: 0;
   font-size: 0.66rem;

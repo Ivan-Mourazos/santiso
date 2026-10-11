@@ -53,9 +53,13 @@ for (const ancho of [360, 390]) {
       await ruta.fulfill({ status: 200, contentType: "image/png", body: PNG });
     });
     await page.goto("/admin/carteles?plantilla=proximos");
+    const tarjetas = page.locator("[data-partido-plegado] > summary");
+    await tarjetas.nth(0).tap();
     await expect(page.getByLabel("Rival del partido 1")).toBeVisible();
     await page.waitForLoadState("networkidle");
     await page.getByLabel("Rival del partido 1").fill("C.D. Compañía de María");
+    await tarjetas.nth(1).tap();
+    await expect(page.getByLabel("Rival del partido 1")).toBeHidden();
     await page.getByLabel("Rival del partido 2").fill("A.C.U.D. Camporrapado");
     await page.getByLabel("Formato de cartel").selectOption("historia");
     await page.getByRole("button", { name: "Preparar carrusel Axenda", exact: true }).tap();
@@ -65,6 +69,10 @@ for (const ancho of [360, 390]) {
     expect(peticiones.map((p) => p.plantilla)).toEqual(["proximos", "partido", "partido"]);
     expect(peticiones.every((p) => p.formato === "historia")).toBe(true);
     const caption = page.getByRole("textbox", { name: "Texto para Instagram", exact: true });
+    const opcionesTexto = page.locator("summary").filter({ hasText: "Texto para Instagram" });
+    // Desplaza la opción al centro: las barras fijas no cuentan para scrollIntoViewIfNeeded.
+    await opcionesTexto.evaluate((n) => n.scrollIntoView({ block: "center" }));
+    await opcionesTexto.tap();
     await caption.fill("Axenda editada 💛🖤");
     await page.getByRole("button", { name: "Compartir carrusel", exact: true }).tap();
     expect(
@@ -85,6 +93,7 @@ for (const ancho of [360, 390]) {
       .locator("main button:visible, main select:visible")
       .evaluateAll((ns) => ns.map((n) => n.getBoundingClientRect().height));
     expect(Math.round(Math.min(...altos))).toBeGreaterThanOrEqual(44);
+    await tarjetas.nth(0).tap();
     await page.getByLabel("Rival del partido 1").fill("Outro rival");
     await expect(
       page.getByRole("button", { name: "Compartir carrusel", exact: true }),

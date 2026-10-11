@@ -9,6 +9,7 @@ import { Field } from "@/components/ui/foundation/Fields";
 import { competitionsForCategory, type CompetenciaRow } from "@/lib/competition";
 import { CategorySelector, type SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
+import { PlegableMovil } from "./PlegableMovil";
 import type { FormState } from "./types";
 
 interface Props {
@@ -73,36 +74,38 @@ export const RivalSelector = ({
           ))}
         </datalist>
       </div>
-      <div className={styles.campo}>
-        <span className={styles.etiqueta}>Escudo del rival</span>
-        <div className={styles.escudo}>
-          <label className="file-input-label">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-            </svg>
-            Subir escudo
-            <input
-              type="file"
-              className="hidden-input"
-              accept="image/*"
-              onChange={(e) => {
-                if (e.target.files?.[0]) handleRivalFile(e.target.files[0]);
-              }}
-            />
-          </label>
-          {rivalEscudoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
-            <img className={styles.escudoImagen} src={rivalEscudoUrl} alt="Escudo del rival" />
-          )}
+      <PlegableMovil titulo="Escudo del rival">
+        <div className={styles.campo}>
+          <span className={styles.etiqueta}>Escudo del rival</span>
+          <div className={styles.escudo}>
+            <label className="file-input-label">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+              </svg>
+              Subir escudo
+              <input
+                type="file"
+                className="hidden-input"
+                accept="image/*"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleRivalFile(e.target.files[0]);
+                }}
+              />
+            </label>
+            {rivalEscudoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
+              <img className={styles.escudoImagen} src={rivalEscudoUrl} alt="Escudo del rival" />
+            )}
+          </div>
         </div>
-      </div>
+      </PlegableMovil>
     </>
   );
 };

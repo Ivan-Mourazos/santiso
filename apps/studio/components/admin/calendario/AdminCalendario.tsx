@@ -5,7 +5,8 @@ import { useState } from "react";
 import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Select } from "@/components/ui/foundation/Fields";
-import { FiltrosMovil } from "@/components/ui/foundation/FiltrosMovil";
+import { FiltrosMovil, useEsMovil } from "@/components/ui/foundation/FiltrosMovil";
+import { partidosRecientes } from "@/lib/calendario/partidos-recientes";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import { borrarJornada } from "@/lib/server/acciones/calendario";
 import Descansos from "./Descansos";
@@ -32,6 +33,12 @@ const nombreJornada = (j: { numero: number; nombre_fase?: string | null }) =>
  */
 export default function AdminCalendario({ showToast, showConfirm, categoria }: Props) {
   const c = useCalendario(categoria);
+  const movil = useEsMovil();
+  const [anterioresEn, setAnterioresEn] = useState<string | null>(null);
+  const claveAnteriores = `${categoria}/${c.selectedSeasonId}/${c.selectedCompetitionId}`;
+  const anterioresAbiertos = anterioresEn === claveAnteriores;
+  const recientes = partidosRecientes(c.partidos);
+  const partidosVisibles = movil && !anterioresAbiertos ? recientes.actuales : c.partidos;
   const { setParams } = useStudio();
   const [dialogo, setDialogo] = useState<"jornadas" | null>(null);
   /** Solo en móvil: lo que se usa una vez al año (crear o borrar jornadas) queda plegado. */
@@ -78,48 +85,50 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
               competicion?.nombre ?? "Sin competición",
             ].join(" · ")}
           >
-          <Select
-            label="Temporada"
-            value={c.selectedSeasonId}
-            onChange={(e) =>
-              setParams({ temporada: e.target.value, competicion: null, jornada: null })
-            }
-          >
-            {c.temporadas.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.nombre}
-                {t.activa ? " (activa)" : ""}
-              </option>
-            ))}
-          </Select>
-          <Select
-            label="Competición"
-            value={c.selectedCompetitionId}
-            onChange={(e) => c.setSelectedCompetitionId(e.target.value)}
-            disabled={c.competicionesEnCategoria.length === 0}
-          >
-            {c.competicionesEnCategoria.length === 0 && <option value="">Sin competiciones</option>}
-            {c.competicionesEnCategoria.map((x) => (
-              <option key={x.id} value={x.id}>
-                {x.nombre}
-              </option>
-            ))}
-          </Select>
-          {c.vista === "jornada" && (
             <Select
-              label="Jornada"
-              value={c.selectedJornada ?? ""}
-              onChange={(e) => c.setSelectedJornada(e.target.value || null)}
-              disabled={c.jornadas.length === 0}
+              label="Temporada"
+              value={c.selectedSeasonId}
+              onChange={(e) =>
+                setParams({ temporada: e.target.value, competicion: null, jornada: null })
+              }
             >
-              {c.jornadas.length === 0 && <option value="">Sin jornadas</option>}
-              {c.jornadas.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {nombreJornada(j)}
+              {c.temporadas.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.nombre}
+                  {t.activa ? " (activa)" : ""}
                 </option>
               ))}
             </Select>
-          )}
+            <Select
+              label="Competición"
+              value={c.selectedCompetitionId}
+              onChange={(e) => c.setSelectedCompetitionId(e.target.value)}
+              disabled={c.competicionesEnCategoria.length === 0}
+            >
+              {c.competicionesEnCategoria.length === 0 && (
+                <option value="">Sin competiciones</option>
+              )}
+              {c.competicionesEnCategoria.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.nombre}
+                </option>
+              ))}
+            </Select>
+            {c.vista === "jornada" && (
+              <Select
+                label="Jornada"
+                value={c.selectedJornada ?? ""}
+                onChange={(e) => c.setSelectedJornada(e.target.value || null)}
+                disabled={c.jornadas.length === 0}
+              >
+                {c.jornadas.length === 0 && <option value="">Sin jornadas</option>}
+                {c.jornadas.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {nombreJornada(j)}
+                  </option>
+                ))}
+              </Select>
+            )}
           </FiltrosMovil>
           {/* Solo en móvil: pasar de jornada con un toque, sin abrir los filtros. */}
           {c.vista === "jornada" && jornada && (
@@ -205,7 +214,20 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
         <LoadingState title="Cargando jornadas…" />
       ) : c.vista === "santiso" ? (
         <section className={styles.bloque} aria-label="Partidos del Santiso">
-          <h3 className={styles.titulo}>Partidos del Santiso · toda la temporada</h3>
+          <h3 className={styles.titulo}>Partidos del Santiso{!movil && " · toda la temporada"}</h3>
+          {movil && recientes.anteriores.length > 0 && (
+            <Button
+              size="sm"
+              variant="secondary"
+              aria-expanded={anterioresAbiertos}
+              aria-controls="partidos-santiso-lista"
+              onClick={() => setAnterioresEn(anterioresAbiertos ? null : claveAnteriores)}
+            >
+              {anterioresAbiertos
+                ? "Ocultar anteriores"
+                : `Ver anteriores (${recientes.anteriores.length})`}
+            </Button>
+          )}
           <p className={`${styles.nota} ${styles.vacio}`}>
             Corrige aquí fecha, hora y campo de cada partido; cada fila se guarda con su botón.
           </p>
@@ -214,9 +236,9 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
               El Santiso no tiene partidos en esta competición.
             </p>
           ) : (
-            <div className={`${styles.partidos} ${styles.vacio}`}>
+            <div id="partidos-santiso-lista" className={`${styles.partidos} ${styles.vacio}`}>
               <CabeceraPartidos conContexto />
-              {c.partidos.map((p) => {
+              {partidosVisibles.map((p) => {
                 const suJornada = c.jornadas.find((j) => j.id === p.jornada_id);
                 return (
                   <FilaPartido

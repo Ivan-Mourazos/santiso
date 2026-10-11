@@ -29,3 +29,16 @@
 .archivos button {
   flex: 1 1 8rem;
 }
+@media (max-width: 900px) {
+  .paquete {
+    padding: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .paquete h4,
+  .paquete > p:first-of-type {
+    display: none;
+  }
+  .acciones > button {
+    flex: 1 1 100%;
+  }
+}
