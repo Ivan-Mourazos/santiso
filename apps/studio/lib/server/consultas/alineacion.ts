@@ -20,7 +20,7 @@ const PROXIMOS = 6;
  * Partidos del club en una categoría de la temporada activa: los que quedan por jugar desde
  * `desde` (día `AAAA-MM-DD`), por fecha, más `incluir` aunque ya se haya jugado.
  */
-async function partidosDelClub(
+export async function partidosDelClub(
   temporadaId: string,
   categoria: string,
   desde: string,
@@ -103,7 +103,10 @@ async function partidosDelClub(
   return pedido && !porJugar.some((p) => p.id === pedido.id) ? [pedido, ...porJugar] : porJugar;
 }
 
-async function plantilla(temporadaId: string, categoria: string): Promise<JugadorAlineacion[]> {
+export async function plantilla(
+  temporadaId: string,
+  categoria: string,
+): Promise<JugadorAlineacion[]> {
   const { db } = await obtenerDb();
   const filas = await db
     .select({
@@ -175,10 +178,17 @@ export async function pantallaAlineacion(
   ]);
   const elegido =
     partidos.find((p) => p.id === partidoPedido) ?? partidos.find((p) => !p.finalizado) ?? null;
+  const alineacion = elegido ? await alineacionDePartido(elegido.id) : ALINEACION_VACIA;
+  let disponibles = jugadores;
+  if (elegido && !alineacion.titulares.length && !alineacion.suplentes.length) {
+    const { convocatoriaDePartido } = await import("./convocatoria");
+    const convocatoria = await convocatoriaDePartido(elegido.id);
+    if (convocatoria) disponibles = jugadores.filter((j) => convocatoria.jugadores.includes(j.id));
+  }
   return {
     partidos,
     partidoId: elegido?.id ?? null,
-    jugadores,
-    alineacion: elegido ? await alineacionDePartido(elegido.id) : ALINEACION_VACIA,
+    jugadores: disponibles,
+    alineacion,
   };
 }

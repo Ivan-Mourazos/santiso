@@ -7,6 +7,7 @@ export const SECCIONES = [
   { id: "tecnicos", label: "Cuerpo técnico", grupo: "Plantilla" },
   { id: "directiva", label: "Directiva", grupo: "Plantilla" },
   { id: "multas", label: "Multas", grupo: "Plantilla" },
+  { id: "convocatoria", label: "Convocatoria", grupo: "Producción" },
   { id: "alineacion", label: "Alineación", grupo: "Producción" },
   { id: "carteles", label: "Carteles", grupo: "Producción" },
   { id: "actas", label: "Actas", grupo: "Producción" },

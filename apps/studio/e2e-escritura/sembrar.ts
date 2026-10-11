@@ -391,6 +391,36 @@ async function sembrar() {
     },
   ]);
 
+  // Partido privado de convocatoria. Fecha pasada y no finalizado: solo aparece al pedirlo,
+  // sin cambiar el próximo partido de las otras pruebas. Reutiliza los tres veteranos.
+  const [convocatoriaCompeticion] = await db
+    .insert(schema.competiciones)
+    .values({
+      temporadaId: activa.id,
+      categoria: "Veteranos",
+      nombre: "Copa Convocatoria",
+      orden: 30,
+    })
+    .returning();
+  const [convocatoriaJornada] = await db
+    .insert(schema.jornadas)
+    .values({
+      competicionId: convocatoriaCompeticion!.id,
+      numero: 1,
+    })
+    .returning();
+  await db.insert(schema.competicionEquipos).values([
+    { competicionId: convocatoriaCompeticion!.id, equipoId: equiposCopa[0]!.id },
+    { competicionId: convocatoriaCompeticion!.id, equipoId: equiposCopa[3]!.id },
+  ]);
+  await db.insert(schema.partidos).values({
+    id: "convocatoria-e2e",
+    jornadaId: convocatoriaJornada!.id,
+    equipoLocalId: equiposCopa[0]!.id,
+    equipoVisitanteId: equiposCopa[3]!.id,
+    fecha: "2000-01-01T17:00",
+  });
+
   cerrar();
   console.log(`Datos de prueba en ${DIR_ESCRITURA}`);
 }

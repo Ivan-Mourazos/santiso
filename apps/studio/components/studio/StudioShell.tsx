@@ -65,6 +65,7 @@ export function StudioShell({ children }: { children: ReactNode }) {
     "tecnicos",
     "equipos",
     "alineacion",
+    "convocatoria",
   ].some((id) => id === section?.id);
   function navigation() {
     return (
