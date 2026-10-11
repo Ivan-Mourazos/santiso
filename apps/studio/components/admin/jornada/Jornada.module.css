@@ -216,7 +216,9 @@
 /* ─── Federación: sincronización automática ─── */
 .rfgf {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--ui-space-3, 0.75rem);
+  min-width: 0;
 }
 .rfgfAviso {
   display: grid;
@@ -247,6 +249,7 @@
   font-size: var(--ui-text-sm, 0.875rem);
 }
 .rfgfDetalle {
+  min-width: 0;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius, 0.75rem);
   padding: 0 var(--ui-space-4, 1rem);
@@ -268,6 +271,8 @@
 }
 .rfgfDetalle[open] {
   display: grid;
+  /* Sin esto, el enlace largo ensancha la caja y la pantalla se desborda. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--ui-space-3, 0.75rem);
   padding-bottom: var(--ui-space-4, 1rem);
 }
@@ -277,8 +282,14 @@
   align-items: start;
   gap: var(--ui-space-2, 0.5rem);
 }
+.rfgfFila > * {
+  min-width: 0;
+}
 .rfgfFila > button {
   margin-top: 1.6rem;
+}
+.rfgfDetalle > button {
+  justify-self: start;
 }
 @media (max-width: 640px) {
   .rfgfFila {

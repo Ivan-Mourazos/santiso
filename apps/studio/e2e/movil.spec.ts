@@ -244,6 +244,25 @@ for (const ancho of [360, 390]) {
   });
 }
 
+for (const ancho of [360, 390]) {
+  test(`jornada: el panel de la federación desplegado cabe a ${ancho}px`, async ({ page }) => {
+    await page.setViewportSize({ width: ancho, height: 844 });
+    await abrir(page, "jornada");
+    const panel = page.getByRole("region", { name: "Federación" });
+    // Solo aparece si hay competiciones en la temporada activa.
+    if ((await panel.count()) === 0) return;
+    await panel.locator("summary").click();
+    await expect(panel.getByRole("button", { name: "Comprobar ahora" })).toBeVisible();
+    for (const control of await panel.locator("input:visible, button:visible").all()) {
+      const caja = (await control.boundingBox())!;
+      expect(Math.round(caja.height)).toBeGreaterThanOrEqual(44);
+      expect(caja.x + caja.width).toBeLessThanOrEqual(ancho + 1);
+    }
+    // Solo se despliega: no se pulsa «Comprobar ahora» ni «Guardar».
+    await comprobarAncho(page);
+  });
+}
+
 test("importar-jornada: el calendario en PDF sigue reservado a escritorio", async ({ page }) => {
   await abrir(page, "importar-jornada?origen=calendario");
   const aviso = page.getByRole("status").filter({ hasText: "solo en escritorio" });
