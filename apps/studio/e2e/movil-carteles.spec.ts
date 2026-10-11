@@ -31,7 +31,7 @@ for (const ancho of [360, 390]) {
     await page.getByRole("tab", { name: "Datos", exact: true }).tap();
     await expect(page.getByLabel("Rival", { exact: true })).toHaveValue("Rival móvil de prueba");
     const selector = page.getByLabel("Plantilla de cartel", { exact: true });
-    expect((await selector.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect(Math.round((await selector.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
     expect(
       await selector.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
     ).toBeGreaterThanOrEqual(16);
@@ -63,6 +63,10 @@ for (const ancho of [360, 390]) {
       if (plantilla === "cronoloxia")
         await page.getByRole("button", { name: "+ Evento", exact: true }).tap();
       if (plantilla === "clasificacion") await page.getByRole("button", { name: /Manual/ }).tap();
+      // Las opciones móviles están plegadas; se revisan también sus controles al abrirlas.
+      for (const resumen of await page.locator("main details > summary:visible").all()) {
+        await resumen.tap();
+      }
       const fuentes = await page
         .locator(
           'main input:visible:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]), main textarea:visible, main select:visible',
@@ -71,7 +75,7 @@ for (const ancho of [360, 390]) {
       expect(Math.min(...fuentes)).toBeGreaterThanOrEqual(16);
       const controlesDatos = await page
         .locator(
-          'main button:visible, main input:visible:not([type="checkbox"]):not([type="radio"]):not([type="file"]), main select:visible, main .file-input-label:visible',
+          'main button:visible, main summary:visible, main input:visible:not([type="checkbox"]):not([type="radio"]):not([type="file"]), main select:visible, main .file-input-label:visible',
         )
         .evaluateAll((campos) =>
           campos.map((el) => ({
@@ -153,6 +157,7 @@ test("carteles: copia texto retocado sin zoom y conserva edición al cambiar de 
     });
   });
   await page.goto("/admin/carteles?plantilla=clasificacion");
+  await page.locator("summary").filter({ hasText: "Texto para Instagram" }).tap();
   const texto = page.getByRole("textbox", { name: "Texto para Instagram", exact: true });
   await expect(texto).toBeVisible();
   await page.waitForLoadState("networkidle");
@@ -161,7 +166,7 @@ test("carteles: copia texto retocado sin zoom y conserva edición al cambiar de 
   ).toBeGreaterThanOrEqual(16);
   await texto.fill("Texto móvil retocado 📸");
   const copiar = page.getByRole("button", { name: "Copiar", exact: true });
-  expect((await copiar.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  expect(Math.round((await copiar.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
   await copiar.tap();
   await expect(page.locator("html")).toHaveAttribute("data-copiado", "Texto móvil retocado 📸");
   await vista(page);

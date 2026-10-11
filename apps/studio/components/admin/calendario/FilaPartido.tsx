@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
+import { Dialog } from "@/components/ui/foundation/Dialog";
+import { useEsMovil } from "@/components/ui/foundation/FiltrosMovil";
 import { Field, Select } from "@/components/ui/foundation/Fields";
 import type { CampoDto } from "@/lib/dto";
 import type { LeagueMatch } from "@/lib/lecturas-cliente";
@@ -89,6 +91,7 @@ export default function FilaPartido({
   const [abierta, setAbierta] = useState(false);
   const enCurso = useRef(false);
   const nombre = `${local} - ${visitante}`;
+  const movilPropio = useEsMovil() && contexto !== undefined;
 
   // Mismo orden que antes de la 6G: marcador, fecha y campo. Si uno falla, los siguientes no
   // se mandan y la fila conserva lo escrito.
@@ -147,13 +150,13 @@ export default function FilaPartido({
     });
   }
 
-  return (
+  const fila = (
     <section
-      className={styles.partido}
+      className={`${styles.partido} ${movilPropio ? styles.detallePropio : ""}`}
       aria-label={nombre}
       data-cambios={conCambios}
       data-contexto={contexto !== undefined}
-      data-abierta={abierta}
+      data-abierta={movilPropio || abierta}
     >
       {contexto !== undefined && <span className={styles.contextoFila}>{contexto}</span>}
       <div className={`${styles.equipo} ${styles.local}`}>
@@ -275,6 +278,45 @@ export default function FilaPartido({
         </Button>
       </div>
     </section>
+  );
+  if (!movilPropio) return fila;
+  return (
+    <>
+      <section aria-label={nombre} data-contexto="true" data-cambios={conCambios}>
+        <button
+          type="button"
+          className={styles.resumenPropio}
+          aria-label={`Ver partido ${nombre}`}
+          onClick={(e) => {
+            e.currentTarget.focus();
+            setAbierta(true);
+          }}
+        >
+          <span className={styles.textoPropio}>
+            <strong>
+              {local} · {visitante}
+            </strong>
+            <span>
+              {contexto} · {resumenDe(p, campos)}
+            </span>
+          </span>
+          <strong className={styles.marcadorPropio}>
+            {p.goles_local ?? "–"}–{p.goles_visitante ?? "–"}
+          </strong>
+          {conCambios && <span className={styles.oculto}>Cambios sin guardar</span>}
+        </button>
+      </section>
+      {abierta && (
+        <Dialog
+          open={abierta}
+          onClose={() => setAbierta(false)}
+          title={nombre}
+          mobilePresentation="sheet"
+        >
+          {fila}
+        </Dialog>
+      )}
+    </>
   );
 }
 

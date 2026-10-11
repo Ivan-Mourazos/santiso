@@ -176,16 +176,64 @@
 }
 
 @media (max-width: 900px) {
+  .pareja,
+  .parejaAncha {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .campo {
+    margin-bottom: 0.5rem;
+  }
+  .desdeLiga {
+    padding: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .desdeLiga .seccion {
+    display: none;
+  }
+  .desdeLiga > button {
+    width: 100%;
+    white-space: normal;
+    padding-inline: 0.4rem;
+  }
+  .seccion {
+    margin: 0.5rem 0 0.25rem;
+  }
+  .tarjetaPartido {
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+  .tarjetaPartido > .seccion {
+    display: none;
+  }
+  .tarjetaPartido input[type="date"],
+  .pareja input[type="date"] {
+    padding-inline: 0.35rem;
+    width: 100%;
+  }
+  .casillaBloque {
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  .casillaBloque .aviso {
+    display: none;
+  }
   .filaTitulares,
   .filaSuplentes {
-    grid-template-columns: 55px minmax(0, 1fr) !important;
+    grid-template-columns: 44px minmax(0, 1fr) 44px 90px !important;
+    gap: 0.25rem !important;
+  }
+  .filaSuplentes {
+    grid-template-columns: 44px minmax(0, 1fr) 90px !important;
   }
   .filaTitulares > button {
-    grid-column: 1;
+    grid-column: auto;
   }
   .filaTitulares > div:last-child,
   .filaSuplentes > div:last-child {
-    grid-column: 2;
+    grid-column: auto;
     justify-content: flex-end;
   }
   .filaEventoCabecera {
