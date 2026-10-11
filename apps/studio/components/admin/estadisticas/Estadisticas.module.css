@@ -126,27 +126,53 @@
   color: var(--ui-muted, #aaa);
   font-size: var(--ui-text-sm, 0.875rem);
 }
-.ordenMovil,
-.tabla .detalleAccion {
+.ordenMovil {
   display: none;
 }
 
 @media (max-width: 640px) {
+  /* En móvil sobra el marco: el título ya está en la cabecera y cada px de ancho cuenta. */
   .panel {
-    padding: var(--ui-space-4, 1rem);
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  /* El título sigue para el lector de pantalla; a la vista ya está en la cabecera. */
+  .cabecera {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .contador {
+    display: none;
   }
   .herramientas {
     grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
   }
   .herramientas > * {
     min-width: 0;
+  }
+  .busqueda label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .ordenMovil {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
     gap: 0.5rem;
-    margin-bottom: 1rem;
   }
   .ordenMovil > * {
     min-width: 0;
@@ -158,83 +184,100 @@
     min-height: 44px;
     font-size: 16px;
   }
-  /* La tabla pasa a fichas: doce columnas no caben en un móvil. */
-  .tablaEnvoltorio,
-  .tabla,
-  .tabla tbody,
-  .tabla tr,
-  .tabla td {
-    display: block;
+  .resumen {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+  }
+  .dato {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0.3rem 0.5rem;
+    min-width: 0;
+  }
+  .dato strong {
+    font-size: 1.05rem;
+  }
+  .dato span {
+    font-size: 0.7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /*
+   * Una línea por jugador: dorsal, nombre y las cuatro cifras que más se miran. El resto
+   * (titularidades, partidos, propia) está en la ficha, que se abre tocando el nombre.
+   */
+  .tablaEnvoltorio {
     overflow: visible;
   }
-  .tabla thead {
-    display: none;
+  .tabla,
+  .tabla thead,
+  .tabla tbody {
+    display: block;
   }
   .tabla tr {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.5rem 0.75rem;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid rgb(255 255 255 / 8%);
-    border-radius: var(--ui-radius, 0.75rem);
-    background: var(--ui-panel-face, var(--ui-surface, #171717));
-    box-shadow: var(--ui-panel-shadow, none);
+    /* 44 px por columna: las cabeceras son botones de ordenar y hay que poder tocarlas. */
+    grid-template-columns: 2.75rem minmax(0, 1fr) repeat(4, 2.75rem);
+    align-items: center;
+    min-height: 48px;
+    border-bottom: 1px solid var(--ui-border);
   }
+  .tabla thead tr {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    min-height: 44px;
+    background: var(--ui-bg);
+  }
+  .tabla th,
   .tabla td {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--ui-space-3, 0.75rem);
-    padding: 0.2rem 0;
+    padding: 0;
     border: 0;
-    text-align: right;
     min-width: 0;
+    text-align: center;
   }
-  .tabla td::before {
-    content: attr(data-etiqueta);
-    color: var(--ui-muted, #aaa);
-    font-size: var(--ui-text-sm, 0.875rem);
-    text-align: left;
-  }
-  .tabla td:first-child,
+  .tabla th:nth-child(2),
   .tabla td:nth-child(2) {
     text-align: left;
+    padding-left: 0.25rem;
   }
-  .tabla td:nth-child(2)::before {
-    content: none;
-  }
-  .tabla .dorsal {
-    grid-column: 1;
-    grid-row: 1;
-    align-self: start;
-    justify-content: flex-start;
-  }
-  .tabla .dorsal::before {
-    content: none;
-  }
-  .tabla .jugador {
-    display: block;
-    grid-column: 1 / -1;
-    grid-row: 1;
-    padding-left: 2.5rem;
-    overflow-wrap: anywhere;
-  }
-  .tabla td[data-prioridad="false"] {
-    grid-column: 1 / -1;
-  }
-  .tabla tr:not([data-expandido="true"]) td[data-prioridad="false"] {
+  .tabla [data-prioridad="false"] {
     display: none;
   }
-  .tabla .detalleAccion {
-    display: block;
-    grid-column: 1 / -1;
-  }
-  .tabla .detalleAccion::before {
-    content: none;
-  }
-  .detalleAccion button {
+  .ordenar {
     width: 100%;
     min-height: 44px;
+    padding: 0;
+    font-size: 0.66rem;
+    text-align: inherit;
+  }
+  .tabla .jugador {
+    overflow: hidden;
+  }
+  /* Un nombre largo se corta con puntos; no ensancha la fila ni se sale de la pantalla. */
+  .jugador .nombreFicha {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .jugador strong {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .jugador small {
+    display: none;
+  }
+  .aviso,
+  .nota {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
   }
 }
 

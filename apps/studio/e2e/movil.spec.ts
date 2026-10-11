@@ -83,7 +83,7 @@ for (const ancho of [360, 390]) {
   test(`marco táctil y cajón inferior a ${ancho}px`, async ({ page }) => {
     await page.setViewportSize({ width: ancho, height: 844 });
     await abrir(page, "equipos");
-    const menuButton = page.getByRole("button", { name: "Menú", exact: true });
+    const menuButton = page.getByRole("button", { name: "Más", exact: true });
     const menuBox = (await menuButton.boundingBox())!;
     expect(menuBox.height).toBeGreaterThanOrEqual(44);
     expect(menuBox.y).toBeGreaterThan(650);
@@ -209,20 +209,27 @@ for (const ancho of [360, 390]) {
     for (const etiqueta of ["Convocatorias", "Goles", "Amarillas", "Rojas"]) {
       await expect(fila.locator(`td[data-etiqueta="${etiqueta}"]`)).toBeVisible();
     }
+    // El resto de cifras no ocupa sitio en la lista: está en la ficha, tocando el nombre.
     await expect(fila.locator('td[data-etiqueta="Titularidades"]')).toBeHidden();
-    const detalle = fila.getByRole("button", { name: /^Más estadísticas de / });
-    await detalle.click();
-    await expect(fila.locator('td[data-etiqueta="Titularidades"]')).toBeVisible();
-    await detalle.click();
-    await expect(fila.locator('td[data-etiqueta="Titularidades"]')).toBeHidden();
-    await page.getByLabel("Ordenar por", { exact: true }).selectOption("goles");
-    const sentido = page.getByRole("button", {
+    expect((await fila.boundingBox())!.height).toBeLessThanOrEqual(56);
+    await fila.getByRole("button", { name: /^Ver ficha de / }).click();
+    const ficha = page.getByRole("dialog");
+    await expect(ficha).toBeVisible();
+    await ficha.getByRole("button", { name: "Cerrar diálogo" }).click();
+    await expect(ficha).toBeHidden();
+    // Temporada, competición y orden van en la hoja de filtros.
+    await page.getByRole("button", { name: /^Filtros: / }).click();
+    const filtros = page.getByRole("dialog", { name: "Filtros" });
+    await filtros.getByLabel("Ordenar por", { exact: true }).selectOption("goles");
+    const sentido = filtros.getByRole("button", {
       name: "Cambiar sentido de ordenación",
       exact: true,
     });
     await expect(sentido).toHaveText("Descendente");
     await sentido.click();
     await expect(sentido).toHaveText("Ascendente");
+    await filtros.getByRole("button", { name: "Listo" }).click();
+    await expect(filtros).toBeHidden();
     await comprobarAncho(page);
   });
 }
@@ -361,7 +368,7 @@ for (const ancho of [360, 390]) {
 }
 
 for (const ancho of [360, 390]) {
-  test(`equipos: escudo y datos completos a ${ancho}px`, async ({ page }) => {
+  test(`equipos: fila compacta con escudo y partidos a ${ancho}px`, async ({ page }) => {
     await page.setViewportSize({ width: ancho, height: 844 });
     await abrir(page, "equipos");
     const fila = page
@@ -370,11 +377,17 @@ for (const ancho of [360, 390]) {
       .first();
     await expect(fila).toBeVisible();
     const escudo = (await fila.locator("td:first-child > *").boundingBox())!;
-    expect(escudo.width).toBeGreaterThanOrEqual(44);
-    expect(escudo.height).toBeGreaterThanOrEqual(44);
-    expect(
-      await fila.locator("td:nth-child(4) span").evaluate((el) => getComputedStyle(el).whiteSpace),
-    ).toBe("normal");
+    // El escudo no se toca: basta con que se reconozca. La fila entera es una línea.
+    expect(escudo.width).toBeGreaterThanOrEqual(36);
+    expect(escudo.height).toBeGreaterThanOrEqual(36);
+    expect((await fila.boundingBox())!.height).toBeLessThanOrEqual(64);
+    // Las competiciones de cada equipo no caben en la lista: están en el editor.
+    await expect(fila.locator("td:nth-child(4)")).toBeHidden();
+    for (const boton of await fila.getByRole("button").all()) {
+      const caja = (await boton.boundingBox())!;
+      expect(Math.round(caja.width)).toBeGreaterThanOrEqual(44);
+      expect(Math.round(caja.height)).toBeGreaterThanOrEqual(44);
+    }
     await expect(fila.locator("td:nth-child(3)")).toHaveAttribute("aria-label", /^Partidos: \d+$/);
     expect(
       await fila
@@ -408,15 +421,22 @@ for (const ancho of [360, 390]) {
 
 for (const ancho of [360, 390]) {
   for (const seccion of ["jugadores", "tecnicos", "directiva"]) {
-    test(`${seccion}: ficha con dato principal y foto legible a ${ancho}px`, async ({ page }) => {
+    test(`${seccion}: fila compacta con dato principal y foto a ${ancho}px`, async ({ page }) => {
       await page.setViewportSize({ width: ancho, height: 844 });
       await abrir(page, seccion);
       const fila = page.locator("main table tbody tr").first();
       await expect(fila).toBeVisible();
       const foto = fila.locator("td:first-child > *").first();
       const imagen = (await foto.boundingBox())!;
-      expect(imagen.width).toBeGreaterThanOrEqual(44);
-      expect(imagen.height).toBeGreaterThanOrEqual(44);
+      // La foto no se toca: basta con que se reconozca. La fila entera es una línea.
+      expect(imagen.width).toBeGreaterThanOrEqual(36);
+      expect(imagen.height).toBeGreaterThanOrEqual(36);
+      expect((await fila.boundingBox())!.height).toBeLessThanOrEqual(64);
+      for (const boton of await fila.getByRole("button").all()) {
+        const caja = (await boton.boundingBox())!;
+        expect(Math.round(caja.width)).toBeGreaterThanOrEqual(44);
+        expect(Math.round(caja.height)).toBeGreaterThanOrEqual(44);
+      }
       if (seccion !== "jugadores") {
         const nombre = (await fila.locator("td:nth-child(2)").boundingBox())!;
         expect(nombre.x - (imagen.x + imagen.width)).toBeLessThanOrEqual(20);

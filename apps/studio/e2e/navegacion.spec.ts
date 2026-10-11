@@ -54,7 +54,7 @@ for (const width of [360, 390])
   test(`menú móvil accesible a ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto("/admin/temporadas");
-    await page.getByRole("button", { name: "Menú", exact: true }).click();
+    await page.getByRole("button", { name: "Más", exact: true }).click();
     const menu = page.getByRole("dialog", { name: "Menú de Studio" });
     await expect(menu).toBeVisible();
     await page.screenshot({ path: test.info().outputPath(`menu-${width}.png`), fullPage: true });

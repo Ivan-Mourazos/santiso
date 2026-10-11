@@ -57,7 +57,8 @@ for (const ancho of [360, 390]) {
       const altos = await page
         .locator("main button:visible, main select:visible")
         .evaluateAll((controles) => controles.map((el) => el.getBoundingClientRect().height));
-      expect(Math.min(...altos)).toBeGreaterThanOrEqual(44);
+      // En Android la densidad de píxeles es fraccionaria: 44 px salen como 43,99999.
+      expect(Math.round(Math.min(...altos))).toBeGreaterThanOrEqual(44);
       await page.getByRole("tab", { name: "Datos", exact: true }).tap();
       if (plantilla === "cronoloxia")
         await page.getByRole("button", { name: "+ Evento", exact: true }).tap();
@@ -78,7 +79,7 @@ for (const ancho of [360, 390]) {
             ancho: el.getBoundingClientRect().width,
           })),
         );
-      expect(Math.min(...controlesDatos.map((x) => x.alto))).toBeGreaterThanOrEqual(44);
+      expect(Math.round(Math.min(...controlesDatos.map((x) => x.alto)))).toBeGreaterThanOrEqual(44);
       expect(Math.min(...controlesDatos.map((x) => x.ancho))).toBeGreaterThanOrEqual(44);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         ancho,
