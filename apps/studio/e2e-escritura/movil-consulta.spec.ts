@@ -82,8 +82,16 @@ test("calendario móvil guarda marcador, campo y fecha y mantiene tarjeta con co
     "Campo de Consulta Móbil con Nome Moi Longo",
   );
   await page.getByRole("button", { name: "Partidos del Santiso", exact: true }).click();
-  await expect(tarjeta.getByText("Jornada 1", { exact: true })).toBeVisible();
-  await comprobarControles(page, tarjeta);
+  // En móvil solo se ven el último jugado y los siguientes: los de antes se despliegan.
+  await expect(page.getByRole("region", { name: "Partidos del Santiso" })).toBeVisible();
+  await expect(page.getByText("Cargando jornadas…")).toHaveCount(0);
+  const anteriores = page.getByRole("button", { name: /^Ver anteriores/ });
+  if (!(await tarjeta.first().isVisible()) && (await anteriores.count()) > 0) {
+    await anteriores.click();
+  }
+  // La jornada va en la línea de resumen de la fila, junto a fecha y campo.
+  await expect(tarjeta.first().getByText(/Jornada 1/).first()).toBeVisible();
+  await comprobarControles(page, tarjeta.first());
 });
 
 test("clasificación móvil prioriza columnas, despliega detalle y guarda varias zonas", async ({
