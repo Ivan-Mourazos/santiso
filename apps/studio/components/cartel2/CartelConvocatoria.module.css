@@ -1,0 +1,110 @@
+.contenido {
+  position: absolute;
+  z-index: 6;
+  inset: 140px 64px 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #fff;
+}
+.contenido header {
+  flex: none;
+}
+.contenido h1 {
+  margin: 0;
+  font-size: 80px;
+  line-height: 1;
+  color: #f5c518;
+}
+.contenido p {
+  margin: 0;
+}
+.contenido header p {
+  max-width: 100%;
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+.categoria {
+  font-size: 22px;
+  letter-spacing: 4px;
+  font-weight: 800;
+}
+.cruce {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px;
+}
+.equipo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+.equipo strong {
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  line-height: 1.1;
+}
+.escudo {
+  flex: none;
+  width: 92px;
+  height: 92px;
+}
+.cuando {
+  font-size: 34px;
+  color: #f5c518;
+  font-weight: 800;
+}
+.campo {
+  font-size: 26px;
+  overflow-wrap: anywhere;
+}
+.quedada {
+  flex: none;
+  padding: 14px 20px;
+  background: rgb(245 197 24 / 12%);
+  border-left: 5px solid #f5c518;
+  font-size: 25px;
+  overflow-wrap: anywhere;
+}
+.quedada b {
+  color: #f5c518;
+  margin-right: 12px;
+}
+.lista {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 24px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lista li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 0;
+  border-bottom: 1px solid rgb(255 255 255 / 15%);
+}
+.lista b {
+  flex: none;
+  width: 42px;
+  font-size: 34px;
+  color: #f5c518;
+  text-align: right;
+}
+.lista span {
+  text-transform: uppercase;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+.nota {
+  flex: none;
+  font-size: 23px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}

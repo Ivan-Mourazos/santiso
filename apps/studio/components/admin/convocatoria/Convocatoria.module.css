@@ -1,0 +1,161 @@
+.panel {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding-bottom: 90px;
+  min-width: 0;
+}
+.partido {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.partido h3 {
+  margin: 0;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.partido p,
+.contador {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--ui-muted, #aaa);
+}
+.contador {
+  font-weight: 800;
+  color: var(--ui-accent, #f5c518);
+}
+.jugadores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.jugadores li {
+  min-width: 0;
+}
+.jugadores button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 8px;
+  border: 1px solid var(--ui-border, #444);
+  border-radius: 10px;
+  background: var(--ui-control-face, #242424);
+  color: var(--ui-text, #fff);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.jugadores b {
+  flex: none;
+  width: 22px;
+  color: var(--ui-accent, #f5c518);
+  font-variant-numeric: tabular-nums;
+}
+.jugadores span {
+  font-weight: 700;
+  font-size: 0.875rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.jugadores button[aria-pressed="true"] {
+  border-color: var(--ui-accent, #f5c518);
+  background: color-mix(in srgb, var(--ui-accent, #f5c518) 14%, #1a1a1a);
+}
+.jugadores button:focus-visible,
+.detalles summary:focus-visible {
+  outline: 3px solid var(--ui-accent, #f5c518);
+  outline-offset: 2px;
+}
+.detalles {
+  border: 1px solid var(--ui-border, #444);
+  border-radius: 10px;
+  padding: 0 10px;
+  min-width: 0;
+}
+.detalles summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.detalles summary::before {
+  content: "+";
+  margin-right: 8px;
+}
+.detalles[open] summary::before {
+  content: "−";
+}
+.campos {
+  border: 0;
+  padding: 0 0 10px;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+.campos > :last-child {
+  grid-column: 1 / -1;
+}
+.panel input,
+.panel select,
+.panel textarea {
+  min-height: 44px;
+  min-width: 0;
+  width: 100%;
+  font-size: 16px;
+}
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.acciones button {
+  min-height: 44px;
+  flex: 1;
+}
+.barra {
+  position: fixed;
+  z-index: 20;
+  bottom: 0;
+  left: 216px;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--ui-border, #444);
+  background: var(--ui-bg, #0b0b0c);
+}
+.barra button {
+  flex: 1;
+  max-width: 16rem;
+  min-height: 44px;
+}
+.png {
+  display: grid;
+  gap: 10px;
+}
+.png img {
+  width: min(100%, 26rem);
+  height: auto;
+  border-radius: 10px;
+}
+@media (max-width: 900px) {
+  .panel {
+    padding-bottom: 140px;
+  }
+  .barra {
+    left: 0;
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+}

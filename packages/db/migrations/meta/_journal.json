@@ -57,6 +57,13 @@
       "when": 1791230943797,
       "tag": "0007_multas",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791742563894,
+      "tag": "0008_convocatorias",
+      "breakpoints": true
     }
   ]
 }

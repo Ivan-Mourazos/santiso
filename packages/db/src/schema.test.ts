@@ -47,6 +47,29 @@ async function sembrar() {
   };
 }
 
+describe("convocatorias previas", () => {
+  it("partido único, par jugador único y borrado en cascada, aparte del acta", async () => {
+    const { db } = conexion;
+    const { jornada, local, visitante, jugador } = await sembrar();
+    const [p] = await db
+      .insert(s.partidos)
+      .values({ jornadaId: jornada.id, equipoLocalId: local.id, equipoVisitanteId: visitante.id })
+      .returning();
+    const cabecera = { partidoId: p!.id, lugarQuedada: "Campo" };
+    const fila = { partidoId: p!.id, jugadorId: jugador.id };
+    await db.insert(s.partidoConvocatorias).values(cabecera);
+    await rechaza(db.insert(s.partidoConvocatorias).values(cabecera));
+    await db.insert(s.partidoConvocados).values(fila);
+    await rechaza(db.insert(s.partidoConvocados).values(fila));
+    await rechaza(db.insert(s.partidoConvocados).values({ ...fila, jugadorId: "inexistente" }));
+    expect(await db.select().from(s.partidoParticipaciones)).toHaveLength(0);
+    expect(await db.select().from(s.partidoAlineaciones)).toHaveLength(0);
+    await db.delete(s.partidos).where(eq(s.partidos.id, p!.id));
+    expect(await db.select().from(s.partidoConvocatorias)).toHaveLength(0);
+    expect(await db.select().from(s.partidoConvocados)).toHaveLength(0);
+  });
+});
+
 describe("temporadas", () => {
   it("solo admite una temporada activa", async () => {
     const { db } = conexion;

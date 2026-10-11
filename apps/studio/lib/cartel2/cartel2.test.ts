@@ -346,7 +346,9 @@ describe("leerPeticion", () => {
       return p.plantilla;
     });
     // La alineación no sale del formulario del Estudio: tiene su pantalla (lib/alineacion).
-    expect(plantillas.sort()).toEqual(PLANTILLAS.filter((p) => p !== "alineacion").sort());
+    expect(plantillas.sort()).toEqual(
+      PLANTILLAS.filter((p) => p !== "alineacion" && p !== "convocatoria").sort(),
+    );
   });
 
   it("resultado: la foto va con su foco y estilo, y el foco no sale de 0–1", () => {
@@ -394,9 +396,7 @@ describe("texto de Instagram", () => {
 
   it("resultado: vitoria fóra, goles agrupados con penalti y tarxetas nosas", () => {
     const texto = textoInstagram("resumo", formulario());
-    expect(texto.split("\n")[0]).toBe(
-      "✅ VITORIA | Sénior · Xornada 2 · Tercera Futgal - Grupo 3",
-    );
+    expect(texto.split("\n")[0]).toBe("✅ VITORIA | Sénior · Xornada 2 · Tercera Futgal - Grupo 3");
     expect(texto).toContain("⚽ C.D. Berres 1-3 UD Santiso FC");
     expect(texto).toContain("💛 Bareto (20', 30' pen.)");
     expect(texto).toContain("C.D. Berres: Rival Uno (10')");
@@ -427,11 +427,20 @@ describe("texto de Instagram", () => {
         clasificacionNombre: "Tercera Futgal - Grupo 3",
         clasificacionData: [
           { nombre: "Rival", posicion: 1, pj: 2, pg: 2, pe: 0, pp: 0, gf: 4, gc: 1, pts: 6 },
-          { nombre: "U.D. Santiso F.C.", posicion: 2, pj: 2, pg: 1, pe: 1, pp: 0, gf: 3, gc: 2, pts: 4 },
+          {
+            nombre: "U.D. Santiso F.C.",
+            posicion: 2,
+            pj: 2,
+            pg: 1,
+            pe: 1,
+            pp: 0,
+            gf: 3,
+            gc: 2,
+            pts: 4,
+          },
         ],
       }),
     );
     expect(texto).toContain("Imos 2º con 4 puntos (1V 1E 0D).");
   });
 });
-
