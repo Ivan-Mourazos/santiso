@@ -24,6 +24,9 @@ const Seasons = dynamic(() => import("@/components/admin/AdminTemporadas"), { lo
 const Lineup = dynamic(() => import("@/components/admin/alineacion/AdminAlineacion"), {
   loading,
 });
+const Callup = dynamic(() => import("@/components/admin/convocatoria/AdminConvocatoria"), {
+  loading,
+});
 const Fines = dynamic(() => import("@/components/admin/multas/AdminMultas"), { loading });
 const Posters = dynamic(() => import("@/components/admin/GeneradorCartel"), { loading });
 const Acta = dynamic(() => import("@/components/admin/AdminActaImporter"), { loading });
@@ -70,12 +73,11 @@ export function StudioSection({ section }: { section: Seccion }) {
       {section === "equipos" && <Teams {...feedback} categoria={category} />}
       {section === "patrocinadores" && <Sponsors {...feedback} />}
       {section === "temporadas" && <Seasons {...feedback} />}
+      {section === "convocatoria" && (
+        <Callup categoria={category} partidoInicial={params.get("partido")} showToast={showToast} />
+      )}
       {section === "alineacion" && (
-        <Lineup
-          categoria={category}
-          partidoInicial={params.get("partido")}
-          showToast={showToast}
-        />
+        <Lineup categoria={category} partidoInicial={params.get("partido")} showToast={showToast} />
       )}
       {section === "multas" && <Fines {...feedback} />}
       {section === "carteles" && (
