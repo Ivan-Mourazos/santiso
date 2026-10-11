@@ -2,7 +2,7 @@ import "server-only";
 
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { parsearFichaPdf } from "@santiso/actas";
+import { marcadorDeFichaPdf, parsearFichaPdf, type Ficha } from "@santiso/actas";
 import { DIR_DATOS, schema } from "@santiso/db";
 import { aliasedTable, and, eq, inArray, sql } from "drizzle-orm";
 import { enlazarActa } from "@/lib/actas/enlazar";
@@ -31,6 +31,9 @@ export interface ResumenRfgf {
   revisar: string[];
   errores: string[];
 }
+
+/** Un acta suele cerrarse el mismo día; pasado este plazo ya solo se mira una vez al día. */
+const DIAS_RECIENTES = 10;
 
 /** Carpeta donde queda el PDF de un acta que hay que revisar a mano. */
 export const DIR_RFGF = path.join(DIR_DATOS, "rfgf");
@@ -110,15 +113,47 @@ async function tratarActa(
     return anotar(codActa, competicion.id, partido.id, partido.propio ? "guardada" : "resultado", "Ya estaba.");
   }
 
+  // Un fallo de red sale de aquí como excepción y se reintenta en la siguiente pasada. Lo que
+  // venga después (no saber leer el PDF) no mejora reintentando: queda para revisar.
   const pdf = await descargador.pdf(urlActaPdf(grupo, codActa));
-  const ficha = await parsearFichaPdf(pdf);
-  const [golesLocal, golesVisitante] = ficha.marcador;
-
-  if (!partido.propio) {
+  // Primero la lectura completa, que es la exacta. Si tropieza con algo (un evento escrito de
+  // forma rara), queda la tolerante, que solo busca el marcador.
+  let ficha: Ficha | null = null;
+  let tropiezo = "formato desconocido";
+  try {
+    ficha = await parsearFichaPdf(pdf);
+  } catch (error) {
+    if (error instanceof Error) tropiezo = error.message;
+  }
+  const leido = ficha?.marcador ?? (await marcadorDeFichaPdf(pdf).catch(() => null));
+  const dejarPdf = async () => {
+    await mkdir(DIR_RFGF, { recursive: true });
+    await writeFile(path.join(DIR_RFGF, `${codActa}.pdf`), pdf);
+  };
+  if (!leido) {
+    await dejarPdf();
+    resumen.revisar.push(`${cruce}: no supe leer el marcador del PDF.`);
+    return anotar(codActa, competicion.id, partido.id, "revisar", "no supe leer el PDF");
+  }
+  const [golesLocal, golesVisitante] = leido;
+  const ponerMarcador = async () => {
     const marcador = await guardarMarcador(partido.id, String(golesLocal), String(golesVisitante));
     if (!marcador.ok) throw new Error(marcador.error);
     resumen.resultados += 1;
+  };
+
+  // Partido ajeno: solo interesa el resultado, y para eso basta el marcador.
+  if (!partido.propio) {
+    await ponerMarcador();
     return anotar(codActa, competicion.id, partido.id, "resultado", `${golesLocal}–${golesVisitante}`);
+  }
+
+  if (!ficha) {
+    if (!partido.conMarcador) await ponerMarcador();
+    await dejarPdf();
+    const motivo = `no supe leer el acta (${tropiezo})`;
+    resumen.revisar.push(`${cruce}: ${motivo}.`);
+    return anotar(codActa, competicion.id, partido.id, "revisar", motivo);
   }
 
   // Partido del Santiso: el acta entera, pero solo si todos los jugadores se reconocen.
@@ -133,12 +168,8 @@ async function tratarActa(
 
   if (dudas.length > 0) {
     // El marcador sí se guarda: no depende de reconocer a nadie.
-    if (!partido.conMarcador) {
-      const marcador = await guardarMarcador(partido.id, String(golesLocal), String(golesVisitante));
-      if (marcador.ok) resumen.resultados += 1;
-    }
-    await mkdir(DIR_RFGF, { recursive: true });
-    await writeFile(path.join(DIR_RFGF, `${codActa}.pdf`), pdf);
+    if (!partido.conMarcador) await ponerMarcador();
+    await dejarPdf();
     const motivo = `no reconozco a ${dudas.join(", ")}`;
     resumen.revisar.push(`${cruce}: ${motivo}.`);
     return anotar(codActa, competicion.id, partido.id, "revisar", motivo);
@@ -172,6 +203,8 @@ export async function sincronizarCompeticion(
   competicionId: string,
   descargador: DescargadorRfgf,
   ahora = new Date(),
+  /** Solo partidos de los últimos días: es la comprobación frecuente. Sin él, todos. */
+  soloRecientes = false,
 ): Promise<ResumenRfgf | null> {
   const { db } = await obtenerDb();
   const [fila] = await db
@@ -199,7 +232,10 @@ export async function sincronizarCompeticion(
   };
   const partidos = await partidosDeCompeticion(competicionId);
 
-  for (const jornada of jornadasPendientes(partidos, horaLocal(ahora))) {
+  const desde = soloRecientes
+    ? horaLocal(new Date(ahora.getTime() - DIAS_RECIENTES * 86_400_000))
+    : undefined;
+  for (const jornada of jornadasPendientes(partidos, horaLocal(ahora), desde)) {
     try {
       const enLaWeb = partidosDeJornada(await descargador.html(urlJornada(grupo, jornada))).filter(
         (p): p is typeof p & { codActa: string } => p.codActa !== null,
@@ -267,6 +303,7 @@ let enMarcha = false;
 export async function sincronizarTodo(
   descargador: DescargadorRfgf,
   ahora = new Date(),
+  soloRecientes = false,
 ): Promise<ResumenRfgf[]> {
   if (enMarcha) return [];
   enMarcha = true;
@@ -283,7 +320,7 @@ export async function sincronizarTodo(
       .where(eq(schema.temporadas.activa, true));
     const resumenes: ResumenRfgf[] = [];
     for (const { id } of enlazadas) {
-      const resumen = await sincronizarCompeticion(id, descargador, ahora);
+      const resumen = await sincronizarCompeticion(id, descargador, ahora, soloRecientes);
       if (resumen) resumenes.push(resumen);
     }
     return resumenes;

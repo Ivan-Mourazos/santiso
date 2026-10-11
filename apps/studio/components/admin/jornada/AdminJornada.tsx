@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation
 import { esDia, hoyLocal, semanaDe, semanaVecina } from "@/lib/jornada/semana";
 import { cargarPantallaJornada } from "@/lib/server/acciones/jornada";
 import type { PantallaJornada } from "@/lib/server/consultas/jornada";
+import PanelRfgf from "./PanelRfgf";
 import TarjetaPartido from "./TarjetaPartido";
 import styles from "./Jornada.module.css";
 
@@ -42,7 +43,7 @@ function rotuloSemana(desde: string, hasta: string) {
  * elegido. La semana vive en la URL (`?semana=AAAA-MM-DD`).
  */
 export default function AdminJornada() {
-  const { params, setParams } = useStudio();
+  const { params, setParams, showToast } = useStudio();
   const pedida = params.get("semana");
   const dia = esDia(pedida) ? pedida : hoyLocal();
   const [pantalla, setPantalla] = useState<PantallaJornada | null>(null);
@@ -148,6 +149,7 @@ export default function AdminJornada() {
           ))}
         </div>
       )}
+      <PanelRfgf showToast={showToast} onNovedades={() => void cargar(dia)} />
     </div>
   );
 }

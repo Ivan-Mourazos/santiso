@@ -1,5 +1,5 @@
 export { parsearFicha } from "./ficha";
-export { parsearFichaPdf } from "./pdf";
+export { marcadorDeFichaPdf, parsearFichaPdf } from "./pdf";
 export type {
   Ficha,
   Fragmento,

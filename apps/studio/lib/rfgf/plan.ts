@@ -27,31 +27,49 @@ export const leFaltaAlgo = (partido: PartidoLocal) =>
  * algo. `ahora` es hora local de pared, con el mismo formato que la fecha de los partidos.
  * Las más antiguas primero.
  */
-export function jornadasPendientes(partidos: readonly PartidoLocal[], ahora: string): number[] {
+export function jornadasPendientes(
+  partidos: readonly PartidoLocal[],
+  ahora: string,
+  /** Si se da, se ignoran los partidos anteriores a ese momento (comprobación frecuente). */
+  desde?: string,
+): number[] {
   const jornadas = new Set<number>();
   for (const partido of partidos) {
     if (!partido.fecha || partido.fecha > ahora) continue;
+    if (desde && partido.fecha < desde) continue;
     if (leFaltaAlgo(partido)) jornadas.add(partido.jornada);
   }
   return [...jornadas].sort((a, b) => a - b).slice(0, MAXIMO_JORNADAS);
 }
 
-/** Por debajo de esto, el nombre de la federación no se da por el de un equipo nuestro. */
-const MINIMO_EQUIPO = 0.6;
+/** Cada equipo debe parecerse al menos esto al nuestro… */
+const MINIMO_EQUIPO = 0.4;
+/** …y entre los dos sumar esto: uno casi exacto compensa a otro escrito distinto. */
+const MINIMO_CRUCE = 1.2;
+/** Ventaja sobre el segundo candidato para darlo por bueno. */
+const VENTAJA_CRUCE = 0.2;
 
 /**
- * El partido nuestro que corresponde a un acta, por los dos equipos y en su orden. `null` si
- * no hay ninguno claro o si hay dos que valdrían.
+ * El partido nuestro que corresponde a un acta, por los dos equipos y en su orden. La
+ * federación escribe algunos nombres distinto («MELIDE VETERANOS» es aquí «Melide»), así que
+ * no se exige que los dos casen perfectos: como cada equipo juega una vez por jornada, basta
+ * con que el cruce destaque claramente. `null` si no hay ninguno claro o si valdrían dos.
  */
 export function partidoDeActa(
   local: string,
   visitante: string,
   candidatos: readonly PartidoLocal[],
 ): PartidoLocal | null {
-  const validos = candidatos.filter(
-    (partido) =>
-      parecido(local, partido.local) >= MINIMO_EQUIPO &&
-      parecido(visitante, partido.visitante) >= MINIMO_EQUIPO,
-  );
-  return validos.length === 1 ? (validos[0] ?? null) : null;
+  const puntuados = candidatos
+    .map((partido) => {
+      const l = parecido(local, partido.local);
+      const v = parecido(visitante, partido.visitante);
+      return { partido, minimo: Math.min(l, v), total: l + v };
+    })
+    .filter((c) => c.minimo >= MINIMO_EQUIPO && c.total >= MINIMO_CRUCE)
+    .sort((a, b) => b.total - a.total);
+  const [mejor, segundo] = puntuados;
+  if (!mejor) return null;
+  if (segundo && mejor.total - segundo.total < VENTAJA_CRUCE) return null;
+  return mejor.partido;
 }

@@ -38,6 +38,13 @@ describe("jornadasPendientes", () => {
     expect(jornadasPendientes([{ ...nuestro, conActa: true }], ahora)).toEqual([]);
   });
 
+  it("con fecha de corte deja fuera lo viejo, que se mira solo de vez en cuando", () => {
+    const viejo = partido({ jornada: 1, fecha: "2026-09-01T17:00" });
+    const reciente = partido({ jornada: 2 });
+    expect(jornadasPendientes([viejo, reciente], ahora, "2026-09-25T00:00")).toEqual([2]);
+    expect(jornadasPendientes([viejo, reciente], ahora)).toEqual([1, 2]);
+  });
+
   it("las más antiguas primero y sin pasar del tope por pasada", () => {
     const muchas = [7, 3, 5, 1, 9].map((jornada) => partido({ jornada }));
     const pendientes = jornadasPendientes(muchas, ahora);
@@ -55,6 +62,14 @@ describe("partidoDeActa", () => {
   it("casa los nombres como los escribe la federación", () => {
     expect(partidoDeActa("C.D. BERRES", "U.D. SANTISO F.C.", jornada)?.id).toBe("a");
     expect(partidoDeActa('C.S.D ARZUA "B"', "GUERREROS DEL SOL", jornada)?.id).toBe("b");
+  });
+
+  it("admite un nombre escrito distinto si el otro equipo no deja duda", () => {
+    const veteranos = [
+      partido({ id: "m", local: "Melide", visitante: "S.D. Tordoia" }),
+      partido({ id: "c", local: "S.D. Cruces", visitante: "Ulla Oil" }),
+    ];
+    expect(partidoDeActa("MELIDE VETERANOS", "S.D. TORDOIA", veteranos)?.id).toBe("m");
   });
 
   it("respeta quién es local: la vuelta no es el mismo partido", () => {
