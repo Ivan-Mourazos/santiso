@@ -36,6 +36,7 @@ const SECCIONES = [
   "multas",
   "alineacion",
   "carteles",
+  "importar",
   "actas",
   "importar-jornada",
   "equipos",
@@ -57,7 +58,7 @@ for (const seccion of SECCIONES) {
     const cabecera = (await page.locator("header").first().boundingBox())!;
     expect(cabecera.height).toBeLessThanOrEqual(60);
     const pestanas = page.getByRole("navigation", { name: "Accesos rápidos" });
-    for (const nombre of ["Jornada", "Actas", "Carteles"]) {
+    for (const nombre of ["Jornada", "Importar", "Carteles"]) {
       const caja = (await pestanas.getByRole("link", { name: nombre }).boundingBox())!;
       expect(caja.height).toBeGreaterThanOrEqual(44);
     }

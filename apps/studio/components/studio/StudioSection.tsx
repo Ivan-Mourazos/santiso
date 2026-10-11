@@ -31,6 +31,7 @@ const Fines = dynamic(() => import("@/components/admin/multas/AdminMultas"), { l
 const Posters = dynamic(() => import("@/components/admin/GeneradorCartel"), { loading });
 const Acta = dynamic(() => import("@/components/admin/AdminActaImporter"), { loading });
 const Batch = dynamic(() => import("@/components/admin/AdminActaBatch"), { loading });
+const Import = dynamic(() => import("@/components/admin/importar/Importar"), { loading });
 const Matchday = dynamic(() => import("@/components/admin/importar/ImportarFoto"), { loading });
 const CalendarPdf = dynamic(() => import("@/components/admin/importar/ImportarCalendarioPdf"), {
   loading,
@@ -86,6 +87,12 @@ export function StudioSection({ section }: { section: Seccion }) {
           partidoInicial={params.get("partido")}
           rellenarProximos={params.get("rellenar") === "1"}
           showToast={showToast}
+        />
+      )}
+      {section === "importar" && (
+        <Import
+          {...feedback}
+          inicial={{ categoria: params.get("categoria"), competicionId: params.get("competicion") }}
         />
       )}
       {section === "actas" && (

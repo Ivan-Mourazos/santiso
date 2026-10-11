@@ -37,6 +37,7 @@ export async function POST(request: Request) {
   const prompt = `Eres un lector de cabeceras de actas de Futgal.
 Lee el documento (puede llegar como varias capturas de la misma acta) y extrae SOLO los siguientes campos del encabezado. Devuelve SOLO JSON válido, sin markdown:
 {
+  "tipo": "acta",
   "jornada": 30,
   "localTeam": "U.D. SANTISO F.C.",
   "visitorTeam": "C.F. CAÑIZA",
@@ -46,6 +47,12 @@ Lee el documento (puede llegar como varias capturas de la misma acta) y extrae S
 }
 
 Reglas:
+- tipo: qué es lo que se ha subido. Exactamente uno de:
+    "acta" → un ÚNICO partido: cabecera con los dos equipos y el marcador, alineaciones, goles, tarjetas, sustituciones o cronología.
+    "jornada" → una LISTA de varios partidos de una misma jornada (un equipo sobre otro, con resultado o guion y fecha).
+    "clasificacion" → una tabla de clasificación.
+    "otro" → cualquier otra cosa.
+  Si es "jornada", pon en jornada el número de jornada resaltado y deja localTeam y visitorTeam vacíos.
 - categoria debe ser exactamente "Senior" o "Veteranos":
     Si el título contiene "VETERAN" → "Veteranos"
     En otro caso → "Senior"

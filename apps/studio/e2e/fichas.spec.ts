@@ -15,8 +15,10 @@ test("la ficha PDF rellena el acta sin salir del ordenador", async ({ page }) =>
     if (peticion.url().includes("/api/admin/acta-")) aLaNube.push(peticion.url());
   });
 
+  // Se entra por «Importar» y de ahí al acta, sin capturas todavía.
   await page.goto("/admin");
-  await page.getByText("Actas", { exact: true }).first().click();
+  await page.getByText("Importar", { exact: true }).first().click();
+  await page.getByRole("button", { name: "Acta a mano o corregir una guardada" }).click();
 
   // Hace falta un partido elegido: el lector necesita saber de qué lado juega el Santiso.
   const partidos = page

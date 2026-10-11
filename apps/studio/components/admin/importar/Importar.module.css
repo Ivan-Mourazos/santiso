@@ -59,6 +59,44 @@
   align-items: center;
 }
 
+/* ─── Importar: una sola entrada ─── */
+.unificado {
+  display: grid;
+  gap: var(--ui-space-4, 1rem);
+}
+.decision {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3, 0.75rem);
+  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
+  border: 1px solid var(--ui-accent, #facc15);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: rgb(250 204 21 / 8%);
+}
+.otros {
+  display: grid;
+  gap: var(--ui-space-2, 0.5rem);
+}
+.otros .titulo {
+  margin: 0;
+}
+.nota a {
+  color: var(--ui-accent, #facc15);
+  font-weight: 700;
+}
+@media (max-width: 900px) {
+  /* El lote de actas y el calendario en PDF son tareas de ordenador. */
+  .soloEscritorio {
+    display: none;
+  }
+  .decision button,
+  .otros button {
+    min-height: 44px;
+  }
+}
+
 /* ─── Archivo ─── */
 .dropzone {
   display: grid;
