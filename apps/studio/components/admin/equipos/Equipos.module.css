@@ -184,8 +184,24 @@
   margin-top: 0.3rem;
 }
 @media (max-width: 640px) {
+  /* En móvil sobra el marco y el título: ya está en la cabecera de la página. */
   .panel {
-    padding: 1rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .cabecera > div:first-child {
+    display: none;
+  }
+  .cabecera .acciones {
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+  .cabecera .acciones button {
+    flex: 1;
+    padding-inline: 0.5rem;
+    font-size: 0.85rem;
   }
   .tabla,
   .tabla tbody {
@@ -194,26 +210,74 @@
   .tabla thead {
     display: none;
   }
+  /* Una línea por equipo: escudo, nombre con sus partidos debajo y las acciones como iconos. */
   .tabla tr {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr);
-    gap: 0.75rem;
-    padding: 1rem 0;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "escudo nombre acciones"
+      "escudo partidos acciones";
+    align-items: center;
+    gap: 0 0.5rem;
+    min-height: 56px;
     border-bottom: 1px solid var(--ui-border, #666);
   }
   .tabla td {
     padding: 0;
     border: 0;
+    min-width: 0;
   }
-  .tabla td:last-child {
-    grid-column: 1 / -1;
+  .tabla td:nth-child(1) {
+    grid-area: escudo;
   }
-  .tabla td:last-child button {
-    flex: 1 1 8rem;
+  .tabla td:nth-child(2) {
+    grid-area: nombre;
+    align-self: end;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tabla td:nth-child(3) {
+    grid-area: partidos;
+    align-self: start;
+    width: auto;
+    text-align: left;
+    color: var(--ui-muted, #aaa);
+    font-size: 0.75rem;
+  }
+  .tabla td:nth-child(3)::before {
+    content: "Partidos: ";
+  }
+  .tabla td:nth-child(4) {
+    display: none;
+  }
+  .tabla td:nth-child(5) {
+    grid-area: acciones;
   }
   .tabla .acciones {
-    flex-wrap: wrap;
-    justify-content: stretch;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+  }
+  /* El texto sigue en el nombre accesible del botón; a la vista queda el icono. */
+  .tabla .acciones button {
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+    font-size: 0;
+  }
+  .tabla .acciones button::before {
+    content: "✕";
+    font-size: 1.05rem;
+  }
+  .tabla .acciones button:first-child::before {
+    content: "✎";
+  }
+  .tabla .acciones button:nth-child(2):not(:last-child)::before {
+    content: "−";
+  }
+  .escudo {
+    width: 36px;
+    height: 36px;
   }
   .contexto {
     display: grid;
@@ -242,47 +306,26 @@
 }
 
 @media (max-width: 640px) {
-  .tabla tr {
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid var(--ui-border, #666);
-    border-radius: var(--ui-radius, 0.75rem);
-    background: var(--ui-panel-face, var(--ui-surface, #171717));
-    box-shadow: var(--ui-panel-shadow, none);
-  }
-  .tabla td {
-    min-width: 0;
-  }
-  .tabla td:nth-child(3),
-  .tabla td:nth-child(4) {
-    grid-column: 1 / -1;
-  }
-  .tabla .numero {
-    width: auto;
-    text-align: left;
-  }
-  .tabla .numero::before {
-    content: "Partidos: ";
-  }
-  .unaLinea {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    overflow-wrap: anywhere;
-  }
-  .escudo {
-    width: 44px;
-    height: 44px;
-  }
   .herramientas {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    gap: 0.25rem;
   }
   .herramientas > :first-child {
     min-width: 0;
   }
+  .herramientas > :first-child label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .herramientas .contador {
     margin: 0;
+    font-size: 0.75rem;
   }
   .casilla,
   .muestra,

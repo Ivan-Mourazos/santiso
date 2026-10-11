@@ -148,24 +148,20 @@
   .tabla tbody {
     display: block;
   }
+  /* Una línea por persona: foto, dorsal, nombre y las dos acciones como iconos de 44 px. */
   .tabla tr {
     display: grid;
-    grid-template-columns: 44px 2.5rem minmax(0, 1fr);
-    grid-template-areas:
-      "foto dorsal nombre"
-      "acciones acciones acciones";
+    grid-template-columns: 36px auto minmax(0, 1fr) auto;
+    grid-template-areas: "foto dorsal nombre acciones";
     align-items: center;
-    gap: 0.5rem 0.75rem;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid rgb(255 255 255 / 8%);
-    border-radius: var(--ui-radius, 0.75rem);
-    background: var(--ui-panel-face, var(--ui-surface, #171717));
-    box-shadow: var(--ui-panel-shadow, none);
+    gap: 0 0.5rem;
+    min-height: 56px;
+    border-bottom: 1px solid var(--ui-border);
   }
   .tabla td {
     padding: 0;
     border: 0;
+    min-width: 0;
   }
   .tabla tr:hover td {
     background: none;
@@ -173,11 +169,37 @@
   .celdaFoto {
     grid-area: foto;
   }
+  .celdaFoto .foto {
+    width: 36px;
+    height: 36px;
+  }
   .celdaDorsal {
     grid-area: dorsal;
+    min-width: 1.6rem;
+    text-align: center;
   }
   .celdaNombre {
     grid-area: nombre;
+    line-height: 1.2;
+  }
+  .celdaNombre strong {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .celdaNombre span {
+    display: none;
+  }
+  .celdaNombre .soloMovil {
+    display: block;
+    font-size: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .celdaNombre .soloMovil::before {
+    content: none;
   }
   .celdaPosicion {
     display: none;
@@ -186,10 +208,22 @@
     grid-area: acciones;
   }
   .filaAcciones {
-    justify-content: stretch;
+    gap: 0.25rem;
   }
-  .filaAcciones > * {
-    flex: 1;
+  /* El texto sigue en el nombre accesible del botón; a la vista queda el icono. */
+  .filaAcciones button {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    font-size: 0;
+  }
+  .filaAcciones button::before {
+    content: "✎";
+    font-size: 1.05rem;
+  }
+  .filaAcciones button:last-child::before {
+    content: "✕";
   }
 }
 
@@ -266,12 +300,8 @@
 
 @media (max-width: 640px) {
   .tabla.staff tr {
-    grid-template-columns: 44px minmax(0, 1fr);
-    grid-template-areas: "foto nombre" "acciones acciones";
-  }
-  .foto {
-    width: 44px;
-    height: 44px;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-areas: "foto nombre acciones";
   }
   .celdaNombre,
   .fotoControles,
@@ -289,13 +319,6 @@
   .casilla {
     min-height: 44px;
     white-space: normal;
-  }
-  .filaAcciones {
-    flex-wrap: wrap;
-  }
-  .filaAcciones button {
-    min-width: 44px;
-    min-height: 44px;
   }
   .fotoEditor {
     flex-wrap: wrap;
@@ -320,8 +343,53 @@
   display: none;
 }
 @media (max-width: 640px) {
+  /* En móvil sobra el marco y el título: ya está en la cabecera de la página. */
+  .panel {
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .cabecera {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  /* El título sigue para el lector de pantalla. */
+  .cabecera > div:first-child:not(.temporada) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .cabecera p {
     display: none;
+  }
+  .temporada {
+    flex: 1;
+    margin-left: 0;
+    min-width: 0;
+  }
+  .temporada label,
+  .herramientas > :first-child label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .herramientas {
+    gap: 0.25rem 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+  .contador {
+    margin: 0;
+    font-size: 0.75rem;
   }
   .masFiltros {
     display: block;

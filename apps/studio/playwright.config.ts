@@ -25,6 +25,12 @@ export default defineConfig({
         viewport: { width: 390, height: 844 },
       },
     },
+    {
+      // El míster entra desde Android: mismas pruebas móviles en Chrome.
+      name: "android",
+      testMatch: "**/movil*.spec.ts",
+      use: { ...devices["Pixel 7"] },
+    },
   ],
   webServer: {
     command: `pnpm exec next dev -H 127.0.0.1 -p ${new URL(URL_BASE).port || "3000"}`,

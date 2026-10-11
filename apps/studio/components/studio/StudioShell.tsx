@@ -9,6 +9,43 @@ import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Select } from "@/components/ui/foundation/Fields";
 import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
+/** Lo del día de partido, a un toque en el móvil; el resto del menú queda en «Más». */
+const PESTANAS = [
+  {
+    id: "jornada",
+    label: "Jornada",
+    icono: "M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z",
+  },
+  {
+    id: "actas",
+    label: "Actas",
+    icono: "M9 4h6v3H9zM8 5H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2M9 12h6M9 16h4",
+  },
+  {
+    id: "carteles",
+    label: "Carteles",
+    icono: "M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1ZM4 16l4.5-4.5 3.5 3.5 3-3 5 5M9 9h.01",
+  },
+] as const;
+
+function Icono({ trazo }: { trazo: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d={trazo} />
+    </svg>
+  );
+}
+
 export function StudioShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { params, navigate, setParams } = useStudio();
@@ -82,21 +119,6 @@ export function StudioShell({ children }: { children: ReactNode }) {
       <div className={styles.main}>
         <header className={styles.header}>
           <div className={styles.heading}>
-            <div className={styles.mobileButton}>
-              <Button
-                variant="secondary"
-                aria-expanded={menu}
-                aria-controls={menuId}
-                aria-haspopup="dialog"
-                onClick={(event) => {
-                  // Safari no enfoca los botones al tocarlos: conserva el destino de retorno.
-                  event.currentTarget.focus();
-                  setMenu(true);
-                }}
-              >
-                Menú
-              </Button>
-            </div>
             <div>
               <p className={styles.eyebrow}>{section?.grupo ?? "Studio"}</p>
               <h1>{section?.label ?? "Panel"}</h1>
@@ -152,6 +174,39 @@ export function StudioShell({ children }: { children: ReactNode }) {
             children
           )}
         </main>
+        <nav aria-label="Accesos rápidos" className={styles.tabs}>
+          {PESTANAS.map((pestana) => (
+            <Link
+              key={pestana.id}
+              href={rutaSeccion(pestana.id, params)}
+              aria-current={pestana.id === section?.id ? "page" : undefined}
+              className={styles.tab}
+              onNavigate={(event) => {
+                event.preventDefault();
+                if (pestana.id !== section?.id) navigate(rutaSeccion(pestana.id, params));
+              }}
+            >
+              <Icono trazo={pestana.icono} />
+              {pestana.label}
+            </Link>
+          ))}
+          <button
+            type="button"
+            className={styles.tab}
+            data-activa={!PESTANAS.some((pestana) => pestana.id === section?.id)}
+            aria-expanded={menu}
+            aria-controls={menuId}
+            aria-haspopup="dialog"
+            onClick={(event) => {
+              // Safari no enfoca los botones al tocarlos: conserva el destino de retorno.
+              event.currentTarget.focus();
+              setMenu(true);
+            }}
+          >
+            <Icono trazo="M4 7h16M4 12h16M4 17h16" />
+            Más
+          </button>
+        </nav>
       </div>
       <Dialog
         id={menuId}

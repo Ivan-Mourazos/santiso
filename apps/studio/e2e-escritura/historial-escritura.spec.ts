@@ -102,8 +102,11 @@ test.describe("estadísticas de la temporada pasada", () => {
 
   for (const ancho of [360, 1280]) {
     test(`cabe a ${ancho}px`, async ({ page }) => {
-      await page.setViewportSize({ width: ancho, height: 900 });
+      // La temporada se elige en ancho de escritorio (en móvil va en la hoja de filtros) y
+      // después se estrecha la ventana para medir.
+      await page.setViewportSize({ width: 1280, height: 900 });
       await abrir(page);
+      await page.setViewportSize({ width: ancho, height: 900 });
       const desborda = await page.evaluate(
         () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
       );

@@ -110,7 +110,15 @@ test("clasificación móvil prioriza columnas, despliega detalle y guarda varias
 test("estadísticas móviles muestran métricas principales, detalle, orden y búsqueda", async ({
   page,
 }) => {
-  await abrirConsulta(page, "estadisticas");
+  // En móvil, temporada y competición de Estadísticas van en la hoja de filtros.
+  await page.goto("/admin/estadisticas?categoria=Veteranos");
+  await page.getByRole("button", { name: /^Filtros: / }).click();
+  const hoja = page.getByRole("dialog", { name: "Filtros" });
+  await hoja.getByLabel("Temporada", { exact: true }).selectOption({ label: "2025/26" });
+  const competicion = hoja.getByLabel("Competición", { exact: true });
+  await expect(competicion.locator("option", { hasText: "Copa Móvil Consulta" })).toHaveCount(1);
+  await competicion.selectOption({ label: "Copa Móvil Consulta" });
+  await hoja.getByRole("button", { name: "Listo" }).click();
   const tabla = page.getByRole("table", { name: "Estadísticas de Veteranos", exact: true });
   const fila = tabla
     .getByRole("row")
@@ -120,18 +128,24 @@ test("estadísticas móviles muestran métricas principales, detalle, orden y b�
     await expect(fila.locator(`td[data-etiqueta="${etiqueta}"]`)).toBeVisible();
   }
   await expect(fila.locator('td[data-etiqueta="Titularidades"]')).toBeHidden();
-  const detalle = fila.getByRole("button", { name: /^Más estadísticas de / });
-  await detalle.click();
-  await expect(detalle).toHaveAttribute("aria-expanded", "true");
-  await expect(fila.locator('td[data-etiqueta="Titularidades"]')).toContainText("1");
   await expect(fila.locator('td[data-etiqueta="Amarillas"]')).toHaveText("1");
   await expect(fila.locator('td[data-etiqueta="Rojas"]')).toHaveText("1");
+  // Las demás cifras están en la ficha, que se abre tocando el nombre.
+  await fila.getByRole("button", { name: /^Ver ficha de / }).click();
+  const ficha = page.getByRole("dialog");
+  await expect(ficha).toBeVisible();
+  await ficha.getByRole("button", { name: "Cerrar diálogo" }).click();
+  await expect(ficha).toBeHidden();
   await comprobarControles(page, tabla);
-  const ordenar = page.getByLabel("Ordenar por", { exact: true });
-  await ordenar.selectOption("jugador");
+  await page.getByRole("button", { name: /^Filtros: / }).click();
+  const filtros = page.getByRole("dialog", { name: "Filtros" });
+  await filtros.getByLabel("Ordenar por", { exact: true }).selectOption("jugador");
   await expect(tabla.locator("tbody tr").first()).toContainText("Antón Consulta Móbil");
-  await page.getByRole("button", { name: "Cambiar sentido de ordenación", exact: true }).click();
+  await filtros
+    .getByRole("button", { name: "Cambiar sentido de ordenación", exact: true })
+    .click();
   await expect(tabla.locator("tbody tr").first()).toContainText("Xoán Xogador");
+  await filtros.getByRole("button", { name: "Listo" }).click();
   await page.getByLabel("Buscar", { exact: true }).fill("sin-coincidencias");
   await expect(
     page.getByText("Ningún jugador coincide con la búsqueda.", { exact: true }),
