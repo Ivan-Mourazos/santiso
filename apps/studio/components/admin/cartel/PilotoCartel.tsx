@@ -7,7 +7,6 @@ import { aHex, COLOR_RIVAL_RESERVA, colorDominante } from "@/lib/cartel2/color";
 import GaleriaPartido from "@/components/admin/fotos/GaleriaPartido";
 import { peticionDeFormulario } from "@/lib/cartel2/formulario";
 import {
-  COMPOSICIONES,
   ESTILOS_FOTO,
   medidasDe,
   type FormatoCartel,
@@ -90,7 +89,8 @@ export default function PilotoCartel({
   equipos: CartelTeam[];
   showToast: (msg: string, type?: "success" | "error") => void;
 }) {
-  const [composicion, setComposicion] = useState<Composicion>("diagonal");
+  // Un solo diseño de cartel de partido: ya no se elige.
+  const composicion: Composicion = "diagonal";
   const [colores, setColores] = useState<Record<string, string>>({});
   const [foto, setFoto] = useState<FotoCartel | null>(null);
   const [galeria, setGaleria] = useState(false);
@@ -268,21 +268,6 @@ export default function PilotoCartel({
       <div className={styles.cabecera}>
         <h3>Previsualización</h3>
         <div className={styles.controles}>
-          {tipo === "partido" && (
-            <div className={styles.grupo} role="group" aria-label="Composición">
-              {COMPOSICIONES.map((c) => (
-                <Button
-                  key={c.id}
-                  size="sm"
-                  variant={composicion === c.id ? "primary" : "secondary"}
-                  aria-pressed={composicion === c.id}
-                  onClick={() => setComposicion(c.id)}
-                >
-                  {c.nombre}
-                </Button>
-              ))}
-            </div>
-          )}
           {tipo === "resumo" && (
             <>
               {/* Con el partido cargado, de su galería; si no, una foto suelta del equipo. */}

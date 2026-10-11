@@ -22,6 +22,48 @@
   background: rgb(250 204 21 / 5%);
 }
 
+.desdeLiga > button {
+  width: 100%;
+}
+.desdeLiga > div {
+  margin-top: 0.6rem;
+}
+
+/* Campos sueltos del cartel de partido: plegados, para retocar o para un amistoso. */
+.manual {
+  min-width: 0;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius, 0.75rem);
+}
+.manual > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  font-size: var(--ui-text-sm, 0.875rem);
+  font-weight: 800;
+  list-style: none;
+}
+.manual > summary::-webkit-details-marker {
+  display: none;
+}
+.manual[open] > summary > span:last-child {
+  transform: rotate(180deg);
+}
+.manual > summary:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+.manualContenido {
+  min-width: 0;
+  padding: 0.75rem;
+  border-top: 1px solid var(--ui-border);
+}
+
 .interruptores {
   display: flex;
   flex-wrap: wrap;

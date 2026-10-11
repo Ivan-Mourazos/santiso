@@ -6,8 +6,9 @@
 
 /** Composiciones del cartel de partido; la primera es la de por defecto. */
 export const COMPOSICIONES = [
+  // Un solo diseño de cartel de partido (Iván, 12/10/2026: «quiero unificar diseños»). Hubo
+  // un segundo, «Enfrentados», que acabó siendo casi igual; se retiró.
   { id: "diagonal", nombre: "Diagonal" },
-  { id: "enfrentados", nombre: "Enfrentados" },
 ] as const;
 export type Composicion = (typeof COMPOSICIONES)[number]["id"];
 

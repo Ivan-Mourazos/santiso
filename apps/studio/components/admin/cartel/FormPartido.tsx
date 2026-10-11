@@ -5,7 +5,8 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
-import { Field } from "@/components/ui/foundation/Fields";
+import { Field, Select } from "@/components/ui/foundation/Fields";
+import { formatLiteralMatchDate } from "@/lib/match-date-time";
 import { competitionsForCategory, type CompetenciaRow } from "@/lib/competition";
 import { CategorySelector, type SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
@@ -126,6 +127,8 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
   tipo,
 }) => {
   const [autoFillMessage, setAutoFillMessage] = useState("");
+  /** El partido elegido en el desplegable; vacío si se cargó «el próximo» o nada. */
+  const [elegido, setElegido] = useState("");
 
   function handleLoadNextMatch() {
     setAutoFillMessage("");
@@ -136,8 +139,6 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
       .filter((match) => {
         if (!match.fecha) return false;
         if (match.categoria !== form.categoria) return false;
-        const mid = match.competicion_id || match.jornada?.competicion_id;
-        if (!form.competicion_id || mid !== form.competicion_id) return false;
         if (
           ["finalizado", "cancelado", "aplazado"].includes(
             (match.estado || "").toLowerCase().trim(),
@@ -161,25 +162,33 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
       return;
     }
 
-    setAutoFillMessage("No encontré próximo partido pendiente para esa categoría y liga.");
+    setAutoFillMessage("No hay ningún partido pendiente para esa categoría.");
   }
 
-  return (
+  /** Los partidos del Santiso de la categoría que aún no se han jugado, del más cercano al más lejano. */
+  const pendientes = dbMatches
+    .filter((match) => {
+      if (match.categoria !== form.categoria) return false;
+      if (["finalizado", "cancelado"].includes((match.estado || "").toLowerCase().trim())) {
+        return false;
+      }
+      const local = match.equipo_local?.nombre?.toLowerCase() || "";
+      const visitante = match.equipo_visitante?.nombre?.toLowerCase() || "";
+      return local.includes("santiso") || visitante.includes("santiso");
+    })
+    .sort((a, b) => (tiempoDe(a) || Infinity) - (tiempoDe(b) || Infinity));
+
+  function etiquetaDe(match: SelectorMatch) {
+    const enCasa = (match.equipo_local?.nombre?.toLowerCase() || "").includes("santiso");
+    const rival = (enCasa ? match.equipo_visitante?.nombre : match.equipo_local?.nombre) || "Rival";
+    const cuando = match.fecha ? formatLiteralMatchDate(match.fecha) : "sin fecha";
+    return `J${match.jornada?.numero ?? "?"} · ${rival} (${enCasa ? "casa" : "fuera"}) · ${cuando}`;
+  }
+
+  const partido = tipo === "partido";
+
+  const campos_ = (
     <>
-      {tipo === "partido" && (
-        <div className={styles.desdeLiga}>
-          <h4 className={styles.seccion}>Autocompletar desde la liga</h4>
-          <Button onClick={handleLoadNextMatch}>Cargar próximo partido</Button>
-          {autoFillMessage && (
-            <p role="status" className={styles.aviso}>
-              {autoFillMessage}
-            </p>
-          )}
-        </div>
-      )}
-
-      <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
-
       {/* Un solo campo: sugiere las del catálogo y admite cualquier otra (Amigable…). */}
       <div className={styles.campo}>
         <Field
@@ -263,6 +272,74 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
         handleRivalFile={handleRivalFile}
         onNameChange={(name) => set("rivalNombre", name)}
       />
+    </>
+  );
+
+  // Las demás plantillas que reutilizan este formulario siguen con todos los campos a la vista.
+  if (!partido) {
+    return (
+      <>
+        <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
+        {campos_}
+      </>
+    );
+  }
+
+  // Cartel de partido: categoría y partido, y el cartel sale relleno. Los campos sueltos quedan
+  // plegados para retocar o para un amistoso que no está en el calendario.
+  return (
+    <>
+      <CategorySelector
+        value={form.categoria}
+        onChange={(v: string) => {
+          set("categoria", v);
+          setElegido("");
+          setAutoFillMessage("");
+        }}
+      />
+      <div className={styles.desdeLiga}>
+        <Button
+          onClick={() => {
+            setElegido("");
+            handleLoadNextMatch();
+          }}
+        >
+          Cargar próximo partido
+        </Button>
+        {pendientes.length > 0 && (
+          <Select
+            label="O elige otro partido"
+            value={elegido}
+            onChange={(e) => {
+              const match = pendientes.find((m) => m.id === e.target.value);
+              setElegido(e.target.value);
+              if (match) {
+                loadMatchFromDb(match);
+                setAutoFillMessage("Partido cargado.");
+              }
+            }}
+          >
+            <option value="">Elegir…</option>
+            {pendientes.map((m) => (
+              <option key={m.id} value={m.id}>
+                {etiquetaDe(m)}
+              </option>
+            ))}
+          </Select>
+        )}
+        {autoFillMessage && (
+          <p role="status" className={styles.aviso}>
+            {autoFillMessage}
+          </p>
+        )}
+      </div>
+      <details className={styles.manual}>
+        <summary>
+          <span>Editar datos a mano</span>
+          <span aria-hidden="true">⌄</span>
+        </summary>
+        <div className={styles.manualContenido}>{campos_}</div>
+      </details>
     </>
   );
 };

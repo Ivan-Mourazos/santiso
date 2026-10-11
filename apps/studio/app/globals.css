@@ -78,7 +78,9 @@ body {
   font-family: "Nunito", "Outfit", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  /* `clip` y no `hidden`: `hidden` convierte la página en su propia caja de scroll y deja
+     sin efecto todo lo que deba quedarse pegado arriba (la cabecera en móvil). */
+  overflow-x: clip;
 }
 
 .glass {

@@ -22,14 +22,16 @@ const PESTANAS = [
     icono: "M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z",
   },
   {
-    id: "importar",
-    label: "Importar",
-    icono: "M9 4h6v3H9zM8 5H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2M9 12h6M9 16h4",
-  },
-  {
     id: "carteles",
     label: "Carteles",
     icono: "M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1ZM4 16l4.5-4.5 3.5 3.5 3-3 5 5M9 9h.01",
+  },
+  // Resultados y actas llegan solos de la federación: «Importar» ya no es de todos los días
+  // y queda en «Más». Las multas sí lo son.
+  {
+    id: "multas",
+    label: "Multas",
+    icono: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM15 9.5a3.5 3.5 0 1 0 0 5M8 11h5M8 13.5h5",
   },
 ] as const;
 
