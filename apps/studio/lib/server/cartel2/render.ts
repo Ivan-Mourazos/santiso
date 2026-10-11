@@ -25,7 +25,10 @@ async function navegador(): Promise<Browser> {
  * (`/media/...`) y las fuentes se sirven desde él; nada sale a internet.
  */
 export async function renderizarCartel(origen: string, peticion: PeticionCartel): Promise<Buffer> {
-  const medidas = medidasDe(peticion.plantilla);
+  const medidas = medidasDe(
+    peticion.plantilla,
+    "formato" in peticion ? peticion.formato : undefined,
+  );
   const contexto = await (
     await navegador()
   ).newContext({

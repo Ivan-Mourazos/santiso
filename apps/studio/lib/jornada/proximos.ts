@@ -68,6 +68,9 @@ export function elegirProximos(partidos: SelectorMatch[], hoy: Date): NextMatch[
     const local = esSantiso(m.equipo_local);
     const rival = local ? m.equipo_visitante : m.equipo_local;
     const partido: NextMatch = {
+      partidoId: m.id,
+      competicion: m.competiciones?.nombre ?? m.competicion ?? m.jornada?.competicion ?? "",
+      jornada: String(m.jornada?.numero ?? ""),
       rival: rival?.nombre || "",
       rivalEscudoUrl: rival?.escudo_url || "",
       fecha: matchDateInput(m.fecha),

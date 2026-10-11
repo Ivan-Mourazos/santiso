@@ -1,0 +1,31 @@
+.paquete {
+  border: 1px solid rgb(245 197 24 / 45%);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  min-width: 0;
+}
+.paquete h4 {
+  margin: 0 0 0.5rem;
+}
+.paquete p {
+  font-size: 0.9rem;
+  color: var(--ui-muted);
+  line-height: 1.4;
+}
+.acciones,
+.archivos {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.paquete button {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.archivos button {
+  flex: 1 1 8rem;
+}

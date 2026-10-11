@@ -5,22 +5,26 @@
  */
 
 export interface CronEvent {
-  id:      string;
-  minuto:  string;
-  tipo:    "gol" | "amarela" | "vermella" | "penalti" | "doble_amarela" | "propia" | "cambio";
-  equipo:  "local" | "rival";
+  id: string;
+  minuto: string;
+  tipo: "gol" | "amarela" | "vermella" | "penalti" | "doble_amarela" | "propia" | "cambio";
+  equipo: "local" | "rival";
   jugador: string;
   jugadorEntra?: string;
 }
 
 export interface Player {
-  id:       string;
-  dorsal:   string;
-  nome:     string;
+  id: string;
+  dorsal: string;
+  nome: string;
   eCapitan: boolean;
 }
 
 export interface NextMatch {
+  partidoId?: string;
+  competicion?: string;
+  jornada?: string;
+  localidad?: string;
   rival: string;
   /** Rival shield URL for poster preload (optional in DB-derived rows). */
   rivalEscudoUrl: string;

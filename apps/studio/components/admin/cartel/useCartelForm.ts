@@ -357,6 +357,7 @@ export function useCartelForm(partidoInicial?: string | null) {
       fecha: matchDateInput(match.fecha),
       hora: matchTimeInput(match.fecha),
       lugar: campoNombre,
+      localidad: undefined,
       estadio: campoNombre,
       santisoSide: isSantisoLocal ? "left" : "right",
       golesLocal: match.goles_local?.toString() || "0",

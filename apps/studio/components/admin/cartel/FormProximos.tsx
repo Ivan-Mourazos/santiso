@@ -7,7 +7,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select } from "@/components/ui/foundation/Fields";
 import type { NextMatch } from "@/lib/cartel/types";
-import { elegirProximos } from "@/lib/jornada/proximos";
+import { huecoProximo } from "@/lib/jornada/proximos";
+import { elegirAxenda } from "@/lib/cartel2/seleccion-axenda";
 import { SectionLabel, Toggle, type SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
 import type { FormState } from "./types";
@@ -52,17 +53,13 @@ export const FormProximos: React.FC<Props> = ({
   const pendienteRef = useRef(rellenarAlAbrir);
 
   const handleAutoFill = () => {
-    const elegidos = elegirProximos(dbMatches, new Date());
+    const elegidos = elegirAxenda(dbMatches, new Date());
     const conRival = elegidos.filter((m) => m.rival).length;
     if (conRival === 0) {
       setAviso("No hay partidos pendientes del Santiso con fecha. Revisa las horas en Calendario.");
       return;
     }
-    setAviso(
-      conRival < elegidos.length
-        ? "Solo juega una categoría esta jornada: el otro hueco queda vacío y no sale en el cartel."
-        : "",
-    );
+    setAviso(conRival === 1 ? "Un solo encuentro esta semana: la portada se adapta a él." : "");
     set("matches", elegidos);
   };
 
@@ -191,6 +188,39 @@ export const FormProximos: React.FC<Props> = ({
               placeholder="A Merced"
               onChange={(e) => updateMatch(i, { lugar: e.target.value })}
             />
+            <div className={styles.pareja}>
+              <Field
+                label={`Competición del partido ${i + 1}`}
+                value={m.competicion ?? ""}
+                onChange={(e) =>
+                  updateMatch(i, { competicion: e.target.value, partidoId: undefined })
+                }
+              />
+              <Field
+                label={`Jornada del partido ${i + 1}`}
+                value={m.jornada ?? ""}
+                inputMode="numeric"
+                onChange={(e) => updateMatch(i, { jornada: e.target.value })}
+              />
+            </div>
+            <Field
+              label={`Localidad del partido ${i + 1}`}
+              value={m.localidad ?? ""}
+              onChange={(e) => updateMatch(i, { localidad: e.target.value })}
+            />
+            {i > 1 && (
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  set(
+                    "matches",
+                    form.matches.filter((_, n) => n !== i),
+                  )
+                }
+              >
+                Quitar partido {i + 1}
+              </Button>
+            )}
 
             <div className={styles.campo} role="group" aria-label={`Localía del partido ${i + 1}`}>
               <span className={styles.etiqueta}>Localía</span>
@@ -210,6 +240,14 @@ export const FormProximos: React.FC<Props> = ({
           </div>
         ))}
       </div>
+      {form.matches.length < 4 && (
+        <Button
+          variant="secondary"
+          onClick={() => set("matches", [...form.matches, huecoProximo("Senior")])}
+        >
+          Añadir partido
+        </Button>
+      )}
     </>
   );
 };
