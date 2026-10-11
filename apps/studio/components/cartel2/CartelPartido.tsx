@@ -80,7 +80,11 @@ export function CartelPartido({
       logosArriba="centro"
       institucionales={datos.institucionales}
       patrocinadores={datos.patrocinadores}
-      className={`${s.cartel} ${s[composicion]} ${historia ? s.historia : ""}`}
+      // El nombre de la composición va también tal cual: una composición sin estilos propios
+      // no tiene clase en el módulo y aun así hay que poder reconocerla.
+      className={[composicion, s[composicion], historia ? s.historia : ""]
+        .filter(Boolean)
+        .join(" ")}
     >
       <div className={s.contenido}>
         <header className={s.cabecera}>

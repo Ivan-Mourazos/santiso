@@ -111,12 +111,13 @@
 .escudoZona::before {
   content: "";
   position: absolute;
-  left: -10px;
+  /* Filo amarillo liso entre los datos y el escudo: sin rayas. */
+  left: -3px;
   top: 0;
   bottom: 0;
-  width: 20px;
+  width: 6px;
   transform: skewX(-8deg);
-  background: repeating-linear-gradient(-58deg, var(--amarillo) 0 18px, var(--negro) 18px 36px);
+  background: var(--amarillo);
 }
 .escudo {
   width: var(--escudo);

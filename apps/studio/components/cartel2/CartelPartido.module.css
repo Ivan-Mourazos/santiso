@@ -190,12 +190,3 @@
   width: 290px;
   height: 290px;
 }
-.enfrentados::after {
-  content: "";
-  position: absolute;
-  z-index: 2;
-  inset: 0;
-  clip-path: polygon(96% 0, 98% 0, 62% 100%, 60% 100%);
-  background: repeating-linear-gradient(-58deg, var(--amarillo) 0 22px, var(--negro) 22px 44px);
-  pointer-events: none;
-}

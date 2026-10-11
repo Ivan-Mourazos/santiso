@@ -181,22 +181,26 @@
     linear-gradient(160deg, var(--izquierda-base), var(--tinta) 88%);
 }
 
+/*
+ * El color de un lado se funde con el del otro a lo largo de la diagonal, sin corte seco
+ * (Iván, 11/10/2026). 106° es la perpendicular a esa diagonal en un lienzo 4:5.
+ */
 .diagonal .fondo::after {
   content: "";
   position: absolute;
   inset: 0;
-  clip-path: polygon(68% 0, 100% 0, 100% 100%, 32% 100%);
+  mask-image: linear-gradient(106deg, transparent 34%, #000 66%);
   background:
     radial-gradient(44% 34% at 74% 60%, var(--derecha-luz), transparent 72%),
     linear-gradient(200deg, var(--derecha-base), var(--tinta) 88%);
 }
 
 .diagonal .ecoIzquierda {
-  clip-path: polygon(0 0, 68% 0, 32% 100%, 0 100%);
+  mask-image: linear-gradient(106deg, #000 34%, transparent 66%);
 }
 
 .diagonal .ecoDerecha {
-  clip-path: polygon(68% 0, 100% 0, 100% 100%, 32% 100%);
+  mask-image: linear-gradient(106deg, transparent 34%, #000 66%);
 }
 
 .diagonal .ecoIzquierda img {
@@ -209,11 +213,12 @@
   top: 300px;
 }
 
-/* Franjas amarillas y negras (la equipación) a lo largo del corte. */
+/*
+ * Sin raya en el corte: los dos lados ya se distinguen por el color del fondo. La franja de
+ * rayas, y después una línea fina, pisaban el «VS» y los textos centrados (Iván, 11/10/2026).
+ */
 .diagonal .franja {
-  z-index: 2;
-  clip-path: polygon(66.2% 0, 68.8% 0, 32.8% 100%, 30.2% 100%);
-  background: repeating-linear-gradient(-58deg, var(--amarillo) 0 22px, var(--negro) 22px 44px);
+  display: none;
 }
 
 .centro .fondo {
