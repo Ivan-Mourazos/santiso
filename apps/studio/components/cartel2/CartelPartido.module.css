@@ -1,197 +1,201 @@
-/*
- * Cartel de partido (previa), sobre `Base`. Zonas sin solaparse:
- *   cabecera 56–190 · escudos y nombres 240–1100 · fecha y hora 810–1180 · logos 1200–1310.
- */
-
-.vs {
-  position: absolute;
-  z-index: 4;
-  font-family: var(--display);
-  line-height: 0.8;
-  letter-spacing: -0.02em;
-}
-
-.cuando {
+.contenido {
   position: absolute;
   z-index: 6;
-  bottom: 170px;
-}
-
-.fecha {
+  top: 180px;
+  bottom: 185px;
+  left: 64px;
+  right: 64px;
   display: flex;
   flex-direction: column;
+  gap: 22px;
 }
-
-.dia {
-  margin-bottom: 10px;
-  font-size: 58px;
-  color: rgb(255 255 255 / 78%);
+.cabecera {
+  text-align: center;
+  flex-shrink: 0;
 }
-
-.numero {
-  font-size: 128px;
-}
-
-.sinFecha {
-  font-size: 72px;
-}
-
-.hora {
-  font-size: 168px;
-  line-height: 0.82;
+.antetitulo {
   color: var(--amarillo);
-  letter-spacing: -0.01em;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.08em;
 }
-
-.campo {
-  margin-top: 18px;
-  white-space: normal;
+.competicion {
+  margin-top: 8px;
+  font-weight: 600;
+  line-height: 1.3;
   overflow-wrap: anywhere;
 }
-
-/* ─── Diagonal ─────────────────────────────────────────────────────────────────────────── */
-
-/* Escudos a los lados y el «VS» en el hueco entre ellos: no tapa a ninguno. */
-.diagonal .escudoLocal {
-  width: 440px;
-  height: 440px;
-  left: 64px;
-  top: 236px;
+.xornada {
+  margin-top: 6px;
+  font-size: 23px;
+  line-height: 1.3;
+  letter-spacing: 0.12em;
+  color: rgb(255 255 255 / 75%);
 }
-
-.diagonal .escudoVisitante {
-  width: 440px;
-  height: 440px;
-  right: 64px;
-  top: 600px;
+.duelo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
+  align-items: center;
+  flex: 1 1 0;
+  min-height: 350px;
 }
-
-.diagonal .vs {
-  left: 540px;
-  top: 644px;
-  transform: translate(-50%, -50%) skewX(-8deg);
-  font-size: 154px;
-  color: #fff;
-  text-shadow:
-    0 0 60px rgb(0 0 0 / 55%),
-    8px 8px 0 var(--tinta);
-}
-
-/*
- * Simetría en diagonal: el escudo de arriba lleva el nombre debajo y el de abajo, encima; los
- * dos nombres quedan hacia el centro del cartel, uno a cada lado del «VS».
- */
-.diagonal .nombreLocal {
-  left: 64px;
-  top: 704px;
-  width: 470px;
-}
-
-.diagonal .nombreVisitante {
-  right: 64px;
-  top: 530px;
-  width: 470px;
-  text-align: right;
-}
-
-.diagonal .cuando {
-  left: 64px;
-  width: 440px;
-}
-
-.diagonal .numero {
-  font-size: 112px;
-}
-
-.diagonal .hora {
-  margin-top: 16px;
-  font-size: 142px;
-}
-
-.diagonal .dia {
-  font-size: 44px;
-}
-
-/* Un campo con nombre largo se parte en dos líneas dentro de su columna, sin cruzar el corte. */
-.diagonal .campo {
-  max-width: 440px;
-  white-space: normal;
-  line-height: 1.25;
-}
-
-/* ─── Enfrentados ──────────────────────────────────────────────────────────────────────── */
-
-.enfrentados .cabecera {
-  top: 146px;
-  left: 64px;
-  right: 64px;
-  max-width: none;
-  text-align: center;
-}
-
-.enfrentados .cabecera > :first-child {
-  font-size: 92px;
-}
-
-.enfrentados .escudoLocal,
-.enfrentados .escudoVisitante {
-  width: 430px;
-  height: 430px;
-  top: 340px;
-}
-
-.enfrentados .escudoLocal {
-  left: 56px;
-  transform: rotate(-3deg);
-}
-
-.enfrentados .escudoVisitante {
-  right: 56px;
-  transform: rotate(3deg);
-}
-
-.enfrentados .vs {
-  left: 540px;
-  top: 560px;
-  transform: translate(-50%, -50%) rotate(-8deg);
-  font-size: 124px;
-  color: var(--amarillo);
-  text-shadow: 0 8px 30px #000;
-}
-
-.enfrentados .nombreLocal,
-.enfrentados .nombreVisitante {
-  top: 800px;
-  width: 440px;
-  text-align: center;
-}
-
-.enfrentados .nombreLocal {
-  left: 50px;
-}
-
-.enfrentados .nombreVisitante {
-  right: 50px;
-}
-
-.enfrentados .cuando {
-  left: 0;
-  right: 0;
+.equipo {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   justify-content: center;
-  align-items: flex-end;
-  column-gap: 40px;
+  gap: 20px;
+  align-items: center;
+  min-width: 0;
+  height: 100%;
+}
+.huecoEscudo {
+  flex: 1;
+  min-height: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.escudo {
+  width: 290px;
+  height: 290px;
+}
+.equipo[data-propio="true"] .escudo {
+  width: 240px;
+  height: 240px;
+}
+.nombre {
+  width: 100%;
   text-align: center;
+  color: #fff;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-shadow: 0 3px 15px #000;
 }
-
-.enfrentados .fecha {
-  align-items: flex-end;
-  text-align: right;
+.equipo[data-propio="false"] .nombre {
+  color: var(--amarillo);
 }
-
-.enfrentados .campo {
-  flex-basis: 100%;
-  padding-inline: 64px;
-  line-height: 1.2;
+.vs {
+  font: 42px/1.6 var(--display);
+  text-align: center;
+  opacity: 0.65;
+}
+.diagonal .equipo:first-child .escudo {
+  transform: translateY(-18px);
+}
+.diagonal .equipo:last-child .escudo {
+  transform: translateY(20px);
+}
+.cando {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 28px;
+  flex-shrink: 0;
+}
+.fecha {
+  font-weight: 800;
+  font-size: 38px;
+  line-height: 1.3;
+}
+.hora {
+  font: 46px/1.6 var(--display);
+  color: var(--amarillo);
+}
+.pendiente {
+  font-size: 24px;
+  line-height: 1.3;
+  color: rgb(255 255 255 / 72%);
+}
+.sede {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 14px 22px;
+  background: rgb(0 0 0 / 38%);
+  border-top: 1px solid rgb(255 255 255 / 22%);
+  border-bottom: 1px solid rgb(255 255 255 / 22%);
+}
+.campo {
+  font-weight: 800;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.localidad {
+  font-size: 27px;
+  line-height: 1.3;
+  color: rgb(255 255 255 / 75%);
+}
+.contexto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 44px;
+  flex-shrink: 0;
+}
+.forma {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+.etiqueta {
+  display: block;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.05em;
+  color: rgb(255 255 255 / 75%);
+}
+.puesto strong {
+  display: block;
+  font: 46px/1.6 var(--display);
+  color: var(--amarillo);
+}
+.racha {
+  display: flex;
+  gap: 7px;
+  margin-top: 8px;
+}
+.racha span {
+  width: 40px;
+  text-align: center;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.4;
+  border: 1px solid rgb(255 255 255 / 50%);
+  background: rgb(0 0 0 / 55%);
+}
+.racha [data-resultado="V"] {
+  color: var(--amarillo);
+  border-color: var(--amarillo);
+}
+.racha [data-resultado="D"] {
+  color: #ddd;
+  background: #482626;
+}
+.historia .contenido {
+  top: 380px;
+  bottom: 420px;
+  gap: 30px;
+}
+.historia .duelo {
+  min-height: 460px;
+}
+.historia .escudo {
+  width: 340px;
+  height: 340px;
+}
+.historia .equipo[data-propio="true"] .escudo {
+  width: 290px;
+  height: 290px;
+}
+.enfrentados::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  clip-path: polygon(96% 0, 98% 0, 62% 100%, 60% 100%);
+  background: repeating-linear-gradient(-58deg, var(--amarillo) 0 22px, var(--negro) 22px 44px);
+  pointer-events: none;
 }

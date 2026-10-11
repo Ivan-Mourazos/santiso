@@ -13,13 +13,19 @@ import { CartelResultado } from "./CartelResultado";
 export function Cartel({ peticion }: { peticion: PeticionCartel }) {
   switch (peticion.plantilla) {
     case "partido":
-      return <CartelPartido datos={peticion.datos} composicion={peticion.composicion} />;
+      return (
+        <CartelPartido
+          datos={peticion.datos}
+          composicion={peticion.composicion}
+          formato={peticion.formato}
+        />
+      );
     case "resultado":
       return <CartelResultado datos={peticion.datos} />;
     case "cronoloxia":
       return <CartelCronoloxia datos={peticion.datos} />;
     case "proximos":
-      return <CartelProximos datos={peticion.datos} />;
+      return <CartelProximos datos={peticion.datos} formato={peticion.formato} />;
     case "once":
       return <CartelOnce datos={peticion.datos} />;
     case "anuncio":

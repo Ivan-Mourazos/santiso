@@ -1,89 +1,94 @@
 import type { CSSProperties } from "react";
 import {
   categoriaCartel,
-  cuerpo,
   fechaCartel,
   type DatosProximos,
+  type FormatoCartel,
   type PartidoProximo,
 } from "@/lib/cartel2/modelo";
-import { Escudo } from "./Escudo";
 import { Base, coloresDe } from "./Base";
-import b from "./Base.module.css";
+import { Escudo } from "./Escudo";
 import s from "./CartelProximos.module.css";
 
-function Banda({ partido, uno }: { partido: PartidoProximo; uno: boolean }) {
-  const l = coloresDe(partido.local);
-  const v = coloresDe(partido.visitante);
-  const estilo = {
-    "--l-base": l.base,
-    "--l-luz": l.luz,
-    "--v-base": v.base,
-    "--v-luz": v.luz,
-  } as CSSProperties;
+function Banda({ partido }: { partido: PartidoProximo }) {
+  const rival = partido.local.propio ? partido.visitante : partido.local;
+  const color = coloresDe(rival);
   const fecha = fechaCartel(partido.fecha);
-  const nombre = (texto: string) => ({
-    fontSize: cuerpo(texto, uno ? 380 : 300, uno ? 34 : 28, 18, 0.5),
-  });
-
   return (
-    <section className={`${s.banda} ${uno ? s.uno : ""}`} style={estilo}>
-      <div className={s.color} />
-      <div className={s.corte} />
-      {partido.local.escudo && (
-        <Escudo
-          className={`${b.escudo} ${s.escudoLocal}`}
-          src={partido.local.escudo}
-          relieve={partido.local.relieve}
-        />
-      )}
-      {partido.visitante.escudo && (
-        <Escudo
-          className={`${b.escudo} ${s.escudoVisitante}`}
-          src={partido.visitante.escudo}
-          relieve={partido.visitante.relieve}
-        />
-      )}
-      <div className={`${b.nombre} ${s.nombreLocal}`} style={nombre(partido.local.nombre)}>
-        {partido.local.nombre.toUpperCase()}
-      </div>
-      <div className={`${b.nombre} ${s.nombreVisitante}`} style={nombre(partido.visitante.nombre)}>
-        {partido.visitante.nombre.toUpperCase()}
-      </div>
-      <div className={s.centro}>
-        <div className={s.categoria}>{categoriaCartel(partido.categoria)}</div>
-        <div className={`${b.display} ${s.dia}`}>
-          {fecha ? `${fecha.dia} ${fecha.numero} ${fecha.mes}` : "DATA POR DEFINIR"}
+    <section
+      data-axenda-partido
+      className={s.banda}
+      style={{ "--rival-base": color.base, "--rival-luz": color.luz } as CSSProperties}
+    >
+      <div className={s.informacion}>
+        <div className={s.categoria}>
+          <span>{categoriaCartel(partido.categoria)}</span>
+          <span className={s.localia}>{partido.local.propio ? "NA CASA" : "FÓRA"}</span>
         </div>
-        {partido.hora && <div className={`${b.display} ${s.hora}`}>{partido.hora}</div>}
-        {partido.campo && (
-          <div className={`${b.dato} ${s.campo}`}>{partido.campo.toUpperCase()}</div>
+        <div className={s.rival}>{rival.nombre}</div>
+        <div className={s.momento}>
+          {fecha ? (
+            <div className={s.fecha}>
+              <span className={s.dia}>{fecha.dia}</span>
+              <span className={s.numero}>
+                {fecha.numero} {fecha.mes}
+              </span>
+            </div>
+          ) : (
+            <div className={s.pendiente}>Data por confirmar</div>
+          )}
+          {partido.hora && (
+            <div className={s.hora}>
+              {partido.hora}
+              <span> h</span>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className={s.escudoZona}>
+        {rival.escudo ? (
+          <Escudo className={s.escudo} src={rival.escudo} relieve={rival.relieve} />
+        ) : (
+          <span className={s.sinEscudo}>VS</span>
         )}
       </div>
     </section>
   );
 }
 
-/**
- * Próximos encuentros: una banda de lado a lado por partido (sénior y veteranos, dos como
- * mucho), con los colores de cada equipo partidos en diagonal. Con uno solo, ocupa todo.
- */
-export function CartelProximos({ datos }: { datos: DatosProximos }) {
-  const partidos = datos.partidos.slice(0, 2);
+/** Agenda mínima; todas las bandas se reparten el alto disponible, de uno a cuatro partidos. */
+export function CartelProximos({
+  datos,
+  formato,
+}: {
+  datos: DatosProximos;
+  formato?: FormatoCartel;
+}) {
+  const partidos = datos.partidos.slice(0, 4);
+  const historia = formato === "historia";
   return (
     <Base
       variante="club"
+      historia={historia}
       logosArriba="centro"
       institucionales={datos.institucionales}
       patrocinadores={datos.patrocinadores}
+      className={`${s.cartel} ${historia ? s.historia : ""}`}
     >
       <header className={s.cabecera}>
-        <div className={s.antetitulo}>AXENDA DA FIN DE SEMANA</div>
-        <div className={b.xornada}>PRÓXIMOS ENCONTROS</div>
+        <div className={s.antetitulo}>{historia ? "HOXE XOGAMOS" : "AXENDA DA FIN DE SEMANA"}</div>
+        <h1 className={s.titulo}>{historia ? "DÍA DE FÚTBOL" : "PRÓXIMOS ENCONTROS"}</h1>
       </header>
-      <div className={`${s.bandas} ${partidos.length === 1 ? s.bandasUna : ""}`}>
+      <div
+        data-axenda-bandas
+        data-cantidad={partidos.length}
+        className={s.bandas}
+        style={{ gridTemplateRows: `repeat(${Math.max(1, partidos.length)}, minmax(0, 1fr))` }}
+      >
         {partidos.map((p, i) => (
-          <Banda key={`${p.categoria}-${i}`} partido={p} uno={partidos.length === 1} />
+          <Banda key={i} partido={p} />
         ))}
+        {!partidos.length && <div className={s.vacia}>A nosa próxima axenda, en breve.</div>}
       </div>
     </Base>
   );

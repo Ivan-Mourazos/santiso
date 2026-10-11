@@ -13,7 +13,7 @@ export type Composicion = (typeof COMPOSICIONES)[number]["id"];
 
 /** Solo publicación 4:5, a ×2 al exportar (2160 × 2700): lo que Instagram muestra sin recortar. */
 export const MEDIDAS = { ancho: 1080, alto: 1350 } as const;
-/** Historia de Instagram 9:16, también a ×2 (2160 × 3840). Solo la plantilla de alineación. */
+/** Historia de Instagram 9:16, a ×2: alineación, Axenda y partido. */
 export const MEDIDAS_HISTORIA = { ancho: 1080, alto: 1920 } as const;
 /**
  * Franja de arriba y de abajo que la interfaz de Instagram tapa en una historia (perfil,
