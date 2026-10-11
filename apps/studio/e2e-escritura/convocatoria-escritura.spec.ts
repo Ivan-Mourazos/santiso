@@ -34,7 +34,7 @@ test("guardar convocatoria, reabrir, exportar PNG y pasar convocados a alineaci√
   await expect(cartel).toBeVisible({ timeout: 60000 });
   expect(
     await cartel.evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight]),
-  ).toEqual([1080, 1350]);
+  ).toEqual([2160, 2700]);
   await expect(page.getByRole("button", { name: "Compartir", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Volver", exact: true }).click();
   await page.getByRole("button", { name: "Pasar a alineaci√≥n", exact: true }).click();
