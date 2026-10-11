@@ -70,6 +70,8 @@ for (const ancho of [360, 390]) {
     expect(peticiones.every((p) => p.formato === "historia")).toBe(true);
     const caption = page.getByRole("textbox", { name: "Texto para Instagram", exact: true });
     const opcionesTexto = page.locator("summary").filter({ hasText: "Texto para Instagram" });
+    // El aviso «Carrusel listo…» queda encima del final de la página: se cierra antes de seguir.
+    await page.getByRole("button", { name: "Cerrar aviso" }).tap();
     // Desplaza la opción al centro: las barras fijas no cuentan para scrollIntoViewIfNeeded.
     await opcionesTexto.evaluate((n) => n.scrollIntoView({ block: "center" }));
     await opcionesTexto.tap();
