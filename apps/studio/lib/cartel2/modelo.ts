@@ -30,6 +30,7 @@ export const PLANTILLAS = [
   "anuncio",
   "clasificacion",
   "alineacion",
+  "convocatoria",
 ] as const;
 export type Plantilla = (typeof PLANTILLAS)[number];
 
@@ -182,6 +183,15 @@ export interface DatosAlineacion extends Logos, Competicion {
   suplentes: JugadorOnce[];
 }
 
+/** Cartel privado 4:5 para el grupo de WhatsApp. */
+export interface DatosConvocatoria extends Omit<DatosAlineacion, "titulares" | "suplentes"> {
+  convocados: JugadorOnce[];
+  horaQuedada: string;
+  lugarQuedada: string;
+  equipacion: string;
+  nota: string;
+}
+
 export const TEMAS_ANUNCIO = {
   celebracion: { etiqueta: "CELEBRACIÓN", acento: "#f5c518" },
   medico: { etiqueta: "PARTE MÉDICO", acento: "#ef4444" },
@@ -237,7 +247,8 @@ export type PeticionCartel =
   | { plantilla: "once"; datos: DatosOnce }
   | { plantilla: "anuncio"; datos: DatosAnuncio }
   | { plantilla: "clasificacion"; datos: DatosClasificacion }
-  | { plantilla: "alineacion"; datos: DatosAlineacion };
+  | { plantilla: "alineacion"; datos: DatosAlineacion }
+  | { plantilla: "convocatoria"; datos: DatosConvocatoria };
 
 const DIAS = ["DOMINGO", "LUNS", "MARTES", "MÉRCORES", "XOVES", "VENRES", "SÁBADO"];
 const MESES = ["XAN", "FEB", "MAR", "ABR", "MAI", "XUÑ", "XUL", "AGO", "SET", "OUT", "NOV", "DEC"];

@@ -30,7 +30,7 @@ export async function renderizarCartel(origen: string, peticion: PeticionCartel)
     await navegador()
   ).newContext({
     viewport: { width: medidas.ancho, height: medidas.alto },
-    deviceScaleFactor: 2,
+    deviceScaleFactor: peticion.plantilla === "convocatoria" ? 1 : 2,
   });
   try {
     const pagina = await contexto.newPage();
