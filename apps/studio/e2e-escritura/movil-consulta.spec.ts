@@ -10,12 +10,27 @@ test.use({
   isMobile: true,
 });
 
-async function abrirConsulta(page: Page, seccion: string) {
-  await page.goto(`/admin/${seccion}?categoria=Veteranos`);
-  await page.getByLabel("Temporada", { exact: true }).selectOption({ label: "2025/26" });
-  const competicion = page.getByLabel("Competición", { exact: true });
+/** Elige temporada y competición; donde van en la hoja de filtros, la abre y la cierra. */
+async function elegirConsulta(page: Page, enHoja: boolean) {
+  const abrirHoja = page.getByRole("button", { name: /^Filtros: / });
+  const hoja = page.getByRole("dialog", { name: "Filtros" });
+  const zona = enHoja ? hoja : page;
+  if (enHoja) await abrirHoja.click();
+  await zona.getByLabel("Temporada", { exact: true }).selectOption({ label: "2025/26" });
+  if (enHoja) {
+    // En Calendario cambiar de temporada recarga la sección y la hoja se cierra: se reabre.
+    await expect(page.getByRole("button", { name: /^Filtros: 2025\/26/ })).toBeAttached();
+    if (!(await hoja.isVisible())) await abrirHoja.click();
+  }
+  const competicion = zona.getByLabel("Competición", { exact: true });
   await expect(competicion.locator("option", { hasText: "Copa Móvil Consulta" })).toHaveCount(1);
   await competicion.selectOption({ label: "Copa Móvil Consulta" });
+  if (enHoja) await hoja.getByRole("button", { name: "Listo" }).click();
+}
+
+async function abrirConsulta(page: Page, seccion: string) {
+  await page.goto(`/admin/${seccion}?categoria=Veteranos`);
+  await elegirConsulta(page, seccion === "calendario" || seccion === "estadisticas");
 }
 
 async function comprobarControles(page: Page, contenedor: Locator) {
@@ -47,6 +62,9 @@ test("calendario móvil guarda marcador, campo y fecha y mantiene tarjeta con co
   await expect(tarjeta).toBeVisible();
   await comprobarControles(page, tarjeta);
   await comprobarControles(page, page.getByRole("region", { name: "Qué se ve", exact: true }));
+  // Campo, fecha y estado están plegados: se despliegan para editarlos.
+  await tarjeta.getByRole("button", { name: /^Ver campo, fecha y estado de / }).click();
+  await comprobarControles(page, tarjeta);
   const goles = tarjeta.getByLabel(`Goles de ${LOCAL}`);
   const originales = await goles.inputValue();
   const nuevos = originales === "2" ? "3" : "2";
@@ -110,15 +128,7 @@ test("clasificación móvil prioriza columnas, despliega detalle y guarda varias
 test("estadísticas móviles muestran métricas principales, detalle, orden y búsqueda", async ({
   page,
 }) => {
-  // En móvil, temporada y competición de Estadísticas van en la hoja de filtros.
-  await page.goto("/admin/estadisticas?categoria=Veteranos");
-  await page.getByRole("button", { name: /^Filtros: / }).click();
-  const hoja = page.getByRole("dialog", { name: "Filtros" });
-  await hoja.getByLabel("Temporada", { exact: true }).selectOption({ label: "2025/26" });
-  const competicion = hoja.getByLabel("Competición", { exact: true });
-  await expect(competicion.locator("option", { hasText: "Copa Móvil Consulta" })).toHaveCount(1);
-  await competicion.selectOption({ label: "Copa Móvil Consulta" });
-  await hoja.getByRole("button", { name: "Listo" }).click();
+  await abrirConsulta(page, "estadisticas");
   const tabla = page.getByRole("table", { name: "Estadísticas de Veteranos", exact: true });
   const fila = tabla
     .getByRole("row")

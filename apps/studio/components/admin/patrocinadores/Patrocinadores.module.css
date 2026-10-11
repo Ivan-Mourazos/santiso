@@ -188,11 +188,45 @@
 }
 
 @media (max-width: 640px) {
+  /* En móvil sobra el marco y el título: ya está en la cabecera de la página. */
   .panel {
-    padding: var(--ui-space-4, 1rem);
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .cabecera {
+    margin-bottom: 0.5rem;
+  }
+  /* El título sigue para el lector de pantalla. */
+  .cabecera > div:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .cabecera > button {
+    width: 100%;
   }
   .herramientas {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+  .herramientas label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .contador {
+    margin: 0.25rem 0;
+    font-size: 0.75rem;
   }
   .tabla thead {
     display: none;
@@ -201,33 +235,40 @@
   .tabla tbody {
     display: block;
   }
+  /* Una línea por ficha: logo, nombre, si sale en carteles y las dos acciones como iconos. */
   .tabla tr {
     display: grid;
-    grid-template-columns: 56px minmax(0, 1fr);
-    grid-template-areas:
-      "logo nombre"
-      "estado estado"
-      "acciones acciones";
+    grid-template-columns: 44px minmax(0, 1fr) auto auto;
+    grid-template-areas: "logo nombre estado acciones";
     align-items: center;
-    gap: 0.5rem 0.75rem;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid rgb(255 255 255 / 8%);
-    border-radius: var(--ui-radius, 0.75rem);
-    background: var(--ui-panel-face, var(--ui-surface, #171717));
-    box-shadow: var(--ui-panel-shadow, none);
+    gap: 0 0.5rem;
+    min-height: 56px;
+    border-bottom: 1px solid var(--ui-border);
   }
   .tabla td {
     padding: 0;
     border: 0;
+    min-width: 0;
   }
   .celdaLogo {
     grid-area: logo;
   }
+  .celdaLogo .logo {
+    width: 44px;
+    height: 36px;
+  }
   .celdaNombre {
     grid-area: nombre;
-    min-width: 0;
-    overflow-wrap: anywhere;
+  }
+  .celdaNombre strong {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* La web de cada patrocinador está en su editor; en la lista solo alarga la fila. */
+  .nombre a {
+    display: none;
   }
   .celdaEstado {
     grid-area: estado;
@@ -236,18 +277,22 @@
     grid-area: acciones;
   }
   .filaAcciones {
-    justify-content: stretch;
-    flex-wrap: wrap;
+    gap: 0.25rem;
   }
-  .filaAcciones > * {
-    flex: 1 1 6rem;
-  }
-  .nombre a {
-    display: flex;
-    align-items: center;
-    min-height: 44px;
+  /* El texto sigue en el nombre accesible del botón; a la vista queda el icono. */
+  .filaAcciones button {
+    width: 44px;
     min-width: 44px;
-    overflow-wrap: anywhere;
+    min-height: 44px;
+    padding: 0;
+    font-size: 0;
+  }
+  .filaAcciones button::before {
+    content: "✎";
+    font-size: 1.05rem;
+  }
+  .filaAcciones button:last-child::before {
+    content: "✕";
   }
   .posicion {
     display: grid;

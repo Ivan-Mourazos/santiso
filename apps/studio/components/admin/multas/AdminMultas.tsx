@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
+import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Field, Select } from "@/components/ui/foundation/Fields";
+import { useEsMovil } from "@/components/ui/foundation/FiltrosMovil";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import { Tabs } from "@/components/ui/foundation/Tabs";
 import { hoyLocal } from "@/lib/jornada/semana";
@@ -138,6 +140,9 @@ function Registro({
   const [fecha, setFecha] = useState(() => hoyLocal());
   const [nota, setNota] = useState("");
   const [ocupada, setOcupada] = useState(false);
+  // En móvil la lista va primero y el alta se abre en una hoja; en escritorio siguen juntas.
+  const movil = useEsMovil();
+  const [alta, setAlta] = useState(false);
   const [soloPendientes, setSoloPendientes] = useState(true);
   const [filtroPersona, setFiltroPersona] = useState("");
 
@@ -213,135 +218,153 @@ function Registro({
     });
   }
 
+  const formulario = (
+    <form className={styles.alta} onSubmit={(e) => void poner(e)} aria-label="Nueva multa">
+      <Select
+        label="A quién"
+        value={personaClave}
+        onChange={(e) => {
+          setPersonaClave(e.target.value);
+          setAMano(null);
+        }}
+      >
+        <option value="">Elegir…</option>
+        {jugadores.length > 0 && (
+          <optgroup label="Jugadores">
+            {jugadores.map((p) => (
+              <option key={p.clave} value={p.clave}>
+                {p.nombre} · {p.detalle}
+              </option>
+            ))}
+          </optgroup>
+        )}
+        {tecnicos.length > 0 && (
+          <optgroup label="Cuerpo técnico (pagan el doble)">
+            {tecnicos.map((p) => (
+              <option key={p.clave} value={p.clave}>
+                {p.nombre} · {p.detalle}
+              </option>
+            ))}
+          </optgroup>
+        )}
+      </Select>
+      <Select
+        label="Motivo"
+        value={conceptoId}
+        onChange={(e) => {
+          setConceptoId(e.target.value);
+          setAMano(null);
+          setUnidades("1");
+          setElegidas([]);
+        }}
+      >
+        <option value="">Elegir…</option>
+        {GRUPOS_MULTA.map((grupo) => (
+          <optgroup key={grupo} label={NOMBRE_GRUPO[grupo]}>
+            {activos
+              .filter((c) => c.grupo === grupo)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre} — {euros(c.importeCentimos)}
+                </option>
+              ))}
+          </optgroup>
+        ))}
+        <option value={OTRO_MOTIVO}>Otro motivo (escribirlo)…</option>
+      </Select>
+      {libre && (
+        <Field
+          label="Motivo de la multa"
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
+          placeholder="Non poñer bote no bar…"
+        />
+      )}
+      {concepto?.porUnidad && concepto.opciones.length > 0 && (
+        <fieldset className={styles.opciones}>
+          <legend>Qué falta ({euros(concepto.importeCentimos)} cada una)</legend>
+          {concepto.opciones.map((opcion) => {
+            const marcada = elegidas.includes(opcion);
+            return (
+              <Button
+                key={opcion}
+                size="sm"
+                variant={marcada ? "primary" : "secondary"}
+                aria-pressed={marcada}
+                onClick={() => {
+                  setAMano(null);
+                  setElegidas(
+                    marcada ? elegidas.filter((o) => o !== opcion) : [...elegidas, opcion],
+                  );
+                }}
+              >
+                {opcion}
+              </Button>
+            );
+          })}
+        </fieldset>
+      )}
+      <div className={styles.importes}>
+        {concepto?.porUnidad && concepto.opciones.length === 0 && (
+          <Field
+            label="Unidades"
+            type="number"
+            min={1}
+            inputMode="numeric"
+            value={unidades}
+            onChange={(e) => {
+              setUnidades(e.target.value);
+              setAMano(null);
+            }}
+          />
+        )}
+        <Field
+          label="Importe (€)"
+          inputMode="decimal"
+          value={aMano ?? (segunNormas === null ? "" : sinCeros(segunNormas))}
+          onChange={(e) => setAMano(e.target.value)}
+          hint={
+            persona?.adestrador && aMano === null && concepto
+              ? "Cuerpo técnico: el doble."
+              : undefined
+          }
+        />
+        <Field
+          label="Fecha"
+          type="date"
+          value={fecha}
+          onChange={(e) => setFecha(e.target.value)}
+        />
+      </div>
+      <Field
+        label="Nota (opcional)"
+        value={nota}
+        onChange={(e) => setNota(e.target.value)}
+        placeholder="Partido contra…, detalle…"
+      />
+      <Button type="submit" pending={ocupada} pendingLabel="Apuntando…">
+        Poner multa
+      </Button>
+    </form>
+  );
+
   return (
     <div className={styles.seccion}>
-      <form className={styles.alta} onSubmit={(e) => void poner(e)} aria-label="Nueva multa">
-        <Select
-          label="A quién"
-          value={personaClave}
-          onChange={(e) => {
-            setPersonaClave(e.target.value);
-            setAMano(null);
-          }}
-        >
-          <option value="">Elegir…</option>
-          {jugadores.length > 0 && (
-            <optgroup label="Jugadores">
-              {jugadores.map((p) => (
-                <option key={p.clave} value={p.clave}>
-                  {p.nombre} · {p.detalle}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          {tecnicos.length > 0 && (
-            <optgroup label="Cuerpo técnico (pagan el doble)">
-              {tecnicos.map((p) => (
-                <option key={p.clave} value={p.clave}>
-                  {p.nombre} · {p.detalle}
-                </option>
-              ))}
-            </optgroup>
-          )}
-        </Select>
-        <Select
-          label="Motivo"
-          value={conceptoId}
-          onChange={(e) => {
-            setConceptoId(e.target.value);
-            setAMano(null);
-            setUnidades("1");
-            setElegidas([]);
-          }}
-        >
-          <option value="">Elegir…</option>
-          {GRUPOS_MULTA.map((grupo) => (
-            <optgroup key={grupo} label={NOMBRE_GRUPO[grupo]}>
-              {activos
-                .filter((c) => c.grupo === grupo)
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre} — {euros(c.importeCentimos)}
-                  </option>
-                ))}
-            </optgroup>
-          ))}
-          <option value={OTRO_MOTIVO}>Otro motivo (escribirlo)…</option>
-        </Select>
-        {libre && (
-          <Field
-            label="Motivo de la multa"
-            value={motivo}
-            onChange={(e) => setMotivo(e.target.value)}
-            placeholder="Non poñer bote no bar…"
-          />
-        )}
-        {concepto?.porUnidad && concepto.opciones.length > 0 && (
-          <fieldset className={styles.opciones}>
-            <legend>Qué falta ({euros(concepto.importeCentimos)} cada una)</legend>
-            {concepto.opciones.map((opcion) => {
-              const marcada = elegidas.includes(opcion);
-              return (
-                <Button
-                  key={opcion}
-                  size="sm"
-                  variant={marcada ? "primary" : "secondary"}
-                  aria-pressed={marcada}
-                  onClick={() => {
-                    setAMano(null);
-                    setElegidas(
-                      marcada ? elegidas.filter((o) => o !== opcion) : [...elegidas, opcion],
-                    );
-                  }}
-                >
-                  {opcion}
-                </Button>
-              );
-            })}
-          </fieldset>
-        )}
-        <div className={styles.importes}>
-          {concepto?.porUnidad && concepto.opciones.length === 0 && (
-            <Field
-              label="Unidades"
-              type="number"
-              min={1}
-              inputMode="numeric"
-              value={unidades}
-              onChange={(e) => {
-                setUnidades(e.target.value);
-                setAMano(null);
-              }}
-            />
-          )}
-          <Field
-            label="Importe (€)"
-            inputMode="decimal"
-            value={aMano ?? (segunNormas === null ? "" : sinCeros(segunNormas))}
-            onChange={(e) => setAMano(e.target.value)}
-            hint={
-              persona?.adestrador && aMano === null && concepto
-                ? "Cuerpo técnico: el doble."
-                : undefined
-            }
-          />
-          <Field
-            label="Fecha"
-            type="date"
-            value={fecha}
-            onChange={(e) => setFecha(e.target.value)}
-          />
-        </div>
-        <Field
-          label="Nota (opcional)"
-          value={nota}
-          onChange={(e) => setNota(e.target.value)}
-          placeholder="Partido contra…, detalle…"
-        />
-        <Button type="submit" pending={ocupada} pendingLabel="Apuntando…">
-          Poner multa
-        </Button>
-      </form>
+      {movil ? (
+        <>
+          <Button onClick={() => setAlta(true)}>Nueva multa</Button>
+          <Dialog
+            open={alta}
+            onClose={() => setAlta(false)}
+            title="Nueva multa"
+            mobilePresentation="sheet"
+          >
+            {formulario}
+          </Dialog>
+        </>
+      ) : (
+        formulario
+      )}
 
       <div className={styles.filtros} role="group" aria-label="Qué multas se ven">
         <Button

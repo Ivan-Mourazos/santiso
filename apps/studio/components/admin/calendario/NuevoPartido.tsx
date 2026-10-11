@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
+import { useEsMovil } from "@/components/ui/foundation/FiltrosMovil";
 import { Field, Select } from "@/components/ui/foundation/Fields";
 import type { CampoDto } from "@/lib/dto";
 import type { LeagueMatch, Team } from "@/lib/lecturas-cliente";
@@ -40,6 +41,9 @@ export default function NuevoPartido({
   const [fecha, setFecha] = useState("");
   const [campoId, setCampoId] = useState("");
   const [pendiente, setPendiente] = useState(false);
+  // En móvil el formulario se abre al pedirlo: así la lista de partidos no queda enterrada.
+  const movil = useEsMovil();
+  const [abierto, setAbierto] = useState(false);
   const enviando = useRef(false);
   useUnsavedChanges(Boolean(localId || visitanteId || fecha || campoId));
 
@@ -90,7 +94,12 @@ export default function NuevoPartido({
   return (
     <section className={styles.bloque} aria-label="Añadir partido">
       <h3 className={styles.titulo}>Añadir partido</h3>
-      <form className={styles.fila} onSubmit={(e) => void anadir(e)}>
+      {movil && !abierto && (
+        <Button variant="secondary" onClick={() => setAbierto(true)}>
+          Añadir partido…
+        </Button>
+      )}
+      <form className={styles.fila} hidden={movil && !abierto} onSubmit={(e) => void anadir(e)}>
         <Select
           label="Local"
           value={localId}

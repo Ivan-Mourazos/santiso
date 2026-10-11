@@ -63,6 +63,15 @@ for (const ancho of [360, 390]) {
     await page.setViewportSize({ width: ancho, height: 844 });
     await abrir(page, "calendario");
     await comprobarAncho(page);
+    // Cada partido es una tarjeta plegada: marcador a la vista y el resto al desplegar.
+    const partido = page.locator("main section[data-abierta]").first();
+    if ((await partido.count()) > 0) {
+      expect((await partido.boundingBox())!.height).toBeLessThanOrEqual(170);
+      await expect(partido.getByLabel("Campo", { exact: true })).toBeHidden();
+      await partido.getByRole("button", { name: /^Ver campo, fecha y estado de / }).click();
+      await expect(partido.getByLabel("Campo", { exact: true })).toBeVisible();
+      await expect(partido.getByLabel("Fecha y hora", { exact: true })).toBeVisible();
+    }
     const controles = page.locator("main input:visible, main select:visible, main button:visible");
     for (const control of await controles.all()) {
       const rect = (await control.boundingBox())!;
@@ -403,8 +412,15 @@ for (const ancho of [360, 390]) {
     await page.setViewportSize({ width: ancho, height: 844 });
     await abrir(page, "patrocinadores");
     const tabla = page.getByRole("table", { name: "Patrocinadores y logos" });
-    for (const enlace of await tabla.getByRole("link").all()) {
-      expect((await enlace.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    // Una línea por ficha: la web no se enseña en la lista (está en el editor) y las acciones
+    // son iconos que se pueden tocar.
+    const fila = tabla.locator("tbody tr").first();
+    expect((await fila.boundingBox())!.height).toBeLessThanOrEqual(64);
+    await expect(tabla.getByRole("link")).toHaveCount(0);
+    for (const boton of await fila.getByRole("button").all()) {
+      const caja = (await boton.boundingBox())!;
+      expect(Math.round(caja.width)).toBeGreaterThanOrEqual(44);
+      expect(Math.round(caja.height)).toBeGreaterThanOrEqual(44);
     }
     const orden = page.getByRole("list", { name: "Orden de los logos" });
     await expect(orden).toBeVisible();

@@ -38,6 +38,29 @@ const ESTADOS = [
   { valor: "finalizado", etiqueta: "Finalizado" },
 ];
 
+const FECHA_CORTA = new Intl.DateTimeFormat("es-ES", {
+  weekday: "short",
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+/** «dom, 18/10, 17:00 · A Merced · Finalizado»: lo que en móvil se ve sin desplegar la fila. */
+function resumenDe(partido: LeagueMatch, campos: CampoDto[]): string {
+  const local = matchDateTimeLocalInput(partido.fecha);
+  const fecha = local ? new Date(local) : null;
+  const campo = campos.find((c) => c.id === partido.campo_id)?.nombre;
+  const estado = ESTADOS.find((e) => e.valor === partido.estado)?.etiqueta;
+  return [
+    fecha && !Number.isNaN(fecha.getTime()) ? FECHA_CORTA.format(fecha) : "Sin fecha",
+    campo ?? "Sin campo",
+    partido.estado && partido.estado !== "programado" ? estado : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 const golesAlCampo = (valor: unknown): string =>
   typeof valor === "number" && Number.isFinite(valor) ? String(valor) : "";
 const golesDelCampo = (texto: string): number | null => {
@@ -62,6 +85,8 @@ export default function FilaPartido({
   showConfirm,
 }: Props) {
   const [ocupada, setOcupada] = useState(false);
+  /** En móvil campo, fecha y estado están plegados; en escritorio siempre se ven. */
+  const [abierta, setAbierta] = useState(false);
   const enCurso = useRef(false);
   const nombre = `${local} - ${visitante}`;
 
@@ -128,6 +153,7 @@ export default function FilaPartido({
       aria-label={nombre}
       data-cambios={conCambios}
       data-contexto={contexto !== undefined}
+      data-abierta={abierta}
     >
       {contexto !== undefined && <span className={styles.contextoFila}>{contexto}</span>}
       <div className={`${styles.equipo} ${styles.local}`}>
@@ -165,6 +191,28 @@ export default function FilaPartido({
         )}
         <span>{visitante}</span>
       </div>
+      <button
+        type="button"
+        className={styles.desplegar}
+        aria-expanded={abierta}
+        aria-label={`${abierta ? "Ocultar" : "Ver"} campo, fecha y estado de ${nombre}`}
+        onClick={() => setAbierta((actual) => !actual)}
+      >
+        <svg
+          aria-hidden="true"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      <p className={styles.resumenFila}>{resumenDe(p, campos)}</p>
       <div className={styles.campo}>
         <Select
           label="Campo"

@@ -140,6 +140,76 @@
   flex: 1;
 }
 
+/* Móvil: una línea por multa y sin marco; el título ya está en la cabecera de la página. */
+@media (max-width: 639px) {
+  .panel {
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .cabecera {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .seccion {
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+  }
+  /* Dentro de la hoja el formulario no necesita su propio marco. */
+  .alta {
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .lista {
+    gap: 0;
+  }
+  .lista li {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "quien importe acciones";
+    gap: 0 0.5rem;
+    min-height: 56px;
+    padding: 0.25rem 0 0.25rem 0.5rem;
+    border-width: 0 0 1px 4px;
+    border-radius: 0;
+    background: none;
+  }
+  .quien {
+    gap: 0;
+  }
+  .quien strong,
+  .quien span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .quien span {
+    font-size: 0.75rem;
+  }
+  .importe {
+    font-size: 1rem;
+  }
+  .accionesFila {
+    gap: 0.25rem;
+  }
+  .accionesFila > button {
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 0.5rem;
+    font-size: 0.78rem;
+  }
+  .accionesFila > button:first-child {
+    flex: none;
+  }
+}
+
 /* Con sitio, todo en una línea. */
 @media (min-width: 640px) {
   .lista li {
