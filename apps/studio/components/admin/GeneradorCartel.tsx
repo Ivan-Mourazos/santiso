@@ -21,6 +21,7 @@ import { FormNoso11 } from "./cartel/FormNoso11";
 import { FormMultiusos } from "./cartel/FormMultiusos";
 import { FormClasificacion } from "./cartel/FormClasificacion";
 import { PaqueteAxenda } from "./cartel/PaqueteAxenda";
+import { PlegableMovil } from "./cartel/PlegableMovil";
 import { Select } from "@/components/ui/foundation/Fields";
 import type { FormatoCartel } from "@/lib/cartel2/modelo";
 
@@ -261,43 +262,47 @@ export default function GeneradorCartel({
             </div>
           )}
 
-          <div className={styles.acciones}>
-            <Button variant="secondary" onClick={resetForm}>
-              Limpiar datos
-            </Button>
-          </div>
+          <PlegableMovil titulo="Más opciones">
+            <div className={styles.acciones}>
+              <Button variant="secondary" onClick={resetForm}>
+                Limpiar datos
+              </Button>
+            </div>
+          </PlegableMovil>
 
           {textoGenerado && (
-            <section className={styles.instagram} aria-label="Texto para Instagram">
-              <div className={styles.instagramCabecera}>
-                <div>
-                  <h4>Texto para Instagram</h4>
-                  <p>Sale de los datos del cartel. Puedes retocarlo aquí antes de copiarlo.</p>
-                </div>
-                <div className={styles.instagramAcciones}>
-                  {retocado && (
-                    <Button variant="secondary" size="sm" onClick={() => setEdicion(null)}>
-                      Restablecer
+            <PlegableMovil titulo="Texto para Instagram">
+              <section className={styles.instagram} aria-label="Texto para Instagram">
+                <div className={styles.instagramCabecera}>
+                  <div>
+                    <h4>Texto para Instagram</h4>
+                    <p>Sale de los datos del cartel. Puedes retocarlo aquí antes de copiarlo.</p>
+                  </div>
+                  <div className={styles.instagramAcciones}>
+                    {retocado && (
+                      <Button variant="secondary" size="sm" onClick={() => setEdicion(null)}>
+                        Restablecer
+                      </Button>
+                    )}
+                    <Button size="sm" onClick={handleCopyInstagram}>
+                      {copied ? "Copiado" : "Copiar"}
                     </Button>
-                  )}
-                  <Button size="sm" onClick={handleCopyInstagram}>
-                    {copied ? "Copiado" : "Copiar"}
-                  </Button>
+                  </div>
                 </div>
-              </div>
-              <textarea
-                value={instagramText}
-                onChange={(e) => setEdicion({ base: textoGenerado, texto: e.target.value })}
-                aria-label="Texto para Instagram"
-                rows={Math.min(18, instagramText.split("\n").length + 1)}
-              />
-              <p
-                className={styles.instagramContador}
-                data-excede={instagramText.length > LIMITE_INSTAGRAM}
-              >
-                {instagramText.length} / {LIMITE_INSTAGRAM} caracteres
-              </p>
-            </section>
+                <textarea
+                  value={instagramText}
+                  onChange={(e) => setEdicion({ base: textoGenerado, texto: e.target.value })}
+                  aria-label="Texto para Instagram"
+                  rows={Math.min(18, instagramText.split("\n").length + 1)}
+                />
+                <p
+                  className={styles.instagramContador}
+                  data-excede={instagramText.length > LIMITE_INSTAGRAM}
+                >
+                  {instagramText.length} / {LIMITE_INSTAGRAM} caracteres
+                </p>
+              </section>
+            </PlegableMovil>
           )}
         </div>
 
@@ -316,13 +321,15 @@ export default function GeneradorCartel({
             equipos={equipos}
             showToast={showToast}
           />
-          <div className={styles.pie}>
-            <p>
-              Los logos de cabecera se cambian en{" "}
-              <Link href="/admin/ajustes-graficos">Ajustes gráficos</Link>; los de la barra
-              inferior, en <Link href="/admin/patrocinadores">Patrocinadores y logos</Link>.
-            </p>
-          </div>
+          <PlegableMovil titulo="Logos y patrocinadores">
+            <div className={styles.pie}>
+              <p>
+                Los logos de cabecera se cambian en{" "}
+                <Link href="/admin/ajustes-graficos">Ajustes gráficos</Link>; los de la barra
+                inferior, en <Link href="/admin/patrocinadores">Patrocinadores y logos</Link>.
+              </p>
+            </div>
+          </PlegableMovil>
         </div>
       </div>
     </div>

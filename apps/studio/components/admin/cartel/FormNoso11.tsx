@@ -9,6 +9,7 @@ import type { Player } from "@/lib/cartel/types";
 import { SectionLabel, CategorySelector, Deslizador, MatchSelector, Toggle } from "./Common";
 import type { SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
+import { PlegableMovil } from "./PlegableMovil";
 import type { FormState } from "./types";
 
 interface CartelPlayerOption {
@@ -91,78 +92,79 @@ export const FormNoso11: React.FC<Props> = ({
         />
       </div>
 
-      <div className={styles.campo} role="group" aria-label="Disposición del cartel">
-        <span className={styles.etiqueta}>Disposición del cartel</span>
-        <div className={styles.interruptores}>
-          <Toggle
-            label="← Foto a la izquierda"
-            active={!form.noso11Flip}
-            onClick={() => set("noso11Flip", false)}
+      <PlegableMovil titulo="Foto y encuadre">
+        <div className={styles.campo} role="group" aria-label="Disposición del cartel">
+          <span className={styles.etiqueta}>Disposición del cartel</span>
+          <div className={styles.interruptores}>
+            <Toggle
+              label="← Foto a la izquierda"
+              active={!form.noso11Flip}
+              onClick={() => set("noso11Flip", false)}
+            />
+            <Toggle
+              label="Foto a la derecha →"
+              active={!!form.noso11Flip}
+              onClick={() => set("noso11Flip", true)}
+            />
+          </div>
+        </div>
+
+        <div className={styles.campo}>
+          <span className={styles.etiqueta}>Foto del jugador destacado</span>
+          <label className="file-input-label">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+            </svg>
+            {jugFileName || "Subir foto del jugador"}
+            <input
+              type="file"
+              className="hidden-input"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleJugadorFile(e.target.files[0]);
+              }}
+            />
+          </label>
+        </div>
+
+        <div className={styles.encuadre}>
+          <h5>Encuadre de la foto</h5>
+          <Deslizador
+            label="Desplazamiento horizontal"
+            min={0}
+            max={1}
+            step={0.01}
+            value={form.jugadorXOffset}
+            onChange={(v) => set("jugadorXOffset", v)}
+            extremos={["Izquierda", "Derecha"]}
           />
-          <Toggle
-            label="Foto a la derecha →"
-            active={!!form.noso11Flip}
-            onClick={() => set("noso11Flip", true)}
+          <Deslizador
+            label="Desplazamiento vertical"
+            min={0}
+            max={1}
+            step={0.01}
+            value={form.jugadorYOffset}
+            onChange={(v) => set("jugadorYOffset", v)}
+            extremos={["Arriba", "Abajo"]}
+          />
+          <Deslizador
+            label="Zoom"
+            min={0.5}
+            max={4}
+            step={0.01}
+            value={form.jugadorZoom}
+            onChange={(v) => set("jugadorZoom", v)}
+            extremos={["Alejar", "Acercar"]}
           />
         </div>
-      </div>
-
-      <div className={styles.campo}>
-        <span className={styles.etiqueta}>Foto del jugador destacado</span>
-        <label className="file-input-label">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-          </svg>
-          {jugFileName || "Subir foto del jugador"}
-          <input
-            type="file"
-            className="hidden-input"
-            accept="image/*"
-            onChange={(e) => {
-              if (e.target.files?.[0]) handleJugadorFile(e.target.files[0]);
-            }}
-          />
-        </label>
-      </div>
-
-      <div className={styles.encuadre}>
-        <h5>Encuadre de la foto</h5>
-        <Deslizador
-          label="Desplazamiento horizontal"
-          min={0}
-          max={1}
-          step={0.01}
-          value={form.jugadorXOffset}
-          onChange={(v) => set("jugadorXOffset", v)}
-          extremos={["Izquierda", "Derecha"]}
-        />
-        <Deslizador
-          label="Desplazamiento vertical"
-          min={0}
-          max={1}
-          step={0.01}
-          value={form.jugadorYOffset}
-          onChange={(v) => set("jugadorYOffset", v)}
-          extremos={["Arriba", "Abajo"]}
-        />
-        <Deslizador
-          label="Zoom"
-          min={0.5}
-          max={4}
-          step={0.01}
-          value={form.jugadorZoom}
-          onChange={(v) => set("jugadorZoom", v)}
-          extremos={["Alejar", "Acercar"]}
-        />
-      </div>
-
+      </PlegableMovil>
       <datalist id="jugadores-categoria-list">
         {jugadoresCategoria.map((j) => (
           <option key={j.id} value={getDisplayName(j)}>
@@ -259,80 +261,82 @@ export const FormNoso11: React.FC<Props> = ({
         ))}
       </div>
 
-      <SectionLabel>Suplentes</SectionLabel>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-        {form.suplentes.map((p, i) => (
-          <div
-            key={p.id}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "55px 1fr auto",
-              gap: "0.5rem",
-              alignItems: "center",
-            }}
-            className={styles.filaSuplentes}
-          >
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder="#"
-              value={p.dorsal}
-              onChange={(e) => updatePlayer("suplentes", i, { dorsal: e.target.value })}
-              style={{ textAlign: "center" }}
-            />
-            <input
-              type="text"
-              list="jugadores-categoria-list"
-              placeholder="Nombre del jugador..."
-              value={p.nome}
-              onChange={(e) => handleChangeJugadorText("suplentes", i, e.target.value)}
+      <PlegableMovil titulo={`Suplentes (${form.suplentes.length})`}>
+        <SectionLabel>Suplentes</SectionLabel>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+          {form.suplentes.map((p, i) => (
+            <div
+              key={p.id}
               style={{
-                padding: "0.4rem",
-                borderRadius: "0.4rem",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid var(--border)",
-                color: "#fff",
-                width: "100%",
+                display: "grid",
+                gridTemplateColumns: "55px 1fr auto",
+                gap: "0.5rem",
+                alignItems: "center",
               }}
-            />
-            <div style={{ display: "flex", gap: "2px" }}>
-              <button
-                type="button"
-                title="Subir"
-                disabled={i === 0}
-                onClick={() => swapPlayers?.("suplentes", i, i - 1)}
+              className={styles.filaSuplentes}
+            >
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="#"
+                value={p.dorsal}
+                onChange={(e) => updatePlayer("suplentes", i, { dorsal: e.target.value })}
+                style={{ textAlign: "center" }}
+              />
+              <input
+                type="text"
+                list="jugadores-categoria-list"
+                placeholder="Nombre del jugador..."
+                value={p.nome}
+                onChange={(e) => handleChangeJugadorText("suplentes", i, e.target.value)}
                 style={{
+                  padding: "0.4rem",
+                  borderRadius: "0.4rem",
                   background: "rgba(255,255,255,0.04)",
                   border: "1px solid var(--border)",
-                  padding: "0.2rem 0.4rem",
-                  borderRadius: "0.3rem",
-                  cursor: i === 0 ? "default" : "pointer",
-                  opacity: i === 0 ? 0.3 : 1,
+                  color: "#fff",
+                  width: "100%",
                 }}
-              >
-                ▲
-              </button>
-              <button
-                type="button"
-                title="Bajar"
-                disabled={i === form.suplentes.length - 1}
-                onClick={() => swapPlayers?.("suplentes", i, i + 1)}
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid var(--border)",
-                  padding: "0.2rem 0.4rem",
-                  borderRadius: "0.3rem",
-                  cursor: i === form.suplentes.length - 1 ? "default" : "pointer",
-                  opacity: i === form.suplentes.length - 1 ? 0.3 : 1,
-                }}
-              >
-                ▼
-              </button>
+              />
+              <div style={{ display: "flex", gap: "2px" }}>
+                <button
+                  type="button"
+                  title="Subir"
+                  disabled={i === 0}
+                  onClick={() => swapPlayers?.("suplentes", i, i - 1)}
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid var(--border)",
+                    padding: "0.2rem 0.4rem",
+                    borderRadius: "0.3rem",
+                    cursor: i === 0 ? "default" : "pointer",
+                    opacity: i === 0 ? 0.3 : 1,
+                  }}
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  title="Bajar"
+                  disabled={i === form.suplentes.length - 1}
+                  onClick={() => swapPlayers?.("suplentes", i, i + 1)}
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid var(--border)",
+                    padding: "0.2rem 0.4rem",
+                    borderRadius: "0.3rem",
+                    cursor: i === form.suplentes.length - 1 ? "default" : "pointer",
+                    opacity: i === form.suplentes.length - 1 ? 0.3 : 1,
+                  }}
+                >
+                  ▼
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </PlegableMovil>
     </>
   );
 };
