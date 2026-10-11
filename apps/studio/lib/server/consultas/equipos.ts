@@ -15,6 +15,7 @@ const columnas = {
   esPropio: schema.equipos.esPropio,
   escudo3d: schema.equipos.escudo3d,
   color: schema.equipos.color,
+  color2: schema.equipos.color2,
 };
 
 const aDto = (fila: {
@@ -25,6 +26,7 @@ const aDto = (fila: {
   esPropio: boolean;
   escudo3d: boolean;
   color: string | null;
+  color2: string | null;
 }): EquipoDto => ({
   id: fila.id,
   nombre: fila.nombre,
@@ -33,6 +35,7 @@ const aDto = (fila: {
   es_propio: fila.esPropio,
   escudo_3d: fila.escudo3d,
   color: fila.color,
+  color_2: fila.color2,
 });
 
 /** Equipos inscritos en una competición, por nombre. */

@@ -13,6 +13,11 @@ export function recursosDeCartel(equipos: CartelTeam[], recursos: AssetUrls): Re
     coloresEquipo: Object.fromEntries(
       equipos.filter((e) => e.color).map((e) => [claveNombre(e.nombre), e.color as string]),
     ),
+    coloresEquipo2: Object.fromEntries(
+      equipos
+        .filter((e) => e.color && e.color_2)
+        .map((e) => [claveNombre(e.nombre), e.color_2 as string]),
+    ),
     patrocinadores: recursos.sponsors,
     institucionales: (recursos.xuntaIsLeft
       ? [recursos.xunta, recursos.rfgf]

@@ -1,0 +1,1 @@
+ALTER TABLE `equipos` ADD `color_2` text;

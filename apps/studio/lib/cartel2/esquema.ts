@@ -22,6 +22,7 @@ const equipo = z.object({
   escudo: imagen.nullable(),
   propio: z.boolean(),
   color,
+  color2: color.optional(),
   relieve: z.boolean(),
 });
 const logos = {

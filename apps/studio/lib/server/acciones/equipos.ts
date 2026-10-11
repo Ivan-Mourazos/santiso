@@ -83,6 +83,15 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
   if (colorEscrito && !/^#[0-9a-f]{6}$/i.test(colorEscrito)) {
     return fallo("El color debe ser #rrggbb.", { color: "No válido" });
   }
+  const color2Escrito = formulario.has("color2")
+    ? String(formulario.get("color2") ?? "").trim()
+    : null;
+  if (color2Escrito && !/^#[0-9a-f]{6}$/i.test(color2Escrito)) {
+    return fallo("El segundo color debe ser #rrggbb.", { color2: "No válido" });
+  }
+  // Sin primer color no hay segundo: los carteles sacarían el primero del escudo y el segundo
+  // quedaría suelto.
+  const sinPrimero = colorEscrito !== null && colorEscrito === "";
 
   const imagen = await guardarImagenOpcional(formulario, "escudo", "escudos");
   if (!imagen.ok) return imagen;
@@ -97,6 +106,9 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
       // Solo si el formulario lo trae: quien no lo manda no lo cambia.
       ...(formulario.has("escudo3d") ? { escudo3d: formulario.get("escudo3d") === "1" } : {}),
       ...(colorEscrito !== null ? { color: colorEscrito.toLowerCase() || null } : {}),
+      ...(color2Escrito !== null || sinPrimero
+        ? { color2: sinPrimero ? null : color2Escrito?.toLowerCase() || null }
+        : {}),
     };
     const columnas = {
       id: schema.equipos.id,
@@ -106,6 +118,7 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
       esPropio: schema.equipos.esPropio,
       escudo3d: schema.equipos.escudo3d,
       color: schema.equipos.color,
+      color2: schema.equipos.color2,
     };
     const [fila] = id
       ? await db
@@ -133,6 +146,7 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
     es_propio: fila.esPropio,
     escudo_3d: fila.escudo3d,
     color: fila.color,
+    color_2: fila.color2,
   });
 }
 

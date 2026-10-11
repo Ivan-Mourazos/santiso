@@ -40,6 +40,7 @@ export interface EquipoDto {
   escudo_3d: boolean;
   /** `#rrggbb` elegido en Equipos; `null` = se saca del escudo. */
   color: string | null;
+  color_2: string | null;
 }
 
 /** Fila de la clasificación calculada, ya con los datos de presentación del equipo. */

@@ -20,6 +20,8 @@ export const equipos = sqliteTable(
     escudo3d: integer("escudo_3d", { mode: "boolean" }).notNull().default(false),
     /** Color del equipo (`#rrggbb`) para los carteles; sin él se saca del escudo. */
     color: text("color"),
+    /** Segundo color (`#rrggbb`), opcional: equipos de dos colores (rojiblancos, blanquiazules…). */
+    color2: text("color_2"),
     ...marcasTiempo(),
   },
   (t) => [

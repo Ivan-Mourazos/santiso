@@ -34,6 +34,8 @@ export interface RecursosCartel {
   escudosEn3d: string[];
   /** Colores elegidos en Equipos, por `claveNombre` del equipo: mandan sobre el del escudo. */
   coloresEquipo: Record<string, string>;
+  /** Segundo color, también por `claveNombre`. Solo equipos que lo tienen elegido. */
+  coloresEquipo2?: Record<string, string>;
 }
 
 export interface OpcionesCartel {
@@ -81,6 +83,9 @@ function equipos(
     escudo: rivalEscudo || null,
     propio: false,
     color: recursos.coloresEquipo[claveNombre(rivalNombre)] ?? color(rivalEscudo || null),
+    ...(recursos.coloresEquipo2?.[claveNombre(rivalNombre)]
+      ? { color2: recursos.coloresEquipo2[claveNombre(rivalNombre)] }
+      : {}),
     relieve: !recursos.escudosEn3d.includes(rivalEscudo),
   };
   const santisoLocal = santisoSide === "left";

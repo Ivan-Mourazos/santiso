@@ -36,6 +36,8 @@ export interface CartelTeam {
   escudo_3d?: boolean;
   /** `#rrggbb` elegido en Equipos; sin él, el cartel lo saca del escudo. */
   color?: string | null;
+  /** Segundo color elegido en Equipos, si lo tiene. */
+  color_2?: string | null;
 }
 
 interface CartelField {
