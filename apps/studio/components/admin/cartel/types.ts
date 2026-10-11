@@ -38,6 +38,7 @@ export interface FormState {
   fecha: string;
   hora: string;
   lugar: string;
+  localidad?: string;
   santisoSide: "left" | "right";
   // Resumo / Cronoloxia
   golesLocal: string;

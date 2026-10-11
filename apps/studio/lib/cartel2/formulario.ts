@@ -22,6 +22,8 @@ import type {
   TipoEvento,
 } from "./modelo";
 import { TEMAS_ANUNCIO } from "./modelo";
+import type { FormatoCartel } from "./modelo";
+import type { PreviaCartel } from "./previa";
 
 export interface RecursosCartel {
   /** Escudo del equipo del Santiso de cada categoría (el que se edita en Equipos). */
@@ -35,6 +37,8 @@ export interface RecursosCartel {
 }
 
 export interface OpcionesCartel {
+  formato?: FormatoCartel;
+  previas?: Record<string, PreviaCartel>;
   /** Color `#rrggbb` del escudo de esa URL (o el de reserva si no tiene). */
   color: (url: string | null) => string;
   composicion: Composicion;
@@ -147,11 +151,28 @@ export function peticionDeFormulario(
     opciones.color,
   );
 
+  const contexto = (id: string | undefined, categoria: string, rival: string, casa: boolean) => {
+    const previa = id ? opciones.previas?.[id] : undefined;
+    if (
+      !previa ||
+      claveNombre(previa.rivalNombre) !== claveNombre(rival) ||
+      previa.categoria !== categoria
+    )
+      return {};
+    return {
+      localidad: previa.localidad,
+      contexto: {
+        local: casa ? previa.club : previa.rival,
+        visitante: casa ? previa.rival : previa.club,
+      },
+    };
+  };
   switch (tipo) {
     case "partido":
       return {
         plantilla: "partido",
         composicion: opciones.composicion,
+        formato: opciones.formato,
         datos: {
           ...logos,
           ...cabecera,
@@ -160,6 +181,8 @@ export function peticionDeFormulario(
           fecha: form.fecha,
           hora: form.hora,
           campo: form.lugar,
+          localidad: form.localidad ?? "",
+          ...contexto(form.partido_id, form.categoria, form.rivalNombre, partido.santisoLocal),
         },
       };
     case "resumo": {
@@ -205,11 +228,12 @@ export function peticionDeFormulario(
     case "proximos":
       return {
         plantilla: "proximos",
+        formato: opciones.formato,
         datos: {
           ...logos,
           partidos: form.matches
             .filter((m: NextMatch) => m.rival.trim())
-            .slice(0, 2)
+            .slice(0, 4)
             .map((m) => {
               const e = equipos(
                 m.categoria,
@@ -226,6 +250,10 @@ export function peticionDeFormulario(
                 fecha: m.fecha,
                 hora: m.hora,
                 campo: m.lugar ?? "",
+                localidad: m.localidad ?? "",
+                competicion: m.competicion ?? "",
+                jornada: m.jornada ?? "",
+                ...contexto(m.partidoId, m.categoria, m.rival, e.santisoLocal),
               };
             }),
         },
@@ -253,9 +281,9 @@ export function peticionDeFormulario(
               }
             : form.jugadorFotoUrl
               ? {
-                url: form.jugadorFotoUrl,
-                x: form.jugadorXOffset,
-                y: form.jugadorYOffset,
+                  url: form.jugadorFotoUrl,
+                  x: form.jugadorXOffset,
+                  y: form.jugadorYOffset,
                   zoom: form.jugadorZoom,
                 }
               : null,

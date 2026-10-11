@@ -35,8 +35,12 @@ export const PLANTILLAS = [
 export type Plantilla = (typeof PLANTILLAS)[number];
 
 /** Tamaño del lienzo de cada plantilla (antes de la exportación a ×2). */
-export function medidasDe(plantilla: Plantilla) {
-  return plantilla === "alineacion" ? MEDIDAS_HISTORIA : MEDIDAS;
+export type FormatoCartel = "publicacion" | "historia";
+export function medidasDe(plantilla: Plantilla, formato?: FormatoCartel) {
+  return plantilla === "alineacion" ||
+    (["partido", "proximos"].includes(plantilla) && formato === "historia")
+    ? MEDIDAS_HISTORIA
+    : MEDIDAS;
 }
 
 export interface EquipoCartel {
@@ -86,6 +90,18 @@ export interface DatosPartido extends Logos, Competicion {
   /** `HH:mm` o vacío. */
   hora: string;
   campo: string;
+  localidad?: string;
+  contexto?: ContextoDeportivo;
+}
+
+export interface FormaEquipo {
+  posicion: number | null;
+  /** Orden cronológico: más antiguo a más reciente. */
+  racha: ("V" | "E" | "D")[];
+}
+export interface ContextoDeportivo {
+  local: FormaEquipo;
+  visitante: FormaEquipo;
 }
 
 export interface GolCartel {
@@ -145,6 +161,10 @@ export interface PartidoProximo {
   fecha: string;
   hora: string;
   campo: string;
+  localidad?: string;
+  competicion?: string;
+  jornada?: string;
+  contexto?: ContextoDeportivo;
 }
 
 export interface DatosProximos extends Logos {
@@ -240,10 +260,10 @@ export type DatosClasificacion = Logos & {
 } & ({ tipo: "liga"; filas: FilaTabla[] } | { tipo: "copa"; rondas: RondaCopa[] });
 
 export type PeticionCartel =
-  | { plantilla: "partido"; composicion: Composicion; datos: DatosPartido }
+  | { plantilla: "partido"; composicion: Composicion; formato?: FormatoCartel; datos: DatosPartido }
   | { plantilla: "resultado"; datos: DatosResultado }
   | { plantilla: "cronoloxia"; datos: DatosCronoloxia }
-  | { plantilla: "proximos"; datos: DatosProximos }
+  | { plantilla: "proximos"; formato?: FormatoCartel; datos: DatosProximos }
   | { plantilla: "once"; datos: DatosOnce }
   | { plantilla: "anuncio"; datos: DatosAnuncio }
   | { plantilla: "clasificacion"; datos: DatosClasificacion }

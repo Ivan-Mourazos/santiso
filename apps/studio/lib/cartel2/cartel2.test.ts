@@ -277,6 +277,49 @@ describe("peticionDeFormulario", () => {
 });
 
 describe("escudos del club y relieve", () => {
+  it("axenda conserva cuatro partidos y su contexto por identidad, aunque cambie el lado", () => {
+    const f = formulario({ partido_id: "p" });
+    f.matches = Array.from({ length: 4 }, () => ({
+      ...f.matches[0]!,
+      partidoId: "p",
+      rival: "C.D. Berres",
+      categoria: "Senior",
+      santisoSide: "right",
+    }));
+    const p = peticionDeFormulario("proximos", f, recursos, {
+      ...opciones,
+      formato: "historia",
+      previas: {
+        p: {
+          categoria: "Senior",
+          rivalNombre: "C.D. Berres",
+          localidad: "A Estrada",
+          club: { posicion: 2, racha: ["V"] },
+          rival: { posicion: 7, racha: ["D"] },
+        },
+      },
+    });
+    if (p.plantilla !== "proximos") throw new Error("plantilla");
+    expect(p.datos.partidos).toHaveLength(4);
+    expect(p.formato).toBe("historia");
+    expect(p.datos.partidos[0]).toMatchObject({
+      localidad: "A Estrada",
+      contexto: { visitante: { posicion: 2 }, local: { posicion: 7 } },
+    });
+    const otro = peticionDeFormulario("partido", { ...f, rivalNombre: "Otro" }, recursos, {
+      ...opciones,
+      previas: {
+        p: {
+          categoria: "Senior",
+          rivalNombre: "C.D. Berres",
+          localidad: "A Estrada",
+          club: { posicion: 2, racha: [] },
+          rival: { posicion: 7, racha: [] },
+        },
+      },
+    });
+    expect(otro.datos).not.toHaveProperty("contexto");
+  });
   it("el Santiso usa el escudo de su equipo de la categoría; si no hay, el del Senior", () => {
     const vet = peticionDeFormulario(
       "partido",
