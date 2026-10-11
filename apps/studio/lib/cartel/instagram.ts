@@ -78,7 +78,9 @@ function listaGoles(eventos: CronEvent[]): string {
   for (const e of ordenados) {
     const nome = (e.jugador || "").trim() || "Gol";
     const clave = e.tipo === "propia" ? `${nome} (p.p.)` : nome;
-    const minuto = e.minuto.trim() ? `${e.minuto.trim()}'${e.tipo === "penalti" ? " pen." : ""}` : "";
+    const minuto = e.minuto.trim()
+      ? `${e.minuto.trim()}'${e.tipo === "penalti" ? " pen." : ""}`
+      : "";
     const lista = porJugador.get(clave) ?? [];
     if (minuto) lista.push(minuto);
     porJugador.set(clave, lista);
@@ -118,7 +120,7 @@ function textoPrevia(f: FormState): string {
 }
 
 function textoProximos(f: FormState): string {
-  const partidos = f.matches.filter((m) => m.rival.trim()).slice(0, 2);
+  const partidos = f.matches.filter((m) => m.rival.trim()).slice(0, 4);
   if (partidos.length === 0) return "";
   const linhas = ["🗓️ AXENDA DA FIN DE SEMANA", ""];
   for (const m of partidos) {
@@ -130,7 +132,17 @@ function textoProximos(f: FormState): string {
     if (m.lugar?.trim()) linhas.push(`📍 ${m.lugar.trim()}`);
     linhas.push("");
   }
-  linhas.push("Contamos contigo! 💛🖤", "", hashtags(partidos[0]!.categoria, "#Axenda"));
+  linhas.push(
+    "👉 Desliza para ver cada partido.",
+    "Contamos contigo! 💛🖤",
+    "",
+    hashtags(
+      partidos[0]!.categoria,
+      ...(partidos.some((m) => m.categoria === "Veteranos") ? ["#Veteranos"] : []),
+      ...(partidos.some((m) => m.categoria === "Senior") ? ["#Senior"] : []),
+      "#Axenda",
+    ),
+  );
   return linhas.join("\n");
 }
 
@@ -172,13 +184,20 @@ function textoResultado(f: FormState, conCarrusel: boolean): string {
       "Tarxetas:",
       tarxetas
         .sort((x, y) => Number(x.minuto) - Number(y.minuto))
-        .map((e) => `${iconoTarxeta(e.tipo)} ${e.jugador.trim() || "—"}${e.minuto ? ` (${e.minuto}')` : ""}`)
+        .map(
+          (e) =>
+            `${iconoTarxeta(e.tipo)} ${e.jugador.trim() || "—"}${e.minuto ? ` (${e.minuto}')` : ""}`,
+        )
         .join(", "),
     );
   }
 
   const peche =
-    nosos > deles ? "Tres puntos para casa! 💪" : nosos < deles ? "Á seguinte! 💪" : "Seguimos sumando 💪";
+    nosos > deles
+      ? "Tres puntos para casa! 💪"
+      : nosos < deles
+        ? "Á seguinte! 💪"
+        : "Seguimos sumando 💪";
   linhas.push("", peche);
   if (conCarrusel) linhas.push("👉 Desliza para ver a cronoloxía e o noso once.");
   linhas.push("", hashtags(f.categoria, esCopa(f.competicion) ? "#Copa" : "", "#Resultado"));
@@ -186,7 +205,8 @@ function textoResultado(f: FormState, conCarrusel: boolean): string {
 }
 
 function textoOnce(f: FormState): string {
-  const nome = (p: Player) => `${p.dorsal ? `${p.dorsal}. ` : ""}${p.nome.trim()}${p.eCapitan ? " (C)" : ""}`;
+  const nome = (p: Player) =>
+    `${p.dorsal ? `${p.dorsal}. ` : ""}${p.nome.trim()}${p.eCapitan ? " (C)" : ""}`;
   const titulares = f.titulares.filter((p) => p.nome.trim());
   if (titulares.length === 0) return "";
   const suplentes = f.suplentes.filter((p) => p.nome.trim());

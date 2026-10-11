@@ -30,6 +30,12 @@ const logos = {
 };
 const cabecera = { categoria: texto(40), competicion: texto(200), jornada: texto(10) };
 const lado = z.enum(["local", "visitante"]);
+const formato = z.enum(["publicacion", "historia"]).optional();
+const forma = z.object({
+  posicion: z.number().int().min(1).max(999).nullable(),
+  racha: z.array(z.enum(["V", "E", "D"])).max(5),
+});
+const contexto = z.object({ local: forma, visitante: forma }).optional();
 const fotoFondo = z.object({
   url: imagen,
   x: z.number().min(0).max(1),
@@ -39,6 +45,7 @@ const fotoFondo = z.object({
 
 const partido = z.object({
   plantilla: z.literal("partido"),
+  formato,
   composicion: z.enum(COMPOSICIONES.map((c) => c.id) as [string, ...string[]]),
   datos: z.object({
     ...logos,
@@ -48,6 +55,8 @@ const partido = z.object({
     fecha: texto(10),
     hora: texto(5),
     campo: texto(),
+    localidad: texto().optional(),
+    contexto,
   }),
 });
 
@@ -103,6 +112,7 @@ const cronoloxia = z.object({
 
 const proximos = z.object({
   plantilla: z.literal("proximos"),
+  formato,
   datos: z.object({
     ...logos,
     partidos: z
@@ -114,9 +124,13 @@ const proximos = z.object({
           fecha: texto(10),
           hora: texto(5),
           campo: texto(),
+          localidad: texto().optional(),
+          competicion: texto().optional(),
+          jornada: texto(10).optional(),
+          contexto,
         }),
       )
-      .max(2),
+      .max(4),
   }),
 });
 

@@ -20,6 +20,9 @@ import PilotoCartel from "./cartel/PilotoCartel";
 import { FormNoso11 } from "./cartel/FormNoso11";
 import { FormMultiusos } from "./cartel/FormMultiusos";
 import { FormClasificacion } from "./cartel/FormClasificacion";
+import { PaqueteAxenda } from "./cartel/PaqueteAxenda";
+import { Select } from "@/components/ui/foundation/Fields";
+import type { FormatoCartel } from "@/lib/cartel2/modelo";
 
 interface Props {
   /** Plantilla elegida en la cabecera del panel (`?plantilla=`). */
@@ -65,6 +68,7 @@ export default function GeneradorCartel({
   const tipo = templateId || "partido";
   const [copied, setCopied] = useState(false);
   const [vistaMovil, setVistaMovil] = useState("datos");
+  const [formato, setFormato] = useState<FormatoCartel>("publicacion");
   const panelId = useId();
 
   const tipoForAssets: TemplateId = TEMPLATES.some((t) => t.id === tipo)
@@ -135,6 +139,28 @@ export default function GeneradorCartel({
           data-activo={vistaMovil === "datos"}
         >
           {/* Template-specific fields */}
+          {(tipo === "partido" || tipo === "proximos") && (
+            <Select
+              label="Formato de cartel"
+              value={formato}
+              onChange={(e) => setFormato(e.target.value as FormatoCartel)}
+            >
+              <option value="publicacion">Publicación · 4:5</option>
+              <option value="historia">Historia · 9:16</option>
+            </Select>
+          )}
+          {tipo === "proximos" && (
+            <PaqueteAxenda
+              form={form}
+              formato={formato}
+              recursos={assetUrls}
+              equipos={equipos}
+              dbMatches={dbMatches}
+              setMatches={(m) => set("matches", m)}
+              texto={instagramText}
+              showToast={showToast}
+            />
+          )}
           {tipo === "partido" && (
             <FormPartido
               form={form}
@@ -284,6 +310,7 @@ export default function GeneradorCartel({
         >
           <PilotoCartel
             tipo={tipoForAssets}
+            formato={formato}
             form={form}
             recursos={assetUrls}
             equipos={equipos}

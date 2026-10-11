@@ -1,189 +1,186 @@
-/*
- * Próximos encuentros, sobre `Base` (variante club). Zonas: logos 44–114 · cabecera 136–290 ·
- * bandas 305–1175 · patrocinadores 1200–1310. Cada banda lleva sus colores en --l-base,
- * --l-luz, --v-base y --v-luz.
- */
-
+.cartel {
+  --dia: 46px;
+  --numero: 64px;
+  --hora: 116px;
+  --escudo: 230px;
+}
 .cabecera {
   position: absolute;
   z-index: 6;
-  top: 136px;
+  top: 155px;
   left: 64px;
   right: 64px;
-  text-align: left;
 }
-
-.cabecera > :last-child {
-  font-size: 100px;
-}
-
 .antetitulo {
-  margin-bottom: 8px;
-  font-weight: 800;
-  font-size: 28px;
-  letter-spacing: 0.22em;
-  color: rgb(255 255 255 / 80%);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  line-height: 1.3;
 }
-
+.titulo {
+  margin: 8px 0 0;
+  font: 68px/1.6 var(--display);
+  color: var(--amarillo);
+}
 .bandas {
   position: absolute;
   z-index: 4;
+  left: 48px;
+  right: 48px;
   top: 305px;
-  left: 0;
-  right: 0;
-  height: 870px;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
+  bottom: 180px;
+  display: grid;
+  gap: 16px;
 }
-
 .banda {
   position: relative;
-  flex: 1;
-  overflow: hidden;
-  clip-path: none;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  background: rgb(6 8 11 / 75%);
+  border: 1px solid rgb(255 255 255 / 20%);
 }
-
-/* Los colores de cada equipo, partidos en diagonal dentro de la banda. */
-.color {
-  position: absolute;
-  inset: 0;
+.informacion {
+  padding: 22px 28px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+.categoria {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--amarillo);
+  letter-spacing: 0.08em;
+}
+.localia {
+  color: #fff;
+  font-size: 20px;
+  letter-spacing: 0.06em;
+}
+.rival {
+  font-size: 35px;
+  font-weight: 800;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.momento {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+.fecha {
+  display: flex;
+  flex-direction: column;
+}
+.dia {
+  font-size: var(--dia);
+  font-weight: 800;
+  line-height: 1.25;
+}
+.numero {
+  font: var(--numero)/1.6 var(--display);
+  color: var(--amarillo);
+  white-space: nowrap;
+}
+.hora {
+  font: var(--hora)/1.6 var(--display);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.hora span {
+  font: 26px/1.3 var(--texto);
+}
+.pendiente {
+  font-size: 28px;
+  line-height: 1.3;
+}
+.escudoZona {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background:
-    radial-gradient(40% 70% at 16% 50%, var(--l-luz), transparent 75%),
-    linear-gradient(160deg, var(--l-base), #06080b 90%);
-  mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+    radial-gradient(ellipse at center, var(--rival-luz), transparent 75%), var(--rival-base);
 }
-
-.color::after {
+.escudoZona::before {
   content: "";
   position: absolute;
-  inset: 0;
-  clip-path: polygon(60% 0, 100% 0, 100% 100%, 40% 100%);
-  background:
-    radial-gradient(40% 70% at 84% 50%, var(--v-luz), transparent 75%),
-    linear-gradient(200deg, var(--v-base), #06080b 90%);
+  left: -10px;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  transform: skewX(-8deg);
+  background: repeating-linear-gradient(-58deg, var(--amarillo) 0 18px, var(--negro) 18px 36px);
 }
-
-/* Franja amarilla y negra en el corte; el centro, oscurecido para leer la fecha. */
-.corte {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(28% 60% at 50% 50%, rgb(6 8 11 / 78%), transparent 100%),
-    repeating-linear-gradient(-62deg, var(--amarillo) 0 16px, var(--negro) 16px 32px);
-  clip-path: polygon(59.5% 0, 60.5% 0, 40.5% 100%, 39.5% 100%);
+.escudo {
+  width: var(--escudo);
+  height: var(--escudo);
 }
-
-.escudoLocal,
-.escudoVisitante {
-  width: 250px;
-  height: 250px;
-  top: calc(50% - 150px);
+.sinEscudo {
+  font: 72px/1.6 var(--display);
+  opacity: 0.6;
 }
-
-.escudoLocal {
-  left: 64px;
+.bandas[data-cantidad="1"] {
+  --dia: 62px;
+  --numero: 96px;
+  --hora: 144px;
+  --escudo: 280px;
 }
-
-.escudoVisitante {
-  right: 64px;
+.bandas[data-cantidad="1"] .banda {
+  grid-template-columns: minmax(0, 1fr) 330px;
 }
-
-.nombreLocal,
-.nombreVisitante {
-  top: calc(50% + 112px);
-  width: 280px;
-  text-align: center;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  line-height: 1.1;
+.bandas[data-cantidad="1"] .informacion {
+  gap: 28px;
 }
-
-.nombreLocal {
-  left: 64px;
+.bandas[data-cantidad="1"] .momento {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
 }
-
-.nombreVisitante {
-  right: 64px;
+.bandas[data-cantidad="1"] .rival {
+  font-size: 48px;
 }
-
-.centro {
-  position: absolute;
-  z-index: 5;
-  top: 50%;
-  left: 372px;
-  right: 372px;
-  transform: translateY(-50%);
-  text-align: center;
-  text-shadow: 0 4px 18px rgb(0 0 0 / 70%);
+.bandas[data-cantidad="3"],
+.bandas[data-cantidad="4"] {
+  --dia: 27px;
+  --numero: 35px;
+  --hora: 58px;
+  --escudo: 156px;
+  gap: 12px;
 }
-
-.categoria {
-  margin-bottom: 10px;
-  font-weight: 800;
-  font-size: 26px;
-  letter-spacing: 0.2em;
-  color: var(--amarillo);
+.bandas[data-cantidad="3"] .banda,
+.bandas[data-cantidad="4"] .banda {
+  grid-template-columns: minmax(0, 1fr) 230px;
 }
-
-.dia {
-  font-size: 46px;
+.bandas[data-cantidad="3"] .informacion,
+.bandas[data-cantidad="4"] .informacion {
+  padding: 12px 24px;
+  gap: 4px;
 }
-
-.hora {
-  font-size: 104px;
-  color: var(--amarillo);
+.bandas[data-cantidad="3"] .rival,
+.bandas[data-cantidad="4"] .rival {
+  font-size: 28px;
 }
-
-.campo {
-  margin-top: 8px;
+.bandas[data-cantidad="3"] .categoria,
+.bandas[data-cantidad="4"] .categoria {
   font-size: 22px;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
 }
-
-/* Un solo partido: la banda ocupa todo y todo crece. */
-.uno .escudoLocal,
-.uno .escudoVisitante {
-  width: 360px;
-  height: 360px;
-  top: calc(50% - 230px);
+.vacia {
+  display: grid;
+  place-items: center;
+  font-size: 38px;
+  line-height: 1.3;
 }
-
-.uno .escudoLocal {
-  left: 64px;
+.historia .cabecera {
+  top: 356px;
 }
-
-.uno .escudoVisitante {
-  right: 64px;
-}
-
-.uno .nombreLocal,
-.uno .nombreVisitante {
-  top: calc(50% + 140px);
-  width: 380px;
-}
-
-.uno .centro {
-  top: auto;
-  bottom: 70px;
-  left: 120px;
-  right: 120px;
-  transform: none;
-}
-
-.uno .dia {
-  font-size: 64px;
-}
-
-.uno .hora {
-  font-size: 150px;
-}
-
-.uno .campo {
-  font-size: 26px;
-}
-
-.bandasUna .banda {
-  clip-path: none;
+.historia .bandas {
+  top: 510px;
+  bottom: 420px;
 }

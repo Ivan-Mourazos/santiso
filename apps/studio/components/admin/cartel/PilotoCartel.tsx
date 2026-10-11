@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { claveNombre } from "@santiso/domain";
 import { Cartel } from "@/components/cartel2/Cartel";
 import { Button } from "@/components/ui/foundation/Button";
 import { aHex, COLOR_RIVAL_RESERVA, colorDominante } from "@/lib/cartel2/color";
@@ -10,7 +9,8 @@ import { peticionDeFormulario } from "@/lib/cartel2/formulario";
 import {
   COMPOSICIONES,
   ESTILOS_FOTO,
-  MEDIDAS,
+  medidasDe,
+  type FormatoCartel,
   type Composicion,
   type FotoCartel,
   type PeticionCartel,
@@ -18,9 +18,11 @@ import {
 import styles from "./PilotoCartel.module.css";
 import type { AssetUrls, FormState, TemplateId } from "./types";
 import type { CartelTeam } from "./useCartelForm";
+import { recursosDeCartel } from "@/lib/cartel2/recursos";
+import { usePreviasCartel } from "./usePreviasCartel";
 
 /** Color dominante de un escudo, leído en un lienzo pequeño; `null` si no se puede. */
-async function colorDeEscudo(url: string): Promise<string | null> {
+export async function colorDeEscudo(url: string): Promise<string | null> {
   const img = new Image();
   img.src = url;
   try {
@@ -50,7 +52,7 @@ async function aDataUrl(url: string): Promise<string> {
   });
 }
 
-async function exportable<T>(valor: T): Promise<T> {
+export async function exportable<T>(valor: T): Promise<T> {
   if (typeof valor === "string")
     return (valor.startsWith("blob:") ? await aDataUrl(valor) : valor) as T;
   if (Array.isArray(valor)) return (await Promise.all(valor.map((v) => exportable(v)))) as T;
@@ -74,12 +76,14 @@ function escudosDelFormulario(form: FormState) {
  */
 export default function PilotoCartel({
   tipo,
+  formato = "publicacion",
   form,
   recursos,
   equipos,
   showToast,
 }: {
   tipo: TemplateId;
+  formato?: FormatoCartel;
   form: FormState;
   recursos: AssetUrls;
   /** Equipos del Senior y de Veteranos: de aquí salen el escudo del Santiso y los marcados en 3D. */
@@ -98,6 +102,13 @@ export default function PilotoCartel({
   const caja = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLElement>(null);
   const [altoPanel, setAltoPanel] = useState<number | null>(null);
+  const previas = usePreviasCartel(
+    tipo === "partido"
+      ? [form.partido_id]
+      : tipo === "proximos"
+        ? form.matches.map((m) => m.partidoId ?? "")
+        : [],
+  );
 
   // Colores de los escudos del formulario, leídos una vez por URL.
   const pendientes = escudosDelFormulario(form).filter((u) => !(u in colores));
@@ -160,43 +171,30 @@ export default function PilotoCartel({
 
   const peticion: PeticionCartel = useMemo(
     () =>
-      peticionDeFormulario(
-        tipo,
-        form,
-        {
-          escudosClub: Object.fromEntries(
-            equipos
-              .filter((e) => e.es_propio && e.escudo_url)
-              .map((e) => [e.categoria, e.escudo_url]),
-          ),
-          escudosEn3d: equipos.filter((e) => e.escudo_3d && e.escudo_url).map((e) => e.escudo_url),
-          coloresEquipo: Object.fromEntries(
-            equipos.filter((e) => e.color).map((e) => [claveNombre(e.nombre), e.color as string]),
-          ),
-          patrocinadores: recursos.sponsors,
-          institucionales: (recursos.xuntaIsLeft
-            ? [recursos.xunta, recursos.rfgf]
-            : [recursos.rfgf, recursos.xunta]
-          ).filter(Boolean),
-        },
-        {
-          color: (url) => (url && colores[url]) || aHex(COLOR_RIVAL_RESERVA),
-          composicion,
-          foto,
-        },
-      ),
-    [tipo, form, recursos, equipos, colores, composicion, foto],
+      peticionDeFormulario(tipo, form, recursosDeCartel(equipos, recursos), {
+        color: (url) => (url && colores[url]) || aHex(COLOR_RIVAL_RESERVA),
+        composicion,
+        foto,
+        formato,
+        previas: previas.datos,
+      }),
+    [tipo, form, recursos, equipos, colores, composicion, foto, formato, previas.datos],
+  );
+  const medidas = medidasDe(
+    peticion.plantilla,
+    "formato" in peticion ? peticion.formato : undefined,
   );
   const escala =
     hueco.ancho && hueco.alto
-      ? Math.min(hueco.ancho / MEDIDAS.ancho, hueco.alto / MEDIDAS.alto)
+      ? Math.min(hueco.ancho / medidas.ancho, hueco.alto / medidas.alto)
       : 0;
-  const margenIzquierdo = (hueco.ancho - MEDIDAS.ancho * escala) / 2;
-  const nombrePng = `${peticion.plantilla}-${form.fecha || "cartel"}.png`;
+  const margenIzquierdo = (hueco.ancho - medidas.ancho * escala) / 2;
+  const nombrePng = `${peticion.plantilla}-${form.fecha || "cartel"}${medidas.alto === 1920 ? "-historia" : ""}.png`;
   const clavePng = JSON.stringify([peticion, nombrePng]);
   const pngActual = png?.clave === clavePng ? png.archivo : null;
 
   async function generar(): Promise<File | null> {
+    if (previas.cargando || previas.error) return null;
     setExportando(true);
     try {
       const respuesta = await fetch("/api/carteles/png", {
@@ -258,6 +256,14 @@ export default function PilotoCartel({
       aria-label="Previsualización del cartel"
       style={altoPanel ? { height: altoPanel } : undefined}
     >
+      {previas.error && (
+        <div>
+          <p role="alert">{previas.error}</p>
+          <button type="button" style={{ minHeight: 44 }} onClick={previas.reintentar}>
+            Reintentar previa
+          </button>
+        </div>
+      )}
       {/* Una sola fila: título, opciones de la plantilla y descarga. Deja el alto al cartel. */}
       <div className={styles.cabecera}>
         <h3>Previsualización</h3>
@@ -347,7 +353,11 @@ export default function PilotoCartel({
                 {compartiendo ? "Compartiendo…" : "Compartir"}
               </Button>
             ) : (
-              <Button size="sm" onClick={() => void generar()} disabled={exportando}>
+              <Button
+                size="sm"
+                onClick={() => void generar()}
+                disabled={exportando || previas.cargando || !!previas.error}
+              >
                 {exportando ? "Generando…" : "Preparar PNG"}
               </Button>
             )}
@@ -356,7 +366,7 @@ export default function PilotoCartel({
             <Button
               size="sm"
               onClick={() => void descargar()}
-              disabled={exportando || compartiendo}
+              disabled={exportando || compartiendo || previas.cargando || !!previas.error}
             >
               {exportando ? "Generando…" : "Descargar PNG"}
             </Button>
