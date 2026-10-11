@@ -81,7 +81,8 @@ test("patrocinador móvil conserva URL larga, logo y orden tras recargar", async
     .getByRole("table", { name: "Patrocinadores y logos" })
     .getByRole("row")
     .filter({ hasText: nombre });
-  await expect(fila.getByRole("link")).toHaveAttribute("href", url);
+  // En móvil la web no se enseña en la lista (está en el editor), pero el enlace sigue ahí.
+  await expect(fila.locator("a")).toHaveAttribute("href", url);
   await expect(fila.locator("img")).toHaveAttribute("src", /^\/media\//);
   await comprobarAncho(page);
   const orden = page.getByRole("list", { name: "Orden de los logos" });
@@ -103,7 +104,8 @@ test("patrocinador móvil conserva URL larga, logo y orden tras recargar", async
   page.once("dialog", (dialogo) => dialogo.accept());
   await editor.getByRole("button", { name: "Cancelar", exact: true }).click();
   await page.reload();
-  await expect(fila.getByRole("link")).toHaveAttribute("href", url);
+  // En móvil la web no se enseña en la lista (está en el editor), pero el enlace sigue ahí.
+  await expect(fila.locator("a")).toHaveAttribute("href", url);
   // Retirar solo de la barra deja intacto el orden de los dos logos sembrados.
   await fila.getByRole("button", { name: `Editar ${nombre}`, exact: true }).click();
   await editor.getByLabel("Mostrar en carteles", { exact: true }).uncheck();

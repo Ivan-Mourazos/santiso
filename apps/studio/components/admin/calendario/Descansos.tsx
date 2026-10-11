@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
+import { useEsMovil } from "@/components/ui/foundation/FiltrosMovil";
 import { Select } from "@/components/ui/foundation/Fields";
 import type { DescansoDto } from "@/lib/dto";
 import type { Team } from "@/lib/lecturas-cliente";
@@ -36,6 +37,9 @@ export default function Descansos({
 }: Props) {
   const [equipoId, setEquipoId] = useState("");
   const [pendiente, setPendiente] = useState(false);
+  // En móvil el formulario se abre al pedirlo: así la lista de partidos no queda enterrada.
+  const movil = useEsMovil();
+  const [abierto, setAbierto] = useState(false);
   const enviando = useRef(false);
   useUnsavedChanges(Boolean(equipoId));
 
@@ -72,7 +76,12 @@ export default function Descansos({
   return (
     <section className={styles.bloque} aria-label="Descansos">
       <h3 className={styles.titulo}>Descansos</h3>
-      <form className={styles.fila} onSubmit={(e) => void marcar(e)}>
+      {movil && !abierto && (
+        <Button variant="secondary" onClick={() => setAbierto(true)}>
+          Marcar un descanso…
+        </Button>
+      )}
+      <form className={styles.fila} hidden={movil && !abierto} onSubmit={(e) => void marcar(e)}>
         <Select
           label="Equipo que descansa"
           value={equipoId}

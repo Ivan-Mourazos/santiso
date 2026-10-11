@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Select } from "@/components/ui/foundation/Fields";
+import { FiltrosMovil } from "@/components/ui/foundation/FiltrosMovil";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import { borrarJornada } from "@/lib/server/acciones/calendario";
 import Descansos from "./Descansos";
@@ -33,10 +34,13 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
   const c = useCalendario(categoria);
   const { setParams } = useStudio();
   const [dialogo, setDialogo] = useState<"jornadas" | null>(null);
+  /** Solo en móvil: lo que se usa una vez al año (crear o borrar jornadas) queda plegado. */
+  const [gestion, setGestion] = useState(false);
   useUnsavedChanges(c.partidos.some(c.conCambios));
 
   const competicion = c.competicionesEnCategoria.find((x) => x.id === c.selectedCompetitionId);
   const jornada = c.jornadas.find((j) => j.id === c.selectedJornada);
+  const indiceJornada = c.jornadas.findIndex((j) => j.id === c.selectedJornada);
 
   function borrarLaJornada() {
     if (!jornada) return;
@@ -68,6 +72,12 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
     <div className={styles.panel}>
       <section className={styles.bloque} aria-label="Qué se ve">
         <div className={styles.selectores}>
+          <FiltrosMovil
+            resumen={[
+              c.temporadas.find((t) => t.id === c.selectedSeasonId)?.nombre ?? "Temporada",
+              competicion?.nombre ?? "Sin competición",
+            ].join(" · ")}
+          >
           <Select
             label="Temporada"
             value={c.selectedSeasonId}
@@ -110,6 +120,29 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
               ))}
             </Select>
           )}
+          </FiltrosMovil>
+          {/* Solo en móvil: pasar de jornada con un toque, sin abrir los filtros. */}
+          {c.vista === "jornada" && jornada && (
+            <div className={styles.pasoJornada} role="group" aria-label="Cambiar de jornada">
+              <Button
+                variant="secondary"
+                aria-label="Jornada anterior"
+                disabled={indiceJornada <= 0}
+                onClick={() => c.setSelectedJornada(c.jornadas[indiceJornada - 1]?.id ?? null)}
+              >
+                ‹
+              </Button>
+              <strong>{nombreJornada(jornada)}</strong>
+              <Button
+                variant="secondary"
+                aria-label="Jornada siguiente"
+                disabled={indiceJornada >= c.jornadas.length - 1}
+                onClick={() => c.setSelectedJornada(c.jornadas[indiceJornada + 1]?.id ?? null)}
+              >
+                ›
+              </Button>
+            </div>
+          )}
           {/* Para corregir horas y campos de toda la temporada sin ir jornada a jornada. */}
           <div className={styles.vistas} role="group" aria-label="Qué partidos">
             <Button
@@ -128,10 +161,19 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
             >
               Partidos del Santiso
             </Button>
+            <button
+              type="button"
+              className={styles.masGestion}
+              aria-expanded={gestion}
+              aria-label={gestion ? "Ocultar gestión de jornadas" : "Gestión de jornadas"}
+              onClick={() => setGestion((actual) => !actual)}
+            >
+              ⋯
+            </button>
           </div>
         </div>
 
-        <div className={styles.acciones}>
+        <div className={styles.acciones} data-mas={gestion}>
           <Button
             size="sm"
             variant="secondary"

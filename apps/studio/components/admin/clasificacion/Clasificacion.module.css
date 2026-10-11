@@ -127,8 +127,21 @@
 }
 
 @media (max-width: 640px) {
+  /* En móvil sobra el marco y el título: ya está en la cabecera de la página. */
   .panel {
-    padding: var(--ui-space-4, 1rem);
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .cabecera {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .selectores {
     grid-template-columns: minmax(0, 1fr);

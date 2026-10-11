@@ -195,18 +195,74 @@
   border-top: 1px solid rgb(255 255 255 / 8%);
 }
 
+/* Solo existen en móvil. */
+.desplegar,
+.resumenFila,
+.pasoJornada,
+.masGestion {
+  display: none;
+}
+
 @media (max-width: 760px) {
+  .panel {
+    gap: 0.5rem;
+  }
   .panel,
   .bloque,
   .selectores > *,
   .fila > * {
     min-width: 0;
   }
+  /* En móvil sobra el marco de cada bloque: cada px de ancho cuenta. */
+  .bloque {
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .titulo {
+    margin: 0.5rem 0 0.35rem;
+  }
   .selectores {
     grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+  .pasoJornada {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  .pasoJornada button {
+    padding: 0;
+    font-size: 1.4rem;
+    line-height: 1;
   }
   .vistas {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    padding: 0;
+  }
+  .vistas > button {
+    flex: 1;
+    padding-inline: 0.4rem;
+    font-size: 0.82rem;
+  }
+  .vistas > .masGestion {
+    display: block;
+    flex: 0 0 44px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    background: none;
+    color: var(--ui-text);
+    font-size: 1.2rem;
+    cursor: pointer;
+  }
+  .acciones {
+    margin-top: 0.5rem;
+  }
+  .acciones[data-mas="false"] {
+    display: none;
   }
   .acciones .nota {
     margin-left: 0;
@@ -225,32 +281,109 @@
     display: none;
   }
   .partidos {
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
+  /*
+   * Como en la app de la federación: local arriba y visitante abajo, cada uno con sus goles.
+   * Debajo, una línea con fecha, campo y estado; se despliega para cambiarlos.
+   */
   .partido,
   .partido[data-contexto="true"] {
-    grid-template-columns: minmax(0, 1fr) 6.25rem minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    grid-template-areas:
+      "contexto contexto contexto"
+      "local golesLocal desplegar"
+      "visitante golesVisitante desplegar"
+      "resumen resumen resumen"
+      "campo campo campo"
+      "fecha fecha fecha"
+      "estado estado estado"
+      "acciones acciones acciones";
     align-items: center;
-    padding: 0.75rem;
-    gap: 0.75rem 0.5rem;
-    box-shadow: var(--ui-panel-shadow, none);
+    padding: 0.5rem;
+    gap: 0.25rem 0.5rem;
   }
   .partido > * {
     min-width: 0;
   }
+  .contextoFila {
+    grid-area: contexto;
+  }
   .equipo {
-    flex-direction: column;
-    text-align: center;
+    grid-area: visitante;
+    justify-content: flex-start;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+  .equipo.local {
+    grid-area: local;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
   }
   .equipo span {
-    overflow-wrap: anywhere;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .contextoFila,
-  .campo,
-  .fecha,
-  .estado,
+  .goles {
+    display: contents;
+  }
+  .goles > span {
+    display: none;
+  }
+  .goles > :first-child {
+    grid-area: golesLocal;
+  }
+  .goles > :last-child {
+    grid-area: golesVisitante;
+  }
+  .goles input {
+    width: 44px;
+    padding-inline: 0;
+  }
+  .partido .desplegar {
+    display: grid;
+    place-items: center;
+    grid-area: desplegar;
+    align-self: stretch;
+    padding: 0;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    background: none;
+    box-shadow: none;
+    color: var(--ui-muted, #aaa);
+    cursor: pointer;
+  }
+  .partido[data-abierta="true"] .desplegar svg {
+    transform: rotate(180deg);
+  }
+  .resumenFila {
+    display: block;
+    grid-area: resumen;
+    margin: 0;
+    color: var(--ui-muted, #aaa);
+    font-size: 0.78rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .campo {
+    grid-area: campo;
+  }
+  .fecha {
+    grid-area: fecha;
+  }
+  .estado {
+    grid-area: estado;
+  }
   .accionesFila {
-    grid-column: 1 / -1;
+    grid-area: acciones;
+  }
+  .partido[data-abierta="false"] .campo,
+  .partido[data-abierta="false"] .fecha,
+  .partido[data-abierta="false"] .estado,
+  .partido[data-abierta="false"][data-cambios="false"] .accionesFila {
+    display: none;
   }
   .partido .campo label,
   .partido .fecha label,
@@ -268,13 +401,11 @@
     min-height: 44px;
     font-size: 16px;
   }
-  .goles input {
-    width: 44px;
-  }
   .partido button,
   .selectores button,
   .acciones button,
   .fila button,
+  .bloque > button,
   .descansos button {
     min-width: 44px;
     min-height: 44px;
