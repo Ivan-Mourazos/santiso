@@ -384,6 +384,27 @@ describe("escudos del club y relieve", () => {
     if (p.plantilla !== "partido") throw new Error("plantilla");
     const rival = p.datos.local.propio ? p.datos.visitante : p.datos.local;
     expect(rival.color).toBe("#1d4ed8");
+    expect(rival.color2).toBeUndefined();
+  });
+
+  it("el segundo color del equipo llega al cartel y pasa la validación", () => {
+    const p = peticionDeFormulario(
+      "partido",
+      formulario(),
+      {
+        ...recursos,
+        coloresEquipo: { "c d berres": "#b91c1c" },
+        coloresEquipo2: { "c d berres": "#ffffff" },
+      },
+      opciones,
+    );
+    if (p.plantilla !== "partido") throw new Error("plantilla");
+    const rival = p.datos.local.propio ? p.datos.visitante : p.datos.local;
+    expect(rival).toMatchObject({ color: "#b91c1c", color2: "#ffffff" });
+    // El Santiso no cambia: negro y amarillo.
+    const club = p.datos.local.propio ? p.datos.local : p.datos.visitante;
+    expect(club.color2).toBeUndefined();
+    expect(leerPeticion(p)).not.toBeNull();
   });
 
   it("sin relieve los escudos marcados en 3D; con relieve el resto", () => {

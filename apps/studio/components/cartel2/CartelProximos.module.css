@@ -37,8 +37,14 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
-  background: rgb(6 8 11 / 75%);
-  border: 1px solid rgb(255 255 255 / 20%);
+}
+/* Entre partido y partido, una línea tenue que se desvanece en los extremos. */
+.banda + .banda::before {
+  content: "";
+  position: absolute;
+  inset: -8px 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 22%) 20% 80%, transparent);
 }
 .informacion {
   padding: 22px 28px;
@@ -68,6 +74,13 @@
   font-weight: 800;
   line-height: 1.3;
   overflow-wrap: anywhere;
+}
+/* «VS» delante del rival: deja claro que es contra quién se juega. */
+.contra {
+  margin-right: 6px;
+  color: var(--amarillo);
+  font: 0.8em/1 var(--display);
+  letter-spacing: 0.04em;
 }
 .momento {
   display: flex;
@@ -105,19 +118,26 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background:
-    radial-gradient(ellipse at center, var(--rival-luz), transparent 75%), var(--rival-base);
 }
-.escudoZona::before {
+/*
+ * Sin caja: el color del rival es un resplandor centrado detrás de su escudo, más ancho que
+ * la propia columna, que se apaga solo. Ni rectángulo ni corte (Iván, 11/10/2026).
+ */
+.escudoZona::before,
+.escudoZona::after {
   content: "";
   position: absolute;
-  /* Filo amarillo liso entre los datos y el escudo: sin rayas. */
-  left: -3px;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  transform: skewX(-8deg);
-  background: var(--amarillo);
+  z-index: -1;
+  pointer-events: none;
+}
+.escudoZona::before {
+  inset: -18% -48%;
+  background: radial-gradient(closest-side, var(--rival-luz), transparent);
+}
+/* El segundo color, si lo hay, asoma por arriba a la derecha del escudo. */
+.escudoZona::after {
+  inset: -22% -30% 34% 30%;
+  background: radial-gradient(closest-side, var(--rival-luz2), transparent);
 }
 .escudo {
   width: var(--escudo);

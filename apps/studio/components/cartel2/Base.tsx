@@ -13,7 +13,7 @@ import { anton, barlow } from "./fuentes";
 import b from "./Base.module.css";
 
 /** Lo que el fondo necesita de un equipo: su escudo (para el eco) y su color. */
-type Lado = Pick<EquipoCartel, "escudo" | "propio" | "color">;
+type Lado = Pick<EquipoCartel, "escudo" | "propio" | "color" | "color2">;
 
 /**
  * Colores de un lado: `base` rellena su mitad y `luz` es el brillo detrás del escudo. El
@@ -21,11 +21,22 @@ type Lado = Pick<EquipoCartel, "escudo" | "propio" | "color">;
  */
 export function coloresDe(lado: Lado | null | undefined) {
   if (!lado || lado.propio) {
-    return { base: "#0b0b0c", luz: "color-mix(in srgb, #f5c518 55%, transparent)" };
+    const base = "#0b0b0c";
+    return {
+      base,
+      base2: base,
+      luz: "color-mix(in srgb, #f5c518 55%, transparent)",
+      luz2: "transparent",
+    };
   }
+  // Con segundo color, el fondo del lado va de uno a otro y lleva un segundo brillo. Sin él,
+  // `base2` repite la base y `luz2` no pinta nada: el cartel queda como siempre.
+  const base = `color-mix(in srgb, ${lado.color} 62%, #06080b)`;
   return {
-    base: `color-mix(in srgb, ${lado.color} 62%, #06080b)`,
+    base,
+    base2: lado.color2 ? `color-mix(in srgb, ${lado.color2} 52%, #06080b)` : base,
     luz: `color-mix(in srgb, ${lado.color} 72%, transparent)`,
+    luz2: lado.color2 ? `color-mix(in srgb, ${lado.color2} 70%, transparent)` : "transparent",
   };
 }
 
@@ -78,9 +89,13 @@ export function Base({
   const d = coloresDe(derecha);
   const estilo = {
     "--izquierda-base": i.base,
+    "--izquierda-base2": i.base2,
     "--izquierda-luz": i.luz,
+    "--izquierda-luz2": i.luz2,
     "--derecha-base": d.base,
+    "--derecha-base2": d.base2,
     "--derecha-luz": d.luz,
+    "--derecha-luz2": d.luz2,
     width: MEDIDAS.ancho,
     height: historia ? MEDIDAS_HISTORIA.alto : MEDIDAS.alto,
   } as CSSProperties;

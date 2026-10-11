@@ -109,6 +109,29 @@ describe("acciones de equipos", () => {
     ).toMatchObject({ ok: true, datos: { color: null } });
   });
 
+  it("guarda un segundo color y lo quita cuando se quita el primero", async () => {
+    const { acciones } = await entorno();
+    const base = { nombre: "C.D. San Mamed", categoria: "Senior" };
+    const creado = await acciones.guardarEquipo(
+      formulario({ id: "", ...base, color: "#B91C1C", color2: "#FFFFFF" }),
+    );
+    expect(creado).toMatchObject({ ok: true, datos: { color: "#b91c1c", color_2: "#ffffff" } });
+    if (!creado.ok) return;
+    const id = creado.datos.id;
+    expect(
+      await acciones.guardarEquipo(formulario({ id, ...base, color: "#b91c1c", color2: "rojo" })),
+    ).toMatchObject({ ok: false, error: "El segundo color debe ser #rrggbb." });
+    // Guardar sin mandar los colores (por ejemplo, solo el escudo) no los toca.
+    expect(await acciones.guardarEquipo(formulario({ id, ...base }))).toMatchObject({
+      ok: true,
+      datos: { color: "#b91c1c", color_2: "#ffffff" },
+    });
+    // Un segundo color sin primero no tiene con qué fundirse: se va con él.
+    expect(
+      await acciones.guardarEquipo(formulario({ id, ...base, color: "", color2: "#ffffff" })),
+    ).toMatchObject({ ok: true, datos: { color: null, color_2: null } });
+  });
+
   it("admite el mismo nombre en otra categoría", async () => {
     const { acciones } = await entorno();
     await acciones.guardarEquipo(formulario({ id: "", nombre: "S.D. Touro", categoria: "Senior" }));

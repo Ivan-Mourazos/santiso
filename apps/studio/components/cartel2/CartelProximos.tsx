@@ -18,14 +18,21 @@ function Banda({ partido }: { partido: PartidoProximo }) {
     <section
       data-axenda-partido
       className={s.banda}
-      style={{ "--rival-base": color.base, "--rival-luz": color.luz } as CSSProperties}
+      style={
+        {
+          "--rival-luz": color.luz,
+          "--rival-luz2": color.luz2,
+        } as CSSProperties
+      }
     >
       <div className={s.informacion}>
         <div className={s.categoria}>
           <span>{categoriaCartel(partido.categoria)}</span>
           <span className={s.localia}>{partido.local.propio ? "NA CASA" : "FÓRA"}</span>
         </div>
-        <div className={s.rival}>{rival.nombre}</div>
+        <div className={s.rival}>
+          <span className={s.contra}>VS</span> {rival.nombre}
+        </div>
         <div className={s.momento}>
           {fecha ? (
             <div className={s.fecha}>

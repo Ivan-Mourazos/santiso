@@ -28,11 +28,13 @@ export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: 
   const nombreRef = useRef<HTMLInputElement>(null);
   const [escudo3d, setEscudo3d] = useState(inicial.escudo3d);
   const [color, setColor] = useState(inicial.color);
+  const [color2, setColor2] = useState(inicial.color2);
   const sucio =
     nombre !== inicial.nombre ||
     foto !== null ||
     escudo3d !== inicial.escudo3d ||
-    color !== inicial.color;
+    color !== inicial.color ||
+    color2 !== inicial.color2;
   useUnsavedChanges(sucio);
   function cerrar() {
     if (operacion.current) return;
@@ -52,7 +54,7 @@ export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: 
     try {
       const imagen = foto ? await prepararImagen(foto) : null;
       const resultado = await guardarEquipo(
-        formularioDeEquipo({ id: inicial.id, nombre, escudo3d, color }, destino, imagen),
+        formularioDeEquipo({ id: inicial.id, nombre, escudo3d, color, color2 }, destino, imagen),
       );
       if (!resultado.ok) {
         setError(resultado.error);
@@ -163,6 +165,33 @@ export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: 
               <span className={styles.detalle}>Se saca del escudo</span>
             )}
           </div>
+          {/* Solo con el primero elegido: un segundo color suelto no sabría con cuál fundirse. */}
+          {color && (
+            <div className={styles.color}>
+              <label className={styles.casilla}>
+                <input
+                  className={styles.check}
+                  type="checkbox"
+                  checked={color2 !== ""}
+                  onChange={(e) => setColor2(e.target.checked ? "#ffffff" : "")}
+                  disabled={pendiente}
+                />
+                Segundo color
+              </label>
+              {color2 ? (
+                <input
+                  type="color"
+                  className={styles.muestra}
+                  aria-label="Segundo color del equipo"
+                  value={color2}
+                  onChange={(e) => setColor2(e.target.value)}
+                  disabled={pendiente}
+                />
+              ) : (
+                <span className={styles.detalle}>Para equipos de dos colores</span>
+              )}
+            </div>
+          )}
         </fieldset>
       </form>
     </Dialog>
