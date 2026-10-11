@@ -277,6 +277,33 @@ describe("peticionDeFormulario", () => {
 });
 
 describe("escudos del club y relieve", () => {
+  it("la localidad manual, incluso vacía, manda sobre la previa", () => {
+    const previas = {
+      p: {
+        categoria: "Senior",
+        rivalNombre: "C.D. Berres",
+        localidad: "A Estrada",
+        club: { posicion: null, racha: [] },
+        rival: { posicion: null, racha: [] },
+      },
+    };
+    for (const localidad of ["Santiso manual", ""]) {
+      const f = formulario({
+        partido_id: "p",
+        rivalNombre: "C.D. Berres",
+        categoria: "Senior",
+        localidad,
+      });
+      f.matches = [
+        { ...f.matches[0]!, partidoId: "p", rival: "C.D. Berres", categoria: "Senior", localidad },
+      ];
+      const partido = peticionDeFormulario("partido", f, recursos, { ...opciones, previas });
+      expect(partido.datos).toMatchObject({ localidad });
+      const axenda = peticionDeFormulario("proximos", f, recursos, { ...opciones, previas });
+      if (axenda.plantilla !== "proximos") throw new Error("plantilla");
+      expect(axenda.datos.partidos[0]).toMatchObject({ localidad });
+    }
+  });
   it("axenda conserva cuatro partidos y su contexto por identidad, aunque cambie el lado", () => {
     const f = formulario({ partido_id: "p" });
     f.matches = Array.from({ length: 4 }, () => ({

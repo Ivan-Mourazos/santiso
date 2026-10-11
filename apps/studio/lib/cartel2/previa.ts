@@ -4,6 +4,7 @@ import type { FormaEquipo } from "./modelo";
 export interface PreviaCartel {
   categoria: string;
   rivalNombre: string;
+  competicion?: string;
   localidad: string;
   club: FormaEquipo;
   rival: FormaEquipo;

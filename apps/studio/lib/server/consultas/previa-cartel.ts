@@ -17,6 +17,7 @@ export async function previasCartel(ids: string[]): Promise<Record<string, Previ
     .select({
       id: s.partidos.id,
       fecha: s.partidos.fecha,
+      numero: s.jornadas.numero,
       localId: s.partidos.equipoLocalId,
       visitanteId: s.partidos.equipoVisitanteId,
       localPropio: local.esPropio,
@@ -26,6 +27,7 @@ export async function previasCartel(ids: string[]): Promise<Record<string, Previ
       localidad: s.campos.poblacion,
       competicionId: s.competiciones.id,
       formato: s.competiciones.formato,
+      competicion: s.competiciones.nombre,
       categoria: s.competiciones.categoria,
     })
     .from(s.partidos)
@@ -55,20 +57,23 @@ export async function previasCartel(ids: string[]): Promise<Record<string, Previ
         .where(
           and(eq(s.jornadas.competicionId, p.competicionId), eq(s.partidos.estado, "finalizado")),
         )
-    )
-      .filter(
-        (a) =>
-          a.id !== p.id &&
-          a.golesLocal !== null &&
-          a.golesVisitante !== null &&
-          (!p.fecha || (a.fecha !== null && a.fecha < p.fecha)),
-      )
-      .sort(
-        (a, b) =>
-          (a.fecha ?? "").localeCompare(b.fecha ?? "") ||
-          a.numero - b.numero ||
-          a.id.localeCompare(b.id),
-      );
+    ).filter(
+      (a) =>
+        a.id !== p.id &&
+        a.golesLocal !== null &&
+        a.golesVisitante !== null &&
+        (p.fecha && a.fecha ? a.fecha < p.fecha : a.numero < p.numero),
+    );
+    // Si falta alguna fecha, orden coherente por jornada para toda la secuencia.
+    const porJornada = anteriores.some((a) => !a.fecha);
+    anteriores.sort(
+      (a, b) =>
+        (!porJornada && a.fecha && b.fecha
+          ? a.fecha.localeCompare(b.fecha)
+          : a.numero - b.numero) ||
+        a.numero - b.numero ||
+        a.id.localeCompare(b.id),
+    );
     const inscritos = await db
       .select({ id: s.competicionEquipos.equipoId })
       .from(s.competicionEquipos)
@@ -97,6 +102,7 @@ export async function previasCartel(ids: string[]): Promise<Record<string, Previ
     };
     salida[p.id] = {
       categoria: p.categoria,
+      competicion: p.competicion,
       rivalNombre: p.localPropio ? p.visitanteNombre : p.localNombre,
       localidad: p.localidad ?? "",
       club: forma(p.localPropio ? p.localId : p.visitanteId),

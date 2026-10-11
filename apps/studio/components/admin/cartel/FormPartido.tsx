@@ -229,7 +229,10 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
             list="campos-cartel"
             placeholder="Elige o escribe"
             value={form.lugar}
-            onChange={(e) => set("lugar", e.target.value)}
+            onChange={(e) => {
+              set("lugar", e.target.value);
+              set("localidad", campos.find((c) => c.nombre === e.target.value)?.poblacion ?? "");
+            }}
           />
           <datalist id="campos-cartel">
             {campos?.map((c) => (
@@ -241,6 +244,13 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
         </div>
       </div>
 
+      {tipo === "partido" && (
+        <Field
+          label="Localidad"
+          value={form.localidad ?? ""}
+          onChange={(e) => set("localidad", e.target.value)}
+        />
+      )}
       <RivalSelector
         rivalNombre={form.rivalNombre}
         rivalEscudoUrl={form.rivalEscudoUrl}

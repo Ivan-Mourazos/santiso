@@ -52,7 +52,7 @@ it("consulta puesto y últimas cinco antes del partido; separa competición y no
       estado: "finalizado",
       golesLocal: [1, 0, 0, 2, 1, 3][i],
       golesVisitante: 1,
-      fecha: `2026-10-0${i + 1}T17:00`,
+      fecha: i === 5 ? null : `2026-10-0${i + 1}T17:00`,
     });
   const [campo] = await db
     .insert(s.campos)
@@ -65,20 +65,18 @@ it("consulta puesto y últimas cinco antes del partido; separa competición y no
       equipoLocalId: rival!.id,
       equipoVisitanteId: club!.id,
       campoId: campo!.id,
-      fecha: "2026-10-18T17:00",
+      fecha: null,
     })
     .returning();
-  await db
-    .insert(s.partidos)
-    .values({
-      jornadaId: js[7]!.id,
-      equipoLocalId: club!.id,
-      equipoVisitanteId: rival!.id,
-      estado: "finalizado",
-      golesLocal: 99,
-      golesVisitante: 0,
-      fecha: "2026-11-01T17:00",
-    });
+  await db.insert(s.partidos).values({
+    jornadaId: js[7]!.id,
+    equipoLocalId: club!.id,
+    equipoVisitanteId: rival!.id,
+    estado: "finalizado",
+    golesLocal: 99,
+    golesVisitante: 0,
+    fecha: null,
+  });
   const [jc] = await db
     .insert(s.jornadas)
     .values({ competicionId: copa!.id, numero: 1 })
@@ -87,9 +85,19 @@ it("consulta puesto y últimas cinco antes del partido; separa competición y no
     .insert(s.partidos)
     .values({ jornadaId: jc!.id, equipoLocalId: club!.id, equipoVisitanteId: rival!.id })
     .returning();
+  // Mismo corte deportivo con fecha conocida o ausente.
+  const [conFecha] = await db
+    .insert(s.partidos)
+    .values({
+      jornadaId: js[6]!.id,
+      equipoLocalId: club!.id,
+      equipoVisitanteId: rival!.id,
+      fecha: "2026-10-18T17:00",
+    })
+    .returning();
   cerrar();
   const { cargarPreviasCartel } = await import("./previa-cartel");
-  const r = await cargarPreviasCartel([proximo!.id, pc!.id, "desconocido"]);
+  const r = await cargarPreviasCartel([proximo!.id, conFecha!.id, pc!.id, "desconocido"]);
   expect(r.ok).toBe(true);
   if (!r.ok) throw new Error(r.error);
   expect(r.datos[proximo!.id]).toMatchObject({
@@ -102,5 +110,6 @@ it("consulta puesto y últimas cinco antes del partido; separa competición y no
     rival: { posicion: null, racha: [] },
   });
   expect(r.datos.desconocido).toBeUndefined();
+  expect(r.datos[conFecha!.id]?.club).toEqual(r.datos[proximo!.id]?.club);
   expect((await cargarPreviasCartel(Array(5).fill(proximo!.id))).ok).toBe(false);
 });

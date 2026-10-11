@@ -151,12 +151,19 @@ export function peticionDeFormulario(
     opciones.color,
   );
 
-  const contexto = (id: string | undefined, categoria: string, rival: string, casa: boolean) => {
+  const contexto = (
+    id: string | undefined,
+    categoria: string,
+    rival: string,
+    casa: boolean,
+    competicion: string,
+  ) => {
     const previa = id ? opciones.previas?.[id] : undefined;
     if (
       !previa ||
       claveNombre(previa.rivalNombre) !== claveNombre(rival) ||
-      previa.categoria !== categoria
+      previa.categoria !== categoria ||
+      (previa.competicion && previa.competicion !== competicion)
     )
       return {};
     return {
@@ -168,7 +175,14 @@ export function peticionDeFormulario(
     };
   };
   switch (tipo) {
-    case "partido":
+    case "partido": {
+      const previa = contexto(
+        form.partido_id,
+        form.categoria,
+        form.rivalNombre,
+        partido.santisoLocal,
+        form.competicion,
+      );
       return {
         plantilla: "partido",
         composicion: opciones.composicion,
@@ -181,10 +195,11 @@ export function peticionDeFormulario(
           fecha: form.fecha,
           hora: form.hora,
           campo: form.lugar,
-          localidad: form.localidad ?? "",
-          ...contexto(form.partido_id, form.categoria, form.rivalNombre, partido.santisoLocal),
+          ...previa,
+          localidad: form.localidad ?? previa.localidad ?? "",
         },
       };
+    }
     case "resumo": {
       const goles = eventos(form.events, partido.santisoLocal).filter(
         (e) => e.tipo === "gol" || e.tipo === "penalti" || e.tipo === "propia",
@@ -243,6 +258,13 @@ export function peticionDeFormulario(
                 recursos,
                 opciones.color,
               );
+              const previa = contexto(
+                m.partidoId,
+                m.categoria,
+                m.rival,
+                e.santisoLocal,
+                m.competicion ?? "",
+              );
               return {
                 categoria: m.categoria,
                 local: e.local,
@@ -250,10 +272,10 @@ export function peticionDeFormulario(
                 fecha: m.fecha,
                 hora: m.hora,
                 campo: m.lugar ?? "",
-                localidad: m.localidad ?? "",
                 competicion: m.competicion ?? "",
                 jornada: m.jornada ?? "",
-                ...contexto(m.partidoId, m.categoria, m.rival, e.santisoLocal),
+                ...previa,
+                localidad: m.localidad ?? previa.localidad ?? "",
               };
             }),
         },
