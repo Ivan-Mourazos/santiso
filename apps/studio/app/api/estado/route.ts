@@ -1,9 +1,12 @@
 import { schema } from "@santiso/db";
 import { count, eq } from "drizzle-orm";
+import { respuestaSinSesion } from "@/lib/server/acceso/sesion";
 import { obtenerDb } from "@/lib/server/db";
 
 /** Diagnóstico local: confirma que la app lee `data/santiso.db`. */
 export async function GET() {
+  const sinSesion = await respuestaSinSesion();
+  if (sinSesion) return sinSesion;
   try {
     const { db } = await obtenerDb();
     const [temporada] = await db

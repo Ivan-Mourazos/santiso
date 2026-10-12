@@ -1,0 +1,98 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  gap: 2rem;
+  align-items: start;
+}
+.layout h2 {
+  margin: 0 0 0.5rem;
+  font: 800 1.35rem var(--ui-font-title);
+}
+.detalle {
+  margin: 0 0 1.25rem;
+  max-width: 60ch;
+  color: var(--ui-muted);
+}
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 64px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+}
+.fila[data-inactivo="true"] .quien {
+  opacity: 0.6;
+}
+.quien {
+  display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.quien strong {
+  font: 800 1.05rem var(--ui-font-title);
+}
+.quien span {
+  color: var(--ui-muted);
+  font-size: 0.9rem;
+}
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.tarjeta {
+  padding: 1.5rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+  box-shadow: var(--ui-panel-shadow, none);
+}
+.formulario {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.error {
+  margin: 0;
+  color: var(--ui-danger);
+  font-weight: 700;
+}
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 900px) {
+  .layout {
+    gap: 1.25rem;
+  }
+  .tarjeta {
+    padding: 1rem;
+  }
+  .acciones button,
+  .formulario button,
+  .tarjeta > button {
+    min-height: 44px;
+  }
+  .formulario button,
+  .tarjeta > button {
+    width: 100%;
+  }
+  .formulario input,
+  .formulario select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}

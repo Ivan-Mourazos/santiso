@@ -4,10 +4,13 @@ import { usePathname } from "next/navigation";
 import { useId, useState, type ReactNode } from "react";
 import {
   SECCIONES,
-  SECCIONES_MENU,
   categoriaDe,
+  reservada,
   rutaSeccion,
+  seccionesDelMenu,
+  type AccesoPanel,
 } from "@/lib/navigation/contexto";
+import { cerrarSesionYSalir } from "@/components/acceso/salir";
 import { TEMPLATES } from "@/components/admin/cartel/types";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
@@ -53,12 +56,20 @@ function Icono({ trazo }: { trazo: string }) {
   );
 }
 
-export function StudioShell({ children }: { children: ReactNode }) {
+export function StudioShell({
+  children,
+  acceso = null,
+}: {
+  children: ReactNode;
+  acceso?: AccesoPanel;
+}) {
   const pathname = usePathname();
   const { params, navigate, setParams } = useStudio();
   const [menu, setMenu] = useState(false);
   const menuId = useId();
   const section = SECCIONES.find((item) => pathname === `/admin/${item.id}`);
+  const secciones = seccionesDelMenu(acceso);
+  const sinPermiso = !!section && reservada(section.id, acceso);
   // Solo el calendario en PDF sigue reservado a escritorio; la captura de jornada vale en móvil.
   const desktopOnly =
     section?.id === "importar-jornada" && params.get("origen") === "calendario";
@@ -77,10 +88,10 @@ export function StudioShell({ children }: { children: ReactNode }) {
   function navigation() {
     return (
       <nav aria-label="Navegación principal" className={styles.nav}>
-        {[...new Set(SECCIONES_MENU.map((item) => item.grupo))].map((group) => (
+        {[...new Set(secciones.map((item) => item.grupo))].map((group) => (
           <section key={group}>
             <h2 className={styles.group}>{group}</h2>
-            {SECCIONES_MENU.filter((item) => item.grupo === group).map((item) => (
+            {secciones.filter((item) => item.grupo === group).map((item) => (
               <Link
                 key={item.id}
                 href={rutaSeccion(item.id, params)}
@@ -123,6 +134,14 @@ export function StudioShell({ children }: { children: ReactNode }) {
           <strong>Studio</strong>
         </Link>
         {navigation()}
+        {acceso && (
+          <div className={styles.cuenta}>
+            <span>{acceso.nombre}</span>
+            <button type="button" onClick={() => void cerrarSesionYSalir()}>
+              Salir
+            </button>
+          </div>
+        )}
       </aside>
       <div className={styles.main}>
         <header className={styles.header}>
@@ -168,7 +187,11 @@ export function StudioShell({ children }: { children: ReactNode }) {
           )}
         </header>
         <main id="contenido" tabIndex={-1} className={styles.content}>
-          {desktopOnly ? (
+          {sinPermiso ? (
+            <p role="status" className={styles.aviso}>
+              Esta sección es solo para el administrador.
+            </p>
+          ) : desktopOnly ? (
             <>
               <p role="status" className={styles.desktopNotice}>
                 El calendario en PDF se importa solo en escritorio (desde 1280 × 720).{" "}

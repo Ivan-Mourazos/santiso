@@ -27,7 +27,8 @@
     "migracion:importar": "pnpm --filter @santiso/migracion-supabase importar",
     "migracion:verificar": "pnpm --filter @santiso/migracion-supabase verificar",
     "e2e": "pnpm --filter @santiso/studio e2e",
-    "e2e:escritura": "pnpm --filter @santiso/studio e2e:escritura"
+    "e2e:escritura": "pnpm --filter @santiso/studio e2e:escritura",
+    "e2e:acceso": "pnpm --filter @santiso/studio e2e:acceso"
   },
   "devDependencies": {
     "@types/node": "catalog:",

@@ -18,6 +18,7 @@ const SECCIONES = [
   "patrocinadores",
   "temporadas",
   "ajustes-graficos",
+  "usuarios",
 ] as const;
 
 const PIXEL = Buffer.from(

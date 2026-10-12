@@ -17,12 +17,28 @@ export const SECCIONES = [
   { id: "importar-jornada", label: "Importar jornada", grupo: "Producción", oculta: true },
   { id: "equipos", label: "Equipos", grupo: "Catálogos" },
   { id: "patrocinadores", label: "Patrocinadores y logos", grupo: "Catálogos" },
-  { id: "temporadas", label: "Temporadas", grupo: "Ajustes" },
-  { id: "ajustes-graficos", label: "Ajustes gráficos", grupo: "Ajustes" },
+  { id: "temporadas", label: "Temporadas", grupo: "Ajustes", admin: true },
+  { id: "ajustes-graficos", label: "Ajustes gráficos", grupo: "Ajustes", admin: true },
+  { id: "usuarios", label: "Usuarios", grupo: "Ajustes", admin: true },
+  // Solo existe con el acceso por contraseña encendido.
+  { id: "cuenta", label: "Mi cuenta", grupo: "Ajustes", conSesion: true },
 ] as const;
 export type Seccion = (typeof SECCIONES)[number]["id"];
 /** Las secciones que salen en el menú. */
 export const SECCIONES_MENU = SECCIONES.filter((seccion) => !("oculta" in seccion));
+/** Quién está usando el panel; `null` con el acceso por contraseña apagado. */
+export type AccesoPanel = { nombre: string; rol: "admin" | "tecnico" } | null;
+/** Si esa sección es solo del administrador y quien mira no lo es. */
+export function reservada(id: Seccion, acceso: AccesoPanel): boolean {
+  const seccion = SECCIONES.find((item) => item.id === id);
+  return !!seccion && "admin" in seccion && acceso?.rol === "tecnico";
+}
+/** Las secciones del menú para quien mira. */
+export function seccionesDelMenu(acceso: AccesoPanel) {
+  return SECCIONES_MENU.filter(
+    (seccion) => !reservada(seccion.id, acceso) && (acceso !== null || !("conSesion" in seccion)),
+  );
+}
 export function esSeccion(value: string): value is Seccion {
   return SECCIONES.some((section) => section.id === value);
 }

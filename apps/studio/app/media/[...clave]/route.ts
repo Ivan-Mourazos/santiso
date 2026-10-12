@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
+import { respuestaSinSesion } from "@/lib/server/acceso/sesion";
 import { resolverRutaMedia, tipoMedia, varianteDeImagen } from "@/lib/server/media";
 
 const noEncontrado = () => new Response("No encontrado", { status: 404 });
@@ -18,6 +19,8 @@ export async function GET(
   solicitud: Request,
   { params }: { params: Promise<{ clave: string[] }> },
 ) {
+  const sinSesion = await respuestaSinSesion();
+  if (sinSesion) return sinSesion;
   const { clave } = await params;
   const ruta = resolverRutaMedia(clave);
   const tipo = ruta ? tipoMedia(ruta) : null;

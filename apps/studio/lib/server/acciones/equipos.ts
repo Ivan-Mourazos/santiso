@@ -20,6 +20,7 @@ import {
 } from "@/lib/server/consultas/equipos";
 import { obtenerDb } from "@/lib/server/db";
 import { guardarImagenOpcional } from "@/lib/server/imagen";
+import { soloAdmin } from "@/lib/server/acceso/permisos";
 
 /**
  * Envoltorios de servidor para los componentes cliente. Las funciones de `consultas/` llevan
@@ -190,6 +191,8 @@ export async function quitarEquipoDeCompeticion(
  * y el borrado fallaría con un error de SQLite en vez de con un mensaje entendible.
  */
 export async function borrarEquipo(id: string): Promise<Resultado<null>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
   const { db } = await obtenerDb();
   const [partido] = await db
     .select({ id: schema.partidos.id })

@@ -5,6 +5,7 @@ import path from "node:path";
 import { DIR_MEDIA } from "@santiso/db";
 import sharp from "sharp";
 import { exito, fallo, type Resultado } from "@/lib/resultado";
+import { exigirSesion } from "@/lib/server/db";
 
 export type CarpetaMedia = "escudos" | "jugadores" | "staff" | "sponsors" | "cartel";
 
@@ -61,6 +62,7 @@ export async function guardarImagen(
   carpeta: CarpetaMedia,
   raiz = DIR_MEDIA,
 ): Promise<string> {
+  await exigirSesion();
   const { data, info } = await sharp(bytes)
     .rotate()
     .ensureAlpha()
@@ -174,6 +176,7 @@ export async function guardarFotoPartido(
   bytes: Uint8Array,
   raiz = DIR_MEDIA,
 ): Promise<FotoGuardada> {
+  await exigirSesion();
   const { data, info } = await sharp(bytes)
     .rotate()
     .resize(LADO_MAXIMO_PARTIDO, LADO_MAXIMO_PARTIDO, { fit: "inside", withoutEnlargement: true })
