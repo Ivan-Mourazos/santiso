@@ -21,6 +21,8 @@ export const rfgfCompeticiones = sqliteTable("rfgf_competiciones", {
   comprobadoEn: text("comprobado_en"),
   /** Resumen de esa comprobación, para enseñarlo. Vacío si no hubo novedad. */
   resumen: text("resumen").notNull().default(""),
+  /** Última vez que se miraron los horarios de las jornadas por jugar, ISO. */
+  horariosEn: text("horarios_en"),
   ...marcasTiempo(),
 });
 
@@ -48,3 +50,19 @@ export const rfgfActas = sqliteTable(
     checkEnum("rfgf_actas_estado_ck", "estado", ESTADOS_ACTA_RFGF),
   ],
 );
+
+/**
+ * Lo último que la federación dijo de un partido por jugar (día, hora y campo). Sirve para
+ * distinguir un cambio de la federación de uno hecho a mano en el Studio: solo se vuelve a
+ * escribir en el partido cuando lo que dice la federación cambia respecto a lo aquí apuntado.
+ */
+export const rfgfPartidos = sqliteTable("rfgf_partidos", {
+  partidoId: text("partido_id")
+    .primaryKey()
+    .references(() => partidos.id, { onDelete: "cascade" }),
+  /** `AAAA-MM-DD` o `AAAA-MM-DDTHH:mm`, como la publicó la federación. */
+  fecha: text("fecha").notNull(),
+  /** Nombre del campo tal como lo escribe la federación; vacío si está por asignar. */
+  campo: text("campo").notNull().default(""),
+  ...marcasTiempo(),
+});

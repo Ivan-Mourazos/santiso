@@ -123,12 +123,16 @@ export async function comprobarRfgfAhora(): Promise<Resultado<string>> {
     if (resumenes.length === 0) return "No hay competiciones enlazadas, o ya hay una comprobación en marcha.";
     const actas = resumenes.reduce((n, r) => n + r.actas, 0);
     const resultados = resumenes.reduce((n, r) => n + r.resultados, 0);
+    const horarios = resumenes.reduce((n, r) => n + r.horarios.length, 0);
     const revisar = resumenes.reduce((n, r) => n + r.revisar.length, 0);
     const errores = resumenes.reduce((n, r) => n + r.errores.length, 0);
-    if (!actas && !resultados && !revisar && !errores) return "Sin novedades en la federación.";
+    if (!actas && !resultados && !horarios && !revisar && !errores) {
+      return "Sin novedades en la federación.";
+    }
     return [
       actas ? `${actas} acta${actas > 1 ? "s" : ""}` : "",
       resultados ? `${resultados} resultado${resultados > 1 ? "s" : ""}` : "",
+      horarios ? `${horarios} horario${horarios > 1 ? "s" : ""} al día` : "",
       revisar ? `${revisar} por revisar` : "",
       errores ? `${errores} con error` : "",
     ]

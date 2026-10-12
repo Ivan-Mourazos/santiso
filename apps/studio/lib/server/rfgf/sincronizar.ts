@@ -2,17 +2,40 @@ import "server-only";
 
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { marcadorDeFichaPdf, parsearFichaPdf, type Ficha } from "@santiso/actas";
+import {
+  marcadorDeFichaPdf,
+  parsearFichaPdf,
+  parsearJornadaPdf,
+  type Ficha,
+} from "@santiso/actas";
 import { DIR_DATOS, schema } from "@santiso/db";
 import { aliasedTable, and, eq, inArray, sql } from "drizzle-orm";
 import { enlazarActa } from "@/lib/actas/enlazar";
 import { actaDeFicha } from "@/lib/actas/ficha-a-acta";
 import { mejorCampo } from "@/lib/importar/emparejar";
-import { grupoDeEnlace, urlActaPdf, urlJornada, type GrupoRfgf } from "@/lib/rfgf/enlace";
+import {
+  grupoDeEnlace,
+  urlActaPdf,
+  urlJornada,
+  urlJornadaPdf,
+  type GrupoRfgf,
+} from "@/lib/rfgf/enlace";
+import {
+  cambioDeHorario,
+  fechaBreve,
+  fechaDeFederacion,
+  jornadasPorJugar,
+  tocaMirarHorarios,
+} from "@/lib/rfgf/horarios";
 import { partidosDeJornada } from "@/lib/rfgf/jornada";
 import { jornadasPendientes, leFaltaAlgo, partidoDeActa, type PartidoLocal } from "@/lib/rfgf/plan";
 import { guardarActa } from "@/lib/server/acciones/actas";
-import { guardarMarcador } from "@/lib/server/acciones/calendario";
+import {
+  cambiarCampoPartido,
+  cambiarFechaPartido,
+  guardarMarcador,
+} from "@/lib/server/acciones/calendario";
+import { asegurarCampo } from "@/lib/server/acciones/campos";
 import { listarCampos } from "@/lib/server/consultas/campos";
 import { listarJugadores } from "@/lib/server/consultas/jugadores";
 import { obtenerDb } from "@/lib/server/db";
@@ -27,6 +50,8 @@ export interface ResumenRfgf {
   resultados: number;
   /** Actas del Santiso guardadas enteras en esta pasada. */
   actas: number;
+  /** Cambios de día, hora o campo traídos de la federación, uno por línea. */
+  horarios: string[];
   /** Actas que no se pudieron guardar solas, con el motivo. */
   revisar: string[];
   errores: string[];
@@ -57,6 +82,7 @@ async function partidosDeCompeticion(competicionId: string): Promise<PartidoLoca
       localPropio: local.esPropio,
       visitantePropio: visitante.esPropio,
       fecha: schema.partidos.fecha,
+      campoId: schema.partidos.campoId,
       golesLocal: schema.partidos.golesLocal,
       participaciones: sql<number>`(select count(*) from ${schema.partidoParticipaciones} where ${schema.partidoParticipaciones.partidoId} = ${schema.partidos.id})`,
     })
@@ -71,6 +97,7 @@ async function partidosDeCompeticion(competicionId: string): Promise<PartidoLoca
     local: f.local,
     visitante: f.visitante,
     fecha: f.fecha,
+    campoId: f.campoId,
     conMarcador: f.golesLocal !== null,
     propio: f.localPropio || f.visitantePropio,
     conActa: Number(f.participaciones) > 0,
@@ -90,6 +117,78 @@ async function anotar(
     .insert(schema.rfgfActas)
     .values({ codActa, ...valores })
     .onConflictDoUpdate({ target: schema.rfgfActas.codActa, set: valores });
+}
+
+/**
+ * Lee el PDF de una jornada y pone al día lo que traiga: el marcador de los partidos jugados
+ * que aún no lo tienen y, de los que quedan por jugar, día, hora y campo. Devuelve cuántas
+ * cosas cambió. Una sola descarga por jornada.
+ */
+async function tratarJornada(
+  jornada: number,
+  grupo: GrupoRfgf,
+  partidos: readonly PartidoLocal[],
+  descargador: DescargadorRfgf,
+  resumen: ResumenRfgf,
+): Promise<number> {
+  const leida = await parsearJornadaPdf(await descargador.pdf(urlJornadaPdf(grupo, jornada)));
+  if (leida.numero !== jornada) throw new Error("La federación devolvió otra jornada.");
+  const candidatos = partidos.filter((p) => p.jornada === jornada);
+  const { db } = await obtenerDb();
+  let cambios = 0;
+  for (const enPdf of leida.partidos) {
+    // Si el cruce no se reconoce no se toca nada: de eso ya avisa la lectura de actas.
+    const partido = partidoDeActa(enPdf.local, enPdf.visitante, candidatos);
+    if (!partido || partido.conMarcador) continue;
+
+    if (enPdf.marcador) {
+      const [local, visitante] = enPdf.marcador;
+      const guardado = await guardarMarcador(partido.id, String(local), String(visitante));
+      if (!guardado.ok) throw new Error(guardado.error);
+      resumen.resultados += 1;
+      cambios += 1;
+      continue;
+    }
+
+    const federacion = {
+      fecha: fechaDeFederacion(enPdf.fecha, enPdf.hora),
+      campo: enPdf.campo ?? "",
+    };
+    const cambio = cambioDeHorario(federacion, partido);
+    {
+      const dicho: string[] = [];
+      if (cambio.fecha) {
+        const fecha = await cambiarFechaPartido(partido.id, cambio.fecha);
+        if (!fecha.ok) throw new Error(fecha.error);
+        dicho.push(fechaBreve(cambio.fecha));
+      }
+      if (cambio.campo) {
+        // El del catálogo si ya está; si no, se da de alta con las reglas de siempre.
+        let campoId = mejorCampo(cambio.campo, "", await listarCampos());
+        if (!campoId) {
+          const creado = await asegurarCampo(cambio.campo, null);
+          if (!creado.ok) throw new Error(creado.error);
+          campoId = creado.datos.id;
+        }
+        if (campoId !== partido.campoId) {
+          const campo = await cambiarCampoPartido(partido.id, campoId);
+          if (!campo.ok) throw new Error(campo.error);
+          dicho.push(cambio.campo);
+        }
+      }
+      if (dicho.length) {
+        resumen.horarios.push(
+          `J${jornada} ${partido.local} – ${partido.visitante}: ${dicho.join(" · ")}`,
+        );
+        cambios += 1;
+      }
+    }
+    await db
+      .insert(schema.rfgfPartidos)
+      .values({ partidoId: partido.id, ...federacion })
+      .onConflictDoUpdate({ target: schema.rfgfPartidos.partidoId, set: federacion });
+  }
+  return cambios;
 }
 
 /** Trae un acta cerrada: guarda el marcador y, si juega el Santiso y todo cuadra, el acta. */
@@ -210,6 +309,7 @@ export async function sincronizarCompeticion(
   const [fila] = await db
     .select({
       enlace: schema.rfgfCompeticiones.enlace,
+      horariosEn: schema.rfgfCompeticiones.horariosEn,
       nombre: schema.competiciones.nombre,
       categoria: schema.competiciones.categoria,
     })
@@ -227,14 +327,35 @@ export async function sincronizarCompeticion(
     competicion: fila.nombre,
     resultados: 0,
     actas: 0,
+    horarios: [],
     revisar: [],
     errores: [],
   };
-  const partidos = await partidosDeCompeticion(competicionId);
+  let partidos = await partidosDeCompeticion(competicionId);
 
   const desde = soloRecientes
     ? horaLocal(new Date(ahora.getTime() - DIAS_RECIENTES * 86_400_000))
     : undefined;
+
+  // Primero el PDF de cada jornada: de una sola descarga salen los marcadores de todos los
+  // partidos jugados y los horarios de los que quedan. Los horarios, cada pocas horas.
+  const mirarHorarios = tocaMirarHorarios(fila.horariosEn, ahora);
+  const jornadasPdf = new Set([
+    ...jornadasPendientes(partidos, horaLocal(ahora), desde),
+    ...(mirarHorarios ? jornadasPorJugar(partidos, horaLocal(ahora)) : []),
+  ]);
+  let cambiosPdf = 0;
+  for (const jornada of jornadasPdf) {
+    try {
+      cambiosPdf += await tratarJornada(jornada, grupo, partidos, descargador, resumen);
+    } catch (error) {
+      const detalle = error instanceof Error ? error.message : "fallo desconocido";
+      resumen.errores.push(`Jornada ${jornada} (PDF): ${detalle}`);
+    }
+  }
+  // Con los marcadores ya puestos, a las jornadas solo les falta, si acaso, el acta del Santiso.
+  if (cambiosPdf > 0) partidos = await partidosDeCompeticion(competicionId);
+
   for (const jornada of jornadasPendientes(partidos, horaLocal(ahora), desde)) {
     try {
       const enLaWeb = partidosDeJornada(await descargador.html(urlJornada(grupo, jornada))).filter(
@@ -283,6 +404,9 @@ export async function sincronizarCompeticion(
   const partes = [
     resumen.actas ? `${resumen.actas} acta${resumen.actas > 1 ? "s" : ""} guardada${resumen.actas > 1 ? "s" : ""}` : "",
     resumen.resultados ? `${resumen.resultados} resultado${resumen.resultados > 1 ? "s" : ""}` : "",
+    // Los cambios de horario se cuentan con su detalle: es lo que hay que saber de un vistazo.
+    ...resumen.horarios.slice(0, 3),
+    resumen.horarios.length > 3 ? `y ${resumen.horarios.length - 3} horarios más` : "",
     resumen.revisar.length ? `${resumen.revisar.length} por revisar` : "",
     resumen.errores.length ? `${resumen.errores.length} con error` : "",
   ].filter(Boolean);
@@ -290,6 +414,7 @@ export async function sincronizarCompeticion(
     .update(schema.rfgfCompeticiones)
     .set({
       comprobadoEn: ahora.toISOString(),
+      ...(mirarHorarios ? { horariosEn: ahora.toISOString() } : {}),
       // Una pasada sin novedades no borra lo último que pasó.
       ...(partes.length > 0 ? { resumen: partes.join(" · ") } : {}),
     })

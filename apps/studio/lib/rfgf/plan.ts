@@ -13,6 +13,8 @@ export interface PartidoLocal {
   propio: boolean;
   /** Ya tiene convocatoria guardada (acta). */
   conActa: boolean;
+  /** Campo asignado, si lo tiene. Solo hace falta para poner al día los horarios. */
+  campoId?: string | null;
 }
 
 /** Como mucho, estas jornadas por pasada: sin prisa y sin cargar la web de la federación. */

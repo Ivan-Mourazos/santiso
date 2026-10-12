@@ -29,9 +29,15 @@ export function iniciarProgramadorRfgf() {
         sincronizarTodo(crearDescargador(), new Date(), !completa),
       );
       for (const r of resumenes) {
-        if (r.actas || r.resultados || r.revisar.length || r.errores.length) {
+        if (
+          r.actas ||
+          r.resultados ||
+          r.horarios.length ||
+          r.revisar.length ||
+          r.errores.length
+        ) {
           console.info(
-            `[rfgf] ${r.competicion}: ${r.actas} actas, ${r.resultados} resultados, ${r.revisar.length} por revisar, ${r.errores.length} errores`,
+            `[rfgf] ${r.competicion}: ${r.actas} actas, ${r.resultados} resultados, ${r.horarios.length} horarios, ${r.revisar.length} por revisar, ${r.errores.length} errores`,
           );
         }
       }
