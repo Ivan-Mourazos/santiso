@@ -421,6 +421,84 @@ async function sembrar() {
     fecha: "2000-01-01T17:00",
   });
 
+  // Jornada como mesa de partido: una copa Senior propia, en 2099 para no cruzarse con nada,
+  // con un partido en cada punto del recorrido (ver `jornada-escritura.spec.ts`).
+  await db.insert(schema.equipos).values([
+    {
+      id: "vestiario-propio",
+      nombre: "U.D. Santiso F.C. Ficticio",
+      clave: "vestiario-propio",
+      categoria: "Senior",
+      esPropio: true,
+    },
+    {
+      id: "vestiario-rival",
+      nombre: "C.D. Compañía de María Ficticio",
+      clave: "vestiario-rival",
+      categoria: "Senior",
+    },
+  ]);
+  await db.insert(schema.competiciones).values({
+    id: "vestiario-copa",
+    nombre: "Copa Vestiario Ficticia",
+    categoria: "Senior",
+    formato: "eliminatoria",
+    temporadaId: activa.id,
+    // Por delante de la liga: en Senior, con dos competiciones, la pantalla abre la segunda
+    // (`pickDefaultCompetitionId`), y las demás pruebas cuentan con que sea «Liga 26/27».
+    orden: -1,
+  });
+  const once = Array.from({ length: 11 }, (_, i) => `vestiario-jugador-${i}`);
+  await db
+    .insert(schema.jugadores)
+    .values(once.map((id, i) => ({ id, nombre: `Jugador ${i} Vestiario Ficticio` })));
+  // «jugado» es un partido cuya hora ya pasó y sigue sin marcador (la base no admite un
+  // finalizado sin goles): por eso va en el pasado. Cada uno, en su propia semana.
+  const pasosVestiario = [
+    ["sin-nada", "2099-06-07"],
+    ["convocado", "2099-06-14"],
+    ["once", "2099-06-21"],
+    ["jugado", "2001-06-03"],
+    ["resultado", "2099-07-05"],
+    ["acta", "2099-07-12"],
+  ] as const;
+  for (const [i, [paso, dia]] of pasosVestiario.entries()) {
+    const partidoId = `vestiario-${paso}`;
+    await db
+      .insert(schema.jornadas)
+      .values({ id: `vestiario-j${i + 1}`, competicionId: "vestiario-copa", numero: i + 1 });
+    await db.insert(schema.partidos).values({
+      id: partidoId,
+      jornadaId: `vestiario-j${i + 1}`,
+      equipoLocalId: "vestiario-propio",
+      equipoVisitanteId: "vestiario-rival",
+      fecha: `${dia}T17:00`,
+      ...(i >= 4 ? { estado: "finalizado" as const, golesLocal: 0, golesVisitante: 0 } : {}),
+    });
+    if (i >= 1) {
+      await db.insert(schema.partidoConvocatorias).values({ partidoId });
+      await db
+        .insert(schema.partidoConvocados)
+        .values(once.map((jugadorId) => ({ partidoId, jugadorId })));
+    }
+    if (i >= 2) {
+      await db.insert(schema.partidoAlineaciones).values(
+        once.map((jugadorId, orden) => ({
+          partidoId,
+          jugadorId,
+          titular: true,
+          capitan: orden === 0,
+          orden,
+        })),
+      );
+    }
+    if (i >= 5) {
+      await db
+        .insert(schema.partidoParticipaciones)
+        .values(once.map((jugadorId) => ({ partidoId, jugadorId, titular: true, jugo: true })));
+    }
+  }
+
   cerrar();
   console.log(`Datos de prueba en ${DIR_ESCRITURA}`);
 }

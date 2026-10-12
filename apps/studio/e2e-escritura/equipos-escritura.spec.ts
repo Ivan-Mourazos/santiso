@@ -156,7 +156,8 @@ test("conserva crear y eliminar competición, y rechaza borrar una con jornadas"
   await expect(
     page.getByLabel("Competición", { exact: true }).locator("option:checked"),
   ).toHaveText("Liga 26/27");
-  await expect(page.getByLabel("Competición", { exact: true }).locator("option")).toHaveCount(1);
+  // Las dos sembradas: la liga y la copa de las pruebas de Jornada. La creada aquí ya no está.
+  await expect(page.getByLabel("Competición", { exact: true }).locator("option")).toHaveCount(2);
 });
 
 test("crear competición protege el borrador incluso durante una petición pendiente", async ({

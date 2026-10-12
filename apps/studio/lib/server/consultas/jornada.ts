@@ -1,7 +1,8 @@
 import "server-only";
 import { schema } from "@santiso/db";
 import { CATEGORIAS, type Categoria } from "@santiso/domain";
-import { aliasedTable, and, asc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
+import { aliasedTable, and, asc, eq, inArray, or, sql } from "drizzle-orm";
+import { momentoLocal, trasPartido } from "@/lib/jornada/vestiario";
 import { semanaDe, type Semana } from "@/lib/jornada/semana";
 import { urlMedia } from "@/lib/media";
 import { clasificacionDeCompeticion } from "@/lib/server/consultas/clasificacion";
@@ -32,6 +33,7 @@ export interface PartidoDeLaSemana {
   golesSantiso: number | null;
   golesRival: number | null;
   campo: string | null;
+  preparacion: { convocatoria: number | null; titulares: number; capitan: boolean };
   /** `null` = todavía sin acta guardada. */
   acta: ActaDeLaSemana | null;
   /** Solo en competiciones de liga y si el Santiso está en la tabla. */
@@ -40,7 +42,13 @@ export interface PartidoDeLaSemana {
 
 export interface PantallaJornada {
   semana: Semana;
-  categorias: { categoria: Categoria; partidos: PartidoDeLaSemana[] }[];
+  momento: string;
+  categorias: {
+    categoria: Categoria;
+    partidos: PartidoDeLaSemana[];
+    proximo: PartidoDeLaSemana | null;
+    ultimo: PartidoDeLaSemana | null;
+  }[];
 }
 
 /** Nombre corto: el apodo si lo hay; si no, nombre y primer apellido. */
@@ -54,10 +62,13 @@ function nombreCorto(nombre: string | null, apodo: string | null) {
  * Los partidos del club en la semana del día pedido, por categoría, con el estado de su acta y
  * la posición del Santiso en la clasificación. Solo la temporada activa. No escribe nada.
  */
-export async function pantallaJornada(dia: string): Promise<PantallaJornada> {
+export async function pantallaJornada(
+  dia: string,
+  momento = momentoLocal(),
+): Promise<PantallaJornada> {
   const semana = semanaDe(dia);
   const temporadaId = await temporadaActivaId();
-  if (!temporadaId) return { semana, categorias: [] };
+  if (!temporadaId) return { semana, momento, categorias: [] };
   const { db } = await obtenerDb();
 
   const categoriasConCompeticion = await db
@@ -104,14 +115,34 @@ export async function pantallaJornada(dia: string): Promise<PantallaJornada> {
       and(
         eq(schema.competiciones.temporadaId, temporadaId),
         or(eq(local.esPropio, true), eq(visitante.esPropio, true)),
-        // `fecha` es hora de pared `AAAA-MM-DDTHH:mm`: comparar texto basta.
-        gte(schema.partidos.fecha, semana.desde),
-        lte(schema.partidos.fecha, `${semana.hasta}T99`),
       ),
     )
     .orderBy(asc(schema.partidos.fecha));
 
   const ids = filas.map((f) => f.id);
+  const [previas, seleccionados, alineaciones] = ids.length
+    ? await Promise.all([
+        db
+          .select({ partidoId: schema.partidoConvocatorias.partidoId })
+          .from(schema.partidoConvocatorias)
+          .where(inArray(schema.partidoConvocatorias.partidoId, ids)),
+        db
+          .select({ partidoId: schema.partidoConvocados.partidoId, n: sql<number>`count(*)` })
+          .from(schema.partidoConvocados)
+          .where(inArray(schema.partidoConvocados.partidoId, ids))
+          .groupBy(schema.partidoConvocados.partidoId),
+        db
+          .select({
+            partidoId: schema.partidoAlineaciones.partidoId,
+            titular: schema.partidoAlineaciones.titular,
+            capitan: schema.partidoAlineaciones.capitan,
+          })
+          .from(schema.partidoAlineaciones)
+          .where(inArray(schema.partidoAlineaciones.partidoId, ids)),
+      ])
+    : [[], [], []];
+  const previasPor = new Set(previas.map((p) => p.partidoId));
+  const seleccionadosPor = new Map(seleccionados.map((p) => [p.partidoId, Number(p.n)]));
   const convocatorias = ids.length
     ? await db
         .select({
@@ -208,6 +239,11 @@ export async function pantallaJornada(dia: string): Promise<PantallaJornada> {
       golesSantiso: santisoLocal ? f.golesLocal : f.golesVisitante,
       golesRival: santisoLocal ? f.golesVisitante : f.golesLocal,
       campo: f.campo,
+      preparacion: {
+        convocatoria: previasPor.has(f.id) ? (seleccionadosPor.get(f.id) ?? 0) : null,
+        titulares: alineaciones.filter((a) => a.partidoId === f.id && a.titular).length,
+        capitan: alineaciones.some((a) => a.partidoId === f.id && a.titular && a.capitan),
+      },
       acta: actaDe(f.id),
       clasificacion:
         tabla && filaSantiso
@@ -224,9 +260,40 @@ export async function pantallaJornada(dia: string): Promise<PantallaJornada> {
 
   return {
     semana,
-    categorias: categorias.map((categoria) => ({
-      categoria,
-      partidos: partidos.filter((p) => p.categoria === categoria).map((p) => p.partido),
-    })),
+    momento,
+    categorias: categorias.map((categoria) => {
+      const propios = partidos.filter((p) => p.categoria === categoria).map((p) => p.partido);
+      const futuros = propios.filter(
+        (p) =>
+          p.estado !== "cancelado" &&
+          !trasPartido(p, momento) &&
+          (!p.fecha ||
+            p.fecha >= momento.slice(0, 10) ||
+            p.estado === "en_juego" ||
+            p.estado === "aplazado"),
+      );
+      // Los que tienen fecha van primero; sin fecha, orden deportivo y no orden SQLite.
+      futuros.sort((a, b) =>
+        a.fecha && b.fecha
+          ? a.fecha.localeCompare(b.fecha)
+          : a.fecha
+            ? -1
+            : b.fecha
+              ? 1
+              : a.jornadaNumero - b.jornadaNumero,
+      );
+      const jugados = propios.filter((p) => trasPartido(p, momento));
+      jugados.sort(
+        (a, b) => (b.fecha ?? "").localeCompare(a.fecha ?? "") || b.jornadaNumero - a.jornadaNumero,
+      );
+      return {
+        categoria,
+        partidos: propios.filter(
+          (p) => p.fecha && p.fecha >= semana.desde && p.fecha <= `${semana.hasta}T99`,
+        ),
+        proximo: futuros[0] ?? null,
+        ultimo: jugados[0] ?? null,
+      };
+    }),
   };
 }

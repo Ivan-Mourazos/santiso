@@ -1,5 +1,6 @@
 import { schema as s, type ConexionDb } from "@santiso/db";
 import { crearDbPrueba } from "@santiso/db/testing";
+import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { pantallaJornada } from "./jornada";
 
@@ -144,6 +145,39 @@ afterEach(() => {
 });
 
 describe("pantallaJornada", () => {
+  it("encuentra próximo y último aunque no haya partido esta semana", async () => {
+    const c = (await pantallaJornada("2026-09-30", "2026-09-30T12:00")).categorias[0]!;
+    expect(c.proximo?.id).toBe("siguiente");
+    expect(c.ultimo?.id).toBe("jugado");
+    expect(c.proximo?.preparacion).toEqual({ convocatoria: null, titulares: 0, capitan: false });
+  });
+
+  it("distingue convocatoria previa de acta y cuenta solo titulares guardados", async () => {
+    await conexion.db.insert(s.partidoConvocatorias).values({ partidoId: "siguiente" });
+    await conexion.db
+      .insert(s.partidoConvocados)
+      .values({ partidoId: "siguiente", jugadorId: "ana" });
+    await conexion.db.insert(s.partidoAlineaciones).values([
+      { partidoId: "siguiente", jugadorId: "ana", titular: true, capitan: true },
+      { partidoId: "siguiente", jugadorId: "bea", titular: false },
+    ]);
+    const c = (await pantallaJornada("2026-09-30", "2026-09-30T12:00")).categorias[0]!;
+    expect(c.proximo?.preparacion).toEqual({ convocatoria: 1, titulares: 1, capitan: true });
+    expect(c.proximo?.acta).toBeNull();
+  });
+
+  it("conserva un partido sin fecha y no elige cancelados como próximos", async () => {
+    await conexion.db.update(s.partidos).set({ fecha: null }).where(eq(s.partidos.id, "siguiente"));
+    const c = (await pantallaJornada("2026-09-30", "2026-09-30T12:00")).categorias[0]!;
+    expect(c.proximo?.id).toBe("siguiente");
+    await conexion.db
+      .update(s.partidos)
+      .set({ estado: "cancelado" })
+      .where(eq(s.partidos.id, "siguiente"));
+    expect(
+      (await pantallaJornada("2026-09-30", "2026-09-30T12:00")).categorias[0]!.proximo,
+    ).toBeNull();
+  });
   it("trae los partidos del club de esa semana y temporada, por categoría", async () => {
     const pantalla = await pantallaJornada("2026-09-23");
     expect(pantalla.semana).toEqual({ desde: "2026-09-21", hasta: "2026-09-27" });
