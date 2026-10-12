@@ -98,6 +98,7 @@ export function StudioShell({
   const showCategory = [
     "calendario",
     "clasificacion",
+    "liga",
     "estadisticas",
     "jugadores",
     "tecnicos",

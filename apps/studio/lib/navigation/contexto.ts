@@ -3,6 +3,7 @@ export const SECCIONES = [
   { id: "calendario", label: "Calendario", grupo: "Competición" },
   { id: "clasificacion", label: "Clasificación", grupo: "Competición" },
   { id: "estadisticas", label: "Estadísticas", grupo: "Competición" },
+  { id: "liga", label: "Goleadores y tarjetas", grupo: "Competición" },
   { id: "jugadores", label: "Jugadores", grupo: "Plantilla" },
   { id: "tecnicos", label: "Cuerpo técnico", grupo: "Plantilla" },
   { id: "directiva", label: "Directiva", grupo: "Plantilla" },

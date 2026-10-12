@@ -5,6 +5,7 @@ const SECCIONES = [
   "calendario",
   "clasificacion",
   "estadisticas",
+  "liga",
   "jugadores",
   "tecnicos",
   "directiva",

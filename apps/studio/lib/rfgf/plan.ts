@@ -17,6 +17,8 @@ export interface PartidoLocal {
   campoId?: string | null;
   /** Ya se sabe quién lo arbitró. */
   conArbitro?: boolean;
+  /** Sus goles y tarjetas ya están en las tablas de la liga. */
+  conEventos?: boolean;
 }
 
 /** Como mucho, estas jornadas por pasada: sin prisa y sin cargar la web de la federación. */
@@ -59,11 +61,11 @@ const VENTAJA_CRUCE = 0.2;
  * no se exige que los dos casen perfectos: como cada equipo juega una vez por jornada, basta
  * con que el cruce destaque claramente. `null` si no hay ninguno claro o si valdrían dos.
  */
-export function partidoDeActa(
+export function partidoDeActa<T extends PartidoLocal>(
   local: string,
   visitante: string,
-  candidatos: readonly PartidoLocal[],
-): PartidoLocal | null {
+  candidatos: readonly T[],
+): T | null {
   const puntuados = candidatos
     .map((partido) => {
       const l = parecido(local, partido.local);
@@ -76,4 +78,15 @@ export function partidoDeActa(
   if (!mejor) return null;
   if (segundo && mejor.total - segundo.total < VENTAJA_CRUCE) return null;
   return mejor.partido;
+}
+
+/**
+ * La jornada jugada más antigua con algún partido cuyos goles y tarjetas aún no están en las
+ * tablas de la liga. De una en una: son siete actas cada vez y no hay prisa.
+ */
+export function jornadaSinEventos(partidos: readonly PartidoLocal[], ahora: string): number | null {
+  const jornadas = partidos
+    .filter((p) => p.conMarcador && !p.conEventos && p.fecha && p.fecha <= ahora)
+    .map((p) => p.jornada);
+  return jornadas.length ? Math.min(...jornadas) : null;
 }

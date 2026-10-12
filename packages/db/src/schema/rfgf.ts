@@ -1,4 +1,4 @@
-import { index, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { partidos } from "./calendario";
 import { checkEnum, marcasTiempo } from "./comunes";
 import { competiciones } from "./competicion";
@@ -42,6 +42,8 @@ export const rfgfActas = sqliteTable(
     estado: text("estado", { enum: ESTADOS_ACTA_RFGF }).notNull(),
     /** Qué se guardó o qué falló, en una frase. */
     detalle: text("detalle").notNull().default(""),
+    /** Ya se apuntaron sus goles y tarjetas en `liga_eventos`. */
+    eventos: integer("eventos", { mode: "boolean" }).notNull().default(false),
     ...marcasTiempo(),
   },
   (t) => [
