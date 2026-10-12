@@ -15,15 +15,15 @@
 .escudo[data-oscuro]::before {
   content: "";
   position: absolute;
-  inset: -6%;
+  inset: -28%;
   z-index: -1;
-  border-radius: 50%;
-  background: radial-gradient(
-    closest-side,
-    rgb(255 255 255 / 48%) 0%,
-    rgb(255 255 255 / 24%) 55%,
-    transparent 100%
-  );
+  /* Tres manchas de luz descentradas y desenfocadas: no dibujan un círculo, se funden con el
+     fondo como un foco que cae desde arriba a la izquierda. */
+  background:
+    radial-gradient(ellipse 44% 40% at 45% 43%, rgb(255 255 255 / 50%), transparent 72%),
+    radial-gradient(ellipse 56% 42% at 60% 62%, rgb(255 255 255 / 20%), transparent 74%),
+    radial-gradient(ellipse 34% 52% at 36% 60%, rgb(255 255 255 / 16%), transparent 72%);
+  filter: blur(22px);
 }
 
 .imagen {
