@@ -142,6 +142,66 @@ test("Axenda: 1, 2, 3 y 4 partidos ocupan portada, nombres largos y zonas segura
     }
 });
 
+/** Ningún nombre de equipo, por largo que sea, baja hasta la línea de fecha y hora. */
+async function nombresSobreLaFecha(cartel: Locator) {
+  const medidas = await cartel.evaluate((el) => {
+    const cando = el.querySelector("[data-cando]")!.getBoundingClientRect();
+    return [...el.querySelectorAll("[data-nombre-equipo]")].map((nombre) => {
+      const rango = document.createRange();
+      rango.selectNodeContents(nombre);
+      const cajas = [...rango.getClientRects()];
+      return {
+        texto: nombre.textContent,
+        sobra: cando.top - Math.max(...cajas.map((c) => c.bottom)),
+        ancho: Math.max(...cajas.map((c) => c.right)) - Math.min(...cajas.map((c) => c.left)),
+        columna: nombre.getBoundingClientRect().width,
+      };
+    });
+  });
+  for (const m of medidas) {
+    expect(m.sobra, `«${m.texto}» pisa la fecha`).toBeGreaterThanOrEqual(0);
+    expect(m.ancho, `«${m.texto}» se sale de su columna`).toBeLessThanOrEqual(m.columna + 1);
+  }
+}
+
+test("Partido: nombres de rival cortos y largos nunca pisan la fecha", async ({ page }) => {
+  test.setTimeout(120000);
+  await page.goto("/render/cartel");
+  await page.waitForFunction(() => typeof window.__pintarCartel === "function");
+  for (const formato of ["publicacion", "historia"] as const)
+    for (const nombre of [
+      "Atlético Éter",
+      "S.D.C. Recesende",
+      "A.C.U.D. Camporrapado",
+      "C.D. Compañía de María",
+      "Sociedad Deportiva Cultural Recesende de Teo",
+    ]) {
+      const p: PeticionCartel = {
+        plantilla: "partido",
+        formato,
+        composicion: "diagonal",
+        datos: {
+          ...logos,
+          local: club,
+          visitante: { ...rival(0), nombre },
+          categoria: "Veteranos",
+          competicion: "Veteranos 1ª Galicia - Grupo 2",
+          jornada: "6",
+          fecha: "2026-10-17",
+          hora: "18:00",
+          campo: "Municipal de Santiso",
+          localidad: "Arcediago (Santiso)",
+          contexto,
+        },
+      };
+      await page.evaluate((p) => window.__pintarCartel?.(p), p);
+      const cartel = page.locator("[data-listo] [data-cartel]");
+      await expect(cartel).toContainText(nombre);
+      await nombresSobreLaFecha(cartel);
+      await sinDesbordes(cartel, formato === "historia");
+    }
+});
+
 test("Partido: sin fecha, contexto completo, parcial o ausente", async ({
   page,
 }, info) => {
@@ -185,6 +245,7 @@ test("Partido: sin fecha, contexto completo, parcial o ausente", async ({
           ),
         });
         await sinDesbordes(cartel, formato === "historia");
+        await nombresSobreLaFecha(cartel);
         const alto = await cartel.evaluate((el) => el.getBoundingClientRect().height);
         expect(alto).toBe(formato === "historia" ? 1920 : 1350);
         await cartel.screenshot({
