@@ -1,0 +1,47 @@
+.pagina {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: calc(1.5rem + env(safe-area-inset-top)) 1rem calc(1.5rem + env(safe-area-inset-bottom));
+  background: var(--ui-bg, #0b0b0c);
+  color: var(--ui-text, #f5f5f5);
+  font-family: var(--ui-font-body);
+}
+.tarjeta {
+  width: min(100%, 24rem);
+  display: grid;
+  gap: 1rem;
+  padding: 1.75rem 1.5rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-panel-face, var(--ui-surface, #171717));
+  box-shadow: var(--ui-panel-shadow, none);
+}
+.logo {
+  justify-self: center;
+  border-radius: 16px;
+}
+.tarjeta h1 {
+  margin: 0;
+  text-align: center;
+  font: 800 1.5rem var(--ui-font-title);
+}
+.detalle {
+  margin: 0 0 0.25rem;
+  text-align: center;
+  color: var(--ui-muted);
+}
+.error {
+  margin: 0;
+  color: var(--ui-danger, #ff6b6b);
+  font-weight: 700;
+}
+.tarjeta input {
+  min-height: 48px;
+  /* 16 px: por debajo, Safari hace zoom al enfocar. */
+  font-size: 16px;
+}
+.tarjeta button {
+  min-height: 48px;
+  width: 100%;
+}

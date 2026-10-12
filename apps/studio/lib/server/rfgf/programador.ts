@@ -1,5 +1,6 @@
 import "server-only";
 
+import { comoSistema } from "@/lib/server/db";
 import { crearDescargador } from "./descargador";
 import { sincronizarTodo } from "./sincronizar";
 
@@ -23,7 +24,10 @@ export function iniciarProgramadorRfgf() {
     const completa = pasada % PASADAS_POR_DIA === 0;
     pasada += 1;
     try {
-      const resumenes = await sincronizarTodo(crearDescargador(), new Date(), !completa);
+      // No viene de ninguna petición: se ejecuta como el propio servidor.
+      const resumenes = await comoSistema(() =>
+        sincronizarTodo(crearDescargador(), new Date(), !completa),
+      );
       for (const r of resumenes) {
         if (r.actas || r.resultados || r.revisar.length || r.errores.length) {
           console.info(

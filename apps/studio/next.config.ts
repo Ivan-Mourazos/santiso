@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
     // `leerImagenDeFormulario`). El límite cuenta la sobrecarga de multipart, de ahí el margen.
     // El motivo del 1 MB por defecto (recursos y DoS) no aplica: escuchamos solo en 127.0.0.1.
     serverActions: { bodySizeLimit: "16mb" },
+    // Con `proxy.ts` Next guarda en memoria el cuerpo de cada petición y por defecto lo corta
+    // a los 10 MB: una imagen original o un acta en varias capturas pasan de ahí.
+    proxyClientMaxBodySize: "64mb",
   },
 };
 

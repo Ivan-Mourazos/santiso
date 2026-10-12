@@ -1,3 +1,4 @@
+import { respuestaSinSesion } from "@/lib/server/acceso/sesion";
 import { MAX_CAPTURAS } from "@/lib/actas/capturas";
 import { sinPartidosRepetidos } from "@/lib/importar/repetidos";
 
@@ -207,6 +208,8 @@ async function generateWithFallback(
 }
 
 export async function POST(request: Request) {
+  const sinSesion = await respuestaSinSesion();
+  if (sinSesion) return sinSesion;
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return Response.json(

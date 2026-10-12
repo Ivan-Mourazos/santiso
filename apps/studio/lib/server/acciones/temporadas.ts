@@ -7,12 +7,15 @@ import type { TemporadaDto } from "@/lib/dto";
 import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
 import { listarTemporadas } from "@/lib/server/consultas/temporadas";
 import { obtenerDb } from "@/lib/server/db";
+import { soloAdmin } from "@/lib/server/acceso/permisos";
 
 export async function cargarTemporadas(): Promise<Resultado<TemporadaDto[]>> {
   return capturar("No se pudieron cargar las temporadas.", listarTemporadas);
 }
 
 export async function crearTemporada(nombre: string): Promise<Resultado<TemporadaDto>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
   let normalizado: string;
   try {
     normalizado = normalizarNombreTemporada(nombre);
@@ -55,6 +58,8 @@ export async function crearTemporada(nombre: string): Promise<Resultado<Temporad
  * `temporadas_una_activa_uq` rechaza que haya dos activas ni siquiera a mitad de operación.
  */
 export async function activarTemporada(id: string): Promise<Resultado<null>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
   const { db } = await obtenerDb();
   const [existe] = await db
     .select({ id: schema.temporadas.id })

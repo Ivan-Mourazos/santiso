@@ -1,3 +1,4 @@
+import { respuestaSinSesion } from "@/lib/server/acceso/sesion";
 import { MAX_CAPTURAS } from "@/lib/actas/capturas";
 
 function stripJsonFence(value: string) {
@@ -10,6 +11,8 @@ function stripJsonFence(value: string) {
 }
 
 export async function POST(request: Request) {
+  const sinSesion = await respuestaSinSesion();
+  if (sinSesion) return sinSesion;
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return Response.json({ error: "Falta GEMINI_API_KEY" }, { status: 500 });

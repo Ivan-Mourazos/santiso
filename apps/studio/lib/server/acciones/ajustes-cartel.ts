@@ -9,6 +9,7 @@ import { leerAjuste } from "@/lib/server/consultas/ajustes";
 import { listarPatrocinadores } from "@/lib/server/consultas/patrocinadores";
 import { obtenerDb } from "@/lib/server/db";
 import { guardarImagenOpcional } from "@/lib/server/imagen";
+import { soloAdmin } from "@/lib/server/acceso/permisos";
 
 const ORDEN_POR_DEFECTO = "xunta_izquierda";
 
@@ -47,6 +48,8 @@ export async function guardarLogoAjuste(
   clave: string,
   formulario: FormData,
 ): Promise<Resultado<string>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
   if (!esClaveAjuste(clave)) return fallo("Ajuste desconocido.");
   const imagen = await guardarImagenOpcional(formulario, "imagen", "cartel");
   if (!imagen.ok) return imagen;
@@ -61,6 +64,8 @@ export async function guardarLogoAjuste(
 }
 
 export async function guardarOrdenLogos(orden: string): Promise<Resultado<null>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
   if (!esValorDe(ORDENES_LOGOS, orden)) return fallo("Orden de logos desconocido.");
   const resultado = await capturar("No se pudo guardar el orden de los logos.", async () => {
     await escribirAjuste("cartel.orden_logos", orden);

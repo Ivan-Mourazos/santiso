@@ -99,6 +99,30 @@ describe("convocatorias previas", () => {
   });
 });
 
+describe("acceso", () => {
+  it("usuario único, rol conocido y sesiones que se van con su usuario", async () => {
+    const { db } = conexion;
+    const base = {
+      usuario: "mou",
+      nombre: "Iván",
+      rol: "admin",
+      claveHash: "scrypt$00$00",
+    } as const;
+    const [u] = await db.insert(s.usuarios).values(base).returning();
+    expect(u).toMatchObject({ activo: true });
+    await rechaza(db.insert(s.usuarios).values({ ...base, nombre: "Otro" }));
+    await rechaza(
+      db.insert(s.usuarios).values({ ...base, usuario: "otro", rol: "jefe" as unknown as "admin" }),
+    );
+    const sesion = { id: "huella", usuarioId: u!.id, expiraEn: "2099-01-01T00:00:00.000Z" };
+    await db.insert(s.sesiones).values(sesion);
+    await rechaza(db.insert(s.sesiones).values(sesion));
+    await rechaza(db.insert(s.sesiones).values({ ...sesion, id: "otra", usuarioId: "nadie" }));
+    await db.delete(s.usuarios).where(eq(s.usuarios.id, u!.id));
+    expect(await db.select().from(s.sesiones)).toHaveLength(0);
+  });
+});
+
 describe("temporadas", () => {
   it("solo admite una temporada activa", async () => {
     const { db } = conexion;

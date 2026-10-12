@@ -7,6 +7,7 @@ import { grupoDeEnlace } from "@/lib/rfgf/enlace";
 import { obtenerDb } from "@/lib/server/db";
 import { crearDescargador } from "@/lib/server/rfgf/descargador";
 import { sincronizarTodo } from "@/lib/server/rfgf/sincronizar";
+import { soloAdmin } from "@/lib/server/acceso/permisos";
 
 export interface ActaPorRevisar {
   codActa: string;
@@ -89,6 +90,8 @@ export async function guardarEnlaceRfgf(
   competicionId: string,
   enlace: string,
 ): Promise<Resultado<null>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
   const texto = enlace.trim();
   const { db } = await obtenerDb();
   if (!texto) {

@@ -40,6 +40,8 @@ const Graphics = dynamic(() => import("@/components/admin/ajustes/AjustesGrafico
 const Stats = dynamic(() => import("@/components/admin/estadisticas/AdminEstadisticas"), {
   loading,
 });
+const Users = dynamic(() => import("@/components/admin/acceso/AdminUsuarios"), { loading });
+const Account = dynamic(() => import("@/components/admin/acceso/MiCuenta"), { loading });
 const subscribeHydration = () => () => {};
 const clientReady = () => true;
 const serverReady = () => false;
@@ -148,6 +150,8 @@ export function StudioSection({ section }: { section: Seccion }) {
         </>
       )}
       {section === "ajustes-graficos" && <Graphics showToast={showToast} />}
+      {section === "usuarios" && <Users {...feedback} />}
+      {section === "cuenta" && <Account showToast={showToast} />}
     </div>
   );
 }

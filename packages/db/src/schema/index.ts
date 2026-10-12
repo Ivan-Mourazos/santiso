@@ -6,3 +6,4 @@ export * from "./plantilla";
 export * from "./multas";
 export * from "./convocatoria";
 export * from "./rfgf";
+export * from "./acceso";

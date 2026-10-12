@@ -1,5 +1,6 @@
 import "server-only";
 import { chromium, type Browser } from "playwright";
+import { COOKIE_SESION } from "@/lib/acceso/config";
 import { medidasDe, type PeticionCartel } from "@/lib/cartel2/modelo";
 
 declare global {
@@ -22,9 +23,14 @@ async function navegador(): Promise<Browser> {
 /**
  * PNG del cartel a doble resolución (2160 × 2700), fotografiando la página
  * `/render/cartel` en un Chromium local. `origen` es el del propio servidor: las imágenes
- * (`/media/...`) y las fuentes se sirven desde él; nada sale a internet.
+ * (`/media/...`) y las fuentes se sirven desde él; nada sale a internet. `sesion` es la cookie
+ * de quien pide el cartel: con el acceso encendido, sin ella el servidor no le serviría nada.
  */
-export async function renderizarCartel(origen: string, peticion: PeticionCartel): Promise<Buffer> {
+export async function renderizarCartel(
+  origen: string,
+  peticion: PeticionCartel,
+  sesion?: string,
+): Promise<Buffer> {
   const medidas = medidasDe(
     peticion.plantilla,
     "formato" in peticion ? peticion.formato : undefined,
@@ -36,6 +42,11 @@ export async function renderizarCartel(origen: string, peticion: PeticionCartel)
     deviceScaleFactor: 2,
   });
   try {
+    if (sesion) {
+      await contexto.addCookies([
+        { name: COOKIE_SESION, value: sesion, url: origen, httpOnly: true, sameSite: "Lax" },
+      ]);
+    }
     const pagina = await contexto.newPage();
     await pagina.goto(`${origen}/render/cartel`, { waitUntil: "domcontentloaded" });
     await pagina.waitForFunction(() => typeof window.__pintarCartel === "function", null, {

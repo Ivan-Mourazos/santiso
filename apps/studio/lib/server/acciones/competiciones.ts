@@ -14,6 +14,7 @@ import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
 import { listarCompeticiones, reglasDeCompeticion } from "@/lib/server/consultas/competiciones";
 import { temporadaActivaId } from "@/lib/server/consultas/temporadas";
 import { obtenerDb } from "@/lib/server/db";
+import { soloAdmin } from "@/lib/server/acceso/permisos";
 
 export async function cargarCompeticiones(): Promise<Resultado<CompeticionDto[]>> {
   return capturar("No se pudieron cargar las competiciones.", listarCompeticiones);
@@ -29,6 +30,8 @@ export async function crearCompeticion(entrada: {
   categoria: string;
   formato: string;
 }): Promise<Resultado<CompeticionDto>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
   const nombre = entrada.nombre.trim();
   if (!nombre) return fallo("El nombre es obligatorio.", { nombre: "Obligatorio" });
 
@@ -86,6 +89,8 @@ export async function crearCompeticion(entrada: {
 
 /** Borra una competición vacía. Con jornadas se niega: el borrado en cascada se llevaría partidos. */
 export async function borrarCompeticion(id: string): Promise<Resultado<null>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
   const { db } = await obtenerDb();
   const [jornada] = await db
     .select({ id: schema.jornadas.id })
@@ -104,6 +109,8 @@ export async function guardarReglas(
   competicionId: string,
   reglas: unknown,
 ): Promise<Resultado<null>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
   const analizado = reglasClasificacionSchema.safeParse(reglas);
   if (!analizado.success) return fallo("Las reglas de clasificación no son válidas.");
 

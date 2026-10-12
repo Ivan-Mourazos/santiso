@@ -1,3 +1,6 @@
+import { respuestaSinSesion } from "@/lib/server/acceso/sesion";
+import { cookies } from "next/headers";
+import { COOKIE_SESION } from "@/lib/acceso/config";
 import { leerPeticion } from "@/lib/cartel2/esquema";
 import { renderizarCartel } from "@/lib/server/cartel2/render";
 
@@ -13,12 +16,16 @@ function origenLocal(request: Request) {
 
 /** Exporta un cartel del motor nuevo a PNG. */
 export async function POST(request: Request) {
+  const sinSesion = await respuestaSinSesion();
+  if (sinSesion) return sinSesion;
   const peticion = leerPeticion(await request.json().catch(() => null));
   if (!peticion) {
     return Response.json({ error: "Datos del cartel no válidos." }, { status: 400 });
   }
   try {
-    const png = await renderizarCartel(origenLocal(request), peticion);
+    // El Chromium que fotografía el cartel entra con la sesión de quien lo pide.
+    const sesion = (await cookies()).get(COOKIE_SESION)?.value;
+    const png = await renderizarCartel(origenLocal(request), peticion, sesion);
     return new Response(new Uint8Array(png), {
       headers: { "content-type": "image/png", "cache-control": "no-store" },
     });
