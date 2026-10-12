@@ -33,7 +33,7 @@ import {
 import { partidosDeJornada } from "@/lib/rfgf/jornada";
 import { eventosDeFicha } from "@/lib/liga/eventos";
 import {
-  jornadaSinEventos,
+  jornadasSinEventos,
   jornadasPendientes,
   leFaltaAlgo,
   partidoDeActa,
@@ -421,12 +421,11 @@ export async function sincronizarCompeticion(
   // Con los marcadores ya puestos, a las jornadas solo les falta, si acaso, el acta del Santiso.
   if (cambiosPdf > 0) partidos = await partidosDeCompeticion(competicionId);
 
-  // Además de lo pendiente, con la cadencia de los horarios se va completando una jornada ya
-  // jugada cuyos goles y tarjetas aún no estén en las tablas de la liga.
-  const atrasada = mirarHorarios ? jornadaSinEventos(partidos, horaLocal(ahora)) : null;
+  // Además de lo pendiente, con la cadencia de los horarios se van completando las jornadas
+  // ya jugadas cuyos goles y tarjetas aún no estén en las tablas de la liga.
   const jornadasActas = new Set([
     ...jornadasPendientes(partidos, horaLocal(ahora), desde),
-    ...(atrasada === null ? [] : [atrasada]),
+    ...(mirarHorarios ? jornadasSinEventos(partidos, horaLocal(ahora)) : []),
   ]);
   for (const jornada of jornadasActas) {
     try {
@@ -525,4 +524,14 @@ export async function sincronizarTodo(
   } finally {
     enMarcha = false;
   }
+}
+
+/** Cuándo se miró la federación por última vez, en cualquier competición. `null` si nunca. */
+export async function ultimaComprobacion(): Promise<Date | null> {
+  const { db } = await obtenerDb();
+  const [fila] = await db
+    .select({ ultima: sql<string | null>`max(${schema.rfgfCompeticiones.comprobadoEn})` })
+    .from(schema.rfgfCompeticiones);
+  const fecha = fila?.ultima ? new Date(fila.ultima) : null;
+  return fecha && !Number.isNaN(fecha.getTime()) ? fecha : null;
 }

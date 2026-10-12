@@ -80,13 +80,34 @@ export function partidoDeActa<T extends PartidoLocal>(
   return mejor.partido;
 }
 
+/** Jornadas ya jugadas que se ponen al día en cada pasada: catorce actas como mucho. */
+export const JORNADAS_ATRASADAS = 2;
+
 /**
- * La jornada jugada más antigua con algún partido cuyos goles y tarjetas aún no están en las
- * tablas de la liga. De una en una: son siete actas cada vez y no hay prisa.
+ * Las jornadas jugadas más antiguas con algún partido cuyos goles y tarjetas aún no están en
+ * las tablas de la liga. Pocas cada vez: son siete actas por jornada y no hay prisa.
  */
-export function jornadaSinEventos(partidos: readonly PartidoLocal[], ahora: string): number | null {
-  const jornadas = partidos
-    .filter((p) => p.conMarcador && !p.conEventos && p.fecha && p.fecha <= ahora)
-    .map((p) => p.jornada);
-  return jornadas.length ? Math.min(...jornadas) : null;
+export function jornadasSinEventos(partidos: readonly PartidoLocal[], ahora: string): number[] {
+  const jornadas = new Set(
+    partidos
+      .filter((p) => p.conMarcador && !p.conEventos && p.fecha && p.fecha <= ahora)
+      .map((p) => p.jornada),
+  );
+  return [...jornadas].sort((a, b) => a - b).slice(0, JORNADAS_ATRASADAS);
+}
+
+/** Hora del día a la que se hace la comprobación diaria de la federación. */
+export const HORA_PASADA_DIARIA = 21;
+
+/**
+ * Si toca la comprobación diaria. Se hace una al día, a partir de las 21:00: los martes ya ha
+ * cerrado el plazo para cambiar horarios (20:00) y el fin de semana ya han acabado los partidos
+ * de la tarde. Si el ordenador estaba apagado a esa hora, se hace en cuanto arranca. `ultima`
+ * es la última comprobación de cualquier tipo, también la pedida a mano.
+ */
+export function tocaPasadaDiaria(ahora: Date, ultima: Date | null): boolean {
+  const frontera = new Date(ahora);
+  frontera.setHours(HORA_PASADA_DIARIA, 0, 0, 0);
+  if (ahora < frontera) frontera.setDate(frontera.getDate() - 1);
+  return !ultima || ultima < frontera;
 }

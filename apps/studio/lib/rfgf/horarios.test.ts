@@ -9,7 +9,7 @@ import {
   nombreDeArbitro,
   tocaMirarHorarios,
 } from "./horarios";
-import type { PartidoLocal } from "./plan";
+import { jornadasSinEventos, tocaPasadaDiaria, type PartidoLocal } from "./plan";
 
 const partido = (jornada: number, fecha: string | null, extra: Partial<PartidoLocal> = {}) =>
   ({
@@ -97,5 +97,28 @@ describe("horarios de la federación", () => {
       partido(4, "2026-10-18T17:00"),
     ];
     expect(jornadasSinArbitro(partidos, "2026-10-12T22:00", "2026-08-28T22:00")).toEqual([2, 1]);
+  });
+
+  it("pone al día dos jornadas viejas cada vez, las más antiguas primero", () => {
+    const jugado = (jornada: number, conEventos = false) =>
+      partido(jornada, `2026-09-${10 + jornada}T17:00`, { conMarcador: true, conEventos });
+    const partidos = [jugado(3), jugado(1), jugado(2, true), jugado(4), partido(5, "2026-10-18")];
+    expect(jornadasSinEventos(partidos, "2026-10-12T22:00")).toEqual([1, 3]);
+  });
+
+  it("la comprobación diaria se hace una vez, a partir de las 21:00", () => {
+    const el = (dia: number, hora: number, minuto = 0) => new Date(2026, 9, dia, hora, minuto);
+    // Nunca se miró: toca.
+    expect(tocaPasadaDiaria(el(13, 10), null)).toBe(true);
+    // Hecha ayer a las 21:05: hoy no toca hasta las 21:00.
+    expect(tocaPasadaDiaria(el(13, 20, 59), el(12, 21, 5))).toBe(false);
+    expect(tocaPasadaDiaria(el(13, 21, 0), el(12, 21, 5))).toBe(true);
+    // Ya hecha hoy después de las 21:00: no se repite.
+    expect(tocaPasadaDiaria(el(13, 23), el(13, 21, 10))).toBe(false);
+    // El ordenador estuvo apagado anoche: se hace por la mañana, al arrancar.
+    expect(tocaPasadaDiaria(el(13, 9), el(11, 21, 5))).toBe(true);
+    // Mirar a mano por la tarde no quita la de la noche; hacerlo después de las 21:00, sí.
+    expect(tocaPasadaDiaria(el(13, 21, 30), el(13, 18))).toBe(true);
+    expect(tocaPasadaDiaria(el(13, 22), el(13, 21, 30))).toBe(false);
   });
 });
