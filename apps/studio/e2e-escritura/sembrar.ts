@@ -444,14 +444,25 @@ async function sembrar() {
     categoria: "Senior",
     formato: "eliminatoria",
     temporadaId: activa.id,
-    orden: 9,
+    // Por delante de la liga: en Senior, con dos competiciones, la pantalla abre la segunda
+    // (`pickDefaultCompetitionId`), y las demás pruebas cuentan con que sea «Liga 26/27».
+    orden: -1,
   });
   const once = Array.from({ length: 11 }, (_, i) => `vestiario-jugador-${i}`);
   await db
     .insert(schema.jugadores)
     .values(once.map((id, i) => ({ id, nombre: `Jugador ${i} Vestiario Ficticio` })));
-  const pasosVestiario = ["sin-nada", "convocado", "once", "jugado", "resultado", "acta"];
-  for (const [i, paso] of pasosVestiario.entries()) {
+  // «jugado» es un partido cuya hora ya pasó y sigue sin marcador (la base no admite un
+  // finalizado sin goles): por eso va en el pasado. Cada uno, en su propia semana.
+  const pasosVestiario = [
+    ["sin-nada", "2099-06-07"],
+    ["convocado", "2099-06-14"],
+    ["once", "2099-06-21"],
+    ["jugado", "2001-06-03"],
+    ["resultado", "2099-07-05"],
+    ["acta", "2099-07-12"],
+  ] as const;
+  for (const [i, [paso, dia]] of pasosVestiario.entries()) {
     const partidoId = `vestiario-${paso}`;
     await db
       .insert(schema.jornadas)
@@ -461,9 +472,7 @@ async function sembrar() {
       jornadaId: `vestiario-j${i + 1}`,
       equipoLocalId: "vestiario-propio",
       equipoVisitanteId: "vestiario-rival",
-      // «jugado» es un partido cuya hora ya pasó y sigue sin marcador: la base no admite un
-      // finalizado sin goles.
-      fecha: paso === "jugado" ? "2001-06-03T17:00" : `2099-06-${String(7 + i * 7).padStart(2, "0")}T17:00`,
+      fecha: `${dia}T17:00`,
       ...(i >= 4 ? { estado: "finalizado" as const, golesLocal: 0, golesVisitante: 0 } : {}),
     });
     if (i >= 1) {
