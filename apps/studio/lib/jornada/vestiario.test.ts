@@ -52,7 +52,7 @@ describe("mesa de trabajo", () => {
   });
   it("no inventa confirmaciones de exportación ni de publicación", () => {
     const p = partido({ preparacion: { convocatoria: 18, titulares: 11, capitan: true } });
-    expect(progresoPartido(p, ahora).pasos.at(-1)?.estado).toBe("Para compartir");
+    expect(progresoPartido(p, ahora).pasos.at(-1)?.estado).toBe("");
   });
   it("no exige resultado al arrancar: concede dos horas y excluye aplazados", () => {
     expect(trasPartido(partido(), "2026-10-18T17:01")).toBe(false);
