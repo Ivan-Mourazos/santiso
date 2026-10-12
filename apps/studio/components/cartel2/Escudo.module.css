@@ -7,6 +7,25 @@
   filter: drop-shadow(0 28px 34px rgb(0 0 0 / 55%)) drop-shadow(0 6px 8px rgb(0 0 0 / 35%));
 }
 
+/* Escudo oscuro (el del Atlético Éter es negro): sobre el fondo del cartel desaparecía. Lleva
+   detrás una placa de luz y un filo claro pegado a la silueta. El escudo no se toca. */
+.escudo[data-oscuro] {
+  filter: drop-shadow(0 0 2px rgb(255 255 255 / 75%)) drop-shadow(0 6px 8px rgb(0 0 0 / 35%));
+}
+.escudo[data-oscuro]::before {
+  content: "";
+  position: absolute;
+  inset: -6%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgb(255 255 255 / 48%) 0%,
+    rgb(255 255 255 / 24%) 55%,
+    transparent 100%
+  );
+}
+
 .imagen {
   display: block;
   width: 100%;

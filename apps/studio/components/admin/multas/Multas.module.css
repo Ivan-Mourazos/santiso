@@ -263,15 +263,24 @@
   text-align: right;
 }
 
+/* Cifras y cabeceras nunca se parten («MULT/AS», «5 / €»): si falta ancho, lo cede el nombre. */
+.tabla th,
+.tabla td {
+  white-space: nowrap;
+}
+
 .tabla th:first-child {
+  width: 100%;
   text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .tabla thead th {
   color: var(--ui-muted, #aaa);
   font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
 }
 
 .tabla td[data-debe="true"] {
@@ -347,6 +356,15 @@
 
 /* Táctil: campos sin zoom de iOS y objetivos de 44 px. */
 @media (pointer: coarse) {
+  /* Toda la etiqueta es el objetivo, no solo el cuadradito. */
+  .casilla {
+    min-height: 44px;
+    padding: 0 0.35rem;
+  }
+  .casilla input {
+    width: 20px;
+    height: 20px;
+  }
   .normas input:not([type="checkbox"]),
   .filtroPersona {
     min-height: 44px;

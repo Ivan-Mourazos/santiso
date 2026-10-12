@@ -123,7 +123,7 @@ export default function AdminConvocatoria({
   async function generar() {
     if (!partido || !pantalla || invalid) return;
     const turno = generacion.current;
-    if (!bloqueada && (!persistida || sucio) && !(await guardar())) return;
+    // Ver el cartel no guarda nada: se pinta con lo que hay en pantalla.
     const peticion = peticionDeConvocatoria(categoria, partido, pantalla.jugadores, c, {
       institucionales: (recursos.xuntaIsLeft
         ? [recursos.xunta, recursos.rfgf]
@@ -320,7 +320,7 @@ export default function AdminConvocatoria({
                 })
               }
             >
-              Pasar a alineación
+              {!persistida || sucio ? "Guardar y pasar a alineación" : "Pasar a alineación"}
             </Button>
           </div>
           <div className={s.barra} aria-label="Acciones de convocatoria">

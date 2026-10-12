@@ -29,6 +29,16 @@ test("guardar convocatoria, reabrir, exportar PNG y pasar convocados a alineaci�
   );
   await expect(page.getByLabel("Equipación", { exact: true })).toHaveValue("Amarela");
   await expect(page.getByLabel("Nota", { exact: true })).toHaveValue("Puntualidade");
+  // Ver el cartel con cambios sin guardar no los guarda.
+  await plantilla.getByRole("button", { name: "Convocar: Tres Aliñación Ficticio" }).click();
+  await expect(page.getByText("3 convocados / 3")).toBeVisible();
+  await page.getByRole("button", { name: "Ver cartel", exact: true }).click();
+  await expect(page.getByRole("img", { name: "Cartel de convocatoria" })).toBeVisible({
+    timeout: 60000,
+  });
+  page.once("dialog", (d) => d.accept());
+  await page.goto(ruta);
+  await expect(page.getByText("2 convocados / 3")).toBeVisible({ timeout: 30000 });
   await page.getByRole("button", { name: "Ver cartel", exact: true }).click();
   const cartel = page.getByRole("img", { name: "Cartel de convocatoria" });
   await expect(cartel).toBeVisible({ timeout: 60000 });
@@ -74,7 +84,7 @@ test("guardado pendiente no redirige tras abandonar convocatoria", async ({ page
     await route.fulfill({ response: respuesta });
     completar();
   });
-  await page.getByRole("button", { name: "Pasar a alineación", exact: true }).click();
+  await page.getByRole("button", { name: "Guardar y pasar a alineación", exact: true }).click();
   await recibida;
   page.once("dialog", (d) => d.accept());
   await page.getByRole("link", { name: "Jornada", exact: true }).first().click();

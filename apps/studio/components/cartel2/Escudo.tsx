@@ -1,5 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
-import type { CSSProperties } from "react";
+"use client";
+
+import { useEffect, useState, type CSSProperties } from "react";
 import e from "./Escudo.module.css";
 
 /** Id del filtro de relieve: lo define una sola vez `FiltroRelieve` dentro de cada cartel. */
@@ -49,6 +51,52 @@ export function FiltroRelieve() {
   );
 }
 
+/** Por debajo de esta luminosidad media (0–1) un escudo no se distingue del fondo del cartel. */
+const UMBRAL_OSCURO = 0.2;
+
+/**
+ * Si el escudo es oscuro (el del Atlético Éter es negro entero). `null` mientras se mira: la
+ * página que fotografía el cartel espera a que no quede ninguno por mirar.
+ */
+function useEscudoOscuro(src: string): boolean | null {
+  const [resultado, setResultado] = useState<{ src: string; oscuro: boolean } | null>(null);
+  useEffect(() => {
+    let vigente = true;
+    const imagen = new Image();
+    const terminar = (oscuro: boolean) => {
+      if (vigente) setResultado({ src, oscuro });
+    };
+    imagen.onload = () => {
+      try {
+        const lado = 32;
+        const lienzo = document.createElement("canvas");
+        lienzo.width = lado;
+        lienzo.height = lado;
+        const contexto = lienzo.getContext("2d");
+        if (!contexto) return terminar(false);
+        contexto.drawImage(imagen, 0, 0, lado, lado);
+        const { data } = contexto.getImageData(0, 0, lado, lado);
+        let luz = 0;
+        let peso = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          const alfa = data[i + 3]! / 255;
+          luz += alfa * (0.2126 * data[i]! + 0.7152 * data[i + 1]! + 0.0722 * data[i + 2]!);
+          peso += alfa;
+        }
+        terminar(peso > 0 && luz / peso / 255 < UMBRAL_OSCURO);
+      } catch {
+        terminar(false);
+      }
+    };
+    imagen.onerror = () => terminar(false);
+    imagen.src = src;
+    return () => {
+      vigente = false;
+    };
+  }, [src]);
+  return resultado?.src === src ? resultado.oscuro : null;
+}
+
 /**
  * Escudo con relieve: el fichero tal cual, con bisel de luz (filtro SVG), un brillo de arriba
  * abajo recortado con su propia forma y sombra proyectada. `className` lo coloca y lo mide.
@@ -65,16 +113,21 @@ export function Escudo({
   /** `false` si el escudo ya tiene volumen: solo lleva la sombra. */
   relieve?: boolean;
 }) {
+  const oscuro = useEscudoOscuro(src);
+  const marcas = {
+    "data-escudo-analizando": oscuro === null ? "" : undefined,
+    "data-oscuro": oscuro ? "" : undefined,
+  };
   if (!relieve) {
     return (
-      <div className={`${e.escudo} ${className ?? ""}`} style={style}>
+      <div className={`${e.escudo} ${className ?? ""}`} style={style} {...marcas}>
         <img className={e.imagen} src={src} alt="" />
       </div>
     );
   }
   const forma = { maskImage: `url("${src}")`, WebkitMaskImage: `url("${src}")` } as CSSProperties;
   return (
-    <div className={`${e.escudo} ${className ?? ""}`} style={style}>
+    <div className={`${e.escudo} ${className ?? ""}`} style={style} {...marcas}>
       <img className={e.imagen} src={src} alt="" style={{ filter: `url(#${FILTRO})` }} />
       <div className={e.brillo} style={forma} />
     </div>

@@ -36,6 +36,10 @@ export default function PaginaRenderCartel() {
     void (async () => {
       await document.fonts.ready;
       await Promise.all([...document.images].map((img) => img.decode().catch(() => undefined)));
+      // Cada escudo mira si es oscuro para ponerse una placa de luz: hasta entonces no hay foto.
+      while (vigente && document.querySelector("[data-escudo-analizando]")) {
+        await new Promise((seguir) => requestAnimationFrame(seguir));
+      }
       if (vigente) setListo(true);
     })();
     return () => {

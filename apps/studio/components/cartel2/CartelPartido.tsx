@@ -22,7 +22,7 @@ function Equipo({ equipo }: { equipo: EquipoCartel }) {
       </div>
       <div
         className={s.nombre}
-        style={{ fontSize: cuerpo(equipo.nombre, 860, equipo.propio ? 48 : 64, 32, 0.58) }}
+        style={{ fontSize: cuerpo(equipo.nombre, 860, equipo.propio ? 58 : 80, 36, 0.58) }}
       >
         {equipo.nombre}
       </div>
@@ -95,7 +95,7 @@ export function CartelPartido({
           {datos.competicion && (
             <div
               className={s.competicion}
-              style={{ fontSize: cuerpo(datos.competicion, 1800, 38, 20, 0.55) }}
+              style={{ fontSize: cuerpo(datos.competicion, 1800, 30, 20, 0.55) }}
             >
               {datos.competicion}
             </div>
