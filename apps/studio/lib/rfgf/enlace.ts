@@ -51,6 +51,14 @@ export function urlJornada(grupo: GrupoRfgf, jornada: number): string {
   return `${BASE}NFG_CmpJornada?${consulta}`;
 }
 
+/**
+ * El PDF que la propia web ofrece con «Generar PDF» en la página de una jornada: todos los
+ * partidos con su día, hora y campo y, si ya se jugaron, su marcador.
+ */
+export function urlJornadaPdf(grupo: GrupoRfgf, jornada: number): string {
+  return `${urlJornada(grupo, jornada)}&NPcd_Pdf=1`;
+}
+
 /** El PDF que la propia web ofrece con «Generar PDF» en la ficha de un partido. */
 export function urlActaPdf(grupo: GrupoRfgf, codActa: string): string {
   const consulta = new URLSearchParams({

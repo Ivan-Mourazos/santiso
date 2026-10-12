@@ -18,3 +18,5 @@ export type {
   JornadaCalendario,
   FragmentoCalendario,
 } from "./calendario";
+export { parsearJornada, parsearJornadaPdf } from "./jornada";
+export type { JornadaFederacion, PartidoJornada } from "./jornada";

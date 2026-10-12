@@ -16,6 +16,28 @@ const FICHA = new Uint8Array(
 const ENLACE =
   "https://www.futgal.es/pnfg/NPcd/NFG_VisCalendario_Vis?cod_primaria=1000120&codtemporada=22&codcompeticion=26990830&codgrupo=27576591";
 
+// El PDF de jornada de mentira es su texto tal cual: aquí se prueba qué se hace con lo leído,
+// no la lectura del PDF, que tiene sus pruebas en `@santiso/actas`.
+vi.mock("@santiso/actas", async (original) => {
+  const real = await original<typeof import("@santiso/actas")>();
+  return {
+    ...real,
+    parsearJornadaPdf: async (bytes: Uint8Array) =>
+      real.parsearJornada(new TextDecoder().decode(bytes)),
+  };
+});
+
+/** El texto del PDF de una jornada. Sin partidos, no dice nada de ninguno. */
+function pdfJornada(numero: number, partidos: string[] = []) {
+  return [
+    "TERCERA Temporada 2025-2026",
+    `Jornada ${numero}`,
+    "Resultados",
+    ...partidos,
+    "REAL FEDERACIÓN",
+  ].join("\n");
+}
+
 const anterior = process.env.SANTISO_DATA_DIR;
 afterEach(async () => {
   const conexion = await globalThis.santisoConexionDb;
@@ -36,14 +58,20 @@ function paginaJornada(local: string, visitante: string, codActa: string | null)
     <a href="NFG_VisEquipos?cod_primaria=1000119&Codigo_Equipo=2">${visitante}</a></body></html>`;
 }
 
-function descargadorDe(html: string) {
-  const pedidas = { html: [] as string[], pdf: [] as string[] };
+function descargadorDe(html: string, jornada: string[] = []) {
+  // `pdf` son las actas; los PDF de jornada se cuentan aparte.
+  const pedidas = { html: [] as string[], pdf: [] as string[], jornadas: [] as number[] };
   const descargador: DescargadorRfgf = {
     async html(url) {
       pedidas.html.push(url);
       return html;
     },
     async pdf(url) {
+      const numero = /NFG_CmpJornada\?.*CodJornada=(\d+)/.exec(url)?.[1];
+      if (numero) {
+        pedidas.jornadas.push(Number(numero));
+        return new TextEncoder().encode(pdfJornada(Number(numero), jornada));
+      }
       pedidas.pdf.push(url);
       return FICHA;
     },
@@ -222,7 +250,11 @@ it("un fallo de la federación queda anotado y se reintenta en la siguiente pasa
   };
 
   const primera = await sincronizarCompeticion(competicionId, conFallo, AHORA);
-  expect(primera?.errores).toHaveLength(1);
+  // Fallan las dos descargas: el PDF de la jornada y el del acta.
+  expect(primera?.errores).toEqual([
+    "Jornada 1 (PDF): La federación respondió 503.",
+    "EQUIPO LOCAL – EQUIPO VISITANTE: La federación respondió 503.",
+  ]);
   const db = await leer();
   expect(await db.select().from(s.rfgfActas)).toMatchObject([{ codActa: "904", estado: "error" }]);
 
@@ -231,4 +263,159 @@ it("un fallo de la federación queda anotado y se reintenta en la siguiente pasa
   expect(segunda).toMatchObject({ actas: 1, errores: [] });
   expect(pedidas.pdf).toHaveLength(1);
   expect(await db.select().from(s.rfgfActas)).toMatchObject([{ codActa: "904", estado: "guardada" }]);
+});
+
+it("del PDF de jornada salen los marcadores de todos los partidos, sin pedir sus actas", async () => {
+  const { s, competicionId, partidoId, sincronizarCompeticion, leer } = await preparar({
+    santiso: false,
+  });
+  const { descargador, pedidas } = descargadorDe(paginaJornada("EQUIPO LOCAL", "EQUIPO VISITANTE", "901"), [
+    "EQUIPO LOCAL",
+    "4 - 1",
+    "14-09-2025",
+    "12:00",
+    "EQUIPO VISITANTE",
+    "Campo: O Campo - Hierba Natural Árbitro: APELLIDO, NOMBRE",
+  ]);
+  const resumen = await sincronizarCompeticion(competicionId, descargador, AHORA);
+  expect(resumen).toMatchObject({ resultados: 1, actas: 0, errores: [], horarios: [] });
+  const db = await leer();
+  const [partido] = await db.select().from(s.partidos).where(eq(s.partidos.id, partidoId));
+  expect(partido).toMatchObject({ golesLocal: 4, golesVisitante: 1, estado: "finalizado" });
+  expect(pedidas.jornadas).toEqual([1]);
+  // Con el marcador ya puesto a la jornada no le falta nada: ni página ni actas.
+  expect(pedidas.html).toEqual([]);
+  expect(pedidas.pdf).toEqual([]);
+});
+
+/** Un partido por jugar el 21/09 a las 17:00, además del ya jugado de `preparar`. */
+async function conPartidoPorJugar() {
+  const base = await preparar({ santiso: false });
+  const db = await base.leer();
+  const s = base.s;
+  const [jornada] = await db
+    .insert(s.jornadas)
+    .values({ competicionId: base.competicionId, numero: 2 })
+    .returning();
+  const equipos = await db.select().from(s.equipos);
+  const [porJugar] = await db
+    .insert(s.partidos)
+    .values({
+      jornadaId: jornada!.id,
+      equipoLocalId: equipos[1]!.id,
+      equipoVisitanteId: equipos[0]!.id,
+      fecha: "2025-09-21T17:00",
+    })
+    .returning();
+  // El ya jugado, con marcador: así solo queda por mirar la jornada 2.
+  await db
+    .update(s.partidos)
+    .set({ golesLocal: 1, golesVisitante: 0, estado: "finalizado" })
+    .where(eq(s.partidos.id, base.partidoId));
+  const leerPartido = async () =>
+    (await db.select().from(s.partidos).where(eq(s.partidos.id, porJugar!.id)))[0]!;
+  return { ...base, db, porJugarId: porJugar!.id, leerPartido };
+}
+
+const cruce = (fecha: string, hora: string | null, campo: string) => [
+  hora ? `EQUIPO VISITANTE ${fecha}` : `EQUIPO VISITANTE ${fecha} EQUIPO LOCAL`,
+  ...(hora ? [hora, "EQUIPO LOCAL"] : []),
+  `Campo: ${campo}`,
+];
+
+it("pone al día día, hora y campo de un partido por jugar y lo cuenta en el resumen", async () => {
+  const { s, db, competicionId, sincronizarCompeticion, leerPartido } = await conPartidoPorJugar();
+  const { descargador, pedidas } = descargadorDe(
+    "",
+    cruce("20-09-2025", "16:30", "Municipal de Proba - Hierba Artificial"),
+  );
+  const resumen = await sincronizarCompeticion(competicionId, descargador, AHORA);
+  expect(pedidas.jornadas).toEqual([2]);
+  expect(resumen?.errores).toEqual([]);
+  expect(resumen?.horarios).toEqual([
+    "J2 Equipo Visitante – Equipo Local: 20/09 16:30 · Municipal de Proba",
+  ]);
+  const partido = await leerPartido();
+  expect(partido.fecha).toBe("2025-09-20T16:30");
+  // El campo no estaba en el catálogo: se da de alta y se asigna.
+  const campos = await db.select().from(s.campos);
+  expect(campos).toHaveLength(1);
+  expect(partido.campoId).toBe(campos[0]!.id);
+  const [fila] = await db.select().from(s.rfgfCompeticiones);
+  expect(fila?.resumen).toContain("20/09 16:30");
+  expect(fila?.horariosEn).toBe(AHORA.toISOString());
+});
+
+it("lo corregido a mano se respeta mientras la federación no cambie; si cambia, manda ella", async () => {
+  const { s, db, competicionId, sincronizarCompeticion, porJugarId, leerPartido } =
+    await conPartidoPorJugar();
+  const federacion = cruce("21-09-2025", "17:00", "Municipal de Proba - Hierba Artificial");
+  await sincronizarCompeticion(competicionId, descargadorDe("", federacion).descargador, AHORA);
+  // A mano, a las 19:00.
+  await db.update(s.partidos).set({ fecha: "2025-09-21T19:00" }).where(eq(s.partidos.id, porJugarId));
+
+  const masTarde = new Date(AHORA.getTime() + 4 * 3_600_000);
+  const igual = await sincronizarCompeticion(
+    competicionId,
+    descargadorDe("", federacion).descargador,
+    masTarde,
+  );
+  expect(igual?.horarios).toEqual([]);
+  expect((await leerPartido()).fecha).toBe("2025-09-21T19:00");
+
+  const cambia = await sincronizarCompeticion(
+    competicionId,
+    descargadorDe("", cruce("21-09-2025", "12:00", "Municipal de Proba - Hierba Artificial"))
+      .descargador,
+    new Date(masTarde.getTime() + 4 * 3_600_000),
+  );
+  expect(cambia?.horarios).toEqual(["J2 Equipo Visitante – Equipo Local: 21/09 12:00"]);
+  expect((await leerPartido()).fecha).toBe("2025-09-21T12:00");
+});
+
+it("sin hora publicada ni campo asignado no borra los que ya había", async () => {
+  const { competicionId, sincronizarCompeticion, leerPartido } = await conPartidoPorJugar();
+  const resumen = await sincronizarCompeticion(
+    competicionId,
+    descargadorDe("", cruce("21-09-2025", null, "Campo Pendiente de asignar")).descargador,
+    AHORA,
+  );
+  expect(resumen).toMatchObject({ horarios: [], errores: [] });
+  expect(await leerPartido()).toMatchObject({ fecha: "2025-09-21T17:00", campoId: null });
+});
+
+it("los horarios no se vuelven a pedir hasta pasadas unas horas", async () => {
+  const { competicionId, sincronizarCompeticion } = await conPartidoPorJugar();
+  const primera = descargadorDe("", cruce("21-09-2025", "17:00", "Campo Pendiente de asignar"));
+  await sincronizarCompeticion(competicionId, primera.descargador, AHORA);
+  expect(primera.pedidas.jornadas).toEqual([2]);
+
+  const enseguida = descargadorDe("");
+  await sincronizarCompeticion(
+    competicionId,
+    enseguida.descargador,
+    new Date(AHORA.getTime() + 30 * 60_000),
+  );
+  expect(enseguida.pedidas.jornadas).toEqual([]);
+
+  const luego = descargadorDe("");
+  await sincronizarCompeticion(
+    competicionId,
+    luego.descargador,
+    new Date(AHORA.getTime() + 3 * 3_600_000),
+  );
+  expect(luego.pedidas.jornadas).toEqual([2]);
+});
+
+it("un PDF de jornada que no se sabe leer queda como error y no toca nada", async () => {
+  const { competicionId, sincronizarCompeticion, leerPartido } = await conPartidoPorJugar();
+  const roto: DescargadorRfgf = {
+    html: async () => "",
+    pdf: async () => new TextEncoder().encode("Esto no es una jornada"),
+  };
+  const resumen = await sincronizarCompeticion(competicionId, roto, AHORA);
+  expect(resumen?.errores).toEqual([
+    "Jornada 2 (PDF): El PDF no es de una jornada de la federación.",
+  ]);
+  expect((await leerPartido()).fecha).toBe("2025-09-21T17:00");
 });
