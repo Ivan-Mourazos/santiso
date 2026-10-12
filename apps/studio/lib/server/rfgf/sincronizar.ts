@@ -24,7 +24,10 @@ import {
   cambioDeHorario,
   fechaBreve,
   fechaDeFederacion,
+  DIAS_BUSCANDO_ARBITRO,
   jornadasPorJugar,
+  jornadasSinArbitro,
+  nombreDeArbitro,
   tocaMirarHorarios,
 } from "@/lib/rfgf/horarios";
 import { partidosDeJornada } from "@/lib/rfgf/jornada";
@@ -83,6 +86,7 @@ async function partidosDeCompeticion(competicionId: string): Promise<PartidoLoca
       visitantePropio: visitante.esPropio,
       fecha: schema.partidos.fecha,
       campoId: schema.partidos.campoId,
+      arbitro: schema.partidos.arbitro,
       golesLocal: schema.partidos.golesLocal,
       participaciones: sql<number>`(select count(*) from ${schema.partidoParticipaciones} where ${schema.partidoParticipaciones.partidoId} = ${schema.partidos.id})`,
     })
@@ -98,6 +102,7 @@ async function partidosDeCompeticion(competicionId: string): Promise<PartidoLoca
     visitante: f.visitante,
     fecha: f.fecha,
     campoId: f.campoId,
+    conArbitro: Boolean(f.arbitro),
     conMarcador: f.golesLocal !== null,
     propio: f.localPropio || f.visitantePropio,
     conActa: Number(f.participaciones) > 0,
@@ -139,7 +144,15 @@ async function tratarJornada(
   for (const enPdf of leida.partidos) {
     // Si el cruce no se reconoce no se toca nada: de eso ya avisa la lectura de actas.
     const partido = partidoDeActa(enPdf.local, enPdf.visitante, candidatos);
-    if (!partido || partido.conMarcador) continue;
+    if (!partido) continue;
+    // El árbitro sale en cuanto la jornada se cierra, tenga o no marcador ya el partido.
+    if (enPdf.arbitro && !partido.conArbitro) {
+      await db
+        .update(schema.partidos)
+        .set({ arbitro: nombreDeArbitro(enPdf.arbitro) })
+        .where(eq(schema.partidos.id, partido.id));
+    }
+    if (partido.conMarcador) continue;
 
     if (enPdf.marcador) {
       const [local, visitante] = enPdf.marcador;
@@ -177,9 +190,10 @@ async function tratarJornada(
         }
       }
       if (dicho.length) {
-        resumen.horarios.push(
-          `J${jornada} ${partido.local} – ${partido.visitante}: ${dicho.join(" · ")}`,
-        );
+        const linea = `J${jornada} ${partido.local} – ${partido.visitante}: ${dicho.join(" · ")}`;
+        // Los del Santiso, delante: en el panel solo caben los primeros.
+        if (partido.propio) resumen.horarios.unshift(linea);
+        else resumen.horarios.push(linea);
         cambios += 1;
       }
     }
@@ -343,6 +357,14 @@ export async function sincronizarCompeticion(
   const jornadasPdf = new Set([
     ...jornadasPendientes(partidos, horaLocal(ahora), desde),
     ...(mirarHorarios ? jornadasPorJugar(partidos, horaLocal(ahora)) : []),
+    // Con la misma cadencia, el árbitro de lo ya jugado que aún no lo tenga.
+    ...(mirarHorarios
+      ? jornadasSinArbitro(
+          partidos,
+          horaLocal(ahora),
+          horaLocal(new Date(ahora.getTime() - DIAS_BUSCANDO_ARBITRO * 86_400_000)),
+        )
+      : []),
   ]);
   let cambiosPdf = 0;
   for (const jornada of jornadasPdf) {

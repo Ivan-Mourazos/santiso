@@ -101,6 +101,7 @@ export default function TarjetaPartido({
       )}
       <p className={styles.campo}>{p.campo || "Campo por confirmar"}</p>
       <p className={styles.competicion}>{p.competicion}</p>
+      {p.arbitro && <p className={styles.competicion}>Árbitro: {p.arbitro}</p>}
 
       <div className={styles.trabajo}>
         <p className={styles.etiqueta}>Siguiente tarea</p>

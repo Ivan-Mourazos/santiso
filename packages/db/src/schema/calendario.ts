@@ -76,6 +76,8 @@ export const partidos = sqliteTable(
     /** Hora local de pared "YYYY-MM-DDTHH:mm", sin zona. */
     fecha: text("fecha"),
     campoId: text("campo_id").references(() => campos.id, { onDelete: "set null" }),
+    /** Quién arbitró, como «Nombre Apellidos». Lo publica la federación al cerrar la jornada. */
+    arbitro: text("arbitro"),
     ...marcasTiempo(),
   },
   (t) => [

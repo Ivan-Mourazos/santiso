@@ -5,6 +5,8 @@ import {
   fechaBreve,
   fechaDeFederacion,
   jornadasPorJugar,
+  jornadasSinArbitro,
+  nombreDeArbitro,
   tocaMirarHorarios,
 } from "./horarios";
 import type { PartidoLocal } from "./plan";
@@ -76,5 +78,24 @@ describe("horarios de la federación", () => {
     expect(
       cambioDeHorario({ fecha: "2026-10-24", campo: "" }, { fecha: "2026-10-25T17:00" }),
     ).toEqual({ fecha: "2026-10-24", campo: null });
+  });
+
+  it("escribe el árbitro como una persona, no como una lista", () => {
+    expect(nombreDeArbitro("ENRIQUEZ PEREIRO, OSCAR")).toBe("Oscar Enriquez Pereiro");
+    expect(nombreDeArbitro("  LOPEZ BLANCO ,  VICTOR ")).toBe("Victor Lopez Blanco");
+    expect(nombreDeArbitro("COMITÉ")).toBe("Comité");
+  });
+
+  it("busca el árbitro de lo jugado hace poco, lo más reciente primero", () => {
+    const jugado = (jornada: number, fecha: string, conArbitro = false) =>
+      partido(jornada, fecha, { conMarcador: true, conArbitro });
+    const partidos = [
+      jugado(1, "2026-09-27T17:00"),
+      jugado(2, "2026-10-04T17:00"),
+      jugado(3, "2026-10-11T17:00", true),
+      jugado(0, "2026-06-01T17:00"),
+      partido(4, "2026-10-18T17:00"),
+    ];
+    expect(jornadasSinArbitro(partidos, "2026-10-12T22:00", "2026-08-28T22:00")).toEqual([2, 1]);
   });
 });

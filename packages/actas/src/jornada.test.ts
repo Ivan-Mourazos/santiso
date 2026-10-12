@@ -66,6 +66,7 @@ describe("PDF de jornada de la federación", () => {
       campo: "Municipal de Santiso",
       superficie: "Hierba Artificial",
       marcador: null,
+      arbitro: null,
     });
   });
 
@@ -111,6 +112,7 @@ describe("PDF de jornada de la federación", () => {
         marcador: [8, 3],
         campo: "Pardiñeiro",
         superficie: "Hierba Natural",
+        arbitro: "ENRIQUEZ PEREIRO, OSCAR",
       }),
       expect.objectContaining({ local: "CLUB ARENAL", marcador: [0, 5] }),
     ]);

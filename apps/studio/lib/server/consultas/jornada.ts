@@ -33,6 +33,8 @@ export interface PartidoDeLaSemana {
   golesSantiso: number | null;
   golesRival: number | null;
   campo: string | null;
+  /** Quién arbitró; `null` hasta que la federación lo publica. */
+  arbitro: string | null;
   preparacion: { convocatoria: number | null; titulares: number; capitan: boolean };
   /** `null` = todavía sin acta guardada. */
   acta: ActaDeLaSemana | null;
@@ -104,6 +106,7 @@ export async function pantallaJornada(
       visitanteEscudo: visitante.escudo,
       visitantePropio: visitante.esPropio,
       campo: schema.campos.nombre,
+      arbitro: schema.partidos.arbitro,
     })
     .from(schema.partidos)
     .innerJoin(schema.jornadas, eq(schema.jornadas.id, schema.partidos.jornadaId))
@@ -239,6 +242,7 @@ export async function pantallaJornada(
       golesSantiso: santisoLocal ? f.golesLocal : f.golesVisitante,
       golesRival: santisoLocal ? f.golesVisitante : f.golesLocal,
       campo: f.campo,
+      arbitro: f.arbitro,
       preparacion: {
         convocatoria: previasPor.has(f.id) ? (seleccionadosPor.get(f.id) ?? 0) : null,
         titulares: alineaciones.filter((a) => a.partidoId === f.id && a.titular).length,

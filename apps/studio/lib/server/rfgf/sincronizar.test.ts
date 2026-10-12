@@ -310,7 +310,7 @@ async function conPartidoPorJugar() {
   // El ya jugado, con marcador: así solo queda por mirar la jornada 2.
   await db
     .update(s.partidos)
-    .set({ golesLocal: 1, golesVisitante: 0, estado: "finalizado" })
+    .set({ golesLocal: 1, golesVisitante: 0, estado: "finalizado", arbitro: "Persona Árbitra" })
     .where(eq(s.partidos.id, base.partidoId));
   const leerPartido = async () =>
     (await db.select().from(s.partidos).where(eq(s.partidos.id, porJugar!.id)))[0]!;
@@ -417,4 +417,60 @@ it("un PDF de jornada que no se sabe leer queda como error y no toca nada", asyn
     "Jornada 2 (PDF): El PDF no es de una jornada de la federación.",
   ]);
   expect((await leerPartido()).fecha).toBe("2025-09-21T17:00");
+});
+
+it("los cambios de los partidos del Santiso se cuentan los primeros", async () => {
+  const { s, db, competicionId, sincronizarCompeticion } = await conPartidoPorJugar();
+  // Otro partido de la misma jornada, entre dos equipos ajenos, que va antes en el PDF.
+  const [a, b] = await db
+    .insert(s.equipos)
+    .values([
+      { nombre: "Ajeno Uno", clave: "ajeno uno", categoria: "Senior" },
+      { nombre: "Ajeno Dous", clave: "ajeno dous", categoria: "Senior" },
+    ])
+    .returning();
+  const [jornada] = await db.select().from(s.jornadas).where(eq(s.jornadas.numero, 2));
+  await db
+    .insert(s.partidos)
+    .values({ jornadaId: jornada!.id, equipoLocalId: a!.id, equipoVisitanteId: b!.id });
+  await db.update(s.equipos).set({ esPropio: true }).where(eq(s.equipos.nombre, "Equipo Local"));
+  const resumen = await sincronizarCompeticion(
+    competicionId,
+    descargadorDe("", [
+      "AJENO UNO 21-09-2025 AJENO DOUS",
+      "Campo: Campo Pendiente de asignar",
+      ...cruce("20-09-2025", "16:30", "Campo Pendiente de asignar"),
+    ]).descargador,
+    AHORA,
+  );
+  expect(resumen?.horarios).toEqual([
+    "J2 Equipo Visitante – Equipo Local: 20/09 16:30",
+    "J2 Ajeno Uno – Ajeno Dous: 21/09",
+  ]);
+});
+
+it("guarda el árbitro de un partido ya jugado, aunque ya tuviera marcador", async () => {
+  const { s, db, competicionId, partidoId, sincronizarCompeticion } = await conPartidoPorJugar();
+  await db.update(s.partidos).set({ arbitro: null }).where(eq(s.partidos.id, partidoId));
+  const { descargador, pedidas } = descargadorDe("", [
+    "EQUIPO LOCAL",
+    "1 - 0",
+    "14-09-2025",
+    "12:00",
+    "EQUIPO VISITANTE",
+    "Campo: O Campo - Hierba Natural Árbitro: APELIDO APELIDO, NOME",
+  ]);
+  const resumen = await sincronizarCompeticion(competicionId, descargador, AHORA);
+  expect(resumen?.errores).toEqual([]);
+  expect(pedidas.jornadas.sort()).toEqual([1, 2]);
+  const [partido] = await db.select().from(s.partidos).where(eq(s.partidos.id, partidoId));
+  expect(partido).toMatchObject({ arbitro: "Nome Apelido Apelido", golesLocal: 1 });
+  // Ya lo tiene: la jornada 1 no se vuelve a pedir.
+  const despues = descargadorDe("");
+  await sincronizarCompeticion(
+    competicionId,
+    despues.descargador,
+    new Date(AHORA.getTime() + 4 * 3_600_000),
+  );
+  expect(despues.pedidas.jornadas).toEqual([2]);
 });

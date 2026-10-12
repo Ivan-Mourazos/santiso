@@ -1,3 +1,4 @@
+import { normalizarNombrePersona } from "@santiso/domain";
 import type { PartidoLocal } from "./plan";
 
 /** Lo que la federación publica de un partido por jugar. */
@@ -71,4 +72,35 @@ export function fechaBreve(fecha: string): string {
   const [dia = "", hora] = fecha.split("T");
   const [, mes, numero] = dia.split("-");
   return `${numero}/${mes}${hora ? ` ${hora}` : ""}`;
+}
+
+/** «ENRIQUEZ PEREIRO, OSCAR» → «Oscar Enriquez Pereiro», con las reglas de nombres de persona. */
+export function nombreDeArbitro(federacion: string): string {
+  const [apellidos = "", nombre = ""] = federacion.split(",").map((parte) => parte.trim());
+  return normalizarNombrePersona(nombre ? `${nombre} ${apellidos}` : apellidos);
+}
+
+/** Días hacia atrás en los que aún se busca el árbitro de un partido ya jugado. */
+export const DIAS_BUSCANDO_ARBITRO = 45;
+
+/**
+ * Jornadas con algún partido jugado del que todavía no se sabe el árbitro, las más recientes
+ * primero y sin pasar de dos: así los partidos de antes se completan poco a poco.
+ */
+export function jornadasSinArbitro(
+  partidos: readonly PartidoLocal[],
+  ahora: string,
+  desde: string,
+): number[] {
+  const ultima = new Map<number, string>();
+  for (const partido of partidos) {
+    if (!partido.conMarcador || partido.conArbitro || !partido.fecha) continue;
+    if (partido.fecha > ahora || partido.fecha < desde) continue;
+    const anterior = ultima.get(partido.jornada);
+    if (!anterior || partido.fecha > anterior) ultima.set(partido.jornada, partido.fecha);
+  }
+  return [...ultima]
+    .sort((a, b) => b[1].localeCompare(a[1]))
+    .slice(0, JORNADAS_POR_JUGAR)
+    .map(([jornada]) => jornada);
 }
