@@ -129,19 +129,25 @@
 }
 .nota {
   flex: none;
+  margin-top: 6px;
   font-size: 26px;
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
 
 /* Variante ampliada: mismos nombres a 40 px; el hueco se recupera en cabecera y espacios. */
+/* Con 16 o menos, los márgenes de los demás carteles (64 px) y aire antes de los
+   patrocinadores. Solo la lista larga se arrima a los bordes para ganar sitio. */
 .contenido {
-  left: 40px;
-  right: 40px;
-  bottom: 160px;
+  left: 64px;
+  right: 64px;
+  bottom: 184px;
 }
 .contenido[data-ampliada="true"] {
   top: 108px;
+  left: 40px;
+  right: 40px;
+  bottom: 164px;
   gap: 6px;
 }
 .contenido[data-ampliada="true"] header {

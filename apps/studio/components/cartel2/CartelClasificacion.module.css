@@ -190,3 +190,9 @@
 .cuadroGrande .marcadorCopa {
   font-size: 84px;
 }
+
+/* A este tamaño un escudo negro (Atlético Éter) se perdía sobre el fondo: un filo claro pegado
+   a la silueta lo recorta. En los de color no se aprecia. */
+.celdaEquipo img {
+  filter: drop-shadow(0 0 1px rgb(255 255 255 / 80%)) drop-shadow(0 0 3px rgb(255 255 255 / 35%));
+}

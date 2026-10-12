@@ -217,3 +217,9 @@
   top: 495px;
   bottom: 410px;
 }
+
+/* Aquí cada escudo ya tiene detrás la luz del color de su equipo: la placa extra de los escudos
+   oscuros se sumaba a ella y dibujaba un disco blanco. Basta con el filo claro. */
+.escudoZona .escudo[data-oscuro]::before {
+  display: none;
+}

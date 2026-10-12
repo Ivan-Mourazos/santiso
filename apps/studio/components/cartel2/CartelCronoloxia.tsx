@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   categoriaCartel,
   fechaCorta,
@@ -70,12 +71,28 @@ function Texto({ evento }: { evento: EventoCartel }) {
   );
 }
 
+/** Alto que suman las dos columnas de la línea de tiempo, en px (2 × 742). */
+const ALTO_DOS_COLUMNAS = 1484;
+
 /**
  * Cronoloxía del partido: marcador arriba y línea de tiempo en el centro, con los minutos
  * sobre la línea y los hechos de cada equipo a su lado. Las filas se aprietan si hay muchos.
  */
 export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
   const eventos = [...datos.eventos].sort((a, c) => orden(a.minuto) - orden(c.minuto));
+  // Con pocas incidencias la letra crece para llenar el cartel; con muchas se queda en 34 px.
+  // Cada incidencia cuenta por las líneas que ocupa: un cambio o un nombre largo, dos.
+  const lineas = eventos.reduce(
+    (total, e) => total + (e.tipo === "cambio" || (e.jugador ?? "").length > 22 ? 2 : 1),
+    0,
+  );
+  const cuerpoLinea = Math.max(
+    34,
+    Math.min(44, Math.floor(((ALTO_DOS_COLUMNAS / Math.max(lineas, 1) - 10) / 1.3) * 0.85)),
+  );
+  // Lo que aun así sobre se reparte entre las filas, para que no quede todo el hueco abajo.
+  const sobra = ALTO_DOS_COLUMNAS - lineas * (cuerpoLinea * 1.3 + 10);
+  const aire = Math.max(2, Math.min(18, Math.floor((sobra * 0.8) / Math.max(eventos.length, 1))));
   const pie = [fechaCorta(datos.fecha), datos.campo.toUpperCase()].filter(Boolean).join("  ·  ");
 
   return (
@@ -124,7 +141,11 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
       </div>
 
       {eventos.length === 0 && <div className={s.vacia}>SEN INCIDENCIAS REXISTRADAS</div>}
-      <ol className={s.linea} data-lectura-bloque>
+      <ol
+        className={s.linea}
+        data-lectura-bloque
+        style={{ "--cuerpo": `${cuerpoLinea}px`, "--aire": `${aire}px` } as CSSProperties}
+      >
         {eventos.map((e, i) => (
           <li
             key={`${e.minuto}-${i}`}
