@@ -182,7 +182,8 @@ export default function AdminJornada() {
                   </button>
                 </section>
               )}
-              {ultimo ? (
+              {/* Si el último partido ya está en la mesa, no se repite debajo. */}
+              {ultimo && partido?.id === ultimo.id ? null : ultimo ? (
                 <section className={styles.resumen} aria-label="Último partido">
                   <p className={styles.etiqueta}>
                     Último partido · {fechaPartido(ultimo.fecha).dia}
