@@ -36,6 +36,9 @@
 .duelo {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
+  /* La fila mide lo que le toca y ni un píxel más: si un nombre ocupa dos líneas, encoge el
+     escudo; nunca empuja la fecha ni se le monta encima. */
+  grid-template-rows: minmax(0, 1fr);
   align-items: center;
   flex: 1 1 0;
   min-height: 350px;
@@ -50,8 +53,8 @@
   height: 100%;
 }
 .huecoEscudo {
-  flex: 1;
-  min-height: 180px;
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,14 +63,15 @@
 /* Los escudos y el rival son lo primero que se mira en el móvil: ocupan todo lo que deja la
    cabecera, que por eso va en dos líneas cortas. */
 .escudo {
-  width: 340px;
-  height: 340px;
+  height: 100%;
+  max-height: 340px;
+  aspect-ratio: 1;
 }
 .equipo[data-propio="true"] .escudo {
-  width: 300px;
-  height: 300px;
+  max-height: 300px;
 }
 .nombre {
+  flex-shrink: 0;
   width: 100%;
   text-align: center;
   color: #fff;
@@ -186,10 +190,8 @@
   min-height: 460px;
 }
 .historia .escudo {
-  width: 430px;
-  height: 430px;
+  max-height: 430px;
 }
 .historia .equipo[data-propio="true"] .escudo {
-  width: 380px;
-  height: 380px;
+  max-height: 380px;
 }

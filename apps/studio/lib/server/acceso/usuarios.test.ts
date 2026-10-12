@@ -41,7 +41,7 @@ describe("usuarios", () => {
     await crearUsuario(db, MOU);
     await expect(crearUsuario(db, { ...DANI, usuario: " MOU " })).rejects.toThrow(/Ya hay/);
     await expect(crearUsuario(db, { ...DANI, usuario: "el míster" })).rejects.toThrow(/usuario/);
-    await expect(crearUsuario(db, { ...DANI, clave: "corta" })).rejects.toThrow(/al menos 8/);
+    await expect(crearUsuario(db, { ...DANI, clave: "123" })).rejects.toThrow(/al menos 4/);
     await expect(crearUsuario(db, { ...DANI, nombre: "  " })).rejects.toThrow(/nombre/);
     expect(await listarUsuarios(db)).toHaveLength(1);
   });
@@ -72,7 +72,7 @@ describe("usuarios", () => {
     ]);
     expect(await comprobarCredenciales(db, "mou", MOU.clave)).toBeNull();
     expect(await comprobarCredenciales(db, "mou", "nueva-clave-2026")).not.toBeNull();
-    await expect(cambiarClave(db, mou.id, "corta")).rejects.toThrow(/al menos 8/);
+    await expect(cambiarClave(db, mou.id, "123")).rejects.toThrow(/al menos 4/);
     await expect(cambiarClave(db, "no-existe", "nueva-clave-2026")).rejects.toThrow(/ya no existe/);
   });
 
