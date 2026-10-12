@@ -224,7 +224,7 @@ export default function AdminConvocatoria({
         <section className={s.png} aria-label="Cartel generado">
           <img src={png.url} alt="Cartel de convocatoria" />
           <div className={s.acciones}>
-            <Button onClick={() => void compartir()}>Compartir</Button>
+            <Button onClick={() => void compartir()}>Guardar o compartir</Button>
             <Button variant="secondary" onClick={descargar}>
               Descargar
             </Button>

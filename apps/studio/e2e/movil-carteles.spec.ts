@@ -126,8 +126,8 @@ for (const modo of ["compartir", "sin-api", "no-admite", "cancelar", "error"] as
     }, modo);
     await abrir(page);
     await vista(page);
-    await page.getByRole("button", { name: "Preparar PNG", exact: true }).tap();
-    const compartir = page.getByRole("button", { name: "Compartir", exact: true });
+    // Sin tocar nada: el PNG se prepara solo y el botón ya es el de guardar.
+    const compartir = page.getByRole("button", { name: "Guardar o compartir", exact: true });
     await expect(compartir).toBeEnabled();
     const descargas: string[] = [];
     page.on("download", (d) => descargas.push(d.suggestedFilename()));
@@ -144,8 +144,9 @@ for (const modo of ["compartir", "sin-api", "no-admite", "cancelar", "error"] as
     await page.getByRole("tab", { name: "Datos", exact: true }).tap();
     await page.getByLabel("Rival", { exact: true }).fill("PNG nuevo necesario");
     await vista(page);
-    await expect(compartir).toBeHidden();
-    await expect(page.getByRole("button", { name: "Preparar PNG", exact: true })).toBeVisible();
+    // Con datos nuevos el PNG anterior ya no vale: se prepara otro, también solo.
+    await expect(compartir).toBeEnabled();
+    expect(peticiones).toBe(2);
   });
 }
 
@@ -184,8 +185,7 @@ test("carteles: PNG móvil real conserva medidas de exportación", async ({ page
   test.setTimeout(120000);
   await abrir(page);
   await vista(page);
-  await page.getByRole("button", { name: "Preparar PNG", exact: true }).tap();
-  await expect(page.getByRole("button", { name: "Compartir", exact: true })).toBeEnabled({
+  await expect(page.getByRole("button", { name: "Guardar o compartir", exact: true })).toBeEnabled({
     timeout: 90000,
   });
   const descarga = page.waitForEvent("download");
@@ -199,29 +199,27 @@ test("carteles: PNG móvil real conserva medidas de exportación", async ({ page
 });
 
 test("carteles: respuesta PNG tardía no habilita compartir datos antiguos", async ({ page }) => {
-  let liberar!: () => void;
-  const espera = new Promise<void>((resolve) => {
-    liberar = resolve;
-  });
+  const soltar: (() => void)[] = [];
   let peticiones = 0;
   await page.route("**/api/carteles/png", async (route) => {
     peticiones++;
-    if (peticiones === 1) await espera;
+    await new Promise<void>((resolve) => soltar.push(resolve));
     await route.fulfill({ contentType: "image/png", body: PNG });
   });
   await abrir(page);
   await vista(page);
-  await page.getByRole("button", { name: "Preparar PNG", exact: true }).tap();
+  // La primera preparación (automática) queda en el aire mientras se cambian los datos.
   await expect.poll(() => peticiones).toBe(1);
   await page.getByRole("tab", { name: "Datos", exact: true }).tap();
   await page.getByLabel("Rival", { exact: true }).fill("Rival cambiado durante exportación");
   await vista(page);
-  liberar();
-  const preparar = page.getByRole("button", { name: "Preparar PNG", exact: true });
-  await expect(preparar).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Compartir", exact: true })).toBeHidden();
-  await preparar.tap();
-  await expect(page.getByRole("button", { name: "Compartir", exact: true })).toBeEnabled();
+  soltar[0]!();
+  // Llega el PNG de los datos viejos: no vale, y se pide otro con los nuevos.
+  const compartir = page.getByRole("button", { name: "Guardar o compartir", exact: true });
+  await expect.poll(() => peticiones, { timeout: 15000 }).toBe(2);
+  await expect(compartir).toBeHidden();
+  soltar[1]!();
+  await expect(compartir).toBeEnabled();
   expect(peticiones).toBe(2);
 });
 
@@ -235,12 +233,14 @@ test("carteles: exportación fallida permite reintentar", async ({ page }) => {
   });
   await abrir(page);
   await vista(page);
+  // La preparación automática falla: se avisa y no se reintenta sola, queda el botón.
   const preparar = page.getByRole("button", { name: "Preparar PNG", exact: true });
-  await preparar.tap();
   await expect(
     page.getByText("No se pudo generar el PNG. Vuelve a intentarlo.", { exact: true }),
   ).toBeVisible();
   await expect(preparar).toBeEnabled();
+  await page.waitForTimeout(2500);
+  expect(peticiones).toBe(1);
   await preparar.tap();
-  await expect(page.getByRole("button", { name: "Compartir", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Guardar o compartir", exact: true })).toBeEnabled();
 });
