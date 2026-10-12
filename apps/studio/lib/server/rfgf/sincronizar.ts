@@ -361,6 +361,8 @@ export async function sincronizarCompeticion(
   ahora = new Date(),
   /** Solo partidos de los últimos días: es la comprobación frecuente. Sin él, todos. */
   soloRecientes = false,
+  /** Pedida a mano: mira también horarios y jornadas atrasadas aunque se hayan mirado hace poco. */
+  completa = false,
 ): Promise<ResumenRfgf | null> {
   const { db } = await obtenerDb();
   const [fila] = await db
@@ -396,7 +398,7 @@ export async function sincronizarCompeticion(
 
   // Primero el PDF de cada jornada: de una sola descarga salen los marcadores de todos los
   // partidos jugados y los horarios de los que quedan. Los horarios, cada pocas horas.
-  const mirarHorarios = tocaMirarHorarios(fila.horariosEn, ahora);
+  const mirarHorarios = completa || tocaMirarHorarios(fila.horariosEn, ahora);
   const jornadasPdf = new Set([
     ...jornadasPendientes(partidos, horaLocal(ahora), desde),
     ...(mirarHorarios ? jornadasPorJugar(partidos, horaLocal(ahora)) : []),
@@ -501,6 +503,7 @@ export async function sincronizarTodo(
   descargador: DescargadorRfgf,
   ahora = new Date(),
   soloRecientes = false,
+  completa = false,
 ): Promise<ResumenRfgf[]> {
   if (enMarcha) return [];
   enMarcha = true;
@@ -517,7 +520,13 @@ export async function sincronizarTodo(
       .where(eq(schema.temporadas.activa, true));
     const resumenes: ResumenRfgf[] = [];
     for (const { id } of enlazadas) {
-      const resumen = await sincronizarCompeticion(id, descargador, ahora, soloRecientes);
+      const resumen = await sincronizarCompeticion(
+        id,
+        descargador,
+        ahora,
+        soloRecientes,
+        completa,
+      );
       if (resumen) resumenes.push(resumen);
     }
     return resumenes;

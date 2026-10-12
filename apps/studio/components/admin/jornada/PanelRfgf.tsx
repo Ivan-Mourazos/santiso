@@ -121,6 +121,17 @@ export default function PanelRfgf({ showToast, onNovedades }: Props) {
           </p>
         </div>
       )}
+      {enlazadas.length > 0 && (
+        <div className={styles.rfgfAhora}>
+          <p>
+            La federación se mira sola cada noche a las 21:00. Si quieres los datos ya (resultados,
+            horarios, goles y tarjetas), pídelos:
+          </p>
+          <Button variant="secondary" disabled={ocupado} onClick={() => void comprobar()}>
+            {ocupado ? "Mirando la federación…" : "Comprobar ahora"}
+          </Button>
+        </div>
+      )}
       <details className={styles.rfgfDetalle}>
         <summary>
           <span>
@@ -131,8 +142,8 @@ export default function PanelRfgf({ showToast, onNovedades }: Props) {
           </span>
         </summary>
         <p className={styles.rfgfNota}>
-          Los resultados y las actas se traen solos de futgal.es cuando la federación cierra cada
-          acta. Pega una vez el enlace del calendario de cada competición.
+          Resultados, horarios, árbitros, goles y tarjetas se traen solos de futgal.es. Pega una
+          vez el enlace del calendario de cada competición.
         </p>
         {estado.map((c) => (
           <div key={c.competicionId} className={styles.rfgfFila}>
@@ -155,9 +166,6 @@ export default function PanelRfgf({ showToast, onNovedades }: Props) {
             </Button>
           </div>
         ))}
-        <Button disabled={ocupado || enlazadas.length === 0} onClick={() => void comprobar()}>
-          {ocupado ? "Mirando…" : "Comprobar ahora"}
-        </Button>
       </details>
     </section>
   );
