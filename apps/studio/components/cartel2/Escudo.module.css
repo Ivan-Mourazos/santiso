@@ -15,15 +15,15 @@
 .escudo[data-oscuro]::before {
   content: "";
   position: absolute;
-  inset: -28%;
+  inset: -42%;
   z-index: -1;
-  /* Tres manchas de luz descentradas y desenfocadas: no dibujan un círculo, se funden con el
-     fondo como un foco que cae desde arriba a la izquierda. */
+  /* Tres manchas alargadas, cruzadas y muy desenfocadas: iluminan el escudo sin dibujar un
+     disco a su alrededor, ni siquiera sobre los fondos más oscuros (Próximos). */
   background:
-    radial-gradient(ellipse 44% 40% at 45% 43%, rgb(255 255 255 / 50%), transparent 72%),
-    radial-gradient(ellipse 56% 42% at 60% 62%, rgb(255 255 255 / 20%), transparent 74%),
-    radial-gradient(ellipse 34% 52% at 36% 60%, rgb(255 255 255 / 16%), transparent 72%);
-  filter: blur(22px);
+    radial-gradient(ellipse 46% 26% at 44% 42%, rgb(255 255 255 / 44%), transparent 74%),
+    radial-gradient(ellipse 24% 46% at 58% 56%, rgb(255 255 255 / 24%), transparent 74%),
+    radial-gradient(ellipse 50% 18% at 56% 68%, rgb(255 255 255 / 14%), transparent 72%);
+  filter: blur(34px);
 }
 
 .imagen {

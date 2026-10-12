@@ -13,12 +13,16 @@ export function CartelAnuncio({ datos }: { datos: DatosAnuncio }) {
   const tema = TEMAS_ANUNCIO[datos.tema];
   const titulo = datos.titulo || "COMUNICADO";
   // Hasta tres líneas de 952 px con la display condensada.
-  const cuerpoTitulo = Math.max(76, Math.min(170, Math.floor((3 * 952) / (titulo.length * 0.5))));
+  const cuerpoTitulo = Math.max(
+    76,
+    Math.min(datos.texto ? 112 : 156, Math.floor((3 * 952) / (titulo.length * 0.5))),
+  );
   const imagenes = datos.imagenes.slice(0, 2);
   const estilo = { "--acento": tema.acento } as CSSProperties;
 
   return (
     <Base
+      compacto
       variante="club"
       izquierda={{ escudo: datos.escudoClub, propio: true, color: "#f5c518" }}
       institucionales={datos.institucionales}
@@ -28,16 +32,27 @@ export function CartelAnuncio({ datos }: { datos: DatosAnuncio }) {
         className={`${s.contenido} ${imagenes.length === 0 ? s.sinImagenes : ""}`}
         style={estilo}
       >
-        <div className={s.etiqueta}>{tema.etiqueta}</div>
+        <div className={s.etiqueta} data-lectura-bloque>
+          {tema.etiqueta}
+        </div>
         <h1
           className={`${b.display} ${s.titulo} ${datos.tema === "celebracion" ? s.tituloAcento : ""}`}
           style={{ fontSize: cuerpoTitulo }}
+          data-lectura-bloque
+          data-lectura-columna
         >
           {titulo.toUpperCase()}
         </h1>
-        {datos.texto && <p className={s.texto}>{datos.texto}</p>}
+        {datos.texto && (
+          <p className={s.texto} data-lectura-bloque data-lectura-columna>
+            {datos.texto}
+          </p>
+        )}
         {imagenes.length > 0 && (
-          <div className={`${s.imagenes} ${imagenes.length === 2 ? s.dos : ""}`}>
+          <div
+            className={`${s.imagenes} ${imagenes.length === 2 ? s.dos : ""}`}
+            data-lectura-bloque
+          >
             {imagenes.map((url) => (
               <img key={url} src={url} alt="" />
             ))}

@@ -66,6 +66,7 @@ export type EstiloFoto = (typeof ESTILOS_FOTO)[number]["id"];
 
 /** Foto de fondo: se recorta alrededor de su foco (`x`, `y` entre 0 y 1). */
 export interface FotoCartel {
+  zoom?: number;
   url: string;
   x: number;
   y: number;
@@ -191,10 +192,12 @@ export interface DatosOnce extends Logos, Competicion {
   foto: { url: string; x: number; y: number; zoom: number } | null;
   /** La foto a la derecha y la lista a la izquierda. */
   invertido: boolean;
+  modoFoto?: "retrato" | "fondo";
 }
 
 /** Alineación anunciada antes del partido, en formato historia. */
 export interface DatosAlineacion extends Logos, Competicion {
+  foto?: FotoCartel | null;
   club: EquipoCartel;
   rival: EquipoCartel;
   /** El Santiso juega en casa. */

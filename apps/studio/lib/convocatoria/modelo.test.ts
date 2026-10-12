@@ -63,19 +63,39 @@ describe("convocatoria", () => {
     expect(sinFecha).not.toContain("undefined");
     expect(sinFecha).not.toContain("Quedada:");
   });
-  it.each([11, 22])("cartel de %i nombres válido, 4:5 y sin colarse en alineación", (cantidad) => {
-    const c = convocatoriaInicial(jugadores.slice(0, cantidad).map((j) => j.id));
-    const peticion = peticionDeConvocatoria("Senior", partido, jugadores, c, {
-      institucionales: [],
-      patrocinadores: [],
-      colorRival: "#abcdef",
-    });
-    expect(leerPeticion(peticion)).toEqual(peticion);
-    expect(medidasDe(peticion.plantilla)).toEqual({ ancho: 1080, alto: 1350 });
-    if (peticion.plantilla !== "convocatoria") throw new Error("plantilla");
-    expect(peticion.datos.convocados).toHaveLength(cantidad);
-    expect(peticion.datos.rival.color).toBe("#abcdef");
-    expect(peticion.datos.local).toBe(false);
-    expect(leerPeticion({ ...peticion, datos: { ...peticion.datos, convocados: [] } })).toBeNull();
+  it("convocatoria inicial propone 16 y permite ampliar hasta 22", () => {
+    expect(convocatoriaInicial(jugadores.map((j) => j.id)).jugadores).toHaveLength(16);
+    expect(
+      errorDeConvocatoria({ ...convocatoriaInicial([]), jugadores: jugadores.map((j) => j.id) }),
+    ).toBeNull();
+    expect(
+      errorDeConvocatoria({
+        ...convocatoriaInicial([]),
+        jugadores: Array.from({ length: 23 }, (_, i) => String(i)),
+      }),
+    ).toContain("22");
   });
+  it.each([11, 16, 22])(
+    "cartel de %i nombres válido, 4:5 y sin colarse en alineación",
+    (cantidad) => {
+      const c = {
+        ...convocatoriaInicial([]),
+        jugadores: jugadores.slice(0, cantidad).map((j) => j.id),
+      };
+      const peticion = peticionDeConvocatoria("Senior", partido, jugadores, c, {
+        institucionales: [],
+        patrocinadores: [],
+        colorRival: "#abcdef",
+      });
+      expect(leerPeticion(peticion)).toEqual(peticion);
+      expect(medidasDe(peticion.plantilla)).toEqual({ ancho: 1080, alto: 1350 });
+      if (peticion.plantilla !== "convocatoria") throw new Error("plantilla");
+      expect(peticion.datos.convocados).toHaveLength(cantidad);
+      expect(peticion.datos.rival.color).toBe("#abcdef");
+      expect(peticion.datos.local).toBe(false);
+      expect(
+        leerPeticion({ ...peticion, datos: { ...peticion.datos, convocados: [] } }),
+      ).toBeNull();
+    },
+  );
 });

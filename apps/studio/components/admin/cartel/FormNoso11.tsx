@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { Field } from "@/components/ui/foundation/Fields";
+import { Field, Select } from "@/components/ui/foundation/Fields";
 import type { Player } from "@/lib/cartel/types";
 import { SectionLabel, CategorySelector, Deslizador, MatchSelector, Toggle } from "./Common";
 import type { SelectorMatch } from "./Common";
@@ -45,6 +45,7 @@ export const FormNoso11: React.FC<Props> = ({
   loadMatchFromDb,
   tipo,
 }) => {
+  const modoFoto = form.noso11FotoModo ?? "fondo";
   const getDisplayName = (j: CartelPlayerOption | undefined) => {
     if (!j) return "";
     if (j.apodo) return j.apodo;
@@ -93,24 +94,36 @@ export const FormNoso11: React.FC<Props> = ({
       </div>
 
       <PlegableMovil titulo="Foto y encuadre">
-        <div className={styles.campo} role="group" aria-label="Disposición del cartel">
-          <span className={styles.etiqueta}>Disposición del cartel</span>
-          <div className={styles.interruptores}>
-            <Toggle
-              label="← Foto a la izquierda"
-              active={!form.noso11Flip}
-              onClick={() => set("noso11Flip", false)}
-            />
-            <Toggle
-              label="Foto a la derecha →"
-              active={!!form.noso11Flip}
-              onClick={() => set("noso11Flip", true)}
-            />
+        <Select
+          label="Uso de la foto"
+          value={modoFoto}
+          onChange={(e) => set("noso11FotoModo", e.target.value as "retrato" | "fondo")}
+        >
+          <option value="fondo">Foto de campo · fondo completo</option>
+          <option value="retrato">Retrato de jugador</option>
+        </Select>
+        {modoFoto === "retrato" && (
+          <div className={styles.campo} role="group" aria-label="Disposición del cartel">
+            <span className={styles.etiqueta}>Disposición del cartel</span>
+            <div className={styles.interruptores}>
+              <Toggle
+                label="← Foto a la izquierda"
+                active={!form.noso11Flip}
+                onClick={() => set("noso11Flip", false)}
+              />
+              <Toggle
+                label="Foto a la derecha →"
+                active={!!form.noso11Flip}
+                onClick={() => set("noso11Flip", true)}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className={styles.campo}>
-          <span className={styles.etiqueta}>Foto del jugador destacado</span>
+          <span className={styles.etiqueta}>
+            {modoFoto === "fondo" ? "Foto del campo" : "Foto del jugador destacado"}
+          </span>
           <label className="file-input-label">
             <svg
               width="14"
@@ -122,7 +135,8 @@ export const FormNoso11: React.FC<Props> = ({
             >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
             </svg>
-            {jugFileName || "Subir foto del jugador"}
+            {jugFileName ||
+              (modoFoto === "fondo" ? "Subir foto del campo" : "Subir foto del jugador")}
             <input
               type="file"
               className="hidden-input"
@@ -156,10 +170,10 @@ export const FormNoso11: React.FC<Props> = ({
           />
           <Deslizador
             label="Zoom"
-            min={0.5}
+            min={modoFoto === "fondo" ? 1 : 0.5}
             max={4}
             step={0.01}
-            value={form.jugadorZoom}
+            value={modoFoto === "fondo" ? Math.max(1, form.jugadorZoom) : form.jugadorZoom}
             onChange={(v) => set("jugadorZoom", v)}
             extremos={["Alejar", "Acercar"]}
           />

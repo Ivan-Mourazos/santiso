@@ -90,7 +90,7 @@ export function progresoPartido(p: PartidoDeLaSemana, ahora: string, categoria =
           titulo: "Publicaciones",
           estado:
             p.acta && tieneResultado(p)
-              ? "Para compartir"
+              ? ""
               : tieneResultado(p)
                 ? "Resultado disponible"
                 : "Espera resultado",
@@ -113,7 +113,8 @@ export function progresoPartido(p: PartidoDeLaSemana, ahora: string, categoria =
         },
         {
           titulo: "Cartel",
-          estado: "Para compartir",
+          // Compartir pasa fuera del Studio: no se puede saber si está hecho, así que no lleva estado.
+          estado: "",
           tono: "pendiente",
           href: e.cartel("partido"),
         },

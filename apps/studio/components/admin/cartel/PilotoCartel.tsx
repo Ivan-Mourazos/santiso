@@ -208,6 +208,12 @@ export default function PilotoCartel({
         headers: { "content-type": "application/json" },
         body: JSON.stringify(await exportable(peticion)),
       });
+      if (respuesta.status === 422) {
+        falloAlPreparar.current = clave;
+        const aviso = (await respuesta.json()) as { error: string };
+        showToast(aviso.error, "error");
+        return null;
+      }
       if (!respuesta.ok) throw new Error(String(respuesta.status));
       const archivo = new File([await respuesta.blob()], nombrePng, { type: "image/png" });
       setPng({ clave: clavePng, archivo });

@@ -315,6 +315,7 @@ export function peticionDeFormulario(
                 }
               : null,
           invertido: form.noso11Flip,
+          modoFoto: form.noso11FotoModo ?? "fondo",
         },
       };
     case "multiusos":

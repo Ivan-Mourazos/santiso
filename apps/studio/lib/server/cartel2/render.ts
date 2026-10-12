@@ -2,6 +2,7 @@ import "server-only";
 import { chromium, type Browser } from "playwright";
 import { COOKIE_SESION } from "@/lib/acceso/config";
 import { medidasDe, type PeticionCartel } from "@/lib/cartel2/modelo";
+import { erroresDeLectura, ErrorCapacidadCartel } from "@/lib/cartel2/lectura";
 
 declare global {
   // Un Chromium por proceso, reutilizado entre exportaciones: arrancarlo cuesta ~1 s.
@@ -55,6 +56,7 @@ export async function renderizarCartel(
     await pagina.evaluate((p) => window.__pintarCartel?.(p), peticion);
     const cartel = pagina.locator("[data-listo] [data-cartel]");
     await cartel.waitFor({ timeout: 30_000 });
+    if ((await cartel.evaluate(erroresDeLectura)).length) throw new ErrorCapacidadCartel();
     return await cartel.screenshot({ type: "png", animations: "disabled" });
   } finally {
     await contexto.close();

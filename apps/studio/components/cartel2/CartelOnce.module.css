@@ -1,141 +1,166 @@
-/*
- * O Noso 11, sobre `Base` (variante club). Retrato a la izquierda (0–560) y lista a la
- * derecha (560–1016); `invertido` los cambia de lado. Logos 44–114 · lista 150–1180 ·
- * patrocinadores 1200–1310.
- */
-
 .retrato {
   position: absolute;
   z-index: 3;
-  top: 0;
-  bottom: 150px;
-  left: 0;
-  width: 620px;
+  inset: 0 auto 150px 0;
+  width: 520px;
   overflow: hidden;
   mask-image:
-    linear-gradient(90deg, #000 62%, transparent), linear-gradient(0deg, transparent, #000 18%);
+    linear-gradient(90deg, #000 65%, transparent), linear-gradient(0deg, transparent, #000 18%);
   mask-composite: intersect;
 }
-
 .foto {
   width: 100%;
   height: 100%;
   object-fit: cover;
   filter: contrast(1.08) saturate(1.05);
 }
-
 .escudoClub {
-  width: 480px;
-  height: 480px;
-  left: 50px;
-  top: 360px;
+  width: 150px;
+  height: 150px;
+  position: absolute;
+  top: 150px;
+  left: 64px;
 }
-
 .lista {
   position: absolute;
   z-index: 6;
-  top: 150px;
+  top: 126px;
   right: 64px;
-  width: 500px;
+  bottom: 170px;
+  width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   text-shadow: 0 3px 14px rgb(0 0 0 / 70%);
 }
-
 .categoria {
+  font-size: 26px;
   font-weight: 800;
-  font-size: 24px;
-  letter-spacing: 0.18em;
-  color: rgb(255 255 255 / 80%);
+  line-height: 1.3;
 }
-
 .titulo {
-  font-size: 118px;
-  line-height: 1.05;
+  font-size: 72px;
+  line-height: 1.5;
   color: var(--amarillo);
 }
-
 .subtitulo {
-  margin-top: 6px;
+  font-size: 34px;
   font-weight: 800;
-  font-style: italic;
-  font-size: 24px;
-  letter-spacing: 0.01em;
-  line-height: 1.15;
+  line-height: 1.3;
   overflow-wrap: anywhere;
 }
-
 .titulares {
-  margin: 18px 0 0;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
   padding: 0;
   list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
 }
-
+.titulares ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2px;
+}
 .titulares li {
+  flex: none;
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 16px;
-  border-bottom: 1px solid rgb(255 255 255 / 7%);
+  gap: 14px;
+  min-height: 54px;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
 }
-
 .dorsal {
-  width: 64px;
+  width: 62px;
   flex: none;
   text-align: right;
-  font-size: 50px;
+  font-size: 46px;
+  line-height: 1.5;
   color: var(--amarillo);
 }
-
 .nombre {
-  flex: 0 1 auto;
   min-width: 0;
+  font-size: 44px;
   font-weight: 800;
-  white-space: normal;
+  line-height: 1.3;
   overflow-wrap: anywhere;
-  line-height: 1.1;
 }
-
 .capitan {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-left: 8px;
   flex: none;
-  display: grid;
-  place-items: center;
-  width: 34px;
+  width: 24px;
   height: 34px;
   color: var(--amarillo);
-  font-weight: 800;
-  font-size: 22px;
-  text-shadow: none;
-}
-
-.suplentes {
-  margin-top: 18px;
-  font-weight: 600;
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1.25;
-  color: rgb(255 255 255 / 88%);
-  overflow-wrap: anywhere;
+  text-align: center;
 }
-
+.suplentes {
+  flex: none;
+  font-size: 32px;
+  line-height: 1.25;
+  font-weight: 600;
+}
 .etiquetaSuplentes {
   display: block;
-  margin-bottom: 4px;
+  color: var(--amarillo);
+  font-size: 26px;
   font-weight: 800;
-  letter-spacing: 0.3em;
+  margin-bottom: 4px;
+}
+.listaSuplentes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+}
+.listaSuplentes > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.listaSuplentes b {
   color: var(--amarillo);
 }
-
-/* Invertido: foto a la derecha, lista a la izquierda. */
 .invertido .retrato {
   left: auto;
   right: 0;
   mask-image:
-    linear-gradient(270deg, #000 62%, transparent), linear-gradient(0deg, transparent, #000 18%);
+    linear-gradient(270deg, #000 65%, transparent), linear-gradient(0deg, transparent, #000 18%);
 }
-
 .invertido .lista {
   right: auto;
   left: 64px;
 }
+.listaAmplia .lista {
+  left: 64px;
+  width: auto;
+  right: 64px;
+}
+.sinFoto .retrato {
+  display: none;
+}
+.listaAmplia .cabecera {
+  min-height: 160px;
+}
+.sinFoto .escudoClub {
+  display: none;
+}
+.listaAmplia .retrato {
+  filter: brightness(0.4);
+}
 
-.invertido .escudoClub {
-  left: auto;
-  right: 50px;
+/* Fila de relleno de la columna corta (ver `CartelOnce.tsx`): ocupa sitio y no se ve. */
+.titulares li.hueco {
+  visibility: hidden;
 }

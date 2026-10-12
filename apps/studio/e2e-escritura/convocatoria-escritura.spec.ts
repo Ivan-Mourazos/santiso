@@ -13,7 +13,6 @@ test("guardar convocatoria, reabrir, exportar PNG y pasar convocados a alineaci√
   await expect(page.getByText("3 convocados / 3")).toBeVisible({ timeout: 30000 });
   const plantilla = page.getByRole("list", { name: "Plantilla Veteranos" });
   await plantilla.getByRole("button", { name: "Convocar: Tres Ali√±aci√≥n Ficticio" }).click();
-  await page.getByText("Datos de la quedada", { exact: true }).click();
   await page.getByLabel("Hora de quedada", { exact: true }).fill("16:00");
   await page.getByLabel("Lugar de quedada", { exact: true }).fill("Campo Calendario");
   await page.getByLabel("Equipaci√≥n", { exact: true }).fill("Amarela");
@@ -22,7 +21,6 @@ test("guardar convocatoria, reabrir, exportar PNG y pasar convocados a alineaci√
   await expect(page.getByText("Convocatoria guardada", { exact: true })).toBeVisible();
   await page.goto(ruta);
   await expect(page.getByText("2 convocados / 3")).toBeVisible({ timeout: 30000 });
-  await page.getByText("Datos de la quedada", { exact: true }).click();
   await expect(page.getByLabel("Hora de quedada", { exact: true })).toHaveValue("16:00");
   await expect(page.getByLabel("Lugar de quedada", { exact: true })).toHaveValue(
     "Campo Calendario",

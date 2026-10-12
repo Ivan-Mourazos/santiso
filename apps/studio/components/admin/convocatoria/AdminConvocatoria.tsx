@@ -137,6 +137,11 @@ export default function AdminConvocatoria({
       headers: { "content-type": "application/json" },
       body: JSON.stringify(peticion),
     });
+    if (respuesta.status === 422) {
+      const aviso = (await respuesta.json()) as { error: string };
+      showToast(aviso.error, "error");
+      return;
+    }
     if (!respuesta.ok) throw new Error(String(respuesta.status));
     const blob = await respuesta.blob();
     if (turno !== generacion.current) return;
@@ -261,7 +266,7 @@ export default function AdminConvocatoria({
             ))}
           </ul>
           {invalid && <p role="status">{invalid}</p>}
-          <details className={s.detalles}>
+          <details className={s.detalles} open>
             <summary>Datos de la quedada</summary>
             <fieldset disabled={ocupada || bloqueada} className={s.campos}>
               <Field

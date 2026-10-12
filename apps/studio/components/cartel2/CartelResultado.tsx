@@ -1,102 +1,81 @@
-import type { CSSProperties } from "react";
-import {
-  categoriaCartel,
-  cuerpo,
-  fechaCorta,
-  goleadores,
-  type DatosResultado,
-} from "@/lib/cartel2/modelo";
+import { categoriaCartel, fechaCorta, goleadores, type DatosResultado } from "@/lib/cartel2/modelo";
 import { Balon } from "./Balon";
 import { Escudo } from "./Escudo";
 import { Base } from "./Base";
 import b from "./Base.module.css";
 import s from "./CartelResultado.module.css";
 
-/**
- * Cartel de resultado: escudos a los lados, marcador enorme en el centro (el del Santiso en
- * amarillo) y goleadores de cada equipo en su columna. Con foto, la foto es el fondo.
- */
 export function CartelResultado({ datos }: { datos: DatosResultado }) {
-  const golesPorLado = {
+  const golesPor = {
     local: goleadores(datos.goles, "local"),
     visitante: goleadores(datos.goles, "visitante"),
   };
-  // Cada goleador ocupa una fila: se reparten el hueco (más pequeño con foto) sin salirse.
-  const filas = Math.max(golesPorLado.local.length, golesPorLado.visitante.length, 1);
-  const hueco = datos.foto ? 250 : 400;
-  const fila = Math.max(26, Math.min(datos.foto ? 44 : 52, Math.floor(hueco / filas)));
-  const estiloGoles = { "--fila-gol": `${fila}px` } as CSSProperties;
-  const cuerpoMarcador = Math.max(datos.golesLocal, datos.golesVisitante) >= 10 ? 190 : 250;
-  const nombre = (texto: string) => ({ fontSize: cuerpo(texto, 360, 36, 22, 0.5) });
-  const pie = [fechaCorta(datos.fecha), datos.campo.toUpperCase()].filter(Boolean).join("  ·  ");
-
+  const pie = [fechaCorta(datos.fecha), datos.campo].filter(Boolean).join(" · ");
   return (
     <Base
+      compacto
       variante="centro"
       izquierda={datos.local}
       derecha={datos.visitante}
       foto={datos.foto}
       institucionales={datos.institucionales}
       patrocinadores={datos.patrocinadores}
-      className={datos.foto ? s.conFoto : undefined}
     >
-      <header className={b.cabecera}>
-        <div className={b.xornada}>{datos.jornada ? `XORNADA ${datos.jornada}` : "RESULTADO"}</div>
-        <div className={b.competicion}>
-          {categoriaCartel(datos.categoria)}
-          {datos.competicion ? ` · ${datos.competicion.toUpperCase()}` : ""}
+      <div className={s.contenido}>
+        <header className={s.cabecera} data-lectura-bloque>
+          <h1 className={b.display}>RESULTADO</h1>
+          <p>
+            {categoriaCartel(datos.categoria)} · {datos.competicion}
+            {datos.jornada ? ` · XORNADA ${datos.jornada}` : ""}
+          </p>
+        </header>
+        <div className={s.cruce} data-lectura-bloque>
+          {datos.local.escudo ? (
+            <Escudo className={s.escudo} src={datos.local.escudo} relieve={datos.local.relieve} />
+          ) : (
+            <span className={s.escudo} />
+          )}
+          <div className={s.marcador} data-resultado-marcador>
+            <strong className={datos.local.propio ? s.propio : ""}>{datos.golesLocal}</strong>
+            <span>–</span>
+            <strong className={datos.visitante.propio ? s.propio : ""}>
+              {datos.golesVisitante}
+            </strong>
+          </div>
+          {datos.visitante.escudo ? (
+            <Escudo
+              className={s.escudo}
+              src={datos.visitante.escudo}
+              relieve={datos.visitante.relieve}
+            />
+          ) : (
+            <span className={s.escudo} />
+          )}
         </div>
-      </header>
-
-      <div className={s.etiqueta}>RESULTADO FINAL</div>
-
-      {datos.local.escudo && (
-        <Escudo
-          className={`${b.escudo} ${s.escudoLocal}`}
-          src={datos.local.escudo}
-          relieve={datos.local.relieve}
-        />
-      )}
-      {datos.visitante.escudo && (
-        <Escudo
-          className={`${b.escudo} ${s.escudoVisitante}`}
-          src={datos.visitante.escudo}
-          relieve={datos.visitante.relieve}
-        />
-      )}
-
-      <div className={`${b.display} ${s.marcador}`} style={{ fontSize: cuerpoMarcador }}>
-        <span className={datos.local.propio ? s.propio : undefined}>{datos.golesLocal}</span>
-        <span className={s.guion}>–</span>
-        <span className={datos.visitante.propio ? s.propio : undefined}>
-          {datos.golesVisitante}
-        </span>
-      </div>
-
-      <div className={`${b.nombre} ${s.nombreLocal}`} style={nombre(datos.local.nombre)}>
-        {datos.local.nombre.toUpperCase()}
-      </div>
-      <div className={`${b.nombre} ${s.nombreVisitante}`} style={nombre(datos.visitante.nombre)}>
-        {datos.visitante.nombre.toUpperCase()}
-      </div>
-
-      {(["local", "visitante"] as const).map((lado) => (
-        <ul
-          key={lado}
-          className={`${s.goles} ${lado === "local" ? s.golesLocal : s.golesVisitante}`}
-          style={estiloGoles}
-        >
-          {golesPorLado[lado].map((g) => (
-            <li key={g.nombre}>
-              <Balon tamano={Math.round(fila * 0.5)} />
-              <span className={s.goleador}>{g.nombre.toUpperCase()}</span>
-              <span className={s.minutos}>{g.minutos.join(", ")}</span>
-            </li>
+        <div className={s.nombres} data-lectura-bloque>
+          <strong data-lectura-columna>{datos.local.nombre}</strong>
+          <strong data-lectura-columna>{datos.visitante.nombre}</strong>
+        </div>
+        <div className={s.goleadores} data-lectura-bloque>
+          {(["local", "visitante"] as const).map((lado) => (
+            <ul key={lado}>
+              {golesPor[lado].map((g) => (
+                <li key={g.nombre} data-lectura-fila>
+                  <Balon tamano={28} />
+                  <span className={s.nombre} data-lectura-columna>
+                    {g.nombre} <span className={s.minutos}>{g.minutos.join(", ")}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           ))}
-        </ul>
-      ))}
-
-      {pie && <div className={`${b.dato} ${s.pie}`}>{pie}</div>}
+        </div>
+        {pie && (
+          <div className={s.pie} data-lectura-bloque>
+            {pie}
+          </div>
+        )}
+      </div>
     </Base>
   );
 }

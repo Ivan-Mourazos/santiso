@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- media local y PNG generado: sin optimizador */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCartelAssets } from "@/components/admin/cartel/useCartelAssets";
+import { FotoFondoControl } from "@/components/cartel2/FotoFondoControl";
 import { useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Select } from "@/components/ui/foundation/Fields";
@@ -19,7 +20,7 @@ import {
   type PantallaAlineacion,
 } from "@/lib/alineacion/modelo";
 import { aHex, COLOR_RIVAL_RESERVA } from "@/lib/cartel2/color";
-import { fechaCorta } from "@/lib/cartel2/modelo";
+import { fechaCorta, type FotoCartel } from "@/lib/cartel2/modelo";
 import { cargarPantallaAlineacion, guardarAlineacion } from "@/lib/server/acciones/alineacion";
 import styles from "./Alineacion.module.css";
 
@@ -43,6 +44,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
   const [alineacion, setAlineacion] = useState<Alineacion>(ALINEACION_VACIA);
   const [guardada, setGuardada] = useState<Alineacion>(ALINEACION_VACIA);
   const [ocupada, setOcupada] = useState(false);
+  const [fotoFondo, setFotoFondo] = useState<FotoCartel | null>(null);
   const [historia, setHistoria] = useState<{ url: string; fichero: File } | null>(null);
   const generacion = useRef(0);
   const recursos = useCartelAssets("noso11");
@@ -82,7 +84,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
 
   const peticion = useMemo(() => {
     if (!pantalla || !partido) return null;
-    return peticionDeAlineacion(categoria, partido, pantalla.jugadores, alineacion, {
+    const p = peticionDeAlineacion(categoria, partido, pantalla.jugadores, alineacion, {
       institucionales: (recursos.xuntaIsLeft
         ? [recursos.xunta, recursos.rfgf]
         : [recursos.rfgf, recursos.xunta]
@@ -90,7 +92,8 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
       patrocinadores: recursos.sponsors,
       colorRival: aHex(COLOR_RIVAL_RESERVA),
     });
-  }, [pantalla, partido, categoria, alineacion, recursos]);
+    return p.plantilla === "alineacion" ? { ...p, datos: { ...p.datos, foto: fotoFondo } } : p;
+  }, [pantalla, partido, categoria, alineacion, recursos, fotoFondo]);
 
   function tocar(jugadorId: string) {
     if (bloqueada || !pantalla) return;
@@ -137,6 +140,11 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
         headers: { "content-type": "application/json" },
         body: JSON.stringify(peticion),
       });
+      if (respuesta.status === 422) {
+        const aviso = (await respuesta.json()) as { error: string };
+        showToast(aviso.error, "error");
+        return;
+      }
       if (!respuesta.ok) throw new Error(String(respuesta.status));
       const blob = await respuesta.blob();
       const dia = (partido.fecha ?? "").slice(0, 10) || "partido";
@@ -300,6 +308,13 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
             })}
           </ul>
 
+          <FotoFondoControl
+            foto={fotoFondo}
+            onChange={(foto) => {
+              setFotoFondo(foto);
+              setHistoria(null);
+            }}
+          />
           <div className={styles.barra}>
             {!bloqueada && (
               <Button

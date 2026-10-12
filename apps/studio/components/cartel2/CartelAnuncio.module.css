@@ -7,7 +7,7 @@
 .contenido {
   position: absolute;
   z-index: 6;
-  top: 200px;
+  top: 130px;
   bottom: 200px;
   left: 64px;
   right: 64px;
@@ -36,7 +36,7 @@
   margin: 28px 0 0;
   font-weight: 400;
   /* Las mayúsculas con tilde (Ó, Á) necesitan aire entre líneas. */
-  line-height: 1.08;
+  line-height: 1.6;
   letter-spacing: -0.02em;
   text-shadow: 0 8px 36px rgb(0 0 0 / 60%);
   overflow-wrap: anywhere;
@@ -50,15 +50,11 @@
   margin: 26px 0 0;
   max-width: 840px;
   font-weight: 600;
-  font-size: 32px;
+  font-size: 46px;
   line-height: 1.3;
   color: rgb(255 255 255 / 94%);
   /* Los saltos de línea que se escriben en el formulario se respetan. */
   white-space: pre-line;
-  display: -webkit-box;
-  -webkit-line-clamp: 6;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .imagenes {
@@ -88,7 +84,7 @@
 /* Sin imágenes, el comunicado se centra en vertical en vez de dejar medio cartel vacío. */
 .sinImagenes {
   justify-content: center;
-  padding-bottom: 20px;
+  padding-bottom: 0;
 }
 
 .sinImagenes .titulo {
@@ -96,7 +92,7 @@
 }
 
 .sinImagenes::before {
-  content: "";
+  content: none;
   position: absolute;
   z-index: -1;
   right: -64px;
@@ -112,6 +108,5 @@
 }
 
 .sinImagenes .texto {
-  font-size: 38px;
-  -webkit-line-clamp: 9;
+  font-size: 46px;
 }
