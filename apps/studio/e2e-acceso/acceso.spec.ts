@@ -115,6 +115,33 @@ test("el míster entra, usa el día a día y no ve lo del administrador", async 
   await contexto.close();
 });
 
+test("en el móvil cada uno tiene sus pestañas", async ({ browser }) => {
+  const movil = { viewport: { width: 360, height: 780 }, hasTouch: true };
+  for (const [quien, esperadas, ausente] of [
+    [MISTER, ["Jornada", "Convocar", "Once", "Multas"], "Carteles"],
+    [ADMIN, ["Jornada", "Carteles", "Multas"], "Convocar"],
+  ] as const) {
+    const contexto = await browser.newContext(movil);
+    const page = await contexto.newPage();
+    await entrar(page, quien.usuario, quien.clave);
+    await expect(page).toHaveURL(/\/admin\/jornada/);
+    const pestanas = page.getByRole("navigation", { name: "Accesos rápidos" });
+    for (const nombre of esperadas) {
+      const caja = (await pestanas.getByRole("link", { name: nombre, exact: true }).boundingBox())!;
+      expect(Math.round(caja.height)).toBeGreaterThanOrEqual(44);
+    }
+    await expect(pestanas.getByRole("link", { name: ausente, exact: true })).toHaveCount(0);
+    await expect(pestanas.getByRole("button", { name: "Más" })).toBeVisible();
+    // Ninguna etiqueta se sale de su pestaña ni ensancha la pantalla.
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+    const desbordadas = await pestanas
+      .locator("a, button")
+      .evaluateAll((items) => items.filter((i) => i.scrollWidth > i.clientWidth + 1).length);
+    expect(desbordadas).toBe(0);
+    await contexto.close();
+  }
+});
+
 test("el cartel se exporta a PNG con la sesión de quien lo pide", async ({ browser }) => {
   test.setTimeout(90_000);
   const { contexto } = await sesionDe(browser, MISTER);
