@@ -265,27 +265,48 @@ it("un fallo de la federación queda anotado y se reintenta en la siguiente pasa
   expect(await db.select().from(s.rfgfActas)).toMatchObject([{ codActa: "904", estado: "guardada" }]);
 });
 
-it("del PDF de jornada salen los marcadores de todos los partidos, sin pedir sus actas", async () => {
+it("del PDF de jornada salen los marcadores; el acta se pide una vez para goles y tarjetas", async () => {
   const { s, competicionId, partidoId, sincronizarCompeticion, leer } = await preparar({
     santiso: false,
   });
-  const { descargador, pedidas } = descargadorDe(paginaJornada("EQUIPO LOCAL", "EQUIPO VISITANTE", "901"), [
+  const pdf = [
     "EQUIPO LOCAL",
     "4 - 1",
     "14-09-2025",
     "12:00",
     "EQUIPO VISITANTE",
     "Campo: O Campo - Hierba Natural Árbitro: APELLIDO, NOMBRE",
-  ]);
+  ];
+  const pagina = paginaJornada("EQUIPO LOCAL", "EQUIPO VISITANTE", "901");
+  const { descargador, pedidas } = descargadorDe(pagina, pdf);
   const resumen = await sincronizarCompeticion(competicionId, descargador, AHORA);
   expect(resumen).toMatchObject({ resultados: 1, actas: 0, errores: [], horarios: [] });
   const db = await leer();
   const [partido] = await db.select().from(s.partidos).where(eq(s.partidos.id, partidoId));
+  // El marcador es el del PDF de jornada: el acta ya no lo pisa.
   expect(partido).toMatchObject({ golesLocal: 4, golesVisitante: 1, estado: "finalizado" });
   expect(pedidas.jornadas).toEqual([1]);
-  // Con el marcador ya puesto a la jornada no le falta nada: ni página ni actas.
-  expect(pedidas.html).toEqual([]);
-  expect(pedidas.pdf).toEqual([]);
+  expect(pedidas.pdf).toHaveLength(1);
+
+  // Sus goles y tarjetas quedan en las tablas de la liga, cada uno con su equipo.
+  const eventos = await db.select().from(s.ligaEventos);
+  expect(eventos.length).toBeGreaterThan(0);
+  expect(new Set(eventos.map((e) => e.partidoId))).toEqual(new Set([partidoId]));
+  const equipos = new Set((await db.select().from(s.equipos)).map((e) => e.id));
+  expect(eventos.every((e) => equipos.has(e.equipoId) && e.personaClave)).toBe(true);
+  expect(await db.select().from(s.rfgfActas)).toMatchObject([
+    { codActa: "901", estado: "resultado", eventos: true },
+  ]);
+
+  // Ya está todo: la siguiente pasada no vuelve a pedir el acta ni duplica nada.
+  const otra = descargadorDe(pagina, pdf);
+  await sincronizarCompeticion(
+    competicionId,
+    otra.descargador,
+    new Date(AHORA.getTime() + 4 * 3_600_000),
+  );
+  expect(otra.pedidas.pdf).toEqual([]);
+  expect(await db.select().from(s.ligaEventos)).toHaveLength(eventos.length);
 });
 
 /** Un partido por jugar el 21/09 a las 17:00, además del ya jugado de `preparar`. */

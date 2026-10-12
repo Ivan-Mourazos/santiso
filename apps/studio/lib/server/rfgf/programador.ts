@@ -1,33 +1,34 @@
 import "server-only";
 
+import { tocaPasadaDiaria } from "@/lib/rfgf/plan";
 import { comoSistema } from "@/lib/server/db";
 import { crearDescargador } from "./descargador";
-import { sincronizarTodo } from "./sincronizar";
+import { sincronizarTodo, ultimaComprobacion } from "./sincronizar";
 
-/** Cada cuánto se mira si hay actas nuevas de los partidos recientes. */
-const CADA_MS = 30 * 60_000;
-/** Una de cada tantas pasadas mira también lo antiguo que siga pendiente: una vez al día. */
-const PASADAS_POR_DIA = 48;
+/** Cada cuánto se mira el reloj para ver si ya toca la comprobación del día. */
+const CADA_MS = 10 * 60_000;
 
 declare global {
   var santisoProgramadorRfgf: ReturnType<typeof setInterval> | undefined;
 }
 
 /**
- * Comprobación periódica de la federación. Solo se activa con `STUDIO_RFGF_AUTO=1`, que lleva
- * la copia de uso diario: ni desarrollo ni pruebas salen nunca a la red por su cuenta.
+ * Comprobación diaria de la federación, a partir de las 21:00 (ver `tocaPasadaDiaria`). Lo
+ * que la federación publica no cambia de una hora para otra, y cuantas menos descargas, mejor:
+ * quien quiera los datos antes tiene «Comprobar ahora» en el panel de Jornada.
+ *
+ * Solo se activa con `STUDIO_RFGF_AUTO=1`, que lleva la copia de uso diario: ni desarrollo ni
+ * pruebas salen nunca a la red por su cuenta.
  */
 export function iniciarProgramadorRfgf() {
   if (process.env.STUDIO_RFGF_AUTO !== "1" || globalThis.santisoProgramadorRfgf) return;
-  let pasada = 0;
   const comprobar = async () => {
-    const completa = pasada % PASADAS_POR_DIA === 0;
-    pasada += 1;
     try {
       // No viene de ninguna petición: se ejecuta como el propio servidor.
-      const resumenes = await comoSistema(() =>
-        sincronizarTodo(crearDescargador(), new Date(), !completa),
-      );
+      const resumenes = await comoSistema(async () => {
+        if (!tocaPasadaDiaria(new Date(), await ultimaComprobacion())) return [];
+        return sincronizarTodo(crearDescargador(), new Date());
+      });
       for (const r of resumenes) {
         if (
           r.actas ||

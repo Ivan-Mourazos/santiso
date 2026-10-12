@@ -35,6 +35,8 @@ export const competiciones = sqliteTable(
     nombre: text("nombre").notNull(),
     formato: text("formato", { enum: FORMATOS_COMPETICION }).notNull().default("liga"),
     orden: integer("orden").notNull().default(0),
+    /** Amarillas que suman un partido de sanción. Lo fija el reglamento de cada competición. */
+    amarillasCiclo: integer("amarillas_ciclo").notNull().default(5),
     reglasClasificacion: text("reglas_clasificacion", { mode: "json" })
       .$type<ReglaClasificacion[]>()
       .notNull()

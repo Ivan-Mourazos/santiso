@@ -31,7 +31,14 @@ import {
   tocaMirarHorarios,
 } from "@/lib/rfgf/horarios";
 import { partidosDeJornada } from "@/lib/rfgf/jornada";
-import { jornadasPendientes, leFaltaAlgo, partidoDeActa, type PartidoLocal } from "@/lib/rfgf/plan";
+import { eventosDeFicha } from "@/lib/liga/eventos";
+import {
+  jornadasSinEventos,
+  jornadasPendientes,
+  leFaltaAlgo,
+  partidoDeActa,
+  type PartidoLocal,
+} from "@/lib/rfgf/plan";
 import { guardarActa } from "@/lib/server/acciones/actas";
 import {
   cambiarCampoPartido,
@@ -72,7 +79,10 @@ function horaLocal(ahora: Date): string {
   return `${ahora.getFullYear()}-${dos(ahora.getMonth() + 1)}-${dos(ahora.getDate())}T${dos(ahora.getHours())}:${dos(ahora.getMinutes())}`;
 }
 
-async function partidosDeCompeticion(competicionId: string): Promise<PartidoLocal[]> {
+/** Un partido con los equipos de cada lado, para apuntar a quién pertenece cada evento. */
+type PartidoConEquipos = PartidoLocal & { equipos: { local: string; visitante: string } };
+
+async function partidosDeCompeticion(competicionId: string): Promise<PartidoConEquipos[]> {
   const { db } = await obtenerDb();
   const local = aliasedTable(schema.equipos, "local");
   const visitante = aliasedTable(schema.equipos, "visitante");
@@ -89,6 +99,9 @@ async function partidosDeCompeticion(competicionId: string): Promise<PartidoLoca
       arbitro: schema.partidos.arbitro,
       golesLocal: schema.partidos.golesLocal,
       participaciones: sql<number>`(select count(*) from ${schema.partidoParticipaciones} where ${schema.partidoParticipaciones.partidoId} = ${schema.partidos.id})`,
+      eventos: sql<number>`(select count(*) from ${schema.rfgfActas} where ${schema.rfgfActas.partidoId} = ${schema.partidos.id} and ${schema.rfgfActas.eventos} = 1)`,
+      equipoLocalId: schema.partidos.equipoLocalId,
+      equipoVisitanteId: schema.partidos.equipoVisitanteId,
     })
     .from(schema.partidos)
     .innerJoin(schema.jornadas, eq(schema.jornadas.id, schema.partidos.jornadaId))
@@ -106,6 +119,8 @@ async function partidosDeCompeticion(competicionId: string): Promise<PartidoLoca
     conMarcador: f.golesLocal !== null,
     propio: f.localPropio || f.visitantePropio,
     conActa: Number(f.participaciones) > 0,
+    conEventos: Number(f.eventos) > 0,
+    equipos: { local: f.equipoLocalId, visitante: f.equipoVisitanteId },
   }));
 }
 
@@ -115,9 +130,11 @@ async function anotar(
   partidoId: string | null,
   estado: EstadoActa,
   detalle: string,
+  /** Ya se miraron sus goles y tarjetas (se pudieran leer o no): no hay que volver a por ella. */
+  eventos = true,
 ) {
   const { db } = await obtenerDb();
-  const valores = { competicionId, partidoId, estado, detalle: detalle.slice(0, 500) };
+  const valores = { competicionId, partidoId, estado, detalle: detalle.slice(0, 500), eventos };
   await db
     .insert(schema.rfgfActas)
     .values({ codActa, ...valores })
@@ -205,13 +222,30 @@ async function tratarJornada(
   return cambios;
 }
 
-/** Trae un acta cerrada: guarda el marcador y, si juega el Santiso y todo cuadra, el acta. */
+/** Apunta los goles y las tarjetas de un acta en las tablas de la liga, sustituyendo los que hubiera. */
+async function guardarEventosDeLiga(partido: PartidoConEquipos, ficha: Ficha) {
+  const { db } = await obtenerDb();
+  const filas = eventosDeFicha(ficha).map(({ lado, ...evento }) => ({
+    partidoId: partido.id,
+    equipoId: partido.equipos[lado],
+    ...evento,
+  }));
+  await db.transaction(async (tx) => {
+    await tx.delete(schema.ligaEventos).where(eq(schema.ligaEventos.partidoId, partido.id));
+    if (filas.length) await tx.insert(schema.ligaEventos).values(filas);
+  });
+}
+
+/**
+ * Trae un acta cerrada: apunta sus goles y tarjetas para las tablas de la liga, guarda el
+ * marcador si falta y, si juega el Santiso y todo cuadra, el acta entera.
+ */
 async function tratarActa(
   codActa: string,
   grupo: GrupoRfgf,
   competicion: { id: string; categoria: string },
   enLaWeb: { local: string; visitante: string },
-  candidatos: readonly PartidoLocal[],
+  candidatos: readonly PartidoConEquipos[],
   descargador: DescargadorRfgf,
   resumen: ResumenRfgf,
 ) {
@@ -222,7 +256,7 @@ async function tratarActa(
     return anotar(codActa, competicion.id, null, "revisar", "No se encontró el partido.");
   }
   // Nada que traer: no se descarga el PDF.
-  if (!leFaltaAlgo(partido)) {
+  if (!leFaltaAlgo(partido) && partido.conEventos) {
     return anotar(codActa, competicion.id, partido.id, partido.propio ? "guardada" : "resultado", "Ya estaba.");
   }
 
@@ -237,6 +271,15 @@ async function tratarActa(
     ficha = await parsearFichaPdf(pdf);
   } catch (error) {
     if (error instanceof Error) tropiezo = error.message;
+  }
+  if (ficha) await guardarEventosDeLiga(partido, ficha);
+  else if (!partido.conEventos) {
+    resumen.revisar.push(`${cruce}: no pude leer sus goles y tarjetas (${tropiezo}).`);
+  }
+  // Solo faltaban los goles y las tarjetas: lo demás del partido no se toca.
+  if (!leFaltaAlgo(partido)) {
+    const estado = partido.propio ? "guardada" : "resultado";
+    return anotar(codActa, competicion.id, partido.id, estado, "Goles y tarjetas apuntados.");
   }
   const leido = ficha?.marcador ?? (await marcadorDeFichaPdf(pdf).catch(() => null));
   const dejarPdf = async () => {
@@ -257,7 +300,7 @@ async function tratarActa(
 
   // Partido ajeno: solo interesa el resultado, y para eso basta el marcador.
   if (!partido.propio) {
-    await ponerMarcador();
+    if (!partido.conMarcador) await ponerMarcador();
     return anotar(codActa, competicion.id, partido.id, "resultado", `${golesLocal}–${golesVisitante}`);
   }
 
@@ -378,7 +421,13 @@ export async function sincronizarCompeticion(
   // Con los marcadores ya puestos, a las jornadas solo les falta, si acaso, el acta del Santiso.
   if (cambiosPdf > 0) partidos = await partidosDeCompeticion(competicionId);
 
-  for (const jornada of jornadasPendientes(partidos, horaLocal(ahora), desde)) {
+  // Además de lo pendiente, con la cadencia de los horarios se van completando las jornadas
+  // ya jugadas cuyos goles y tarjetas aún no estén en las tablas de la liga.
+  const jornadasActas = new Set([
+    ...jornadasPendientes(partidos, horaLocal(ahora), desde),
+    ...(mirarHorarios ? jornadasSinEventos(partidos, horaLocal(ahora)) : []),
+  ]);
+  for (const jornada of jornadasActas) {
     try {
       const enLaWeb = partidosDeJornada(await descargador.html(urlJornada(grupo, jornada))).filter(
         (p): p is typeof p & { codActa: string } => p.codActa !== null,
@@ -395,6 +444,7 @@ export async function sincronizarCompeticion(
               enLaWeb.map((p) => p.codActa),
             ),
             inArray(schema.rfgfActas.estado, ["resultado", "guardada", "revisar"]),
+            eq(schema.rfgfActas.eventos, true),
           ),
         );
       const hechas = new Set(tratadas.map((t) => t.codActa));
@@ -474,4 +524,14 @@ export async function sincronizarTodo(
   } finally {
     enMarcha = false;
   }
+}
+
+/** Cuándo se miró la federación por última vez, en cualquier competición. `null` si nunca. */
+export async function ultimaComprobacion(): Promise<Date | null> {
+  const { db } = await obtenerDb();
+  const [fila] = await db
+    .select({ ultima: sql<string | null>`max(${schema.rfgfCompeticiones.comprobadoEn})` })
+    .from(schema.rfgfCompeticiones);
+  const fecha = fila?.ultima ? new Date(fila.ultima) : null;
+  return fecha && !Number.isNaN(fecha.getTime()) ? fecha : null;
 }

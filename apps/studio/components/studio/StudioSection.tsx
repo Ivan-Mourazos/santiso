@@ -40,6 +40,7 @@ const Graphics = dynamic(() => import("@/components/admin/ajustes/AjustesGrafico
 const Stats = dynamic(() => import("@/components/admin/estadisticas/AdminEstadisticas"), {
   loading,
 });
+const LeagueTables = dynamic(() => import("@/components/admin/liga/AdminLiga"), { loading });
 const Users = dynamic(() => import("@/components/admin/acceso/AdminUsuarios"), { loading });
 const Account = dynamic(() => import("@/components/admin/acceso/MiCuenta"), { loading });
 const subscribeHydration = () => () => {};
@@ -54,7 +55,8 @@ export function StudioSection({ section }: { section: Seccion }) {
   // Equipos no entra: carga el catálogo una vez y filtra en memoria por la competición elegida.
   // Remontarla al cambiar de competición no aporta nada y abre una carrera: un diálogo abierto
   // justo después de cambiar se montaba en la instancia vieja y desaparecía con ella.
-  const contextual = section === "calendario" || section === "clasificacion";
+  const contextual =
+    section === "calendario" || section === "clasificacion" || section === "liga";
   // Plantilla y staff son por temporada: cambiar de temporada tiene que volver a montarlos.
   const squad = section === "jugadores" || section === "tecnicos" || section === "directiva";
   const key = contextual
@@ -69,6 +71,7 @@ export function StudioSection({ section }: { section: Seccion }) {
       {section === "jornada" && <Week />}
       {section === "calendario" && <Calendar {...feedback} categoria={category} />}
       {section === "clasificacion" && <League categoria={category} />}
+      {section === "liga" && <LeagueTables showToast={showToast} categoria={category} />}
       {section === "estadisticas" && <Stats showToast={showToast} categoria={category} />}
       {section === "jugadores" && <Players {...feedback} categoria={category} />}
       {section === "tecnicos" && <Staff {...feedback} tipo="Tecnico" categoria={category} />}
