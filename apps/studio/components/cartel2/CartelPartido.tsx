@@ -12,6 +12,26 @@ import { Base } from "./Base";
 import { Escudo } from "./Escudo";
 import s from "./CartelPartido.module.css";
 
+/** Ancho de la columna de cada equipo en el cartel, en px. */
+const ANCHO_COLUMNA = 440;
+/** Ancho medio de un carácter de la letra de los nombres, en em (medido: ≈ 0,37). */
+const EM_NOMBRE = 0.4;
+
+/**
+ * Cuerpo del nombre de un equipo. Si cabe en una línea a buen tamaño, va en una y grande
+ * («Atlético Éter»). Si no, va en dos y más contenido («A.C.U.D. Camporrapado»), midiendo por su
+ * palabra más larga para que ninguna se salga de la columna.
+ */
+export function cuerpoNombre(nombre: string, propio: boolean) {
+  const enUnaLinea = cuerpo(nombre, ANCHO_COLUMNA, propio ? 58 : 80, 36, EM_NOMBRE);
+  if (enUnaLinea >= 54) return enUnaLinea;
+  const masLarga = nombre.split(/\s+/).reduce((a, b) => (b.length > a.length ? b : a), "");
+  return Math.min(
+    cuerpo(masLarga, ANCHO_COLUMNA, propio ? 52 : 64, 30, EM_NOMBRE),
+    cuerpo(nombre, ANCHO_COLUMNA * 2, propio ? 52 : 64, 30, EM_NOMBRE),
+  );
+}
+
 function Equipo({ equipo }: { equipo: EquipoCartel }) {
   return (
     <div className={s.equipo} data-propio={equipo.propio}>
@@ -22,7 +42,8 @@ function Equipo({ equipo }: { equipo: EquipoCartel }) {
       </div>
       <div
         className={s.nombre}
-        style={{ fontSize: cuerpo(equipo.nombre, 860, equipo.propio ? 58 : 80, 36, 0.58) }}
+        data-nombre-equipo
+        style={{ fontSize: cuerpoNombre(equipo.nombre, equipo.propio) }}
       >
         {equipo.nombre}
       </div>
@@ -107,7 +128,7 @@ export function CartelPartido({
           <div className={s.vs}>VS</div>
           <Equipo equipo={datos.visitante} />
         </div>
-        <div className={s.cando}>
+        <div className={s.cando} data-cando>
           {datos.fecha ? (
             <span className={s.fecha}>{fechaCorta(datos.fecha)}</span>
           ) : (
