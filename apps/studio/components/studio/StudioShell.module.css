@@ -194,7 +194,7 @@
   /* Barra de pestañas opaca de lado a lado: lo que pasa por debajo no se ve a través. */
   .tabs {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--pestanas, 4), minmax(0, 1fr));
     position: fixed;
     left: 0;
     right: 0;

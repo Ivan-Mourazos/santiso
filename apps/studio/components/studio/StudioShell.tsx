@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState, type CSSProperties, type ReactNode } from "react";
 import {
   SECCIONES,
   categoriaDe,
@@ -38,6 +38,25 @@ const PESTANAS = [
   },
 ] as const;
 
+/**
+ * Las del cuerpo técnico: su día a día es convocar, hacer el once y poner multas. Los carteles
+ * los lleva el delegado; a él le quedan en «Más».
+ */
+const PESTANAS_TECNICO = [
+  PESTANAS[0],
+  {
+    id: "convocatoria",
+    label: "Convocar",
+    icono: "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3 19a6 6 0 0 1 12 0M17 8v6M14 11h6",
+  },
+  {
+    id: "alineacion",
+    label: "Once",
+    icono: "M4 5h16v14H4ZM12 5v14M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5ZM4 9h2.5v6H4M20 9h-2.5v6H20",
+  },
+  PESTANAS[2],
+] as const;
+
 function Icono({ trazo }: { trazo: string }) {
   return (
     <svg
@@ -70,6 +89,7 @@ export function StudioShell({
   const section = SECCIONES.find((item) => pathname === `/admin/${item.id}`);
   const secciones = seccionesDelMenu(acceso);
   const sinPermiso = !!section && reservada(section.id, acceso);
+  const pestanas = acceso?.rol === "tecnico" ? PESTANAS_TECNICO : PESTANAS;
   // Solo el calendario en PDF sigue reservado a escritorio; la captura de jornada vale en móvil.
   const desktopOnly =
     section?.id === "importar-jornada" && params.get("origen") === "calendario";
@@ -205,8 +225,12 @@ export function StudioShell({
             children
           )}
         </main>
-        <nav aria-label="Accesos rápidos" className={styles.tabs}>
-          {PESTANAS.map((pestana) => (
+        <nav
+          aria-label="Accesos rápidos"
+          className={styles.tabs}
+          style={{ "--pestanas": pestanas.length + 1 } as CSSProperties}
+        >
+          {pestanas.map((pestana) => (
             <Link
               key={pestana.id}
               href={rutaSeccion(pestana.id, params)}
@@ -224,7 +248,7 @@ export function StudioShell({
           <button
             type="button"
             className={styles.tab}
-            data-activa={!PESTANAS.some((pestana) => pestana.id === section?.id)}
+            data-activa={!pestanas.some((pestana) => pestana.id === section?.id)}
             aria-expanded={menu}
             aria-controls={menuId}
             aria-haspopup="dialog"
