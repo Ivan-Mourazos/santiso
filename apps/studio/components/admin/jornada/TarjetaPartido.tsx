@@ -4,327 +4,172 @@ import Link from "next/link";
 import { useState } from "react";
 import GaleriaPartido from "@/components/admin/fotos/GaleriaPartido";
 import { useStudio } from "@/components/studio/StudioContext";
-import boton from "@/components/ui/foundation/Button.module.css";
-import { hoyLocal } from "@/lib/jornada/semana";
 import type { PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
+import { enlacesPartido, progresoPartido, tieneResultado } from "./vestiario";
 import styles from "./Jornada.module.css";
 
-interface Props {
-  partido: PartidoDeLaSemana;
-  categoria: string;
+export function fechaPartido(fecha: string | null) {
+  if (!fecha) return { dia: "Fecha por confirmar", hora: "" };
+  const f = new Date(fecha);
+  if (Number.isNaN(f.getTime())) return { dia: "Fecha por confirmar", hora: "" };
+  return {
+    dia: f.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" }),
+    hora: fecha.includes("T") ? fecha.slice(11, 16) : "",
+  };
 }
 
-const clasesBoton = (variante: "primary" | "secondary") =>
-  `${boton.button} ${boton[variante]} ${boton.sm}`;
-
-/** Enlace con aspecto de botón. Deshabilitado, es un botón inerte que dice por qué. */
-function Accion({
+function Acceso({
   href,
   children,
-  principal,
-  deshabilitada,
+  disponible = true,
   motivo,
 }: {
   href: string;
   children: React.ReactNode;
-  principal?: boolean;
-  deshabilitada?: boolean;
+  disponible?: boolean;
   motivo?: string;
 }) {
-  const clase = clasesBoton(principal ? "primary" : "secondary");
-  if (deshabilitada) {
-    return (
-      <button type="button" className={clase} disabled title={motivo}>
-        {children}
-      </button>
-    );
-  }
-  return (
-    <Link href={href} className={clase}>
+  return disponible ? (
+    <Link className={styles.acceso} href={href}>
       {children}
+      <span aria-hidden="true">↗</span>
     </Link>
-  );
-}
-
-const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
-const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-
-/** `2026-09-27T17:00` → { dia: "dom 27 sep", hora: "17:00" }. Sin fecha, nada. */
-function fechaCorta(fecha: string | null) {
-  if (!fecha) return null;
-  const [dia, hora] = fecha.split("T");
-  const [a, m, d] = (dia ?? "").split("-").map(Number);
-  if (!a || !m || !d) return null;
-  const f = new Date(a, m - 1, d);
-  return { dia: `${DIAS[f.getDay()]} ${d} ${MESES[m - 1]}`, hora: hora?.slice(0, 5) ?? "" };
-}
-
-function Paso({
-  titulo,
-  estado,
-  tono,
-  children,
-}: {
-  titulo: string;
-  estado: string;
-  tono: "hecho" | "pendiente" | "espera";
-  children: React.ReactNode;
-}) {
-  return (
-    <li className={styles.paso}>
-      <div className={styles.pasoCabecera}>
-        <h4>{titulo}</h4>
-        <span className={styles.estado} data-tono={tono}>
-          {estado}
-        </span>
-      </div>
+  ) : (
+    <span className={styles.noDisponible}>
       {children}
-    </li>
+      <small>{motivo}</small>
+    </span>
   );
 }
 
-/**
- * Un partido de la semana y lo que toca hacer con él: cartel previo, acta, carteles del resultado,
- * resto de la jornada y clasificación. No guarda nada: cada botón abre su pantalla con el partido
- * ya elegido.
- */
-export default function TarjetaPartido({ partido: p, categoria }: Props) {
+export default function TarjetaPartido({
+  partido: p,
+  categoria,
+  momento,
+}: {
+  partido: PartidoDeLaSemana;
+  categoria: string;
+  momento: string;
+}) {
   const { showToast } = useStudio();
   const [galeria, setGaleria] = useState(false);
-  const cuando = fechaCorta(p.fecha);
-  const conResultado = p.golesSantiso !== null;
-  // Un partido cuya hora ya pasó cuenta como jugado aunque siga «programado»: es justo cuando
-  // hay que importar su acta.
-  const ahora = new Date();
-  const momentoActual = `${hoyLocal(ahora)}T${String(ahora.getHours()).padStart(2, "0")}:${String(ahora.getMinutes()).padStart(2, "0")}`;
-  const pasado = Boolean(p.fecha && p.fecha <= momentoActual);
-  const jugado = p.estado === "finalizado" || conResultado || pasado;
-  const cat = encodeURIComponent(categoria);
-  const conPartido = (plantilla: string) =>
-    `/admin/carteles?plantilla=${plantilla}&partido=${p.id}`;
-  const local = p.santisoLocal
-    ? { nombre: p.santiso, escudo: p.santisoEscudoUrl, propio: true }
-    : { nombre: p.rival.nombre, escudo: p.rival.escudoUrl, propio: false };
-  const visitante = p.santisoLocal
-    ? { nombre: p.rival.nombre, escudo: p.rival.escudoUrl, propio: false }
-    : { nombre: p.santiso, escudo: p.santisoEscudoUrl, propio: true };
-  const golesLocal = p.santisoLocal ? p.golesSantiso : p.golesRival;
-  const golesVisitante = p.santisoLocal ? p.golesRival : p.golesSantiso;
-
-  const equipo = (e: typeof local, lado: "local" | "visitante") => (
-    <div className={`${styles.equipo} ${e.propio ? styles.propio : ""}`}>
-      {lado === "visitante" &&
-        (e.escudo ? (
-          // eslint-disable-next-line @next/next/no-img-element -- escudo local del catálogo
-          <img src={e.escudo} alt="" />
-        ) : (
-          <span className={styles.escudoVacio} aria-hidden="true" />
-        ))}
-      <span>{e.nombre}</span>
-      {lado === "local" &&
-        (e.escudo ? (
-          // eslint-disable-next-line @next/next/no-img-element -- escudo local del catálogo
-          <img src={e.escudo} alt="" />
-        ) : (
-          <span className={styles.escudoVacio} aria-hidden="true" />
-        ))}
-    </div>
-  );
-
-  const acta = p.acta;
-  const resumenActa = acta
-    ? [
-        `${acta.convocados} convocados`,
-        acta.goleadores.length
-          ? `goles: ${acta.goleadores.map((g) => (g.goles > 1 ? `${g.nombre} (${g.goles})` : g.nombre)).join(", ")}`
-          : null,
-        acta.golesPropiaRival ? `${acta.golesPropiaRival} en propia del rival` : null,
-        acta.amarillas ? `${acta.amarillas} amarilla${acta.amarillas > 1 ? "s" : ""}` : null,
-        acta.rojas ? `${acta.rojas} roja${acta.rojas > 1 ? "s" : ""}` : null,
-      ]
-        .filter(Boolean)
-        .join(" · ")
-    : null;
-
+  const cuando = fechaPartido(p.fecha);
+  const { despues, pasos, principal } = progresoPartido(p, momento, categoria);
+  const e = enlacesPartido(p, categoria);
+  const marcado = tieneResultado(p);
   return (
-    <article className={styles.tarjeta} aria-label={`${local.nombre} - ${visitante.nombre}`}>
-      <p className={styles.contexto}>
-        {p.competicion} · Jornada {p.jornadaNumero}
-        {p.campo ? ` · ${p.campo}` : ""}
-      </p>
-
-      <div className={styles.cruce}>
-        {equipo(local, "local")}
-        <div className={styles.centro}>
-          {conResultado ? (
-            <span className={styles.marcador}>
-              {golesLocal} – {golesVisitante}
-            </span>
-          ) : pasado ? (
-            <>
-              <span className={styles.hora}>Sin resultado</span>
-              {cuando && <span className={styles.dia}>{cuando.dia}</span>}
-            </>
-          ) : cuando ? (
-            <>
-              <span className={styles.hora}>{cuando.hora || "Sin hora"}</span>
-              <span className={styles.dia}>{cuando.dia}</span>
-            </>
-          ) : (
-            <span className={styles.dia}>Sin fecha</span>
-          )}
-        </div>
-        {equipo(visitante, "visitante")}
+    <article
+      className={styles.tarjeta}
+      aria-label={`${p.santiso} - ${p.rival.nombre}`}
+      data-mesa-partido
+      data-fase={despues ? "despues" : "antes"}
+    >
+      <div className={styles.partidoCabecera}>
+        <span className={styles.contexto}>
+          {despues ? "Tras el partido" : p.estado === "en_juego" ? "En juego" : "Próximo partido"} ·
+          Jornada {p.jornadaNumero}
+        </span>
+        <span className={styles.localia}>
+          {p.estado === "aplazado"
+            ? "Aplazado"
+            : p.estado === "cancelado"
+              ? "Cancelado"
+              : p.santisoLocal
+                ? "Casa"
+                : "Fuera"}
+        </span>
       </div>
-
-      <ol className={styles.pasos}>
-        <Paso
-          titulo="Antes del partido"
-          estado={
-            jugado
-              ? "Jugado"
-              : cuando
-                ? `${cuando.dia}${cuando.hora ? `, ${cuando.hora}` : ""}`
-                : "Sin fecha"
-          }
-          tono={jugado ? "hecho" : "espera"}
-        >
-          <div className={styles.botones}>
-            <Accion href={conPartido("partido")} principal={!jugado}>
-              Cartel de partido
-            </Accion>
-            <Accion href={`/admin/convocatoria?categoria=${cat}&partido=${p.id}`}>
-              Convocatoria
-            </Accion>
-            <Accion href={`/admin/alineacion?categoria=${cat}&partido=${p.id}`}>Alineación</Accion>
-            <Accion
-              href={`/admin/calendario?categoria=${cat}&competicion=${p.competicionId}&jornada=${p.jornadaId}`}
-            >
-              Cambiar fecha, hora o campo
-            </Accion>
-          </div>
-        </Paso>
-
-        <Paso
-          titulo="Acta"
-          estado={acta ? "Guardada" : jugado ? "Esperando a la federación" : "Tras el partido"}
-          tono={acta ? "hecho" : jugado ? "pendiente" : "espera"}
-        >
-          {resumenActa && <p className={styles.detalle}>{resumenActa}</p>}
-          {acta && (
-            <div className={styles.botones}>
-              <Accion
-                href={`/admin/actas?categoria=${cat}&competicion=${p.competicionId}&partido=${p.id}`}
-              >
-                Corregir acta
-              </Accion>
-            </div>
-          )}
-          {!acta && (
-            <div className={styles.botones}>
-              {/* La federación la trae sola al cerrarse: meterla a mano es el plan B. */}
-              <Accion
-                href={`/admin/actas?categoria=${cat}&competicion=${p.competicionId}&partido=${p.id}`}
-                deshabilitada={!jugado}
-                motivo="Se importa cuando se haya jugado"
-              >
-                Meter acta a mano
-              </Accion>
-            </div>
-          )}
-        </Paso>
-
-        <Paso
-          titulo="Carteles del resultado"
-          estado={
-            !jugado
-              ? "Tras el partido"
-              : acta
-                ? "Listos"
-                : conResultado
-                  ? "Faltan datos del acta"
-                  : "Falta el resultado"
-          }
-          tono={jugado ? (acta ? "hecho" : "pendiente") : "espera"}
-        >
-          <div className={styles.botones}>
-            <Accion
-              href={conPartido("resumo")}
-              deshabilitada={!conResultado}
-              motivo="Necesita el resultado"
-            >
-              Resultado
-            </Accion>
-            <Accion
-              href={conPartido("cronoloxia")}
-              deshabilitada={!acta}
-              motivo="Necesita el acta: goles y tarjetas"
-            >
-              Cronoloxía
-            </Accion>
-            <Accion
-              href={conPartido("noso11")}
-              deshabilitada={!acta}
-              motivo="Necesita el acta: la convocatoria"
-            >
-              O noso 11
-            </Accion>
-            {/* Siempre disponible: las fotos se pueden subir en cuanto llegan, antes del acta. */}
-            <button
-              type="button"
-              className={`${boton.button} ${boton.secondary} ${boton.sm}`}
-              onClick={() => setGaleria(true)}
-            >
-              Fotos del partido
-            </button>
-          </div>
-          {galeria && (
-            <GaleriaPartido
-              partidoId={p.id}
-              partido={`${local.nombre} – ${visitante.nombre}${cuando ? ` · ${cuando}` : ""}`}
-              onCerrar={() => setGaleria(false)}
-              showToast={showToast}
-            />
-          )}
-        </Paso>
-
-        <Paso
-          titulo="Resto de la jornada"
-          estado={jugado ? "Resultados de la liga" : "Tras el partido"}
-          tono="espera"
-        >
-          <div className={styles.botones}>
-            <Accion
-              href={`/admin/importar-jornada?origen=foto&categoria=${cat}&competicion=${p.competicionId}&jornada=${p.jornadaId}`}
-              deshabilitada={!jugado}
-              motivo="Se importan cuando se haya jugado la jornada"
-            >
-              Importar resultados
-            </Accion>
-          </div>
-        </Paso>
-
-        {p.clasificacion && (
-          <Paso
-            titulo="Clasificación"
-            estado={
-              p.clasificacion.jugados === 0
-                ? "Sin partidos jugados"
-                : `${p.clasificacion.posicion}º de ${p.clasificacion.equipos} · ${p.clasificacion.puntos} ${p.clasificacion.puntos === 1 ? "punto" : "puntos"}`
-            }
-            tono={p.clasificacion.jugados === 0 ? "espera" : "hecho"}
-          >
-            <div className={styles.botones}>
-              <Accion href={`/admin/clasificacion?categoria=${cat}&competicion=${p.competicionId}`}>
-                Ver clasificación
-              </Accion>
-              <Accion href="/admin/carteles?plantilla=clasificacion">
-                Cartel de clasificación
-              </Accion>
-            </div>
-          </Paso>
+      <div className={styles.rival}>
+        <div>
+          <p className={styles.propio}>{p.santiso} · contra</p>
+          <h2>{p.rival.nombre}</h2>
+        </div>
+        {p.rival.escudoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- escudo del catálogo local
+          <img src={p.rival.escudoUrl} alt="" />
         )}
-      </ol>
+      </div>
+      <div className={styles.cuando}>
+        <time dateTime={p.fecha ?? undefined}>{cuando.dia}</time>
+        <strong>{marcado ? `${p.golesSantiso}–${p.golesRival}` : cuando.hora || "Sin hora"}</strong>
+      </div>
+      {marcado && <p className={styles.contexto}>Marcador · Santiso / rival</p>}
+      <p className={styles.campo}>{p.campo || "Campo por confirmar"}</p>
+      <p className={styles.competicion}>{p.competicion}</p>
+
+      <div className={styles.trabajo}>
+        <p className={styles.etiqueta}>Siguiente tarea</p>
+        <Link href={principal.href} className={styles.principal} data-accion-principal>
+          {principal.titulo}
+          <span aria-hidden="true">→</span>
+        </Link>
+        <ol
+          className={styles.pasos}
+          aria-label={despues ? "Cierre del partido" : "Preparación del partido"}
+        >
+          {pasos.map((paso, i) => (
+            <li key={paso.titulo} className={styles.paso} data-tono={paso.tono} data-paso-partido>
+              <span className={styles.numero} aria-hidden="true">
+                {paso.tono === "hecho" ? "✓" : i + 1}
+              </span>
+              {paso.tono === "espera" ? (
+                <span>{paso.titulo}</span>
+              ) : (
+                <Link href={paso.href}>{paso.titulo}</Link>
+              )}
+              <span className={styles.estado}>{paso.estado}</span>
+            </li>
+          ))}
+        </ol>
+        {despues && (
+          <p className={styles.nota}>
+            Acta automática de la federación; edición manual disponible.
+          </p>
+        )}
+      </div>
+      <details className={styles.masTareas}>
+        <summary>Más tareas del partido</summary>
+        {p.clasificacion && (
+          <p className={styles.nota}>
+            Santiso {p.clasificacion.posicion}.º de {p.clasificacion.equipos} ·{" "}
+            {p.clasificacion.puntos} pts
+          </p>
+        )}
+        <div className={styles.accesos}>
+          <Acceso href={e.convocatoria}>Convocatoria</Acceso>
+          <Acceso href={e.once}>Alineación</Acceso>
+          <Acceso href={e.cartel("partido")}>Cartel de partido</Acceso>
+          <Acceso href={e.calendario}>Cambiar fecha, hora o campo</Acceso>
+          <Acceso href={e.acta} disponible={despues || Boolean(p.acta)} motivo="Tras el partido">
+            {p.acta ? "Corregir acta" : "Meter acta a mano"}
+          </Acceso>
+          <Acceso href={e.cartel("resumo")} disponible={marcado} motivo="Necesita resultado">
+            Resultado
+          </Acceso>
+          <Acceso href={e.cartel("cronoloxia")} disponible={Boolean(p.acta)} motivo="Necesita acta">
+            Cronoloxía
+          </Acceso>
+          <Acceso href={e.cartel("noso11")} disponible={Boolean(p.acta)} motivo="Necesita acta">
+            O noso 11
+          </Acceso>
+          <button type="button" className={styles.acceso} onClick={() => setGaleria(true)}>
+            Fotos del partido<span aria-hidden="true">↗</span>
+          </button>
+          <Acceso href={e.resultados} disponible={despues} motivo="Tras el partido">
+            Importar resultados
+          </Acceso>
+          <Acceso href={e.clasificacion}>Ver clasificación</Acceso>
+          <Acceso href="/admin/carteles?plantilla=clasificacion">Cartel de clasificación</Acceso>
+        </div>
+      </details>
+      {galeria && (
+        <GaleriaPartido
+          partidoId={p.id}
+          partido={`${p.santiso} – ${p.rival.nombre} · ${cuando.dia}`}
+          onCerrar={() => setGaleria(false)}
+          showToast={showToast}
+        />
+      )}
     </article>
   );
 }
