@@ -41,3 +41,22 @@ export function seccion(items: readonly Fragmento[], desde: string, hasta: strin
   if (fin <= inicio) throw new Error(`Orden de secciones no reconocido: ${desde}`);
   return filas(items.filter((i) => i.y > inicio + 0.0025 && i.y < fin - 0.0025));
 }
+
+/**
+ * Cuando el nombre de un goleador es largo, la ficha baja el minuto a la línea siguiente:
+ * «3 - 0 APELLIDOS LARGOS, NOMBRE» y debajo «(11')». Devuelve cada fila con su minuto.
+ */
+export function unirMinutoSuelto(lineas: readonly string[]): string[] {
+  const unidas: string[] = [];
+  for (const linea of lineas) {
+    const anterior = unidas.at(-1);
+    if (
+      /^\(\d{1,3}(?:['’]?\+\d{1,2})?['’]?\)$/u.test(linea) &&
+      anterior &&
+      !anterior.endsWith(")")
+    ) {
+      unidas[unidas.length - 1] = `${anterior} ${linea}`;
+    } else unidas.push(linea);
+  }
+  return unidas;
+}

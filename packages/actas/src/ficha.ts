@@ -1,7 +1,7 @@
 export type * from "./ficha-tipos";
 import type { Ficha, Fragmento, EquipoFicha, JugadorFicha, GolFicha } from "./ficha-tipos";
 import type { MarcaFicha } from "./iconos";
-import { exigir, filas, ancla, seccion } from "./ficha-geometria";
+import { exigir, filas, ancla, seccion, unirMinutoSuelto } from "./ficha-geometria";
 import { evento, leerCambios, leerTarjetas, equipoDeAutor } from "./ficha-eventos";
 
 function jugadores(lineas: string[]): JugadorFicha[] {
@@ -99,8 +99,8 @@ export function parsearFicha(
     exigir(mv, "Marcador visitante"),
   ];
   let anterior: [number, number] = [0, 0];
-  const goles = filas(
-    centro.filter((i) => i.y > tituloGoles.y + 0.0025 && i.y < estadio.y - 0.0025),
+  const goles = unirMinutoSuelto(
+    filas(centro.filter((i) => i.y > tituloGoles.y + 0.0025 && i.y < estadio.y - 0.0025)),
   ).map((l) => {
     const m = exigir(/^(\d+) - (\d+) (.+)$/.exec(l), "Fila de gol incompleta");
     const actual: [number, number] = [Number(m[1]), Number(m[2])];

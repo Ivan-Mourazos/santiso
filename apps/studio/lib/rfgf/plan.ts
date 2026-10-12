@@ -56,6 +56,13 @@ const MINIMO_CRUCE = 1.2;
 const VENTAJA_CRUCE = 0.2;
 
 /**
+ * En las ligas de veteranos la federación añade la categoría al nombre («MELIDE VETERANOS»).
+ * No distingue a un equipo de otro dentro de la misma liga y sí estropea el parecido.
+ */
+const sinCategoria = (nombre: string) =>
+  nombre.replace(/\bveteranos?\b/giu, " ").replace(/\s+/gu, " ").trim() || nombre;
+
+/**
  * El partido nuestro que corresponde a un acta, por los dos equipos y en su orden. La
  * federación escribe algunos nombres distinto («MELIDE VETERANOS» es aquí «Melide»), así que
  * no se exige que los dos casen perfectos: como cada equipo juega una vez por jornada, basta
@@ -68,8 +75,8 @@ export function partidoDeActa<T extends PartidoLocal>(
 ): T | null {
   const puntuados = candidatos
     .map((partido) => {
-      const l = parecido(local, partido.local);
-      const v = parecido(visitante, partido.visitante);
+      const l = parecido(sinCategoria(local), sinCategoria(partido.local));
+      const v = parecido(sinCategoria(visitante), sinCategoria(partido.visitante));
       return { partido, minimo: Math.min(l, v), total: l + v };
     })
     .filter((c) => c.minimo >= MINIMO_EQUIPO && c.total >= MINIMO_CRUCE)
