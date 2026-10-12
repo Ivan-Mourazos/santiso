@@ -1,0 +1,42 @@
+.control {
+  margin-block: 16px;
+  border-top: 1px solid var(--ui-border);
+}
+.control summary,
+.control button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font: inherit;
+}
+.control label {
+  display: grid;
+  gap: 8px;
+  margin-block: 12px;
+  font-size: 16px;
+}
+.control input {
+  min-height: 44px;
+  max-width: 100%;
+  font: inherit;
+  font-size: 16px;
+}
+.control img {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  max-height: 200px;
+  object-fit: cover;
+}
+.control button {
+  padding: 8px 12px;
+  background: transparent;
+  color: var(--ui-text);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+}
+.control :is(input, button, summary):focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}

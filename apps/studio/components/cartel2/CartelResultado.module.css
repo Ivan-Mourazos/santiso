@@ -1,174 +1,101 @@
-/*
- * Cartel de resultado, sobre `Base`. Zonas: cabecera 56–190 · etiqueta 250 · escudos y
- * marcador 300–600 · nombres 630 · goleadores 710–1120 · fecha y campo 1140 · logos 1200–1310.
- */
-
-.etiqueta {
+.contenido {
   position: absolute;
   z-index: 6;
-  top: 244px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-weight: 800;
-  font-size: 30px;
-  letter-spacing: 0.4em;
+  inset: 126px 64px 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cabecera h1 {
+  margin: 0;
+  font-size: 64px;
+  line-height: 1.5;
   color: var(--amarillo);
 }
-
-.escudoLocal,
-.escudoVisitante {
-  width: 270px;
-  height: 270px;
-  top: 318px;
+.cabecera p {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.3;
 }
-
-.escudoLocal {
-  left: 70px;
+.cruce {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 260px;
+  align-items: center;
+  gap: 12px;
 }
-
-.escudoVisitante {
-  right: 70px;
+.escudo {
+  width: 260px;
+  height: 260px;
 }
-
 .marcador {
-  position: absolute;
-  z-index: 5;
-  left: 0;
-  right: 0;
-  top: 330px;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 18px;
-  line-height: 1;
-  text-shadow: 0 10px 40px rgb(0 0 0 / 60%);
+  gap: 12px;
+  font: 200px/1.5 var(--display);
 }
-
+.marcador span {
+  font-size: 70px;
+  opacity: 0.6;
+}
 .propio {
   color: var(--amarillo);
 }
-
-.guion {
-  color: rgb(255 255 255 / 55%);
-  font-size: 0.6em;
-}
-
-.nombreLocal,
-.nombreVisitante {
-  top: 620px;
-  width: 360px;
+.nombres {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px;
   text-align: center;
-  white-space: nowrap;
 }
-
-.nombreLocal {
-  left: 25px;
+.nombres strong {
+  font-size: 44px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
 }
-
-.nombreVisitante {
-  right: 25px;
+.goleadores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px;
+  flex: 1;
+  min-height: 0;
 }
-
-.goles {
-  position: absolute;
-  z-index: 6;
-  top: 712px;
-  width: 440px;
+.goleadores ul {
   margin: 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
-
-.golesLocal {
-  left: 64px;
-}
-
-.golesVisitante {
-  right: 64px;
-  align-items: flex-end;
-  text-align: right;
-}
-
-/* Una fila por goleador; `--fila-gol` lo calcula el componente para que quepan todos. */
-.goles li {
+.goleadores li {
   display: flex;
   align-items: center;
-  column-gap: 10px;
-  height: var(--fila-gol);
-  line-height: 1;
-  white-space: nowrap;
-  text-shadow: 0 3px 14px rgb(0 0 0 / 70%);
+  gap: 10px;
+  min-height: 48px;
 }
-
-.golesVisitante li {
-  flex-direction: row-reverse;
-}
-
-.goles li svg {
+.goleadores svg {
   flex: none;
 }
-
-.goleador {
+.nombre {
+  flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 38px;
   font-weight: 800;
-  font-style: italic;
-  font-size: calc(var(--fila-gol) * 0.7);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
 }
-
 .minutos {
+  display: inline-block;
   flex: none;
-  font-weight: 600;
-  font-size: calc(var(--fila-gol) * 0.56);
-  color: rgb(245 197 24 / 90%);
-  letter-spacing: 0.04em;
+  font-size: 30px;
+  color: var(--amarillo);
+  white-space: nowrap;
 }
-
 .pie {
-  position: absolute;
-  z-index: 6;
-  left: 64px;
-  right: 64px;
-  bottom: 150px;
+  font-size: 34px;
+  line-height: 1.3;
   text-align: center;
-  font-size: 26px;
-}
-
-/* Con foto: la parte de arriba es para la foto; marcador y goles bajan a la mitad inferior,
-   donde la foto ya está oscurecida. Goles de 880 a 1130. */
-.conFoto .etiqueta {
-  top: 560px;
-}
-
-.conFoto .escudoLocal,
-.conFoto .escudoVisitante {
-  width: 200px;
-  height: 200px;
-  top: 612px;
-}
-
-.conFoto .escudoLocal {
-  left: 90px;
-}
-
-.conFoto .escudoVisitante {
-  right: 90px;
-}
-
-.conFoto .marcador {
-  top: 606px;
-  font-size: 190px !important;
-}
-
-.conFoto .nombreLocal,
-.conFoto .nombreVisitante {
-  top: 826px;
-}
-
-.conFoto .goles {
-  top: 880px;
+  overflow-wrap: anywhere;
 }

@@ -329,6 +329,47 @@
   height: 70px;
 }
 
+/* Optativo: no altera Partido. Menos cabecera institucional, más espacio deportivo. */
+.compacto .institucionales {
+  top: 32px;
+  gap: 24px;
+}
+.compacto .institucionales img {
+  height: 56px;
+}
+.compacto.historia .institucionales {
+  top: 264px;
+}
+.compacto .cabecera {
+  top: 118px;
+  right: 64px;
+  max-width: none;
+}
+.compacto .xornada {
+  font-size: 64px;
+  line-height: 1.5;
+}
+.compacto .competicion {
+  margin-top: 0;
+  font-size: 28px;
+  line-height: 1.3;
+  letter-spacing: 0.03em;
+}
+
+/* Las piezas de lectura conservan luces y degradados; ninguna franja rayada cruza datos. */
+.compacto .fondo::after {
+  display: none;
+}
+.compacto .foto::after {
+  background: linear-gradient(
+    180deg,
+    rgb(6 8 11 / 78%) 0%,
+    rgb(6 8 11 / 58%) 30%,
+    rgb(6 8 11 / 66%) 60%,
+    rgb(6 8 11 / 94%) 100%
+  );
+}
+
 /* Patrocinadores: sin caja, recortados a su contenido. */
 .patrocinadores {
   position: absolute;

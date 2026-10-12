@@ -9,6 +9,7 @@ import {
   type FotoCartel,
 } from "@/lib/cartel2/modelo";
 import { FiltroRelieve } from "./Escudo";
+import { ContenidoLegible } from "./ContenidoLegible";
 import { anton, barlow } from "./fuentes";
 import b from "./Base.module.css";
 
@@ -67,6 +68,7 @@ export function Base({
   lineas = false,
   historia = false,
   logosArriba = "derecha",
+  compacto = false,
   institucionales,
   patrocinadores,
   className = "",
@@ -80,6 +82,8 @@ export function Base({
   /** Lienzo 9:16 de historia; los logos se apartan de lo que tapa Instagram. */
   historia?: boolean;
   logosArriba?: "derecha" | "centro" | "ninguno";
+  /** Más espacio para datos en las piezas de lectura móvil. Partido conserva su diseño. */
+  compacto?: boolean;
   institucionales: string[];
   patrocinadores: string[];
   className?: string;
@@ -102,18 +106,22 @@ export function Base({
 
   return (
     <div
-      className={`${b.cartel} ${b[variante]} ${foto ? b.conFoto : ""} ${historia ? b.historia : ""} ${anton.variable} ${barlow.variable} ${className}`}
+      className={`${b.cartel} ${b[variante]} ${foto ? b.conFoto : ""} ${historia ? b.historia : ""} ${compacto ? b.compacto : ""} ${anton.variable} ${barlow.variable} ${className}`}
       style={estilo}
       data-cartel
     >
       <FiltroRelieve />
       <div className={b.fondo} />
       {foto ? (
-        <div className={`${b.foto} ${b[`foto_${foto.estilo}`] ?? ""}`}>
+        <div className={`${b.foto} ${b[`foto_${foto.estilo}`] ?? ""}`} data-foto-fondo>
           <img
             src={urlFoto(foto.url)}
             alt=""
-            style={{ objectPosition: `${foto.x * 100}% ${foto.y * 100}%` }}
+            style={{
+              objectPosition: `${foto.x * 100}% ${foto.y * 100}%`,
+              transform: foto.zoom ? `scale(${Math.max(1, foto.zoom)})` : undefined,
+              transformOrigin: `${foto.x * 100}% ${foto.y * 100}%`,
+            }}
           />
           {foto.estilo === "amarillo" && <div className={b.tinte} />}
         </div>
@@ -140,6 +148,7 @@ export function Base({
       {logosArriba !== "ninguno" && institucionales.length > 0 && (
         <div
           className={`${b.institucionales} ${logosArriba === "centro" ? b.institucionalesCentro : ""}`}
+          data-lectura-bloque={compacto || undefined}
         >
           {institucionales.map((logo) => (
             <img key={logo} src={urlLogo(logo)} alt="" />
@@ -147,10 +156,10 @@ export function Base({
         </div>
       )}
 
-      {children}
+      {compacto ? <ContenidoLegible>{children}</ContenidoLegible> : children}
 
       {patrocinadores.length > 0 && (
-        <footer className={b.patrocinadores}>
+        <footer className={b.patrocinadores} data-lectura-bloque={compacto || undefined}>
           {patrocinadores.map((logo) => (
             <img key={logo} src={urlLogo(logo)} alt="" />
           ))}

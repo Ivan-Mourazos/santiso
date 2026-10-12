@@ -2,6 +2,7 @@ import { respuestaSinSesion } from "@/lib/server/acceso/sesion";
 import { cookies } from "next/headers";
 import { COOKIE_SESION } from "@/lib/acceso/config";
 import { leerPeticion } from "@/lib/cartel2/esquema";
+import { ErrorCapacidadCartel } from "@/lib/cartel2/lectura";
 import { renderizarCartel } from "@/lib/server/cartel2/render";
 
 /**
@@ -30,6 +31,9 @@ export async function POST(request: Request) {
       headers: { "content-type": "image/png", "cache-control": "no-store" },
     });
   } catch (error) {
+    if (error instanceof ErrorCapacidadCartel) {
+      return Response.json({ error: error.message }, { status: 422 });
+    }
     console.error("renderizarCartel", error);
     return Response.json({ error: "No se pudo generar el PNG del cartel." }, { status: 500 });
   }

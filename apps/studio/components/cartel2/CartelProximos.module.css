@@ -1,36 +1,33 @@
 .cartel {
-  --dia: 46px;
-  --numero: 64px;
-  --hora: 116px;
-  --escudo: 230px;
+  --dia: 42px;
+  --numero: 58px;
+  --hora: 100px;
+  --escudo: 280px;
 }
 .cabecera {
   position: absolute;
   z-index: 6;
-  top: 155px;
+  top: 115px;
   left: 64px;
   right: 64px;
 }
 .antetitulo {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.08em;
   line-height: 1.3;
 }
 .titulo {
-  margin: 8px 0 0;
-  font: 68px/1.6 var(--display);
+  margin: 4px 0 0;
+  font: 52px/1.6 var(--display);
   color: var(--amarillo);
 }
 .bandas {
   position: absolute;
   z-index: 4;
-  left: 48px;
-  right: 48px;
-  top: 305px;
-  bottom: 180px;
+  inset: 248px 48px 180px;
   display: grid;
-  gap: 16px;
+  gap: 24px;
 }
 .banda {
   position: relative;
@@ -38,53 +35,48 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
 }
-/* Entre partido y partido, una línea tenue que se desvanece en los extremos. */
 .banda + .banda::before {
   content: "";
   position: absolute;
-  inset: -8px 0 auto;
+  inset: -12px 0 auto;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / 22%) 20% 80%, transparent);
 }
 .informacion {
-  padding: 22px 28px;
+  padding: 16px 24px;
   min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
 }
 .categoria {
   display: flex;
   gap: 20px;
   align-items: center;
-  font-size: 25px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1.3;
   color: var(--amarillo);
-  letter-spacing: 0.08em;
 }
 .localia {
   color: #fff;
-  font-size: 20px;
-  letter-spacing: 0.06em;
+  font-size: 26px;
 }
 .rival {
-  font-size: 35px;
+  font-size: 52px;
   font-weight: 800;
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
-/* «VS» delante del rival: deja claro que es contra quién se juega. */
 .contra {
   margin-right: 6px;
   color: var(--amarillo);
-  font: 0.8em/1 var(--display);
-  letter-spacing: 0.04em;
+  font: 0.8em/1.6 var(--display);
 }
 .momento {
   display: flex;
-  gap: 32px;
+  gap: 24px;
   align-items: center;
 }
 .fecha {
@@ -94,7 +86,7 @@
 .dia {
   font-size: var(--dia);
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 .numero {
   font: var(--numero)/1.6 var(--display);
@@ -110,7 +102,7 @@
   font: 26px/1.3 var(--texto);
 }
 .pendiente {
-  font-size: 28px;
+  font-size: 34px;
   line-height: 1.3;
 }
 .escudoZona {
@@ -119,10 +111,6 @@
   justify-content: center;
   align-items: center;
 }
-/*
- * Sin caja: el color del rival es un resplandor centrado detrás de su escudo, más ancho que
- * la propia columna, que se apaga solo. Ni rectángulo ni corte (Iván, 11/10/2026).
- */
 .escudoZona::before,
 .escudoZona::after {
   content: "";
@@ -134,7 +122,6 @@
   inset: -18% -48%;
   background: radial-gradient(closest-side, var(--rival-luz), transparent);
 }
-/* El segundo color, si lo hay, asoma por arriba a la derecha del escudo. */
 .escudoZona::after {
   inset: -22% -30% 34% 30%;
   background: radial-gradient(closest-side, var(--rival-luz2), transparent);
@@ -150,11 +137,11 @@
 .bandas[data-cantidad="1"] {
   --dia: 62px;
   --numero: 96px;
-  --hora: 144px;
-  --escudo: 280px;
+  --hora: 140px;
+  --escudo: 340px;
 }
 .bandas[data-cantidad="1"] .banda {
-  grid-template-columns: minmax(0, 1fr) 330px;
+  grid-template-columns: minmax(0, 1fr) 350px;
 }
 .bandas[data-cantidad="1"] .informacion {
   gap: 28px;
@@ -162,35 +149,60 @@
 .bandas[data-cantidad="1"] .momento {
   flex-direction: column;
   align-items: flex-start;
-  gap: 20px;
+  gap: 12px;
 }
 .bandas[data-cantidad="1"] .rival {
-  font-size: 48px;
+  font-size: 62px;
 }
 .bandas[data-cantidad="3"],
 .bandas[data-cantidad="4"] {
-  --dia: 27px;
-  --numero: 35px;
-  --hora: 58px;
-  --escudo: 156px;
+  --dia: 28px;
+  --numero: 40px;
+  --hora: 64px;
+  --escudo: 200px;
   gap: 12px;
 }
 .bandas[data-cantidad="3"] .banda,
 .bandas[data-cantidad="4"] .banda {
-  grid-template-columns: minmax(0, 1fr) 230px;
+  grid-template-columns: minmax(0, 1fr) 220px;
 }
 .bandas[data-cantidad="3"] .informacion,
 .bandas[data-cantidad="4"] .informacion {
-  padding: 12px 24px;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  padding: 4px 24px;
+  gap: 4px 12px;
 }
 .bandas[data-cantidad="3"] .rival,
 .bandas[data-cantidad="4"] .rival {
-  font-size: 28px;
+  font-size: 40px;
 }
 .bandas[data-cantidad="3"] .categoria,
 .bandas[data-cantidad="4"] .categoria {
-  font-size: 22px;
+  font-size: 24px;
+  grid-column: 1;
+  grid-row: 1;
+  gap: 10px;
+}
+.bandas[data-cantidad="3"] .rival,
+.bandas[data-cantidad="4"] .rival {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.bandas[data-cantidad="3"] .fecha,
+.bandas[data-cantidad="4"] .fecha {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.bandas[data-cantidad="3"] .momento,
+.bandas[data-cantidad="4"] .momento {
+  grid-column: 2;
+  grid-row: 1;
+  justify-content: flex-end;
+  gap: 12px;
 }
 .vacia {
   display: grid;
@@ -199,9 +211,9 @@
   line-height: 1.3;
 }
 .historia .cabecera {
-  top: 356px;
+  top: 350px;
 }
 .historia .bandas {
-  top: 510px;
-  bottom: 420px;
+  top: 495px;
+  bottom: 410px;
 }

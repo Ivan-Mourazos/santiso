@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import {
   categoriaCartel,
   fechaCorta,
@@ -76,29 +75,31 @@ function Texto({ evento }: { evento: EventoCartel }) {
  * sobre la línea y los hechos de cada equipo a su lado. Las filas se aprietan si hay muchos.
  */
 export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
-  const eventos = [...datos.eventos].sort((a, c) => orden(a.minuto) - orden(c.minuto)).slice(0, 26);
-  const alto = Math.max(27, Math.min(78, Math.floor(720 / Math.max(eventos.length, 1))));
-  const estiloFila = { "--fila": `${alto}px` } as CSSProperties;
+  const eventos = [...datos.eventos].sort((a, c) => orden(a.minuto) - orden(c.minuto));
   const pie = [fechaCorta(datos.fecha), datos.campo.toUpperCase()].filter(Boolean).join("  ·  ");
 
   return (
     <Base
+      compacto
       variante="centro"
       izquierda={datos.local}
       derecha={datos.visitante}
       institucionales={datos.institucionales}
       patrocinadores={datos.patrocinadores}
     >
-      <header className={b.cabecera}>
+      <header className={`${b.cabecera} ${s.cabecera}`} style={{ top: 100 }} data-lectura-bloque>
         <div className={b.xornada}>CRONOLOXÍA</div>
         <div className={b.competicion}>
           {categoriaCartel(datos.categoria)}
           {datos.jornada ? ` · XORNADA ${datos.jornada}` : ""}
           {datos.competicion ? ` · ${datos.competicion.toUpperCase()}` : ""}
         </div>
+        <div className={s.equipos}>
+          {datos.local.nombre} · {datos.visitante.nombre}
+        </div>
       </header>
 
-      <div className={s.marcador}>
+      <div className={s.marcador} data-lectura-bloque>
         {datos.local.escudo ? (
           <Escudo className={s.escudo} src={datos.local.escudo} relieve={datos.local.relieve} />
         ) : (
@@ -123,10 +124,15 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
       </div>
 
       {eventos.length === 0 && <div className={s.vacia}>SEN INCIDENCIAS REXISTRADAS</div>}
-      <ol className={s.linea} style={estiloFila}>
+      <ol className={s.linea} data-lectura-bloque>
         {eventos.map((e, i) => (
-          <li key={`${e.minuto}-${i}`} className={e.lado === "local" ? s.izquierda : s.derecha}>
-            <span className={s.hecho}>
+          <li
+            key={`${e.minuto}-${i}`}
+            className={e.lado === "local" ? s.izquierda : s.derecha}
+            data-lectura-fila
+            data-propio={e.lado === "local" ? datos.local.propio : datos.visitante.propio}
+          >
+            <span className={s.hecho} data-lectura-columna>
               <Icono tipo={e.tipo} />
               <Texto evento={e} />
             </span>
@@ -135,7 +141,11 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
         ))}
       </ol>
 
-      {pie && <div className={`${b.dato} ${s.pie}`}>{pie}</div>}
+      {pie && (
+        <div className={`${b.dato} ${s.pie}`} data-lectura-bloque>
+          {pie}
+        </div>
+      )}
     </Base>
   );
 }

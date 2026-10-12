@@ -54,6 +54,7 @@ export interface FormState {
   // O Noso 11
   jugadorFotoUrl: string;
   noso11Flip: boolean;
+  noso11FotoModo?: "retrato" | "fondo";
   titulares: Player[];
   suplentes: Player[];
   // Multiusos

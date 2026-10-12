@@ -189,6 +189,26 @@ describe("modelo", () => {
 });
 
 describe("peticionDeFormulario", () => {
+  it("foto del campo ocupa fondo completo y conserva encuadre; retrato sigue disponible", () => {
+    const p = peticionDeFormulario(
+      "noso11",
+      formulario({ jugadorFotoUrl: "/media/campo.webp", noso11FotoModo: "fondo" }),
+      recursos,
+      opciones,
+    );
+    expect(p.plantilla).toBe("once");
+    if (p.plantilla !== "once") throw new Error("plantilla");
+    expect(p.datos.modoFoto).toBe("fondo");
+    expect(p.datos.foto).toEqual({ url: "/media/campo.webp", x: 0.5, y: 0.4, zoom: 1.2 });
+    expect(leerPeticion(p)).toEqual(p);
+    const retrato = peticionDeFormulario(
+      "noso11",
+      formulario({ jugadorFotoUrl: "/media/jugador.webp", noso11FotoModo: "retrato" }),
+      recursos,
+      opciones,
+    );
+    expect(retrato.plantilla === "once" && retrato.datos.modoFoto).toBe("retrato");
+  });
   it("partido: el Santiso de visitante con su amarillo; el rival con el color de su escudo", () => {
     const p = peticionDeFormulario("partido", formulario(), recursos, opciones);
     if (p.plantilla !== "partido") throw new Error("plantilla");
@@ -421,6 +441,27 @@ describe("escudos del club y relieve", () => {
 });
 
 describe("leerPeticion", () => {
+  it("once inicial admite foto de campo sin perder foco ni zoom y rechaza encuadre inválido", () => {
+    const base = peticionDeFormulario("partido", formulario(), recursos, opciones);
+    if (base.plantilla !== "partido") throw new Error("plantilla");
+    const p = {
+      plantilla: "alineacion",
+      datos: {
+        ...base.datos,
+        club: base.datos.local,
+        rival: base.datos.visitante,
+        local: true,
+        titulares: [],
+        suplentes: [],
+        foto: { url: "/media/campo.webp", x: 0.3, y: 0.8, estilo: "color", zoom: 1.2 },
+      },
+    };
+    const leida = leerPeticion(p);
+    expect(leida?.plantilla === "alineacion" && leida.datos.foto).toEqual(p.datos.foto);
+    expect(
+      leerPeticion({ ...p, datos: { ...p.datos, foto: { ...p.datos.foto, x: 1.5 } } }),
+    ).toBeNull();
+  });
   it("acepta la petición de cada plantilla sacada del formulario", () => {
     const tipos = [
       "partido",
