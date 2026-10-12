@@ -15,6 +15,8 @@ export interface PartidoLocal {
   conActa: boolean;
   /** Campo asignado, si lo tiene. Solo hace falta para poner al día los horarios. */
   campoId?: string | null;
+  /** Ya se sabe quién lo arbitró. */
+  conArbitro?: boolean;
 }
 
 /** Como mucho, estas jornadas por pasada: sin prisa y sin cargar la web de la federación. */

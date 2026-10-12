@@ -14,6 +14,8 @@ export interface PartidoJornada {
   superficie: string | null;
   /** Goles de local y visitante. `null` si el partido no se ha jugado. */
   marcador: [number, number] | null;
+  /** «APELLIDOS, NOMBRE», tal como lo escribe la federación. `null` hasta que se juega. */
+  arbitro: string | null;
 }
 
 export interface JornadaFederacion {
@@ -73,6 +75,7 @@ export function parsearJornada(texto: string): JornadaFederacion {
         fecha: `${ano}-${mes}-${dia}`,
         hora: hora ? `${hora.padStart(2, "0")}:${minuto}` : null,
         ...campoDe(linea),
+        arbitro: limpiar(/Árbitro:\s*(.*)$/iu.exec(linea)?.[1] ?? "") || null,
         marcador: golesLocal === undefined ? null : [Number(golesLocal), Number(golesVisitante)],
       });
     } else if (bloque.length) {
