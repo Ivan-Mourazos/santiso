@@ -38,6 +38,7 @@ const forma = z.object({
 });
 const contexto = z.object({ local: forma, visitante: forma }).optional();
 const fotoFondo = z.object({
+  zoom: z.number().positive().max(4).optional(),
   url: imagen,
   x: z.number().min(0).max(1),
   y: z.number().min(0).max(1),
@@ -151,6 +152,7 @@ const once = z.object({
       .object({ url: imagen, x: z.number(), y: z.number(), zoom: z.number().positive() })
       .nullable(),
     invertido: z.boolean(),
+    modoFoto: z.enum(["retrato", "fondo"]).optional(),
   }),
 });
 
@@ -167,6 +169,7 @@ const alineacion = z.object({
     campo: texto(),
     titulares: z.array(jugador).max(11),
     suplentes: z.array(jugador).max(12),
+    foto: fotoFondo.nullable().optional(),
   }),
 });
 
@@ -181,7 +184,7 @@ const convocatoria = z.object({
     fecha: texto(10),
     hora: texto(5),
     campo: texto(),
-    convocados: z.array(jugador).min(1).max(40),
+    convocados: z.array(jugador).min(1).max(22),
     horaQuedada: texto(5),
     lugarQuedada: texto(200),
     equipacion: texto(120),

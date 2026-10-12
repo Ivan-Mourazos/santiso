@@ -1,6 +1,5 @@
 import {
   categoriaCartel,
-  cuerpo,
   fechaCorta,
   type DatosAlineacion,
   type EquipoCartel,
@@ -18,10 +17,7 @@ function Equipo({ equipo }: { equipo: EquipoCartel }) {
       ) : (
         <div className={s.sinEscudo} />
       )}
-      <div
-        className={`${s.nombreEquipo} ${equipo.propio ? s.propio : ""}`}
-        style={{ fontSize: cuerpo(equipo.nombre, 400, 30, 20, 0.5) }}
-      >
+      <div className={`${s.nombreEquipo} ${equipo.propio ? s.propio : ""}`} data-lectura-columna>
         {equipo.nombre.toUpperCase()}
       </div>
     </div>
@@ -50,31 +46,37 @@ export function CartelAlineacion({ datos }: { datos: DatosAlineacion }) {
 
   return (
     <Base
+      compacto
       variante="club"
       historia
+      foto={datos.foto}
       izquierda={datos.club}
       logosArriba="centro"
       institucionales={datos.institucionales}
       patrocinadores={datos.patrocinadores}
     >
       <div className={s.contenido} data-sin-patrocinadores={datos.patrocinadores.length === 0}>
-        <header className={s.cabecera}>
+        <header className={s.cabecera} data-lectura-bloque>
           <div className={s.competicion}>{competicion}</div>
           <div className={`${b.display} ${s.titulo}`}>ONCE INICIAL</div>
         </header>
 
-        <div className={s.cruce}>
+        <div className={s.cruce} data-lectura-bloque>
           <Equipo equipo={local} />
           <div className={`${b.display} ${s.vs}`}>VS</div>
           <Equipo equipo={visitante} />
         </div>
-        {cuando && <div className={s.cuando}>{cuando}</div>}
+        {cuando && (
+          <div className={s.cuando} data-lectura-bloque>
+            {cuando}
+          </div>
+        )}
 
-        <ol className={s.titulares}>
+        <ol className={s.titulares} data-lectura-bloque>
           {titulares.map((j, i) => (
-            <li key={`${j.dorsal}-${i}`}>
+            <li key={`${j.dorsal}-${i}`} data-lectura-fila>
               <span className={`${b.display} ${s.dorsal}`}>{j.dorsal}</span>
-              <span className={s.nombre} style={{ fontSize: cuerpo(j.nombre, 760, 46, 30, 0.5) }}>
+              <span className={s.nombre} data-lectura-columna>
                 {j.nombre.toUpperCase()}
               </span>
               {j.capitan && <span className={s.capitan}>C</span>}
@@ -83,10 +85,10 @@ export function CartelAlineacion({ datos }: { datos: DatosAlineacion }) {
         </ol>
 
         {suplentes.length > 0 && (
-          <div className={s.suplentes}>
+          <div className={s.suplentes} data-lectura-bloque>
             <span className={s.etiquetaSuplentes}>SUPLENTES</span>
             {suplentes.map((j, i) => (
-              <span key={`${j.dorsal}-${i}`} className={s.suplente}>
+              <span key={`${j.dorsal}-${i}`} className={s.suplente} data-lectura-columna>
                 {j.dorsal && <b>{j.dorsal}</b>} {j.nombre}
               </span>
             ))}

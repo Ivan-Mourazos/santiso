@@ -24,13 +24,21 @@ export interface PantallaConvocatoria {
   migracionPendiente: boolean;
 }
 export function convocatoriaInicial(ids: string[]): Convocatoria {
-  return { jugadores: [...ids], horaQuedada: "", lugarQuedada: "", equipacion: "", nota: "" };
+  return {
+    jugadores: ids.slice(0, 16),
+    horaQuedada: "",
+    lugarQuedada: "",
+    equipacion: "",
+    nota: "",
+  };
 }
 export function errorDeConvocatoria(c: Convocatoria): string | null {
   if (!c || !Array.isArray(c.jugadores) || c.jugadores.some((id) => typeof id !== "string" || !id))
     return "Selección de jugadores inválida.";
   if (!c.jugadores.length) return "Selecciona al menos un convocado.";
   if (new Set(c.jugadores).size !== c.jugadores.length) return "Hay un jugador repetido.";
+  if (c.jugadores.length > 22)
+    return "Selecciona como máximo 22 convocados; una lista mayor necesita dos láminas.";
   if (
     typeof c.horaQuedada !== "string" ||
     (c.horaQuedada && !/^([01]\d|2[0-3]):[0-5]\d$/.test(c.horaQuedada))

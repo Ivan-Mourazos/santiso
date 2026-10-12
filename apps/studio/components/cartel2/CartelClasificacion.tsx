@@ -12,12 +12,13 @@ import s from "./CartelClasificacion.module.css";
 export function CartelClasificacion({ datos }: { datos: DatosClasificacion }) {
   return (
     <Base
+      compacto
       variante="club"
       izquierda={{ escudo: datos.escudoClub, propio: true, color: "#f5c518" }}
       institucionales={datos.institucionales}
       patrocinadores={datos.patrocinadores}
     >
-      <header className={b.cabecera}>
+      <header className={b.cabecera} data-lectura-bloque>
         <div className={b.xornada}>CLASIFICACIÓN</div>
         <div className={b.competicion}>
           {categoriaCartel(datos.categoria)}
@@ -30,11 +31,11 @@ export function CartelClasificacion({ datos }: { datos: DatosClasificacion }) {
 }
 
 function Tabla({ datos }: { datos: Extract<DatosClasificacion, { tipo: "liga" }> }) {
-  const filas = datos.filas.slice(0, 20);
-  const alto = Math.max(40, Math.min(64, Math.floor(930 / (filas.length + 1))));
+  const filas = datos.filas;
+  const alto = 60;
   const estilo = { "--fila": `${alto}px` } as CSSProperties;
   return (
-    <table className={s.tabla} style={estilo}>
+    <table className={s.tabla} style={estilo} data-lectura-bloque>
       <thead>
         <tr>
           <th className={s.pos} />
@@ -49,12 +50,18 @@ function Tabla({ datos }: { datos: Extract<DatosClasificacion, { tipo: "liga" }>
       </thead>
       <tbody>
         {filas.map((f) => (
-          <tr key={`${f.posicion}-${f.nombre}`} className={f.propio ? s.propio : undefined}>
+          <tr
+            key={`${f.posicion}-${f.nombre}`}
+            className={f.propio ? s.propio : undefined}
+            data-lectura-fila
+          >
             <td className={`${b.display} ${s.pos}`}>{f.posicion}</td>
             <td className={s.equipo}>
               <span className={s.celdaEquipo}>
                 {f.escudo ? <img src={f.escudo} alt="" /> : <span className={s.sinEscudo} />}
-                <span className={s.nombre}>{f.nombre.toUpperCase()}</span>
+                <span className={s.nombre} data-lectura-columna>
+                  {f.nombre.toUpperCase()}
+                </span>
               </span>
             </td>
             <td>{f.pj}</td>
@@ -77,25 +84,30 @@ function Cuadro({ datos }: { datos: Extract<DatosClasificacion, { tipo: "copa" }
   const pocos = rondas.reduce((n, r) => n + r.partidos.length, 0) <= 4;
   const esSantiso = (nombre: string) => nombre.toLowerCase().includes("santiso");
   return (
-    <div className={`${s.cuadro} ${pocos ? s.cuadroGrande : ""}`}>
+    <div className={`${s.cuadro} ${pocos ? s.cuadroGrande : ""}`} data-lectura-bloque>
       {rondas.map((r) => (
         <section key={r.nombre} className={s.ronda}>
           <h2 className={b.display}>{r.nombre.toUpperCase()}</h2>
           <ul>
             {r.partidos.map((p, i) => (
               <li
+                data-lectura-fila
                 key={`${p.local}-${p.visitante}-${i}`}
                 className={
                   esSantiso(p.local) || esSantiso(p.visitante) ? s.partidoPropio : undefined
                 }
               >
-                <span className={s.equipoCopa}>{p.local.toUpperCase()}</span>
+                <span className={s.equipoCopa} data-lectura-columna>
+                  {p.local.toUpperCase()}
+                </span>
                 <span className={`${b.display} ${s.marcadorCopa}`}>
                   {p.golesLocal === null || p.golesVisitante === null
                     ? "–"
                     : `${p.golesLocal}-${p.golesVisitante}`}
                 </span>
-                <span className={`${s.equipoCopa} ${s.derecha}`}>{p.visitante.toUpperCase()}</span>
+                <span className={`${s.equipoCopa} ${s.derecha}`} data-lectura-columna>
+                  {p.visitante.toUpperCase()}
+                </span>
               </li>
             ))}
           </ul>

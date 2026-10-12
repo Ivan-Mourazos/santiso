@@ -84,6 +84,7 @@ for (const cantidad of [11, 22]) {
         })),
       },
     };
+    await page.setViewportSize({ width: 1080, height: 1350 });
     await page.goto("/render/cartel");
     await page.waitForFunction(() => typeof window.__pintarCartel === "function");
     await page.evaluate((p) => window.__pintarCartel?.(p), peticion);
