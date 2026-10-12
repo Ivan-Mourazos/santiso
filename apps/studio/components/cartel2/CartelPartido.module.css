@@ -97,12 +97,13 @@
   flex-shrink: 0;
 }
 /* El cuándo se tiene que leer de un vistazo: es lo segundo que se busca, tras el rival. */
+/* Interlineado 1,6: con menos, esta tipografía se sale de su propia línea por arriba y abajo. */
 .fecha {
-  font: 54px/1.2 var(--display);
+  font: 50px/1.6 var(--display);
   letter-spacing: 0.01em;
 }
 .hora {
-  font: 78px/1.2 var(--display);
+  font: 72px/1.6 var(--display);
   color: var(--amarillo);
 }
 .pendiente {

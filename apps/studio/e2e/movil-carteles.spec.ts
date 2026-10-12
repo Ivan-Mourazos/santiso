@@ -9,6 +9,8 @@ async function abrir(page: Page) {
   await page.goto("/admin/carteles");
   await expect(page.getByRole("tab", { name: "Datos", exact: true })).toBeVisible();
   await page.waitForLoadState("networkidle");
+  // El cartel de partido se rellena eligiendo partido; los campos sueltos van plegados.
+  await page.locator("summary").filter({ hasText: "Editar datos a mano" }).tap();
 }
 
 async function vista(page: Page) {
@@ -64,8 +66,12 @@ for (const ancho of [360, 390]) {
         await page.getByRole("button", { name: "+ Evento", exact: true }).tap();
       if (plantilla === "clasificacion") await page.getByRole("button", { name: /Manual/ }).tap();
       // Las opciones móviles están plegadas; se revisan también sus controles al abrirlas.
-      for (const resumen of await page.locator("main details > summary:visible").all()) {
-        await resumen.tap();
+      // Se abren solo los cerrados, de uno en uno: al abrir uno aparecen los que lleva dentro,
+      // y tocar uno ya abierto lo cerraría.
+      for (let intento = 0; intento < 20; intento++) {
+        const cerrado = page.locator("main details:not([open]) > summary:visible").first();
+        if ((await cerrado.count()) === 0) break;
+        await cerrado.tap();
       }
       const fuentes = await page
         .locator(

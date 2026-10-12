@@ -29,7 +29,10 @@ test("cambiar de plantilla cambia el formulario y el cartel", async ({ page }) =
   await page.goto("/admin/carteles");
   await expect(plantilla(page)).toBeVisible({ timeout: 20000 });
 
-  // Partido: rival y datos del encuentro, con sus etiquetas asociadas al campo.
+  // Partido: se elige categoría y partido; los campos sueltos están plegados para retocar.
+  await expect(page.getByRole("button", { name: "Cargar próximo partido" })).toBeVisible();
+  await expect(page.getByLabel("Rival", { exact: true })).toBeHidden();
+  await page.locator("summary").filter({ hasText: "Editar datos a mano" }).click();
   await expect(page.getByLabel("Rival", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Fecha", { exact: true })).toBeVisible();
 
