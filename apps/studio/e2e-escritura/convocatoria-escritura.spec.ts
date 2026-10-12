@@ -45,7 +45,7 @@ test("guardar convocatoria, reabrir, exportar PNG y pasar convocados a alineaci√
   expect(
     await cartel.evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight]),
   ).toEqual([2160, 2700]);
-  await expect(page.getByRole("button", { name: "Compartir", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Guardar o compartir", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Volver", exact: true }).click();
   await page.getByRole("button", { name: "Pasar a alineaci√≥n", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/alineacion\?.*partido=convocatoria-e2e/);

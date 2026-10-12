@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useEsMovil } from "@/components/ui/foundation/FiltrosMovil";
 import { Cartel } from "@/components/cartel2/Cartel";
 import { Button } from "@/components/ui/foundation/Button";
 import { aHex, COLOR_RIVAL_RESERVA, colorDominante } from "@/lib/cartel2/color";
@@ -68,11 +69,15 @@ function escudosDelFormulario(form: FormState) {
   return [form.rivalEscudoUrl, ...form.matches.map((m) => m.rivalEscudoUrl)].filter(Boolean);
 }
 
+/** Lo que la vista previa tiene que estar quieta en el móvil antes de preparar el PNG sola. */
+const ESPERA_PREPARAR_MS = 1200;
+
 /**
  * Cartel del motor nuevo (HTML/CSS → PNG con Chromium local) para cualquier plantilla. Usa el
  * mismo formulario que el cartel actual; la vista previa es el propio cartel escalado y el PNG
  * lo genera `/api/carteles/png` con los mismos datos.
  */
+
 export default function PilotoCartel({
   tipo,
   formato = "publicacion",
@@ -195,6 +200,7 @@ export default function PilotoCartel({
 
   async function generar(): Promise<File | null> {
     if (previas.cargando || previas.error) return null;
+    const clave = clavePng;
     setExportando(true);
     try {
       const respuesta = await fetch("/api/carteles/png", {
@@ -207,12 +213,33 @@ export default function PilotoCartel({
       setPng({ clave: clavePng, archivo });
       return archivo;
     } catch {
+      // Con este fallo apuntado, el móvil no vuelve a intentarlo solo: queda el botón.
+      falloAlPreparar.current = clave;
       showToast("No se pudo generar el PNG. Vuelve a intentarlo.", "error");
       return null;
     } finally {
       setExportando(false);
     }
   }
+
+  // En el móvil el PNG se prepara solo en cuanto la vista previa se queda quieta: así «Guardar
+  // o compartir» abre la hoja del sistema al primer toque (en iOS, «Guardar imagen»). No puede
+  // prepararse dentro de ese toque: Safari solo deja compartir justo después de tocar, y pintar
+  // el cartel tarda un par de segundos.
+  const esMovil = useEsMovil();
+  const falloAlPreparar = useRef<string | null>(null);
+  const prepararSolo = useRef(generar);
+  useEffect(() => {
+    prepararSolo.current = generar;
+  });
+  const previaLista = !previas.cargando && !previas.error;
+  const aLaVista = hueco.ancho > 0;
+  useEffect(() => {
+    if (!esMovil || !aLaVista || !previaLista || pngActual || exportando) return;
+    if (falloAlPreparar.current === clavePng) return;
+    const espera = setTimeout(() => void prepararSolo.current(), ESPERA_PREPARAR_MS);
+    return () => clearTimeout(espera);
+  }, [esMovil, aLaVista, previaLista, pngActual, exportando, clavePng]);
 
   function guardar(archivo: File) {
     const url = URL.createObjectURL(archivo);
@@ -335,7 +362,7 @@ export default function PilotoCartel({
           <div className={styles.movil}>
             {pngActual ? (
               <Button size="sm" onClick={() => void compartir()} disabled={compartiendo}>
-                {compartiendo ? "Compartiendo…" : "Compartir"}
+                {compartiendo ? "Abriendo…" : "Guardar o compartir"}
               </Button>
             ) : (
               <Button
@@ -343,7 +370,7 @@ export default function PilotoCartel({
                 onClick={() => void generar()}
                 disabled={exportando || previas.cargando || !!previas.error}
               >
-                {exportando ? "Generando…" : "Preparar PNG"}
+                {exportando ? "Preparando…" : "Preparar PNG"}
               </Button>
             )}
           </div>

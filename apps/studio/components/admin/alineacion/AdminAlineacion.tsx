@@ -233,7 +233,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
         <section className={styles.historia} aria-label="Historia generada">
           <img src={historia.url} alt="Historia con la alineación" />
           <div className={styles.acciones}>
-            <Button onClick={() => void compartir()}>Compartir</Button>
+            <Button onClick={() => void compartir()}>Guardar o compartir</Button>
             <Button variant="secondary" onClick={descargar}>
               Descargar
             </Button>

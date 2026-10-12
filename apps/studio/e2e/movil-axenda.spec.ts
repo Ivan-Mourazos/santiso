@@ -26,7 +26,10 @@ test("Partido: recupera la previa después de un fallo de transporte", async ({ 
     page.getByRole("alert").filter({ hasText: "No se pudo cargar la previa" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Reintentar previa", exact: true }).tap();
-  await expect(page.getByRole("button", { name: "Preparar PNG", exact: true })).toBeEnabled();
+  // Con la previa ya cargada, el PNG se prepara solo: el botón pasa a ser el de guardar.
+  await expect(
+    page.getByRole("button", { name: /^(Preparar PNG|Guardar o compartir)$/ }),
+  ).toBeEnabled({ timeout: 60000 });
   await expect(page.getByRole("button", { name: "Reintentar previa", exact: true })).toBeHidden();
 });
 for (const ancho of [360, 390]) {
@@ -64,7 +67,7 @@ for (const ancho of [360, 390]) {
     await page.getByLabel("Formato de cartel").selectOption("historia");
     await page.getByRole("button", { name: "Preparar carrusel Axenda", exact: true }).tap();
     await expect(
-      page.getByRole("button", { name: "Compartir carrusel", exact: true }),
+      page.getByRole("button", { name: "Guardar o compartir", exact: true }),
     ).toBeVisible();
     expect(peticiones.map((p) => p.plantilla)).toEqual(["proximos", "partido", "partido"]);
     expect(peticiones.every((p) => p.formato === "historia")).toBe(true);
@@ -76,7 +79,7 @@ for (const ancho of [360, 390]) {
     await opcionesTexto.evaluate((n) => n.scrollIntoView({ block: "center" }));
     await opcionesTexto.tap();
     await caption.fill("Axenda editada 💛🖤");
-    await page.getByRole("button", { name: "Compartir carrusel", exact: true }).tap();
+    await page.getByRole("button", { name: "Guardar o compartir", exact: true }).tap();
     expect(
       await page.evaluate(
         () => (window as unknown as { axendaCompartida: unknown }).axendaCompartida,
@@ -98,7 +101,7 @@ for (const ancho of [360, 390]) {
     await tarjetas.nth(0).tap();
     await page.getByLabel("Rival del partido 1").fill("Outro rival");
     await expect(
-      page.getByRole("button", { name: "Compartir carrusel", exact: true }),
+      page.getByRole("button", { name: "Guardar o compartir", exact: true }),
     ).toBeHidden();
     await page.getByRole("tab", { name: "Vista previa", exact: true }).tap();
     await expect(page.locator("[data-vista-cartel] [data-cartel]")).toBeVisible();
