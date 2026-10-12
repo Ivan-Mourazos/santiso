@@ -48,24 +48,22 @@ export function jornadasPorJugar(partidos: readonly PartidoLocal[], ahora: strin
 /**
  * Qué hay que cambiar en un partido nuestro a la vista de lo que publica la federación.
  *
- * Solo se toca cuando la federación dice algo distinto de lo último que se le vio (`visto`):
- * así, lo que se corrija a mano en el Studio no se pisa en la pasada siguiente. Nunca se
- * cambia una hora por «sin hora», ni un campo por «por asignar».
+ * La federación manda siempre (decisión de Iván, 12/10/2026): si publica un día, una hora o
+ * un campo distintos de los del Studio, se ponen los suyos, aunque lo del Studio se hubiera
+ * corregido a mano. Lo único que no hace es borrar: mientras no publique hora o el campo esté
+ * «por asignar», se conserva lo que hubiera.
  */
 export function cambioDeHorario(
-  visto: HorarioFederacion | undefined,
   federacion: HorarioFederacion,
   actual: { fecha: string | null },
-): { fecha: string | null; campo: string | null } | null {
-  if (visto && visto.fecha === federacion.fecha && visto.campo === federacion.campo) return null;
-
+): { fecha: string | null; campo: string | null } {
   const mismoDia = actual.fecha?.slice(0, 10) === federacion.fecha.slice(0, 10);
   const sinHoraNueva = federacion.fecha.length === 10;
   // La federación aún no da hora y el día es el mismo: se conserva la hora que ya había.
   const fecha =
     actual.fecha === federacion.fecha || (sinHoraNueva && mismoDia) ? null : federacion.fecha;
-  const campo = federacion.campo && federacion.campo !== visto?.campo ? federacion.campo : null;
-  return { fecha, campo };
+  // Si el campo es ya el del partido lo decide quien lo aplica, que conoce el catálogo.
+  return { fecha, campo: federacion.campo || null };
 }
 
 /** «18/10 17:00» o «18/10» para contar un cambio en una línea. */

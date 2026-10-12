@@ -53,44 +53,28 @@ describe("horarios de la federación", () => {
     expect(jornadasPorJugar([partido(3, "2026-10-18T17:00")], "2026-10-18T17:30")).toEqual([]);
   });
 
-  it("la primera vez aplica lo que diga la federación si es distinto", () => {
+  it("aplica lo que diga la federación cuando es distinto de lo que hay", () => {
     const federacion = { fecha: "2026-10-18T16:30", campo: "Municipal de Santiso" };
-    expect(cambioDeHorario(undefined, federacion, { fecha: "2026-10-18T17:00" })).toEqual({
+    expect(cambioDeHorario(federacion, { fecha: "2026-10-18T17:00" })).toEqual({
       fecha: "2026-10-18T16:30",
       campo: "Municipal de Santiso",
     });
-    expect(cambioDeHorario(undefined, federacion, { fecha: "2026-10-18T16:30" })).toEqual({
+    expect(cambioDeHorario(federacion, { fecha: "2026-10-18T16:30" })).toEqual({
       fecha: null,
       campo: "Municipal de Santiso",
     });
-  });
-
-  it("si la federación no ha cambiado nada, lo corregido a mano se respeta", () => {
-    const visto = { fecha: "2026-10-18T17:00", campo: "Municipal de Santiso" };
-    expect(cambioDeHorario(visto, { ...visto }, { fecha: "2026-10-18T19:00" })).toBeNull();
-  });
-
-  it("un cambio de la federación sí se aplica, aunque se hubiera tocado a mano", () => {
-    const visto = { fecha: "2026-10-18T17:00", campo: "Municipal de Santiso" };
-    expect(
-      cambioDeHorario(
-        visto,
-        { fecha: "2026-10-17T16:00", campo: "Municipal de Santiso" },
-        { fecha: "2026-10-18T19:00" },
-      ),
-    ).toEqual({ fecha: "2026-10-17T16:00", campo: null });
-    expect(
-      cambioDeHorario(visto, { fecha: visto.fecha, campo: "A Gandareira" }, { fecha: visto.fecha }),
-    ).toEqual({ fecha: null, campo: "A Gandareira" });
+    expect(cambioDeHorario(federacion, { fecha: null })).toMatchObject({
+      fecha: "2026-10-18T16:30",
+    });
   });
 
   it("no cambia una hora por «sin hora» ni un campo por «por asignar»", () => {
     expect(
-      cambioDeHorario(undefined, { fecha: "2026-10-25", campo: "" }, { fecha: "2026-10-25T17:00" }),
+      cambioDeHorario({ fecha: "2026-10-25", campo: "" }, { fecha: "2026-10-25T17:00" }),
     ).toEqual({ fecha: null, campo: null });
     // Pero si la federación mueve el día, manda ella aunque todavía no dé hora.
     expect(
-      cambioDeHorario(undefined, { fecha: "2026-10-24", campo: "" }, { fecha: "2026-10-25T17:00" }),
+      cambioDeHorario({ fecha: "2026-10-24", campo: "" }, { fecha: "2026-10-25T17:00" }),
     ).toEqual({ fecha: "2026-10-24", campo: null });
   });
 });

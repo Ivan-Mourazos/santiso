@@ -346,7 +346,7 @@ it("pone al día día, hora y campo de un partido por jugar y lo cuenta en el re
   expect(fila?.horariosEn).toBe(AHORA.toISOString());
 });
 
-it("lo corregido a mano se respeta mientras la federación no cambie; si cambia, manda ella", async () => {
+it("la federación manda siempre: lo cambiado a mano vuelve a lo que ella publica", async () => {
   const { s, db, competicionId, sincronizarCompeticion, porJugarId, leerPartido } =
     await conPartidoPorJugar();
   const federacion = cruce("21-09-2025", "17:00", "Municipal de Proba - Hierba Artificial");
@@ -355,22 +355,21 @@ it("lo corregido a mano se respeta mientras la federación no cambie; si cambia,
   await db.update(s.partidos).set({ fecha: "2025-09-21T19:00" }).where(eq(s.partidos.id, porJugarId));
 
   const masTarde = new Date(AHORA.getTime() + 4 * 3_600_000);
-  const igual = await sincronizarCompeticion(
+  const otraVez = await sincronizarCompeticion(
     competicionId,
     descargadorDe("", federacion).descargador,
     masTarde,
   );
-  expect(igual?.horarios).toEqual([]);
-  expect((await leerPartido()).fecha).toBe("2025-09-21T19:00");
+  expect(otraVez?.horarios).toEqual(["J2 Equipo Visitante – Equipo Local: 21/09 17:00"]);
+  expect((await leerPartido()).fecha).toBe("2025-09-21T17:00");
 
-  const cambia = await sincronizarCompeticion(
+  // Y si no hay nada distinto, no se anuncia ningún cambio.
+  const sinNovedad = await sincronizarCompeticion(
     competicionId,
-    descargadorDe("", cruce("21-09-2025", "12:00", "Municipal de Proba - Hierba Artificial"))
-      .descargador,
+    descargadorDe("", federacion).descargador,
     new Date(masTarde.getTime() + 4 * 3_600_000),
   );
-  expect(cambia?.horarios).toEqual(["J2 Equipo Visitante – Equipo Local: 21/09 12:00"]);
-  expect((await leerPartido()).fecha).toBe("2025-09-21T12:00");
+  expect(sinNovedad?.horarios).toEqual([]);
 });
 
 it("sin hora publicada ni campo asignado no borra los que ya había", async () => {

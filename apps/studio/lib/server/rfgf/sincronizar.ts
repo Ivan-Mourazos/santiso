@@ -135,17 +135,6 @@ async function tratarJornada(
   if (leida.numero !== jornada) throw new Error("La federación devolvió otra jornada.");
   const candidatos = partidos.filter((p) => p.jornada === jornada);
   const { db } = await obtenerDb();
-  const vistos = candidatos.length
-    ? await db
-        .select()
-        .from(schema.rfgfPartidos)
-        .where(
-          inArray(
-            schema.rfgfPartidos.partidoId,
-            candidatos.map((p) => p.id),
-          ),
-        )
-    : [];
   let cambios = 0;
   for (const enPdf of leida.partidos) {
     // Si el cruce no se reconoce no se toca nada: de eso ya avisa la lectura de actas.
@@ -165,12 +154,8 @@ async function tratarJornada(
       fecha: fechaDeFederacion(enPdf.fecha, enPdf.hora),
       campo: enPdf.campo ?? "",
     };
-    const cambio = cambioDeHorario(
-      vistos.find((v) => v.partidoId === partido.id),
-      federacion,
-      partido,
-    );
-    if (cambio) {
+    const cambio = cambioDeHorario(federacion, partido);
+    {
       const dicho: string[] = [];
       if (cambio.fecha) {
         const fecha = await cambiarFechaPartido(partido.id, cambio.fecha);
