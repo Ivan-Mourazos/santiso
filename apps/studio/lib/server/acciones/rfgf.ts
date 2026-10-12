@@ -119,7 +119,8 @@ export async function guardarEnlaceRfgf(
 /** Mira ahora mismo la federación, sin esperar a la siguiente comprobación periódica. */
 export async function comprobarRfgfAhora(): Promise<Resultado<string>> {
   return capturar("No se pudo consultar la federación.", async () => {
-    const resumenes = await sincronizarTodo(crearDescargador());
+    // A mano se trae todo: resultados, horarios y dos jornadas atrasadas de goles y tarjetas.
+    const resumenes = await sincronizarTodo(crearDescargador(), new Date(), false, true);
     if (resumenes.length === 0) return "No hay competiciones enlazadas, o ya hay una comprobación en marcha.";
     const actas = resumenes.reduce((n, r) => n + r.actas, 0);
     const resultados = resumenes.reduce((n, r) => n + r.resultados, 0);

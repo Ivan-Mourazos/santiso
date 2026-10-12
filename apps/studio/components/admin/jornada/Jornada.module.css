@@ -469,3 +469,27 @@ button.acceso {
     min-height: 44px;
   }
 }
+
+/* «Comprobar ahora», a la vista: antes estaba al fondo de un desplegable. */
+.rfgfAhora {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+}
+.rfgfAhora p {
+  flex: 1 1 16rem;
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: 0.875rem;
+}
+.rfgfAhora button {
+  min-height: 44px;
+}
+@media (max-width: 900px) {
+  .rfgfAhora button {
+    width: 100%;
+  }
+}

@@ -7,6 +7,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation
 import { Tabs } from "@/components/ui/foundation/Tabs";
 import type { Disciplina, Goleador } from "@/lib/liga/tablas";
 import { cargarLiga, guardarCicloAmarillas } from "@/lib/server/acciones/liga";
+import { comprobarRfgfAhora } from "@/lib/server/acciones/rfgf";
 import type { PantallaLiga } from "@/lib/server/consultas/liga";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import styles from "./Liga.module.css";
@@ -104,6 +105,7 @@ export default function AdminLiga({ categoria, showToast }: Props) {
   const [soloRival, setSoloRival] = useState("");
   const [ciclo, setCiclo] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [trayendo, setTrayendo] = useState(false);
   const generacion = useRef(0);
 
   const cargar = useCallback(async (competicionId: string) => {
@@ -128,6 +130,20 @@ export default function AdminLiga({ categoria, showToast }: Props) {
   useEffect(() => {
     if (selectedCompetitionId) void cargar(selectedCompetitionId);
   }, [selectedCompetitionId, cargar]);
+
+  async function traerAhora() {
+    if (!selectedCompetitionId || trayendo) return;
+    setTrayendo(true);
+    try {
+      const resultado = await comprobarRfgfAhora();
+      showToast(resultado.ok ? resultado.datos : resultado.error, resultado.ok ? "success" : "error");
+      await cargar(selectedCompetitionId);
+    } catch {
+      showToast("No se pudo consultar la federación.", "error");
+    } finally {
+      setTrayendo(false);
+    }
+  }
 
   async function guardarCiclo() {
     if (!selectedCompetitionId || guardando) return;
@@ -195,7 +211,7 @@ export default function AdminLiga({ categoria, showToast }: Props) {
             </Button>
           }
         />
-      ) : !pantalla || cargando ? (
+      ) : !pantalla || (cargando && !trayendo) ? (
         <LoadingState title="Cargando la liga…" />
       ) : (
         <>
@@ -208,6 +224,13 @@ export default function AdminLiga({ categoria, showToast }: Props) {
             {pantalla.partidosSinLeer > 0 &&
               ` Hay ${pantalla.partidosSinLeer} acta${pantalla.partidosSinLeer > 1 ? "s" : ""} que no se supo leer: sus goles y tarjetas faltan aquí.`}
           </p>
+          {pantalla.partidosCargados + pantalla.partidosSinLeer < pantalla.partidosJugados && (
+            <div className={styles.traer}>
+              <Button variant="secondary" pending={trayendo} pendingLabel="Mirando la federación…" onClick={() => void traerAhora()}>
+                Traer ahora dos jornadas más
+              </Button>
+            </div>
+          )}
           <Tabs
             label="Datos de la liga"
             value={pestana}
