@@ -418,3 +418,33 @@ it("un PDF de jornada que no se sabe leer queda como error y no toca nada", asyn
   ]);
   expect((await leerPartido()).fecha).toBe("2025-09-21T17:00");
 });
+
+it("los cambios de los partidos del Santiso se cuentan los primeros", async () => {
+  const { s, db, competicionId, sincronizarCompeticion } = await conPartidoPorJugar();
+  // Otro partido de la misma jornada, entre dos equipos ajenos, que va antes en el PDF.
+  const [a, b] = await db
+    .insert(s.equipos)
+    .values([
+      { nombre: "Ajeno Uno", clave: "ajeno uno", categoria: "Senior" },
+      { nombre: "Ajeno Dous", clave: "ajeno dous", categoria: "Senior" },
+    ])
+    .returning();
+  const [jornada] = await db.select().from(s.jornadas).where(eq(s.jornadas.numero, 2));
+  await db
+    .insert(s.partidos)
+    .values({ jornadaId: jornada!.id, equipoLocalId: a!.id, equipoVisitanteId: b!.id });
+  await db.update(s.equipos).set({ esPropio: true }).where(eq(s.equipos.nombre, "Equipo Local"));
+  const resumen = await sincronizarCompeticion(
+    competicionId,
+    descargadorDe("", [
+      "AJENO UNO 21-09-2025 AJENO DOUS",
+      "Campo: Campo Pendiente de asignar",
+      ...cruce("20-09-2025", "16:30", "Campo Pendiente de asignar"),
+    ]).descargador,
+    AHORA,
+  );
+  expect(resumen?.horarios).toEqual([
+    "J2 Equipo Visitante – Equipo Local: 20/09 16:30",
+    "J2 Ajeno Uno – Ajeno Dous: 21/09",
+  ]);
+});

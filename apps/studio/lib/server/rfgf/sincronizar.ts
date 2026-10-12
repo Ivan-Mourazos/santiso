@@ -177,9 +177,10 @@ async function tratarJornada(
         }
       }
       if (dicho.length) {
-        resumen.horarios.push(
-          `J${jornada} ${partido.local} – ${partido.visitante}: ${dicho.join(" · ")}`,
-        );
+        const linea = `J${jornada} ${partido.local} – ${partido.visitante}: ${dicho.join(" · ")}`;
+        // Los del Santiso, delante: en el panel solo caben los primeros.
+        if (partido.propio) resumen.horarios.unshift(linea);
+        else resumen.horarios.push(linea);
         cambios += 1;
       }
     }
