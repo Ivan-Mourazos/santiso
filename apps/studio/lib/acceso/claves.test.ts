@@ -33,8 +33,8 @@ describe("contraseñas", () => {
   });
 
   it("exige un mínimo de longitud", () => {
-    expect(errorDeClave("1234567")).toMatch(/al menos 8/);
-    expect(errorDeClave("12345678")).toBeNull();
+    expect(errorDeClave("123")).toMatch(/al menos 4/);
+    expect(errorDeClave("1234")).toBeNull();
     expect(errorDeClave("a".repeat(201))).toMatch(/demasiado larga/);
   });
 });
