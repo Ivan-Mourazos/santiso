@@ -1,0 +1,1 @@
+ALTER TABLE `rfgf_actas` ADD `aviso` text DEFAULT '' NOT NULL;

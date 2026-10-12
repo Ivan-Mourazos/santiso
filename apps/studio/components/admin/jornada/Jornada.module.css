@@ -493,3 +493,62 @@ button.acceso {
     width: 100%;
   }
 }
+
+/* Aviso de que la federación movió el partido: lo primero que se lee de la tarjeta. */
+.cambio {
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-left: 4px solid var(--ui-warning);
+  background: rgb(245 158 11 / 12%);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.sanciones {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ui-border);
+}
+.sanciones ul {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.sanciones li {
+  display: grid;
+  gap: 0.1rem;
+  padding-left: 0.6rem;
+  border-left: 3px solid var(--ui-warning);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.sanciones li[data-situacion="sancionado"],
+.sanciones li[data-situacion="expulsado"] {
+  border-left-color: var(--ui-danger);
+}
+.sanciones small,
+.sanciones span {
+  color: var(--ui-muted);
+  font-weight: 400;
+}
+
+.rfgfAviso li em {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--ui-muted);
+  font-style: normal;
+  font-size: 0.85rem;
+}
+.rfgfAcciones {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+.rfgfAcciones a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--ui-accent);
+}

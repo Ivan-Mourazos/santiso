@@ -42,6 +42,8 @@ export const rfgfActas = sqliteTable(
     estado: text("estado", { enum: ESTADOS_ACTA_RFGF }).notNull(),
     /** Qué se guardó o qué falló, en una frase. */
     detalle: text("detalle").notNull().default(""),
+    /** Algo que no salió del todo bien y conviene que alguien vea. Vacío si todo fue bien. */
+    aviso: text("aviso").notNull().default(""),
     /** Ya se apuntaron sus goles y tarjetas en `liga_eventos`. */
     eventos: integer("eventos", { mode: "boolean" }).notNull().default(false),
     ...marcasTiempo(),
@@ -66,5 +68,9 @@ export const rfgfPartidos = sqliteTable("rfgf_partidos", {
   fecha: text("fecha").notNull(),
   /** Nombre del campo tal como lo escribe la federación; vacío si está por asignar. */
   campo: text("campo").notNull().default(""),
+  /** El último cambio de día, hora o campo sobre lo que ya había, en una frase. */
+  cambio: text("cambio").notNull().default(""),
+  /** Cuándo se detectó ese cambio, ISO. */
+  cambioEn: text("cambio_en"),
   ...marcasTiempo(),
 });

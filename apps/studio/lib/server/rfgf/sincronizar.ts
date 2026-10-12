@@ -185,12 +185,17 @@ async function tratarJornada(
       campo: enPdf.campo ?? "",
     };
     const cambio = cambioDeHorario(federacion, partido);
+    let aviso: { cambio: string; cambioEn: string } | null = null;
+    // Solo es un cambio del que avisar si pisa algo que ya había; poner fecha a un partido
+    // que no la tenía es rellenar.
+    let pisa = false;
     {
       const dicho: string[] = [];
       if (cambio.fecha) {
         const fecha = await cambiarFechaPartido(partido.id, cambio.fecha);
         if (!fecha.ok) throw new Error(fecha.error);
         dicho.push(fechaBreve(cambio.fecha));
+        if (partido.fecha) pisa = true;
       }
       if (cambio.campo) {
         // El del catálogo si ya está; si no, se da de alta con las reglas de siempre.
@@ -204,6 +209,7 @@ async function tratarJornada(
           const campo = await cambiarCampoPartido(partido.id, campoId);
           if (!campo.ok) throw new Error(campo.error);
           dicho.push(cambio.campo);
+          if (partido.campoId) pisa = true;
         }
       }
       if (dicho.length) {
@@ -211,13 +217,17 @@ async function tratarJornada(
         // Los del Santiso, delante: en el panel solo caben los primeros.
         if (partido.propio) resumen.horarios.unshift(linea);
         else resumen.horarios.push(linea);
+        if (pisa) aviso = { cambio: dicho.join(" · "), cambioEn: new Date().toISOString() };
         cambios += 1;
       }
     }
     await db
       .insert(schema.rfgfPartidos)
-      .values({ partidoId: partido.id, ...federacion })
-      .onConflictDoUpdate({ target: schema.rfgfPartidos.partidoId, set: federacion });
+      .values({ partidoId: partido.id, ...federacion, ...aviso })
+      .onConflictDoUpdate({
+        target: schema.rfgfPartidos.partidoId,
+        set: { ...federacion, ...aviso },
+      });
   }
   return cambios;
 }
@@ -248,6 +258,8 @@ async function tratarActa(
   candidatos: readonly PartidoConEquipos[],
   descargador: DescargadorRfgf,
   resumen: ResumenRfgf,
+  /** Lo que conviene dejar a la vista del acta aunque lo demás se haya guardado. */
+  salida: { aviso: string },
 ) {
   const cruce = `${enLaWeb.local} – ${enLaWeb.visitante}`;
   const partido = partidoDeActa(enLaWeb.local, enLaWeb.visitante, candidatos);
@@ -275,6 +287,7 @@ async function tratarActa(
   if (ficha) await guardarEventosDeLiga(partido, ficha);
   else if (!partido.conEventos) {
     resumen.revisar.push(`${cruce}: no pude leer sus goles y tarjetas (${tropiezo}).`);
+    salida.aviso = `No pude leer sus goles y tarjetas (${tropiezo}). Faltan en las tablas de la liga.`;
   }
   // Solo faltaban los goles y las tarjetas: lo demás del partido no se toca.
   if (!leFaltaAlgo(partido)) {
@@ -453,6 +466,7 @@ export async function sincronizarCompeticion(
       const candidatos = partidos.filter((p) => p.jornada === jornada);
       for (const acta of enLaWeb) {
         if (hechas.has(acta.codActa)) continue;
+        const salida = { aviso: "" };
         try {
           await tratarActa(
             acta.codActa,
@@ -462,11 +476,19 @@ export async function sincronizarCompeticion(
             candidatos,
             descargador,
             resumen,
+            salida,
           );
+          // El aviso se pone o se quita según haya ido esta vez.
+          await db
+            .update(schema.rfgfActas)
+            .set({ aviso: salida.aviso })
+            .where(eq(schema.rfgfActas.codActa, acta.codActa));
         } catch (error) {
           const detalle = error instanceof Error ? error.message : "fallo desconocido";
-          resumen.errores.push(`${acta.local} – ${acta.visitante}: ${detalle}`);
-          await anotar(acta.codActa, competicionId, null, "error", detalle);
+          const cruce = `${acta.local} – ${acta.visitante}`;
+          resumen.errores.push(`${cruce}: ${detalle}`);
+          // El cruce va en el detalle: aquí aún no se sabe a qué partido nuestro corresponde.
+          await anotar(acta.codActa, competicionId, null, "error", `${cruce}: ${detalle}`);
         }
       }
     } catch (error) {

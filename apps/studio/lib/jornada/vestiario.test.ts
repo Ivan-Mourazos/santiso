@@ -18,6 +18,8 @@ const partido = (cambios: Partial<PartidoDeLaSemana> = {}): PartidoDeLaSemana =>
   golesRival: null,
   campo: null,
   arbitro: null,
+  cambioFederacion: null,
+  avisos: [],
   acta: null,
   clasificacion: null,
   preparacion: { convocatoria: null, titulares: 0, capitan: false },

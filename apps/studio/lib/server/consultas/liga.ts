@@ -112,3 +112,8 @@ export async function pantallaLiga(competicionId: string): Promise<PantallaLiga>
     propios: [...new Set(filas.filter((f) => f.propio).map((f) => f.equipoId))],
   };
 }
+
+/** Solo quien tiene algo que contar (apercibido, sancionado o expulsado) en una competición. */
+export async function avisosDeLiga(competicionId: string): Promise<Disciplina[]> {
+  return (await pantallaLiga(competicionId)).disciplina.filter((d) => d.situacion !== null);
+}
