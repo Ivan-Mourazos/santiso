@@ -207,7 +207,7 @@ export default function TarjetaPartido({ partido: p, categoria }: Props) {
 
         <Paso
           titulo="Acta"
-          estado={acta ? "Guardada" : jugado ? "Pendiente" : "Tras el partido"}
+          estado={acta ? "Guardada" : jugado ? "Esperando a la federación" : "Tras el partido"}
           tono={acta ? "hecho" : jugado ? "pendiente" : "espera"}
         >
           {resumenActa && <p className={styles.detalle}>{resumenActa}</p>}
@@ -222,13 +222,13 @@ export default function TarjetaPartido({ partido: p, categoria }: Props) {
           )}
           {!acta && (
             <div className={styles.botones}>
+              {/* La federación la trae sola al cerrarse: meterla a mano es el plan B. */}
               <Accion
                 href={`/admin/actas?categoria=${cat}&competicion=${p.competicionId}&partido=${p.id}`}
-                principal={jugado}
                 deshabilitada={!jugado}
                 motivo="Se importa cuando se haya jugado"
               >
-                Importar acta
+                Meter acta a mano
               </Accion>
             </div>
           )}

@@ -142,14 +142,14 @@ test("Axenda: 1, 2, 3 y 4 partidos ocupan portada, nombres largos y zonas segura
     }
 });
 
-test("Partido: Diagonal y Enfrentados, sin fecha, contexto completo, parcial o ausente", async ({
+test("Partido: sin fecha, contexto completo, parcial o ausente", async ({
   page,
 }, info) => {
   test.setTimeout(120000);
   await page.goto("/render/cartel");
   await page.waitForFunction(() => typeof window.__pintarCartel === "function");
   for (const formato of ["publicacion", "historia"] as const)
-    for (const composicion of ["diagonal", "enfrentados"] as const)
+    for (const composicion of ["diagonal"] as const)
       for (const datos of [
         contexto,
         undefined,

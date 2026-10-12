@@ -202,7 +202,7 @@
   }
   .pestanas {
     position: fixed;
-    top: 52px;
+    top: var(--studio-cabecera, 52px);
     left: max(0.75rem, env(safe-area-inset-left));
     right: max(0.75rem, env(safe-area-inset-right));
     z-index: 5;

@@ -44,26 +44,27 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 20px;
+  gap: 14px;
   align-items: center;
   min-width: 0;
   height: 100%;
 }
 .huecoEscudo {
   flex: 1;
-  min-height: 210px;
+  min-height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
 }
+/* Algo más contenidos que antes: dejan sitio a la línea de fecha y hora, que ahora es grande. */
 .escudo {
-  width: 290px;
-  height: 290px;
+  width: 250px;
+  height: 250px;
 }
 .equipo[data-propio="true"] .escudo {
-  width: 240px;
-  height: 240px;
+  width: 220px;
+  height: 220px;
 }
 .nombre {
   width: 100%;
@@ -95,13 +96,14 @@
   gap: 28px;
   flex-shrink: 0;
 }
+/* El cuándo se tiene que leer de un vistazo: es lo segundo que se busca, tras el rival. */
+/* Interlineado 1,6: con menos, esta tipografía se sale de su propia línea por arriba y abajo. */
 .fecha {
-  font-weight: 800;
-  font-size: 38px;
-  line-height: 1.3;
+  font: 50px/1.6 var(--display);
+  letter-spacing: 0.01em;
 }
 .hora {
-  font: 46px/1.6 var(--display);
+  font: 72px/1.6 var(--display);
   color: var(--amarillo);
 }
 .pendiente {

@@ -228,7 +228,7 @@
   }
   .tabla thead tr {
     position: sticky;
-    top: 0;
+    top: var(--studio-cabecera, 0px);
     z-index: 1;
     min-height: 44px;
     background: var(--ui-bg);

@@ -29,7 +29,10 @@ test("cambiar de plantilla cambia el formulario y el cartel", async ({ page }) =
   await page.goto("/admin/carteles");
   await expect(plantilla(page)).toBeVisible({ timeout: 20000 });
 
-  // Partido: rival y datos del encuentro, con sus etiquetas asociadas al campo.
+  // Partido: se elige categoría y partido; los campos sueltos están plegados para retocar.
+  await expect(page.getByRole("button", { name: "Cargar próximo partido" })).toBeVisible();
+  await expect(page.getByLabel("Rival", { exact: true })).toBeHidden();
+  await page.locator("summary").filter({ hasText: "Editar datos a mano" }).click();
   await expect(page.getByLabel("Rival", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Fecha", { exact: true })).toBeVisible();
 
@@ -105,8 +108,9 @@ test("el cartel se previsualiza y se descarga en PNG a 2160×2700", async ({ pag
   await expect(piloto).toBeVisible({ timeout: 30000 });
   await expect(piloto.locator("[data-vista-cartel] [data-cartel]")).toBeVisible();
 
-  await piloto.getByRole("button", { name: "Enfrentados", exact: true }).click();
-  await expect(piloto.locator("[data-cartel]")).toHaveClass(/enfrentados/);
+  // Un solo diseño de cartel de partido: no hay composición que elegir.
+  await expect(piloto.getByRole("group", { name: "Composición" })).toHaveCount(0);
+  await expect(piloto.locator("[data-cartel]")).toHaveClass(/diagonal/);
 
   const descarga = page.waitForEvent("download", { timeout: 90000 });
   await piloto.getByRole("button", { name: "Descargar PNG" }).click();

@@ -22,7 +22,7 @@ function Equipo({ equipo }: { equipo: EquipoCartel }) {
       </div>
       <div
         className={s.nombre}
-        style={{ fontSize: cuerpo(equipo.nombre, 860, equipo.propio ? 44 : 80, 32, 0.58) }}
+        style={{ fontSize: cuerpo(equipo.nombre, 860, equipo.propio ? 48 : 64, 32, 0.58) }}
       >
         {equipo.nombre}
       </div>
