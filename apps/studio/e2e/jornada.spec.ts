@@ -59,7 +59,7 @@ test("jornada: conserva destinos del partido, fotos y federación", async ({ pag
       expect(href).toContain("partido=");
   }
   await expect(partido.getByRole("button", { name: "Fotos del partido" })).toBeVisible();
-  await page.getByText("Otras semanas y carteles", { exact: true }).click();
+  await page.getByText("Otras semanas", { exact: true }).click();
   await expect(page.getByRole("link", { name: "Próximos encuentros" })).toHaveAttribute(
     "href",
     "/admin/carteles?plantilla=proximos&rellenar=1",

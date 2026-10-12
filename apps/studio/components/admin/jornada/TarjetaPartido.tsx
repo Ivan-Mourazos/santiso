@@ -5,7 +5,7 @@ import { useState } from "react";
 import GaleriaPartido from "@/components/admin/fotos/GaleriaPartido";
 import { useStudio } from "@/components/studio/StudioContext";
 import type { PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
-import { enlacesPartido, progresoPartido, tieneResultado } from "./vestiario";
+import { enlacesPartido, marcador, progresoPartido, tieneResultado } from "@/lib/jornada/vestiario";
 import styles from "./Jornada.module.css";
 
 export function fechaPartido(fecha: string | null) {
@@ -36,7 +36,7 @@ function Acceso({
     </Link>
   ) : (
     <span className={styles.noDisponible}>
-      {children}
+      <span>{children}</span>
       <small>{motivo}</small>
     </span>
   );
@@ -91,9 +91,14 @@ export default function TarjetaPartido({
       </div>
       <div className={styles.cuando}>
         <time dateTime={p.fecha ?? undefined}>{cuando.dia}</time>
-        <strong>{marcado ? `${p.golesSantiso}–${p.golesRival}` : cuando.hora || "Sin hora"}</strong>
+        <strong>{marcador(p)?.cifras ?? (cuando.hora || "Sin hora")}</strong>
       </div>
-      {marcado && <p className={styles.contexto}>Marcador · Santiso / rival</p>}
+      {marcado && (
+        <p className={styles.contexto}>
+          {marcador(p)?.desenlace} ·{" "}
+          {p.santisoLocal ? `${p.santiso} – ${p.rival.nombre}` : `${p.rival.nombre} – ${p.santiso}`}
+        </p>
+      )}
       <p className={styles.campo}>{p.campo || "Campo por confirmar"}</p>
       <p className={styles.competicion}>{p.competicion}</p>
 

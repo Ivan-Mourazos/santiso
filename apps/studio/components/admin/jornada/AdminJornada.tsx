@@ -10,7 +10,7 @@ import { cargarPantallaJornada } from "@/lib/server/acciones/jornada";
 import type { PantallaJornada } from "@/lib/server/consultas/jornada";
 import PanelRfgf from "./PanelRfgf";
 import TarjetaPartido, { fechaPartido } from "./TarjetaPartido";
-import { partidoEnMesa, tieneResultado } from "./vestiario";
+import { marcador, partidoEnMesa } from "@/lib/jornada/vestiario";
 import styles from "./Jornada.module.css";
 
 const MESES = [
@@ -190,13 +190,14 @@ export default function AdminJornada() {
                   <h3>
                     {ultimo.rival.nombre}
                     <span className={styles.resultado}>
-                      {tieneResultado(ultimo)
-                        ? `${ultimo.golesSantiso}–${ultimo.golesRival}`
-                        : "Sin resultado"}
+                      {marcador(ultimo)?.cifras ?? "Sin resultado"}
                     </span>
                   </h3>
                   <p>
-                    Santiso / rival · {ultimo.santisoLocal ? "Casa" : "Fuera"} ·{" "}
+                    {[marcador(ultimo)?.desenlace, ultimo.santisoLocal ? "Casa" : "Fuera"]
+                      .filter(Boolean)
+                      .join(" · ")}{" "}
+                    ·{" "}
                     {ultimo.acta ? "Acta guardada" : "Acta pendiente"}
                   </p>
                   {ultimo.acta && (
@@ -227,7 +228,7 @@ export default function AdminJornada() {
         </section>
       )}
       <details className={styles.archivo} open={historico || undefined}>
-        <summary>Otras semanas y carteles</summary>
+        <summary>Otras semanas</summary>
         {!historico && <h3>Semana {rotuloSemana(semana.desde, semana.hasta)}</h3>}
         <div className={styles.botones}>
           <button type="button" onClick={() => irA(semanaVecina(dia, -1))}>
@@ -242,10 +243,11 @@ export default function AdminJornada() {
             Siguiente →
           </button>
         </div>
-        <Link className={styles.acceso} href="/admin/carteles?plantilla=proximos&rellenar=1">
-          Próximos encuentros<span aria-hidden="true">↗</span>
-        </Link>
       </details>
+      {/* A la vista: es el cartel de cada semana, no algo de archivo. */}
+      <Link className={styles.acceso} href="/admin/carteles?plantilla=proximos&rellenar=1">
+        Próximos encuentros<span aria-hidden="true">↗</span>
+      </Link>
       <PanelRfgf showToast={showToast} onNovedades={() => void cargar(dia)} />
     </div>
   );

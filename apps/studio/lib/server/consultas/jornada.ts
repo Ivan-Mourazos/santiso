@@ -2,7 +2,7 @@ import "server-only";
 import { schema } from "@santiso/db";
 import { CATEGORIAS, type Categoria } from "@santiso/domain";
 import { aliasedTable, and, asc, eq, inArray, or, sql } from "drizzle-orm";
-import { momentoLocal, trasPartido } from "@/components/admin/jornada/vestiario";
+import { momentoLocal, trasPartido } from "@/lib/jornada/vestiario";
 import { semanaDe, type Semana } from "@/lib/jornada/semana";
 import { urlMedia } from "@/lib/media";
 import { clasificacionDeCompeticion } from "@/lib/server/consultas/clasificacion";

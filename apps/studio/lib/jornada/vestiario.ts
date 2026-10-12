@@ -10,6 +10,20 @@ export function tieneResultado(p: PartidoDeLaSemana) {
   return p.golesSantiso !== null && p.golesRival !== null;
 }
 
+/**
+ * El marcador como se escribe en el fútbol: goles del local, goles del visitante, y delante lo
+ * que significó para el Santiso. «3–8 Santiso / rival» se leía al revés tras perder 8–3 fuera.
+ */
+export function marcador(p: PartidoDeLaSemana) {
+  if (p.golesSantiso === null || p.golesRival === null) return null;
+  const cifras = p.santisoLocal
+    ? `${p.golesSantiso}–${p.golesRival}`
+    : `${p.golesRival}–${p.golesSantiso}`;
+  const desenlace =
+    p.golesSantiso > p.golesRival ? "Victoria" : p.golesSantiso < p.golesRival ? "Derrota" : "Empate";
+  return { cifras, desenlace };
+}
+
 /** Pasar la hora de inicio no significa que el partido haya terminado. */
 export function trasPartido(p: PartidoDeLaSemana, ahora: string) {
   if (p.estado === "aplazado" || p.estado === "cancelado" || p.estado === "en_juego") return false;
@@ -55,15 +69,14 @@ export function enlacesPartido(p: PartidoDeLaSemana, categoria: string) {
 export function progresoPartido(p: PartidoDeLaSemana, ahora: string, categoria = "Senior") {
   const e = enlacesPartido(p, categoria);
   const despues = trasPartido(p, ahora);
+  const resultado = marcador(p);
   const convocados = p.preparacion.convocatoria;
   const once = p.preparacion.titulares === 11 && p.preparacion.capitan;
   const pasos: PasoPartido[] = despues
     ? [
         {
           titulo: "Resultado",
-          estado: tieneResultado(p)
-            ? `${p.golesSantiso}–${p.golesRival} · Santiso / rival`
-            : "Pendiente",
+          estado: resultado ? `${resultado.desenlace} ${resultado.cifras}` : "Pendiente",
           tono: tieneResultado(p) ? "hecho" : "pendiente",
           href: e.calendario,
         },

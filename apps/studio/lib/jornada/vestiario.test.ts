@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { partidoEnMesa, progresoPartido, trasPartido } from "@/components/admin/jornada/vestiario";
+import { partidoEnMesa, progresoPartido, trasPartido } from "./vestiario";
 import type { PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
 
 const partido = (cambios: Partial<PartidoDeLaSemana> = {}): PartidoDeLaSemana => ({
