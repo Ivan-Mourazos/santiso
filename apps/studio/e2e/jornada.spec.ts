@@ -1,27 +1,25 @@
 import { expect, test } from "@playwright/test";
 import { vigilarSalidasAInternet } from "./red";
 
-/**
- * Pantalla «Jornada» contra la base de datos real. **Solo lectura**: no tiene nada que guarde;
- * aquí se comprueba que carga, que cambia de semana y que sus enlaces llevan el partido.
- */
-test("abre en la semana de hoy con una columna por categoría", async ({ page }) => {
+/** Datos reales, solo lectura: enlaces, cambios de contexto y estados guardados. */
+test("jornada: entrada centrada en un partido y una sola acción principal", async ({ page }) => {
   const errores: string[] = [];
   const externas = vigilarSalidasAInternet(page);
-  page.on("pageerror", (error) => errores.push(error.message));
-
-  // `/admin` lleva a la Jornada: es la pantalla de entrada.
+  page.on("pageerror", (e) => errores.push(e.message));
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/admin\/jornada/);
-  await expect(page.getByRole("heading", { name: /^Semana del/ })).toBeVisible({ timeout: 30000 });
-  for (const categoria of ["Senior", "Veteranos"]) {
-    await expect(page.getByRole("region", { name: categoria, exact: true })).toBeVisible();
-  }
+  await expect(page.locator("[data-mesa-partido]")).toBeVisible({ timeout: 30000 });
+  await expect(page.locator("[data-accion-principal]")).toHaveCount(1);
+  await expect(page.getByRole("group", { name: "Equipo" })).toBeVisible();
+  await page.getByRole("button", { name: "Veteranos", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Veteranos", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/categoria=Veteranos/);
+  await expect(page.locator("[data-accion-principal]")).toHaveCount(1);
   expect(errores).toEqual([]);
   expect(externas).toEqual([]);
 });
 
-test("las semanas se recorren y quedan en la URL", async ({ page }) => {
+test("jornada: conserva semanas en URL y vuelve a la mesa actual", async ({ page }) => {
   await page.goto("/admin/jornada?semana=2026-09-23");
   const titulo = page.getByRole("heading", { name: /^Semana del/ });
   await expect(titulo).toHaveText("Semana del 21 al 27 de septiembre", { timeout: 30000 });
@@ -29,61 +27,85 @@ test("las semanas se recorren y quedan en la URL", async ({ page }) => {
   await expect(titulo).toHaveText("Semana del 28 de septiembre al 4 de octubre");
   await expect(page).toHaveURL(/semana=2026-09-28/);
   await page.getByRole("button", { name: "← Anterior" }).click();
-  // Cada clic calcula desde la semana de la URL: esperar a que cambie antes del siguiente.
   await expect(titulo).toHaveText("Semana del 21 al 27 de septiembre");
-  await page.getByRole("button", { name: "← Anterior" }).click();
-  await expect(titulo).toHaveText("Semana del 14 al 20 de septiembre");
+  await page.getByRole("button", { name: "Volver al próximo partido" }).click();
+  await expect(page).not.toHaveURL(/semana=/);
+  await expect(page.locator("[data-mesa-partido]")).toBeVisible();
 });
 
-test("cada partido enlaza sus pantallas con el partido ya elegido", async ({ page }) => {
+test("jornada: conserva destinos del partido, fotos y federación", async ({ page }) => {
   await page.goto("/admin/jornada?semana=2026-09-23");
-  const senior = page.getByRole("region", { name: "Senior", exact: true });
-  const partido = senior.getByRole("article").first();
+  const partido = page.locator("[data-mesa-partido]");
   await expect(partido).toBeVisible({ timeout: 30000 });
-  // La hora se corrige en Calendario, con la jornada del partido ya elegida.
-  await expect(partido.getByRole("link", { name: "Cambiar fecha, hora o campo" })).toHaveAttribute(
+  await partido.getByText("Más tareas del partido", { exact: true }).click();
+  for (const [nombre, destino] of [
+    ["Convocatoria", "/admin/convocatoria?"],
+    ["Alineación", "/admin/alineacion?"],
+    ["Cartel de partido", "/admin/carteles?plantilla=partido&"],
+    ["Cambiar fecha, hora o campo", "/admin/calendario?"],
+    ["Ver clasificación", "/admin/clasificacion?"],
+    ["Cartel de clasificación", "/admin/carteles?plantilla=clasificacion"],
+  ]) {
+    const href = await partido
+      .getByRole("link", { name: nombre, exact: false })
+      .last()
+      .getAttribute("href");
+    expect(href).toContain(destino);
+    if (
+      nombre !== "Cartel de clasificación" &&
+      nombre !== "Ver clasificación" &&
+      nombre !== "Cambiar fecha, hora o campo"
+    )
+      expect(href).toContain("partido=");
+  }
+  await expect(partido.getByRole("button", { name: "Fotos del partido" })).toBeVisible();
+  await page.getByText("Otras semanas y carteles", { exact: true }).click();
+  await expect(page.getByRole("link", { name: "Próximos encuentros" })).toHaveAttribute(
     "href",
-    /\/admin\/calendario\?categoria=Senior&competicion=[\w-]+&jornada=[\w-]+/,
+    "/admin/carteles?plantilla=proximos&rellenar=1",
   );
-  const cartel = partido.getByRole("link", { name: "Cartel de partido" });
-  const href = (await cartel.getAttribute("href")) ?? "";
-  expect(href).toMatch(/\/admin\/carteles\?plantilla=partido&partido=[\w-]+/);
-
-  // Y el enlace hace su trabajo: Carteles se abre con el rival del partido ya puesto.
-  const rivalEsperado = (await partido.getAttribute("aria-label"))!
-    .split(" - ")
-    .find((nombre) => !/santiso/i.test(nombre));
-  await cartel.click();
-  await expect(page).toHaveURL(/\/admin\/carteles/);
-  await expect(page.getByLabel("Rival", { exact: true })).toHaveValue(rivalEsperado!, {
-    timeout: 30000,
-  });
+  await expect(page.locator("summary").filter({ hasText: "Federación" })).toBeVisible();
+  // Abrir Carteles solo rellena el editor; nunca generar ni guardar en datos reales.
+  const rival = await partido.getByRole("heading", { level: 2 }).textContent();
+  await partido.getByRole("link", { name: "Cartel de partido", exact: false }).click();
+  await expect(page.getByLabel("Rival", { exact: true })).toHaveValue(rival!, { timeout: 30000 });
 });
 
-test("lo que depende de haber jugado está deshabilitado antes y dice por qué", async ({ page }) => {
-  // Último partido Senior de la temporada (09/05/2027): sin jugar durante mucho tiempo, así la
-  // prueba no cambia de resultado cuando se importe el acta de la primera jornada.
+test("jornada: antes de jugar muestra preparación y explica publicaciones indisponibles", async ({
+  page,
+}) => {
   await page.goto("/admin/jornada?semana=2027-05-05");
-  const partido = page
-    .getByRole("region", { name: "Senior", exact: true })
-    .getByRole("article")
-    .first();
-  await expect(partido).toBeVisible({ timeout: 30000 });
-  const cronoloxia = partido.getByRole("button", { name: "Cronoloxía" });
-  await expect(cronoloxia).toBeDisabled();
-  await expect(cronoloxia).toHaveAttribute("title", /acta/);
+  const partido = page.locator("[data-mesa-partido]");
+  await expect(partido).toHaveAttribute("data-fase", "antes", { timeout: 30000 });
+  await expect(partido.getByRole("list", { name: "Preparación del partido" })).toBeVisible();
+  await expect(partido.getByRole("list", { name: "Cierre del partido" })).toHaveCount(0);
+  await partido.getByText("Más tareas del partido", { exact: true }).click();
+  await expect(partido.getByText("Cronoloxía", { exact: true })).toBeVisible();
+  await expect(partido.getByText("Necesita acta", { exact: true })).toHaveCount(2);
+  await expect(partido.getByRole("link", { name: "Cronoloxía" })).toHaveCount(0);
+});
+
+test("jornada: último partido permite cerrar y regresar al próximo sin guardar", async ({
+  page,
+}) => {
+  await page.goto("/admin/jornada");
+  const ultimo = page.getByRole("region", { name: "Último partido", exact: true });
+  await expect(ultimo).toBeVisible({ timeout: 30000 });
+  await ultimo.getByRole("button", { name: "Acta y publicaciones" }).click();
+  await expect(page.locator("[data-mesa-partido]")).toHaveAttribute("data-fase", "despues");
+  await expect(page.getByRole("list", { name: "Cierre del partido" })).toBeVisible();
+  await expect(page.locator("[data-accion-principal]")).toHaveCount(1);
+  await page.getByRole("button", { name: "Preparar siguiente", exact: false }).click();
+  await expect(page.locator("[data-mesa-partido]")).toHaveAttribute("data-fase", "antes");
 });
 
 for (const ancho of [360, 1280]) {
-  test(`la jornada cabe a ${ancho}px`, async ({ page }) => {
-    await page.setViewportSize({ width: ancho, height: 900 });
-    await page.goto("/admin/jornada?semana=2026-09-23");
-    await expect(page.getByRole("region", { name: "Senior", exact: true })).toBeVisible({
-      timeout: 30000,
-    });
-    const desborda = await page.evaluate(
-      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  test(`jornada: cabe a ${ancho}px`, async ({ page }) => {
+    await page.setViewportSize({ width: ancho, height: 720 });
+    await page.goto("/admin/jornada");
+    await expect(page.locator("[data-mesa-partido]")).toBeVisible({ timeout: 30000 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      ancho,
     );
-    expect(desborda).toBe(false);
   });
 }

@@ -1,216 +1,383 @@
-/* Jornada (9A): el trabajo de la semana en una pantalla. Tokens de la Fase 3A. */
-
+/* Vestiario: estilos locales; navegación y componentes comunes conservan su contrato. */
 .pantalla {
   display: grid;
-  gap: var(--ui-space-5, 1.5rem);
+  gap: 16px;
 }
-.semana {
+.mesaCabecera {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--ui-space-3, 0.75rem);
-  padding: var(--ui-space-4, 1rem) var(--ui-space-5, 1.5rem);
-  background: var(--ui-panel-face, var(--ui-surface, #171717));
-  box-shadow: var(--ui-panel-shadow, none);
-  border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius-lg, 1.125rem);
+  gap: 8px;
 }
-.semana h3 {
+.etiqueta {
   margin: 0;
-  font: 800 1.2rem var(--ui-font-title, sans-serif);
+  color: var(--ui-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
-.semana p {
-  margin: 0.15rem 0 0;
-  color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
-}
-.botones {
+.equipos {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--ui-space-2, 0.5rem);
-  align-items: center;
+  gap: 4px;
 }
-.botones a {
-  text-decoration: none;
+.equipos button,
+.botones button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
 }
-
-/* ─── Categorías ─── */
-.categorias {
+.equipos button[aria-pressed="true"] {
+  border-color: var(--ui-accent);
+  color: var(--ui-accent);
+  background: rgb(250 204 21 / 6%);
+}
+.categoria,
+.resumenes {
+  min-width: 0;
+}
+.mesa {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
-  gap: var(--ui-space-4, 1rem);
+  gap: 16px;
   align-items: start;
 }
-.categoria {
-  display: grid;
-  gap: var(--ui-space-3, 0.75rem);
-}
-.categoria > h3 {
-  margin: 0;
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--ui-accent, #facc15);
-}
-.vacia {
-  margin: 0;
-  padding: var(--ui-space-4, 1rem);
-  border: 1px dashed rgb(255 255 255 / 15%);
-  border-radius: var(--ui-radius, 0.75rem);
-  color: var(--ui-muted, #aaa);
-}
-
-/* ─── Tarjeta de partido ─── */
 .tarjeta {
-  display: grid;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  background: var(--ui-panel-face, var(--ui-surface, #171717));
-  box-shadow: var(--ui-panel-shadow, none);
-  border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius-lg, 1.125rem);
+  position: relative;
+  min-width: 0;
+  padding: 20px;
+  background: #191b1c;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  overflow: hidden;
 }
-.contexto {
-  margin: 0;
-  color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+.tarjeta::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 40px;
+  height: 4px;
+  background: var(--ui-accent);
+  transform: skew(-25deg);
 }
-.cruce {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--ui-space-3, 0.75rem);
-}
-.equipo {
+.partidoCabecera {
   display: flex;
   align-items: center;
-  gap: var(--ui-space-2, 0.5rem);
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.contexto,
+.competicion {
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: 0.8125rem;
+}
+.localia {
+  color: var(--ui-text);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+.rival {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+.rival > div {
   min-width: 0;
-  font-weight: 800;
-  overflow-wrap: break-word;
 }
-.equipo:first-child {
-  justify-content: flex-end;
-  text-align: right;
+.rival h2 {
+  margin: 4px 0 0;
+  font: 700 clamp(1.5rem, 4vw, 2rem)/1.12 var(--ui-font-title);
+  overflow-wrap: anywhere;
 }
-.equipo img,
-.escudoVacio {
-  width: 2.25rem;
-  height: 2.25rem;
+.propio {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ui-muted);
+}
+.rival img {
+  width: 56px;
+  height: 64px;
+  padding: 6px;
+  border-radius: 6px;
+  background: #f0ede4;
   object-fit: contain;
   flex: none;
 }
-.escudoVacio {
-  border-radius: 999px;
-  background: var(--ui-raised, #242424);
+.cuando {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: 20px;
 }
-.propio {
-  color: var(--ui-accent, #facc15);
+.cuando time {
+  font-weight: 600;
+  font-size: 1rem;
+  text-transform: capitalize;
 }
-.centro {
-  text-align: center;
-}
-.marcador {
-  font: 900 1.6rem var(--ui-font-title, sans-serif);
+.cuando strong {
+  font: 700 1.75rem var(--ui-font-title);
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
-.hora {
-  display: block;
-  font-weight: 800;
-  white-space: nowrap;
+.campo {
+  margin: 8px 0 4px;
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
 }
-.dia {
-  display: block;
-  color: var(--ui-muted, #aaa);
-  font-size: 0.8rem;
-  white-space: nowrap;
+.competicion {
+  overflow-wrap: anywhere;
 }
-
-/* ─── Pasos ─── */
+.trabajo {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ui-border);
+}
+.principal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  margin: 8px 0 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--ui-accent);
+  color: #171717;
+  text-decoration: none;
+  font-weight: 700;
+}
 .pasos {
   display: grid;
-  gap: 0.4rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .paso {
   display: grid;
-  gap: 0.35rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius, 0.75rem);
-  background: var(--ui-raised, #242424);
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border-bottom: 1px solid rgb(255 255 255 / 6%);
+  font-size: 0.875rem;
 }
-.pasoCabecera {
+.numero {
+  color: var(--ui-muted);
+  font-size: 0.75rem;
+}
+.paso[data-tono="hecho"] .numero {
+  color: var(--ui-success);
+}
+.paso a {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--ui-space-2, 0.5rem);
-}
-.pasoCabecera h4 {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 800;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ui-text);
+  font-weight: 600;
+  text-decoration: none;
 }
 .estado {
-  font-size: 0.8rem;
-  font-weight: 800;
+  max-width: 145px;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--ui-muted);
 }
-.estado[data-tono="hecho"] {
-  color: var(--ui-success, #10b981);
+.paso[data-tono="hecho"] .estado {
+  color: var(--ui-success);
 }
-.estado[data-tono="pendiente"] {
-  color: var(--ui-warning, #f59e0b);
+.nota {
+  margin: 10px 0 0;
+  color: var(--ui-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
 }
-.estado[data-tono="espera"] {
-  color: var(--ui-muted, #aaa);
+.masTareas {
+  margin-top: 12px;
 }
-.detalle {
-  margin: 0;
-  color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+.masTareas summary,
+.archivo summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ui-muted);
+  cursor: pointer;
+  font-size: 0.875rem;
 }
-
+.masTareas summary::after,
+.archivo summary::after {
+  content: "+";
+  font-size: 1.25rem;
+}
+.masTareas[open] summary::after,
+.archivo[open] summary::after {
+  content: "−";
+}
+.accesos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.acceso,
+.clasificacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  color: var(--ui-text);
+  text-decoration: none;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+}
+button.acceso {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.accesos .acceso {
+  border-bottom: 1px solid var(--ui-border);
+}
+.noDisponible {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ui-muted);
+  font-size: 0.875rem;
+}
+.noDisponible small {
+  font-size: 0.75rem;
+}
+.clasificacion {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ui-border);
+  color: var(--ui-muted);
+  font-size: 0.8125rem;
+}
+.resumenes {
+  display: grid;
+  gap: 16px;
+}
+.resumen {
+  padding: 16px 4px;
+  border-block: 1px solid var(--ui-border);
+}
+.resumen h3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 8px 0 4px;
+  font: 600 1.125rem var(--ui-font-title);
+  overflow-wrap: anywhere;
+}
+.resumen p:not(.etiqueta) {
+  margin: 4px 0;
+  color: var(--ui-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.resultado {
+  font-size: 1.375rem;
+  white-space: nowrap;
+}
+.archivo {
+  border-bottom: 1px solid var(--ui-border);
+}
+.archivo h3,
+.archivoCabecera h3 {
+  margin: 8px 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.archivoCabecera {
+  margin-bottom: 16px;
+}
+.archivoCabecera label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.875rem;
+}
+.archivoCabecera select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 16px;
+}
+.pantalla :is(a, button, summary, select):focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+.pantalla :is(a, button, summary) {
+  -webkit-tap-highlight-color: transparent;
+}
+@media (hover: hover) {
+  .acceso:hover,
+  .paso a:hover,
+  .clasificacion:hover {
+    color: var(--ui-accent);
+  }
+  .principal:hover {
+    filter: brightness(1.05);
+  }
+}
+@media (min-width: 900px) {
+  .mesa {
+    grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+  }
+  .accesos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 20px;
+  }
+  .resumen {
+    padding-inline: 16px;
+  }
+}
 @media (max-width: 640px) {
-  .categorias {
-    grid-template-columns: 1fr;
+  .pantalla {
+    gap: 12px;
+  }
+  .mesaCabecera {
+    flex-wrap: wrap;
   }
   .tarjeta {
-    padding: var(--ui-space-4, 1rem);
-    min-width: 0;
+    padding: 16px;
   }
-  .botones a,
-  .botones button {
-    min-width: 44px;
-    min-height: 44px;
-    justify-content: center;
+  .partidoCabecera {
+    margin-bottom: 12px;
   }
-  .tarjeta .botones > * {
-    flex: 1 1 8rem;
+  .cuando {
+    margin-top: 16px;
   }
-  /* En estrecho los nombres largos se partían a mitad de palabra: el cruce se apila. */
-  .cruce {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
+  .trabajo {
+    margin-top: 16px;
   }
-  .equipo,
-  .equipo:first-child {
-    justify-content: center;
-    text-align: center;
-    overflow-wrap: break-word;
-  }
-}
-
-/* Los enlaces con aspecto de botón. */
-.botones a {
-  display: inline-flex;
-  align-items: center;
 }
 
 /* ─── Federación: sincronización automática ─── */
