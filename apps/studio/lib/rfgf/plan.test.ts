@@ -70,6 +70,9 @@ describe("partidoDeActa", () => {
       partido({ id: "c", local: "S.D. Cruces", visitante: "Ulla Oil" }),
     ];
     expect(partidoDeActa("MELIDE VETERANOS", "S.D. TORDOIA", veteranos)?.id).toBe("m");
+    // Con la categoría en los dos nombres, que antes no llegaba al mínimo.
+    const touro = [{ ...veteranos[0]!, id: "t", local: "S.D. Touro", visitante: "Melide" }];
+    expect(partidoDeActa("S.D. TOURO VETERANOS", "MELIDE VETERANOS", touro)?.id).toBe("t");
   });
 
   it("respeta quién es local: la vuelta no es el mismo partido", () => {
