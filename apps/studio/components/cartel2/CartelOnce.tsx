@@ -89,6 +89,11 @@ export function CartelOnce({ datos }: { datos: DatosOnce }) {
                   </span>
                 </li>
               ))}
+              {/* La columna corta se completa con filas vacías: así las dos reparten su altura
+                  igual y cada nombre queda a la altura de su vecino. */}
+              {Array.from({ length: Math.max(0, 6 - columna.length) }, (_, i) => (
+                <li key={`hueco-${i}`} className={s.hueco} aria-hidden="true" />
+              ))}
             </ol>
           ))}
         </div>

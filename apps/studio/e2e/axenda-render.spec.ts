@@ -344,7 +344,7 @@ test("Lectura retrato: once y doce suplentes completos en ambos lados", async ({
       p.datos.suplentes.push({ nombre: "Manuel Vázquez Novas", dorsal: "23", capitan: false });
       await page.evaluate((p) => window.__pintarCartel?.(p), p);
       const cartel = page.locator("[data-listo] [data-cartel]");
-      await expect(cartel.locator("ol li")).toHaveCount(11);
+      await expect(cartel.locator("ol li[data-lectura-fila]")).toHaveCount(11);
       expect(await conflictosLectura(cartel)).toEqual([]);
       await sinDesbordes(cartel, false);
       await capturaCompleta(cartel, {

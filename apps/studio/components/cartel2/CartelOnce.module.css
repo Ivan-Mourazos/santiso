@@ -64,10 +64,10 @@
   padding: 0;
   list-style: none;
   min-height: 0;
-  /* Seis filas iguales en las dos columnas: con 6 y 5 nombres, cada fila queda a la altura de
-     su vecina en vez de repartirse por su cuenta. */
-  display: grid;
-  grid-template-rows: repeat(6, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2px;
 }
 .titulares li {
   flex: none;
@@ -158,4 +158,9 @@
 }
 .listaAmplia .retrato {
   filter: brightness(0.4);
+}
+
+/* Fila de relleno de la columna corta (ver `CartelOnce.tsx`): ocupa sitio y no se ve. */
+.titulares li.hueco {
+  visibility: hidden;
 }
