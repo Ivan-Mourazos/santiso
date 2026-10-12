@@ -472,7 +472,9 @@ function Resumen({ multas }: { multas: Multa[] }) {
           <thead>
             <tr>
               <th scope="col">Persona</th>
-              <th scope="col">Multas</th>
+              <th scope="col">
+                <abbr title="Número de multas">N.º</abbr>
+              </th>
               <th scope="col">Debe</th>
               <th scope="col">Pagado</th>
             </tr>

@@ -345,7 +345,11 @@
   color: var(--ui-muted, #aaa);
   font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
+  /* Una palabra no se parte («CONVOCAD/O»): si no cabe, se corta con puntos. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .fichaTotales dd {
   margin: 0;

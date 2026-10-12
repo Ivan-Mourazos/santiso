@@ -69,6 +69,13 @@ a {
   color: inherit;
 }
 
+/* Botones y campos no heredan la letra por su cuenta: cada navegador ponía la suya (Arial en
+   Chrome, otra en Safari) y la misma fila se veía distinta en Android y en iPhone.
+   `:where` no suma especificidad: cualquier regla propia sigue mandando. */
+:where(button, input, select, textarea) {
+  font-family: inherit;
+}
+
 html,
 body {
   min-height: 100%;

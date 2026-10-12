@@ -73,6 +73,9 @@ export function CartelProximos({
 }) {
   const partidos = datos.partidos.slice(0, 4);
   const historia = formato === "historia";
+  // «Hoxe» solo vale si todo se juega el mismo día: una historia con sábado y domingo no es de hoy.
+  const unSoloDia = new Set(partidos.map((p) => p.fecha)).size <= 1;
+  const deHoy = historia && unSoloDia;
   return (
     <Base
       variante="club"
@@ -83,8 +86,8 @@ export function CartelProximos({
       className={`${s.cartel} ${historia ? s.historia : ""}`}
     >
       <header className={s.cabecera}>
-        <div className={s.antetitulo}>{historia ? "HOXE XOGAMOS" : "AXENDA DA FIN DE SEMANA"}</div>
-        <h1 className={s.titulo}>{historia ? "DÍA DE FÚTBOL" : "PRÓXIMOS ENCONTROS"}</h1>
+        <div className={s.antetitulo}>{deHoy ? "HOXE XOGAMOS" : "AXENDA DA FIN DE SEMANA"}</div>
+        <h1 className={s.titulo}>{deHoy ? "DÍA DE FÚTBOL" : "PRÓXIMOS ENCONTROS"}</h1>
       </header>
       <div
         data-axenda-bandas

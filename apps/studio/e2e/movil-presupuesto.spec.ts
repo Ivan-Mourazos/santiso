@@ -181,3 +181,30 @@ for (const { seccion, fila, altoFila, pendiente } of PRESUPUESTOS) {
     expect(Math.max(...altos)).toBeLessThanOrEqual(altoFila);
   });
 }
+
+test("multas: el bote no parte palabras ni importes y las casillas de normas se tocan bien", async ({
+  page,
+}) => {
+  await abrir(page, "multas");
+  await page.getByRole("tab", { name: "Bote" }).tap();
+  const tabla = page.getByRole("table", { name: "Multas por persona" });
+  if (await tabla.count()) {
+    // Cifras y cabeceras en una sola línea: ni «MULT/AS» ni «5 / €». El nombre sí puede partirse.
+    const cortes = await tabla
+      .locator("thead th:not(:first-child), tbody td")
+      .evaluateAll((celdas) => celdas.map((celda) => getComputedStyle(celda).whiteSpace));
+    expect(new Set(cortes)).toEqual(new Set(["nowrap"]));
+    const caja = (await tabla.boundingBox())!;
+    expect(Math.round(caja.x + caja.width)).toBeLessThanOrEqual(page.viewportSize()!.width);
+  }
+  await page.getByRole("tab", { name: "Normas" }).tap();
+  const casillas = page.locator("label:has(input[type=checkbox])");
+  await expect(casillas.first()).toBeVisible();
+  const cajas = await casillas.evaluateAll((etiquetas) =>
+    etiquetas.map((etiqueta) => Math.round(etiqueta.getBoundingClientRect().height)),
+  );
+  expect(Math.min(...cajas)).toBeGreaterThanOrEqual(44);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
+});
