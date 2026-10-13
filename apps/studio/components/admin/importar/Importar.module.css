@@ -258,6 +258,10 @@
   overflow-y: auto;
   display: grid;
   gap: var(--ui-space-3, 0.75rem);
+  /* Separada del botón de arriba: al deslizar, la lista se cortaba pegada a él. */
+  margin-top: var(--ui-space-4, 1rem);
+  padding-top: var(--ui-space-2, 0.5rem);
+  border-top: 1px solid var(--ui-border, #333);
 }
 .jornadas ul {
   margin: 0;
@@ -275,6 +279,12 @@
 @media (max-width: 640px) {
   .panel {
     padding: var(--ui-space-4, 1rem);
+  }
+  /* En el móvil la lista va entera en la página: una caja con su propio deslizamiento dentro
+     de la pantalla se atasca con el dedo. */
+  .jornadas {
+    max-height: none;
+    overflow-y: visible;
   }
   /*
    * Revisión compacta: local arriba y visitante abajo, cada uno con sus goles al lado, como en
