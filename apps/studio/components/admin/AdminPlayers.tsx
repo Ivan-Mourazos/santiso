@@ -21,6 +21,7 @@ import {
   quitarJugadorDeTemporada,
 } from "@/lib/server/acciones/jugadores";
 import { useCompeticiones } from "@/lib/useCompeticiones";
+import FichaJugador from "./estadisticas/FichaJugador";
 import BarraTemporada from "./plantilla/BarraTemporada";
 import EditorJugador from "./plantilla/EditorJugador";
 import IncorporarDeTemporada, { type Elegido } from "./plantilla/IncorporarDeTemporada";
@@ -62,6 +63,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
   const [filtro, setFiltro] = useState<FiltroJugadores>(FILTRO_VACIO);
   const [masFiltros, setMasFiltros] = useState(false);
   const [editor, setEditor] = useState<EstadoEditor>(null);
+  const [ficha, setFicha] = useState<JugadorDto | null>(null);
   // Cada carga lleva un número: si llega tarde la respuesta de una carga anterior, se descarta.
   const generacion = useRef(0);
 
@@ -328,6 +330,14 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
                     <div className={styles.filaAcciones}>
                       <Button
                         variant="secondary"
+                        onClick={() => setFicha(j)}
+                        size="sm"
+                        aria-label={`Ver ficha de ${j.nombre}`}
+                      >
+                        Ficha
+                      </Button>
+                      <Button
+                        variant="secondary"
                         onClick={() => abrirEditor(j)}
                         size="sm"
                         aria-label={`Editar a ${j.nombre}`}
@@ -405,6 +415,17 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
           }}
           candidatos={candidatosDialogo}
           onConfirmar={handleIncorporar}
+        />
+      )}
+
+      {ficha && temporadaId && (
+        <FichaJugador
+          jugadorId={ficha.id}
+          nombre={ficha.apodo || ficha.nombre}
+          categoria={categoria}
+          temporadaId={temporadaId}
+          competicionId={null}
+          onCerrar={() => setFicha(null)}
         />
       )}
 

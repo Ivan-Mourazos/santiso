@@ -25,6 +25,8 @@ export async function fichaDeJugador(ambito: AmbitoFicha): Promise<FichaJugador 
       id: schema.jugadores.id,
       nombre: schema.jugadores.nombre,
       apodo: schema.jugadores.apodo,
+      fechaNacimiento: schema.jugadores.fechaNacimiento,
+      historial: schema.jugadores.historial,
     })
     .from(schema.jugadores)
     .where(eq(schema.jugadores.id, ambito.jugadorId));
@@ -125,6 +127,8 @@ export async function fichaDeJugador(ambito: AmbitoFicha): Promise<FichaJugador 
       dorsal: inscripcion?.dorsal ?? null,
       posicion: inscripcion?.posicion ?? null,
       fotoUrl: inscripcion?.foto ? urlMedia(inscripcion.foto) : null,
+      fechaNacimiento: persona.fechaNacimiento ?? null,
+      historial: persona.historial ?? [],
     },
     partidos: construirPartidos(
       ambito.jugadorId,

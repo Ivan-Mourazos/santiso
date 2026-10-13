@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
-import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
+import { Field, Select } from "@/components/ui/foundation/Fields";
 import { useUnsavedChanges } from "@/components/studio/StudioContext";
 import type { JugadorDto } from "@/lib/dto";
 import { prepararImagen } from "@/lib/imagen-cliente";
@@ -18,6 +18,7 @@ import {
 } from "@/lib/plantilla/modelo";
 import { buscarJugadoresParecidos, guardarJugador } from "@/lib/server/acciones/jugadores";
 import type { ParecidoJugador } from "@/lib/server/consultas/jugadores";
+import EditorHistorial from "./EditorHistorial";
 import FotoFormulario from "./FotoFormulario";
 import styles from "./Plantilla.module.css";
 
@@ -209,11 +210,9 @@ export default function EditorJugador({
               onChange={campo("fechaNacimiento")}
             />
           </div>
-          <Textarea
-            label="Historial deportivo"
-            hint="Una línea por temporada, por ejemplo «2022/23: Deportivo B»."
-            value={borrador.historial}
-            onChange={campo("historial")}
+          <EditorHistorial
+            valor={borrador.historial}
+            onCambiar={(historial) => setBorrador((actual) => ({ ...actual, historial }))}
           />
         </fieldset>
 

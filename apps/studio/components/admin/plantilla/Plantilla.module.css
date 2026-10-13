@@ -408,3 +408,54 @@
     display: none;
   }
 }
+
+/* Historial deportivo por filas: temporada, club y quitar. */
+.historial {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+}
+.historialTitulo {
+  margin: 0;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.historialVacio {
+  margin: 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.historialFilas {
+  display: grid;
+  gap: 0.4rem;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.historialFilas li {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+.historialTemporada,
+.historialEquipo {
+  min-width: 0;
+  width: 100%;
+  min-height: 38px;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--ui-border, #333);
+  border-radius: var(--ui-radius, 0.75rem);
+  background: var(--ui-field-face, #111);
+  color: var(--ui-text, #fff);
+  font: inherit;
+}
+@media (pointer: coarse) {
+  .historialTemporada,
+  .historialEquipo {
+    min-height: 44px;
+    /* Con menos de 16 px el iPhone hace zoom al enfocar. */
+    font-size: 16px;
+  }
+}

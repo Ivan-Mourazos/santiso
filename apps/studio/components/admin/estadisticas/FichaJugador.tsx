@@ -10,6 +10,7 @@ import {
   totalesDeFicha,
   type FichaJugador as Ficha,
 } from "@/lib/estadisticas/ficha";
+import { filasDeHistorial } from "@/lib/plantilla/historial";
 import { cargarFichaJugador } from "@/lib/server/acciones/estadisticas";
 import styles from "./Estadisticas.module.css";
 
@@ -21,6 +22,18 @@ interface Props {
   temporadaId: string;
   competicionId: string | null;
   onCerrar: () => void;
+}
+
+/** «34 años», a día de hoy; `null` sin fecha de nacimiento. */
+function edad(nacimiento: string | null) {
+  if (!nacimiento) return null;
+  const nacio = new Date(nacimiento);
+  if (Number.isNaN(nacio.getTime())) return null;
+  const hoy = new Date();
+  const cumplido =
+    hoy.getMonth() > nacio.getMonth() ||
+    (hoy.getMonth() === nacio.getMonth() && hoy.getDate() >= nacio.getDate());
+  return `${hoy.getFullYear() - nacio.getFullYear() - (cumplido ? 0 : 1)} años`;
 }
 
 const fechaCorta = (fecha: string | null) =>
@@ -76,6 +89,7 @@ export default function FichaJugador({
                   ficha.jugador.apodo,
                   ficha.jugador.dorsal === null ? null : `Dorsal ${ficha.jugador.dorsal}`,
                   ficha.jugador.posicion,
+                  edad(ficha.jugador.fechaNacimiento),
                 ]
                   .filter(Boolean)
                   .join(" · ")}
@@ -101,6 +115,19 @@ export default function FichaJugador({
             ))}
           </dl>
 
+          {ficha.jugador.historial.length > 0 && (
+            <details className={styles.fichaHistorial}>
+              <summary>Historial deportivo ({ficha.jugador.historial.length} temporadas)</summary>
+              <ul>
+                {filasDeHistorial(ficha.jugador.historial.join("\n")).map((fila, i) => (
+                  <li key={i}>
+                    {fila.temporada && <strong>{fila.temporada}</strong>}
+                    <span>{fila.equipo}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
           {ficha.partidos.length === 0 ? (
             <p className={styles.nota}>Todavía no ha estado convocado en ningún partido con acta.</p>
           ) : (

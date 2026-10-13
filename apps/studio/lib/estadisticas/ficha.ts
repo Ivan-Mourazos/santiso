@@ -51,6 +51,9 @@ export interface FichaJugador {
     dorsal: number | null;
     posicion: string | null;
     fotoUrl: string | null;
+    fechaNacimiento: string | null;
+    /** Una línea por temporada: «25/26: Club». */
+    historial: string[];
   };
   /** Del más reciente al más antiguo. */
   partidos: PartidoDeFicha[];

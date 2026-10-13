@@ -1,3 +1,4 @@
+import { filasDeHistorial, textoDeHistorial } from "./historial";
 import { claveNombre, POSICIONES } from "@santiso/domain";
 import type { JugadorDto, StaffDto } from "@/lib/dto";
 
@@ -114,7 +115,7 @@ export function formularioDeJugador(
   f.set("nombre", borrador.nombre);
   f.set("apodo", borrador.apodo);
   f.set("fechaNacimiento", borrador.fechaNacimiento);
-  f.set("historial", borrador.historial);
+  f.set("historial", textoDeHistorial(filasDeHistorial(borrador.historial)));
   f.set("dorsal", borrador.dorsal.trim());
   f.set("posicion", borrador.posicion);
   if (foto) f.set("foto", foto);
