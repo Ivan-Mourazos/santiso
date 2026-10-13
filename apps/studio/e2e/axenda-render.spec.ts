@@ -158,9 +158,17 @@ function casoLectura(plantilla: PlantillaLectura, nombre: string): PeticionCarte
           categoria: "Senior",
           titulo: "Terceira Futgal",
           escudoClub: club.escudo,
-          filas: Array.from({ length: 14 }, (_, i) => ({
+          // Veteranos juega con 16 equipos y varios nombres largos: es el caso que no cabía.
+          filas: Array.from({ length: 16 }, (_, i) => ({
             posicion: i + 1,
-            nombre: i === 0 ? nombre : i === 11 ? club.nombre : NOMBRES_LECTURA[i % 4]!,
+            nombre:
+              i === 0
+                ? nombre
+                : i === 11
+                  ? club.nombre
+                  : i % 3 === 0
+                    ? "Club Taberna do Portugués-Boqueixón"
+                    : NOMBRES_LECTURA[i % 4]!,
             escudo: club.escudo,
             pj: 2,
             pg: 1,

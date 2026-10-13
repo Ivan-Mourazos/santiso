@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
 import type { CSSProperties } from "react";
-import { categoriaCartel, type DatosClasificacion } from "@/lib/cartel2/modelo";
+import { categoriaCartel, cuerpo, type DatosClasificacion } from "@/lib/cartel2/modelo";
 import { Base } from "./Base";
 import b from "./Base.module.css";
 import s from "./CartelClasificacion.module.css";
@@ -30,9 +30,20 @@ export function CartelClasificacion({ datos }: { datos: DatosClasificacion }) {
   );
 }
 
+/** Alto útil de la tabla (260–1180) y ancho de la columna del equipo sin escudo ni márgenes. */
+const ALTO_TABLA = 920;
+const ANCHO_EQUIPO = 520 - 12 - 14;
+/** Ancho medio de una letra del nombre (negrita cursiva en mayúsculas), en em. */
+const EM_NOMBRE = 0.46;
+
 function Tabla({ datos }: { datos: Extract<DatosClasificacion, { tipo: "liga" }> }) {
   const filas = datos.filas;
-  const alto = 60;
+  // La tabla tiene 920 px de alto: la cabecera ocupa 0,7 filas. Con 14 equipos cada fila mide
+  // 60 px; con 16 o 20 encoge lo justo para que quepan todos.
+  const alto = Math.max(34, Math.min(60, Math.floor(ALTO_TABLA / (filas.length + 0.7))));
+  const letra = Math.round(alto * 0.56);
+  // El nombre va siempre en una línea: el que no cabe baja de cuerpo, no parte la fila.
+  const anchoNombre = ANCHO_EQUIPO - alto * 0.75;
   const estilo = { "--fila": `${alto}px` } as CSSProperties;
   return (
     <table className={s.tabla} style={estilo} data-lectura-bloque>
@@ -59,7 +70,13 @@ function Tabla({ datos }: { datos: Extract<DatosClasificacion, { tipo: "liga" }>
             <td className={s.equipo}>
               <span className={s.celdaEquipo}>
                 {f.escudo ? <img src={f.escudo} alt="" /> : <span className={s.sinEscudo} />}
-                <span className={s.nombre} data-lectura-columna>
+                <span
+                  className={s.nombre}
+                  style={{
+                    fontSize: cuerpo(f.nombre.toUpperCase(), anchoNombre, letra, 16, EM_NOMBRE),
+                  }}
+                  data-lectura-columna
+                >
                   {f.nombre.toUpperCase()}
                 </span>
               </span>

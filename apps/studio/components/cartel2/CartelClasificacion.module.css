@@ -13,14 +13,14 @@
   table-layout: fixed;
   border-collapse: collapse;
   font-weight: 800;
-  font-size: 34px;
+  font-size: calc(var(--fila) * 0.56);
   text-shadow: 0 2px 10px rgb(0 0 0 / 60%);
 }
 
 .tabla th {
   height: calc(var(--fila) * 0.7);
   font-weight: 800;
-  font-size: 26px;
+  font-size: calc(var(--fila) * 0.43);
   letter-spacing: 0.15em;
   color: rgb(255 255 255 / 80%);
   text-align: center;
@@ -36,15 +36,15 @@
 
 .tabla .pos,
 .tabla .pts {
-  font-size: 40px;
-  line-height: 1.5;
+  font-size: calc(var(--fila) * 0.66);
+  line-height: 1.2;
 }
 .tabla tbody {
-  line-height: 1.5;
+  line-height: 1.2;
 }
 .tabla thead .pts {
-  font-size: 26px;
-  line-height: 1.5;
+  font-size: calc(var(--fila) * 0.43);
+  line-height: 1.2;
 }
 
 .pos {
@@ -75,8 +75,7 @@
 
 .nombre {
   min-width: 0;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
   line-height: 1.2;
   font-style: italic;
 }

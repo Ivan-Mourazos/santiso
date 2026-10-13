@@ -210,15 +210,6 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
         </button>
       </div>
 
-      <SectionLabel>Visibilidad de Activos</SectionLabel>
-      <div style={{ display: "flex", gap: "0.8rem", marginBottom: "1.5rem" }}>
-        <Toggle
-          label="Logos y Patrocinadores"
-          active={form.showAssets}
-          onClick={() => set("showAssets", !form.showAssets)}
-        />
-      </div>
-
       {modoManual ? (
         <div style={{ marginBottom: "1.5rem" }}>
           <div className={styles.campo}>
@@ -399,22 +390,6 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
           </div>
         </>
       )}
-
-      <div className={styles.campo} role="group" aria-label="Santiso en el cartel">
-        <span className={styles.etiqueta}>Santiso en el cartel</span>
-        <div className={styles.interruptores}>
-          <Toggle
-            label="← Izquierda"
-            active={form.santisoSide === "left"}
-            onClick={() => set("santisoSide", "left")}
-          />
-          <Toggle
-            label="Derecha →"
-            active={form.santisoSide === "right"}
-            onClick={() => set("santisoSide", "right")}
-          />
-        </div>
-      </div>
     </>
   );
 };
