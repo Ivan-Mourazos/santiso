@@ -145,6 +145,26 @@ export default function FichaJugador({
               </div>
             );
           })}
+          {ficha.anteriores.length > 0 && (
+            <details className={styles.fichaAnteriores}>
+              <summary>Temporadas anteriores en el club (federación)</summary>
+              <ul>
+                {ficha.anteriores.map((anterior) => (
+                  <li key={`${anterior.temporada}-${anterior.competicion}-${anterior.grupo}`}>
+                    <strong>{anterior.temporada}</strong>
+                    <span>
+                      {anterior.competicion} · {anterior.grupo}
+                    </span>
+                    <span>
+                      {anterior.convocados} convocatorias · {anterior.titular} de titular ·{" "}
+                      {anterior.jugados} jugados · {anterior.goles} goles · {anterior.amarillas}{" "}
+                      amarillas · {anterior.rojas} rojas
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
           {ficha.jugador.historial.length > 0 && (
             <details className={styles.fichaHistorial}>
               <summary>Historial deportivo ({ficha.jugador.historial.length} temporadas)</summary>

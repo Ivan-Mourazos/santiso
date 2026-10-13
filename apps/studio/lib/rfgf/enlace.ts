@@ -120,3 +120,16 @@ export function urlEstadisticasJugador(codigo: string, codActa: string): string 
   });
   return `${BASE}NFG_EstadisticasJugador?${consulta}`;
 }
+
+/** Sección «competiciones de un equipo» de la web de la federación. */
+const COD_COMPETICIONES_EQUIPO = "1000123";
+
+/** Todas las competiciones y grupos de un equipo, temporada a temporada, en una página. */
+export function urlCompeticionesDeEquipo(codEquipo: string, codTemporada: string): string {
+  const consulta = new URLSearchParams({
+    cod_primaria: COD_COMPETICIONES_EQUIPO,
+    codequipo: codEquipo,
+    codtemporada: codTemporada,
+  });
+  return `${BASE}NFG_VisCompeticiones_Equipo?${consulta}`;
+}

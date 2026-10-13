@@ -474,3 +474,29 @@
 .fichaOficial[data-cuadra="false"] {
   border-left-color: var(--ui-warning, #f59e0b);
 }
+
+/* Temporadas pasadas según la federación: plegadas, una tarjeta por competición. */
+.fichaAnteriores summary {
+  min-height: 36px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.fichaAnteriores ul {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.fichaAnteriores li {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.4rem 0.6rem;
+  border-left: 3px solid var(--ui-accent, #facc15);
+  background: rgb(255 255 255 / 4%);
+  overflow-wrap: anywhere;
+}
+.fichaAnteriores span {
+  color: var(--ui-muted, #aaa);
+}
