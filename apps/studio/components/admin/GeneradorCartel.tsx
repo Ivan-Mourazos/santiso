@@ -282,7 +282,7 @@ export default function GeneradorCartel({
                         Restablecer
                       </Button>
                     )}
-                    <Button size="sm" onClick={handleCopyInstagram}>
+                    <Button variant="secondary" size="sm" onClick={handleCopyInstagram}>
                       {copied ? "Copiado" : "Copiar"}
                     </Button>
                   </div>

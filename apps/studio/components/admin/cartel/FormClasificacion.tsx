@@ -9,6 +9,7 @@ import { getClasificacionData } from "@/lib/cartel/clasificacion-data";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import AvisoError from "../AvisoError";
 import { CategorySelector, SectionLabel, Toggle } from "./Common";
+import { Button } from "@/components/ui/foundation/Button";
 import styles from "./Formularios.module.css";
 import type { FilaCartelClasificacion } from "@/lib/cartel/types";
 import type { FormState } from "./types";
@@ -118,26 +119,17 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
 
       <SectionLabel>Modo de datos</SectionLabel>
       <div style={{ display: "flex", gap: "0.8rem", marginBottom: "1.2rem" }}>
-        <button
-          type="button"
+        <Button size="sm" variant={!modoManual ? "primary" : "secondary"}
+ aria-pressed={!modoManual}
           onClick={() => {
             setModoManual(false);
           }}
-          style={{
-            flex: 1,
-            padding: "0.6rem",
-            background: !modoManual ? "var(--primary)" : "rgba(255,255,255,0.05)",
-            color: !modoManual ? "#000" : "#fff",
-            border: "none",
-            borderRadius: "6px",
-            fontWeight: 800,
-            cursor: "pointer",
-          }}
+          
         >
           Automático (BD)
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button size="sm" variant={modoManual ? "primary" : "secondary"}
+ aria-pressed={modoManual}
           onClick={() => {
             setModoManual(true);
             if (!form.clasificacionData || form.clasificacionData.length === 0) {
@@ -195,19 +187,10 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
               ]);
             }
           }}
-          style={{
-            flex: 1,
-            padding: "0.6rem",
-            background: modoManual ? "var(--primary)" : "rgba(255,255,255,0.05)",
-            color: modoManual ? "#000" : "#fff",
-            border: "none",
-            borderRadius: "6px",
-            fontWeight: 800,
-            cursor: "pointer",
-          }}
+          
         >
           ✍️ Manual (Sin BD)
-        </button>
+        </Button>
       </div>
 
       {modoManual ? (
@@ -309,41 +292,21 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
                     style={{ padding: "0.3rem 0.3rem", fontSize: "0.75rem", textAlign: "center" }}
                   />
                 </label>
-                <button
-                  type="button"
+                <Button size="sm" variant="danger"
                   onClick={() => handleRemoveManualTeam(idx)}
-                  style={{
-                    background: "rgba(239,68,68,0.2)",
-                    border: "none",
-                    color: "#f87171",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    height: "28px",
-                    fontWeight: 800,
-                  }}
+                  
                   title="Eliminar"
                 >
                   ✕
-                </button>
+                </Button>
               </div>
             ))}
-            <button
-              type="button"
+            <Button size="sm" variant="secondary"
               onClick={handleAddManualTeam}
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px dashed rgba(255,255,255,0.2)",
-                color: "#fff",
-                padding: "0.6rem",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: "0.8rem",
-                marginTop: "0.4rem",
-              }}
+              
             >
               + Añadir equipo a la tabla
-            </button>
+            </Button>
           </div>
         </div>
       ) : (

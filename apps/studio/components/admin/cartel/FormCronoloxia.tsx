@@ -9,6 +9,7 @@ import type { CronEvent } from "@/lib/cartel/types";
 import { CategorySelector, MatchSelector } from "./Common";
 import type { SelectorMatch } from "./Common";
 import { RivalSelector } from "./FormPartido";
+import { Button } from "@/components/ui/foundation/Button";
 import styles from "./Formularios.module.css";
 import type { FormState } from "./types";
 
@@ -78,31 +79,14 @@ export const FormCronoloxia: React.FC<Props & { tipo: string }> = ({
       {(["local", "rival"] as const).map((team) => {
         const active = ev.equipo === team;
         return (
-          <button
+          <Button size="sm" variant={active ? "primary" : "secondary"}
+ aria-pressed={active}
             key={team}
-            type="button"
             onClick={() => updateEvent(i, { equipo: team, jugador: "", jugadorEntra: "" })}
-            style={{
-              border: "none",
-              borderRadius: "0.62rem",
-              padding: "0.45rem 0.55rem",
-              background: active
-                ? team === "local"
-                  ? "var(--primary)"
-                  : "rgba(255,255,255,0.92)"
-                : "transparent",
-              color: active ? "#050505" : "rgba(255,255,255,0.62)",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              fontSize: "0.72rem",
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              transition: "all 0.18s ease",
-            }}
+            
           >
             {team === "local" ? "Santiso" : "Rival"}
-          </button>
+          </Button>
         );
       })}
     </div>
@@ -188,22 +172,12 @@ export const FormCronoloxia: React.FC<Props & { tipo: string }> = ({
         >
           Eventos del Partido
         </p>
-        <button
+        <Button size="sm" variant="secondary"
           onClick={addEvent}
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid var(--border)",
-            color: "var(--primary)",
-            padding: "0.3rem 0.7rem",
-            borderRadius: "0.5rem",
-            fontFamily: "inherit",
-            fontWeight: 800,
-            fontSize: "0.75rem",
-            cursor: "pointer",
-          }}
+          
         >
           + Evento
-        </button>
+        </Button>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         {form.events.map((ev, i) => (
@@ -244,22 +218,13 @@ export const FormCronoloxia: React.FC<Props & { tipo: string }> = ({
                 }}
               />
               {renderTeamToggle(ev, i)}
-              <button
+              <Button size="sm" variant="danger"
                 onClick={() => removeEvent(ev.id)}
-                type="button"
                 aria-label="Eliminar evento"
-                style={{
-                  background: "rgba(239,68,68,0.08)",
-                  border: "1px solid rgba(239,68,68,0.22)",
-                  color: "#ef4444",
-                  cursor: "pointer",
-                  fontSize: "1rem",
-                  borderRadius: "0.7rem",
-                  minHeight: "42px",
-                }}
+                
               >
                 ×
-              </button>
+              </Button>
             </div>
 
             <div
