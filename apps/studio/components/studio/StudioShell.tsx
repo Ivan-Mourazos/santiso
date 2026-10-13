@@ -90,9 +90,6 @@ export function StudioShell({
   const secciones = seccionesDelMenu(acceso);
   const sinPermiso = !!section && reservada(section.id, acceso);
   const pestanas = acceso?.rol === "tecnico" ? PESTANAS_TECNICO : PESTANAS;
-  // Solo el calendario en PDF sigue reservado a escritorio; la captura de jornada vale en móvil.
-  const desktopOnly =
-    section?.id === "importar-jornada" && params.get("origen") === "calendario";
   const category = categoriaDe(params);
   const categories = ["Senior", "Veteranos"];
   const showCategory = [
@@ -212,16 +209,6 @@ export function StudioShell({
             <p role="status" className={styles.aviso}>
               Esta sección es solo para el administrador.
             </p>
-          ) : desktopOnly ? (
-            <>
-              <p role="status" className={styles.desktopNotice}>
-                El calendario en PDF se importa solo en escritorio (desde 1280 × 720).{" "}
-                <Link href="/admin/importar-jornada?origen=foto">
-                  Importar una captura de jornada
-                </Link>
-              </p>
-              <div className={styles.desktopOnly}>{children}</div>
-            </>
           ) : (
             children
           )}

@@ -13,7 +13,7 @@ test("el calendario PDF enseña el plan antes de escribir nada", async ({ page }
   // Se entra por «Importar»: el calendario en PDF es uno de sus enlaces de ordenador.
   await page.goto("/admin");
   await page.getByText("Importar", { exact: true }).first().click();
-  await page.getByRole("link", { name: "calendario completo en PDF" }).click();
+  await page.getByRole("link", { name: "calendario completo" }).click();
 
   const competicion = page.locator("#cal-competicion");
   await expect(competicion).toBeVisible();

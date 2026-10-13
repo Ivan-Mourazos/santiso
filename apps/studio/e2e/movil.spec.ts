@@ -265,15 +265,14 @@ for (const ancho of [360, 390]) {
   });
 }
 
-test("importar-jornada: el calendario en PDF sigue reservado a escritorio", async ({ page }) => {
+test("importar-jornada: el calendario completo también se importa desde el móvil", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
   await abrir(page, "importar-jornada?origen=calendario");
-  const aviso = page.getByRole("status").filter({ hasText: "solo en escritorio" });
-  await expect(aviso).toBeVisible();
-  await expect(page.locator("main input:visible")).toHaveCount(0);
+  await expect(page.locator("#cal-competicion")).toBeVisible();
+  await expect(page.locator("#cal-file")).toBeVisible();
+  // No se pulsa: saldría a la red de la federación.
+  await expect(page.getByRole("button", { name: "Traer de la federación" })).toBeVisible();
   await comprobarAncho(page);
-  // Desde el aviso se vuelve a la captura, que sí vale en móvil.
-  await aviso.getByRole("link", { name: "Importar una captura de jornada" }).click();
-  await expect(page.locator("#jornada-file-input")).toBeVisible();
 });
 
 for (const ancho of [360, 390]) {
