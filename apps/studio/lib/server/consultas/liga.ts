@@ -20,6 +20,8 @@ export interface PantallaLiga {
   partidosCargados: number;
   /** Partidos cuya acta se bajó pero no se supo leer: sus goles y tarjetas faltan en las tablas. */
   partidosSinLeer: number;
+  /** Jornadas jugadas con algún partido todavía sin traer, de la más reciente a la más antigua. */
+  jornadasPorTraer: number[];
   /** Equipos del club en la competición, para destacarlos. */
   propios: string[];
 }
@@ -109,6 +111,9 @@ export async function pantallaLiga(competicionId: string): Promise<PantallaLiga>
     partidosJugados: jugados.length,
     partidosCargados: cargados,
     partidosSinLeer: sinLeer,
+    jornadasPorTraer: [
+      ...new Set(jugados.filter((p) => !bajados.has(p.id)).map((p) => p.jornada)),
+    ].sort((a, b) => b - a),
     propios: [...new Set(filas.filter((f) => f.propio).map((f) => f.equipoId))],
   };
 }

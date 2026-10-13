@@ -99,11 +99,11 @@ describe("horarios de la federación", () => {
     expect(jornadasSinArbitro(partidos, "2026-10-12T22:00", "2026-08-28T22:00")).toEqual([2, 1]);
   });
 
-  it("pone al día dos jornadas viejas cada vez, las más antiguas primero", () => {
+  it("pone al día dos jornadas cada vez, las más recientes primero", () => {
     const jugado = (jornada: number, conEventos = false) =>
       partido(jornada, `2026-09-${10 + jornada}T17:00`, { conMarcador: true, conEventos });
     const partidos = [jugado(3), jugado(1), jugado(2, true), jugado(4), partido(5, "2026-10-18")];
-    expect(jornadasSinEventos(partidos, "2026-10-12T22:00")).toEqual([1, 3]);
+    expect(jornadasSinEventos(partidos, "2026-10-12T22:00")).toEqual([4, 3]);
   });
 
   it("la comprobación diaria se hace una vez, a partir de las 21:00", () => {

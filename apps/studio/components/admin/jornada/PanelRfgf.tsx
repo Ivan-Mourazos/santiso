@@ -10,6 +10,7 @@ import {
   reintentarActaRfgf,
   type CompeticionRfgf,
 } from "@/lib/server/acciones/rfgf";
+import { ProblemasFederacion } from "./ProblemasFederacion";
 import styles from "./Jornada.module.css";
 
 interface Props {
@@ -31,13 +32,6 @@ function cuando(iso: string | null) {
   const fecha = new Date(iso);
   return Number.isNaN(fecha.getTime()) ? "—" : `mirado ${HORA.format(fecha)}`;
 }
-
-/** Qué puede hacer quien lo lee con cada tipo de problema. */
-const QUE_HACER = {
-  acta: "Si es un jugador nuevo, dalo de alta en Jugadores y reintenta; o mete el acta a mano desde Importar.",
-  datos: "El marcador sí está guardado. Reintenta; si sigue igual, avísame: hay que enseñarle a leer ese acta.",
-  red: "Suele pasar al pedir muchas seguidas. Espera unos minutos y reintenta; si no, se reintenta sola esta noche.",
-} as const;
 
 /**
  * Sincronización con la web de la federación: resultados y actas llegan solos. Aquí se ve
@@ -102,40 +96,11 @@ export default function PanelRfgf({ showToast, onNovedades }: Props) {
 
   return (
     <section className={styles.rfgf} aria-label="Federación">
-      {porRevisar.length > 0 && (
-        <div className={styles.rfgfAviso} role="alert">
-          <strong>
-            {porRevisar.length === 1
-              ? "Hay un partido que la federación no me dejó traer bien"
-              : `Hay ${porRevisar.length} partidos que la federación no me dejó traer bien`}
-          </strong>
-          <ul>
-            {porRevisar.map((acta) => (
-              <li key={acta.codActa}>
-                <span>
-                  <b>{acta.partido}.</b> {acta.motivo.replace(/\.$/, "")}.{" "}
-                  <em>{QUE_HACER[acta.tipo]}</em>
-                </span>
-                <span className={styles.rfgfAcciones}>
-                  {acta.enlace && (
-                    <a href={acta.enlace} target="_blank" rel="noreferrer">
-                      Ver acta
-                    </a>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={ocupado}
-                    onClick={() => void reintentar(acta.codActa)}
-                  >
-                    Reintentar
-                  </Button>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <ProblemasFederacion
+        actas={porRevisar}
+        ocupado={ocupado}
+        onReintentar={(codActa) => void reintentar(codActa)}
+      />
       {enlazadas.length > 0 && (
         <div className={styles.rfgfAhora}>
           <p>

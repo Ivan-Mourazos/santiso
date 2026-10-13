@@ -27,6 +27,10 @@ export function equipoDeAutor(
   return null;
 }
 export function evento(linea: string): { autor: string; minuto: string } {
+  // Una tarjeta sacada tras el pitido final no lleva minuto: la ficha pone «(Final)». Se apunta
+  // en el 90, que es donde cae en la cronología.
+  const trasElFinal = /^(.+?)\s*\(Final\)$/iu.exec(linea);
+  if (trasElFinal) return { autor: exigir(trasElFinal[1], "Autor vacío"), minuto: "90" };
   const m = exigir(
     /^(.+?)\s*\((\d{1,3})(?:['’]?\+(\d{1,2}))?['’]?\)$/u.exec(linea),
     "Evento no reconocido",
