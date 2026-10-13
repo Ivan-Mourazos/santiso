@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select } from "@/components/ui/foundation/Fields";
 import { ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import type { CalendarioLeido } from "@/lib/server/acciones/calendario-pdf";
-import { guardarCalendario, leerCalendarioPdf } from "@/lib/server/acciones/calendario-pdf";
+import {
+  guardarCalendario,
+  leerCalendarioPdf,
+  traerCalendarioRfgf,
+} from "@/lib/server/acciones/calendario-pdf";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import styles from "./Importar.module.css";
 
@@ -49,6 +53,7 @@ export default function ImportarCalendarioPdf({ showToast, showConfirm }: Props)
   const [archivo, setArchivo] = useState<File | null>(null);
   const [leido, setLeido] = useState<CalendarioLeido | null>(null);
   const [ocupada, setOcupada] = useState<string | null>(null);
+  const [origenLeido, setOrigenLeido] = useState<"pdf" | "federacion">("pdf");
 
   const porJornada = useMemo(() => {
     if (!leido) return [];
@@ -61,21 +66,28 @@ export default function ImportarCalendarioPdf({ showToast, showConfirm }: Props)
     return [...mapa.entries()].sort((a, b) => a[0] - b[0]);
   }, [leido]);
 
-  async function leer() {
-    if (!archivo) return showToast("Elige el PDF del calendario.", "error");
+  /** Lee el calendario del PDF subido o, sin fichero, del enlace de la federación. */
+  async function leer(origen: "pdf" | "federacion" = "pdf") {
+    if (origen === "pdf" && !archivo) return showToast("Elige el PDF del calendario.", "error");
     if (!selectedCompetitionId) return showToast("Elige la competición de destino.", "error");
-    setOcupada("Leyendo el calendario…");
+    setOcupada(origen === "pdf" ? "Leyendo el calendario…" : "Trayendo el calendario de la federación…");
     try {
-      const formulario = new FormData();
-      formulario.append("calendario", archivo);
-      formulario.append("competicionId", selectedCompetitionId);
-      const resultado = await leerCalendarioPdf(formulario);
+      let resultado;
+      if (origen === "pdf") {
+        const formulario = new FormData();
+        formulario.append("calendario", archivo!);
+        formulario.append("competicionId", selectedCompetitionId);
+        resultado = await leerCalendarioPdf(formulario);
+      } else {
+        resultado = await traerCalendarioRfgf(selectedCompetitionId);
+      }
       if (!resultado.ok) {
         showToast(resultado.error, "error");
         setLeido(null);
         return;
       }
       setLeido(resultado.datos);
+      setOrigenLeido(origen);
       showToast("Calendario leído. Revisa el plan antes de aplicarlo.");
     } catch {
       showToast("No se pudo leer el calendario. Comprueba la conexión.", "error");
@@ -102,7 +114,7 @@ export default function ImportarCalendarioPdf({ showToast, showConfirm }: Props)
             `Creadas ${resultado.datos.jornadas} jornada(s) y ${resultado.datos.partidos} partido(s).`,
           );
           // Releer para que el plan refleje lo que acaba de escribirse.
-          await leer();
+          await leer(origenLeido);
         } catch {
           showToast("No se pudo guardar el calendario. Comprueba la conexión.", "error");
         } finally {
@@ -123,8 +135,8 @@ export default function ImportarCalendarioPdf({ showToast, showConfirm }: Props)
         <div>
           <h3>Cargar calendario desde PDF</h3>
           <p>
-            El PDF de la federación, leído en el ordenador, sin IA. Antes de escribir nada se enseña
-            qué se va a crear.
+            El PDF de la federación, leído en el ordenador, sin IA: súbelo o deja que el Studio lo
+            baje con el enlace de la competición. Antes de escribir nada se enseña qué se va a crear.
           </p>
         </div>
       </div>
@@ -192,6 +204,13 @@ export default function ImportarCalendarioPdf({ showToast, showConfirm }: Props)
             disabled={hayOcupacion || !archivo || !selectedCompetitionId}
           >
             Leer calendario (sin IA)
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => void leer("federacion")}
+            disabled={hayOcupacion || !selectedCompetitionId}
+          >
+            Traer de la federación
           </Button>
         </div>
       </div>

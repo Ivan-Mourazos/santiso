@@ -9,7 +9,10 @@ import {
   type PlanImportacion,
 } from "@/lib/calendario/plan-importacion";
 import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
+import { grupoDeEnlace, urlCalendarioPdf } from "@/lib/rfgf/enlace";
+import { soloAdmin } from "@/lib/server/acceso/permisos";
 import { obtenerDb } from "@/lib/server/db";
+import { crearDescargador } from "@/lib/server/rfgf/descargador";
 
 export interface CalendarioLeido {
   competicion: string;
@@ -93,6 +96,43 @@ export async function leerCalendarioPdf(
     // El parser rechaza explícitamente lo que no entiende; su mensaje dice qué pasó.
     const detalle = error instanceof Error ? error.message : "motivo desconocido";
     return fallo(`No se pudo leer el calendario: ${detalle}`);
+  }
+
+  return capturar("No se pudo preparar la importación.", async () => ({
+    competicion: calendario.competicion,
+    temporada: calendario.temporada,
+    plan: planDeImportacion(calendario, await estadoDe(competicionId)),
+  }));
+}
+
+/**
+ * Lo mismo, pero el PDF lo baja el Studio de la federación con el enlace guardado de la
+ * competición: una sola descarga. Tampoco escribe nada.
+ */
+export async function traerCalendarioRfgf(
+  competicionId: string,
+): Promise<Resultado<CalendarioLeido>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  if (!competicionId) return fallo("Elige la competición de destino.");
+  const { db } = await obtenerDb();
+  const [enlazada] = await db
+    .select({ enlace: schema.rfgfCompeticiones.enlace })
+    .from(schema.rfgfCompeticiones)
+    .where(eq(schema.rfgfCompeticiones.competicionId, competicionId));
+  const grupo = enlazada ? grupoDeEnlace(enlazada.enlace) : null;
+  if (!grupo) {
+    return fallo(
+      "Esta competición no tiene enlace de la federación. Ponlo en Jornada, apartado «Federación», o sube el PDF.",
+    );
+  }
+
+  let calendario;
+  try {
+    calendario = await parsearCalendarioPdf(await crearDescargador().pdf(urlCalendarioPdf(grupo)));
+  } catch (error) {
+    const detalle = error instanceof Error ? error.message : "motivo desconocido";
+    return fallo(`No se pudo traer el calendario de la federación: ${detalle}`);
   }
 
   return capturar("No se pudo preparar la importación.", async () => ({

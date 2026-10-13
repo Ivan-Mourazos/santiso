@@ -20,6 +20,10 @@ test("el calendario PDF enseña el plan antes de escribir nada", async ({ page }
   // La competición es obligatoria: sin ella no se puede leer nada.
   await expect(page.getByRole("button", { name: "Leer calendario (sin IA)" })).toBeDisabled();
 
+  // Sin PDF también se puede: lo baja el Studio con el enlace de la competición. No se pulsa
+  // aquí, que saldría a la red.
+  await expect(page.getByRole("button", { name: "Traer de la federación" })).toBeVisible();
+
   await page.locator("#cal-file").setInputFiles(CALENDARIO);
   await competicion.selectOption({ index: 1 });
 

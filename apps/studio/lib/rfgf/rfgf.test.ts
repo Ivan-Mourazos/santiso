@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { grupoDeEnlace, urlActaPdf, urlJornada } from "./enlace";
+import { grupoDeEnlace, urlActaPdf, urlCalendarioPdf, urlJornada } from "./enlace";
 import { partidosDeJornada } from "./jornada";
 
 const CALENDARIO =
@@ -106,5 +106,20 @@ describe("partidosDeJornada", () => {
 
   it("una página sin partidos no devuelve nada", () => {
     expect(partidosDeJornada("<html><body>Sin datos</body></html>")).toEqual([]);
+  });
+});
+
+describe("calendario de la federación", () => {
+  it("arma la dirección del PDF del calendario entero con los cuatro códigos", () => {
+    expect(
+      urlCalendarioPdf({
+        codPrimaria: "1000120",
+        codTemporada: "22",
+        codCompeticion: "26990830",
+        codGrupo: "27576591",
+      }),
+    ).toBe(
+      "https://www.futgal.es/pnfg/NPcd/NFG_VisCalendario_Vis?cod_primaria=1000120&codtemporada=22&codcompeticion=26990830&codgrupo=27576591&NPcd_Pdf=1",
+    );
   });
 });

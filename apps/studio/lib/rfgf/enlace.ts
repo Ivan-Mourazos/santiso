@@ -82,3 +82,15 @@ export function urlClasificacionPdf(grupo: GrupoRfgf, jornada: number): string {
   });
   return `${BASE}NFG_VisClasificacion?${consulta}`;
 }
+
+/** El PDF del calendario entero de la competición («Generar PDF» en su página). */
+export function urlCalendarioPdf(grupo: GrupoRfgf): string {
+  const consulta = new URLSearchParams({
+    cod_primaria: grupo.codPrimaria,
+    codtemporada: grupo.codTemporada,
+    codcompeticion: grupo.codCompeticion,
+    codgrupo: grupo.codGrupo,
+    NPcd_Pdf: "1",
+  });
+  return `${BASE}NFG_VisCalendario_Vis?${consulta}`;
+}
