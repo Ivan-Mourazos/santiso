@@ -157,9 +157,10 @@ export default function Importar({ showToast, showConfirm, inicial }: Props) {
             Acta a mano o corregir una guardada
           </Button>
         </div>
-        <p className={`${styles.nota} ${styles.soloEscritorio}`}>
-          En el ordenador: <Link href="/admin/actas?modoActas=lote">varias actas de una vez</Link> ·{" "}
-          <Link href="/admin/importar-jornada?origen=calendario">calendario completo en PDF</Link>
+        <p className={styles.nota}>
+          También: <Link href="/admin/actas?modoActas=lote">varias actas de una vez</Link> ·{" "}
+          <Link href="/admin/importar-jornada?origen=calendario">calendario completo</Link> (de la
+          federación o en PDF)
         </p>
       </div>
     </div>

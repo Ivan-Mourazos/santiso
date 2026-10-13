@@ -145,9 +145,6 @@
 .tabs {
   display: none;
 }
-.desktopNotice {
-  display: none;
-}
 .aviso {
   margin: 0;
   padding: 1rem;
@@ -306,17 +303,6 @@
   .toast {
     bottom: calc(4.75rem + env(safe-area-inset-bottom));
     right: max(0.75rem, env(safe-area-inset-right));
-  }
-  .desktopOnly {
-    display: none;
-  }
-  .desktopNotice {
-    display: block;
-    padding: 1rem;
-    border: 1px solid var(--ui-border);
-    border-radius: var(--ui-radius);
-    background: var(--ui-panel-face);
-    box-shadow: var(--ui-panel-shadow);
   }
 }
 @media (prefers-reduced-motion: reduce) {

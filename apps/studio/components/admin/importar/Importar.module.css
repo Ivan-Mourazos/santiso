@@ -87,10 +87,6 @@
   font-weight: 700;
 }
 @media (max-width: 900px) {
-  /* El lote de actas y el calendario en PDF son tareas de ordenador. */
-  .soloEscritorio {
-    display: none;
-  }
   .decision button,
   .otros button {
     min-height: 44px;
