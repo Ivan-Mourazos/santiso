@@ -36,6 +36,20 @@
   cursor: not-allowed;
   border-style: dashed;
 }
+/* En el iPhone un campo de fecha u hora tiene ancho propio y se sale de su columna, pisando al
+   campo de al lado: sin apariencia nativa ocupa lo que le toca. */
+input[type="date"].control,
+input[type="time"].control,
+input[type="datetime-local"].control {
+  appearance: none;
+  display: block;
+  max-width: 100%;
+  text-align: left;
+}
+input.control::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.35em;
+}
 select.control:not([multiple]) {
   appearance: none;
   padding-right: 2rem;
