@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import type { FotoCartel } from "@/lib/cartel2/modelo";
+import { prepararFotoSubida } from "@/lib/cartel2/subida";
 import s from "./FotoFondoControl.module.css";
 
 export function FotoFondoControl({
@@ -25,20 +26,18 @@ export function FotoFondoControl({
             e.target.value = "";
             const actual = ++lectura.current;
             if (!file) return;
-            if (!file.type.startsWith("image/") || file.size > 8_000_000) {
-              setError("Elige una imagen de hasta 8 MB.");
+            if (!file.type.startsWith("image/")) {
+              setError("Elige una imagen.");
               return;
             }
             setError("");
-            const reader = new FileReader();
-            reader.onload = () => {
-              if (actual === lectura.current && typeof reader.result === "string")
-                onChange({ url: reader.result, x: 0.5, y: 0.5, estilo: "color" });
-            };
-            reader.onerror = () => {
-              if (actual === lectura.current) setError("No se pudo leer la foto.");
-            };
-            reader.readAsDataURL(file);
+            void prepararFotoSubida(file)
+              .then((url) => {
+                if (actual === lectura.current) onChange({ url, x: 0.5, y: 0.5, estilo: "color" });
+              })
+              .catch(() => {
+                if (actual === lectura.current) setError("No se pudo leer la foto.");
+              });
           }}
         />
       </label>
@@ -67,6 +66,17 @@ export function FotoFondoControl({
               step="0.01"
               value={foto.y}
               onChange={(e) => onChange({ ...foto, y: Number(e.target.value) })}
+            />
+          </label>
+          <label>
+            Acercar
+            <input
+              type="range"
+              min="1"
+              max="4"
+              step="0.01"
+              value={foto.zoom ?? 1}
+              onChange={(e) => onChange({ ...foto, zoom: Number(e.target.value) })}
             />
           </label>
           <button

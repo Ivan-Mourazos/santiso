@@ -141,3 +141,16 @@
     display: none;
   }
 }
+
+/* Encuadre de la foto de fondo: plegado para no quitarle alto al cartel. */
+.encuadre {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+.encuadre summary {
+  min-height: 32px;
+  font-weight: 700;
+  cursor: pointer;
+}

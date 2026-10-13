@@ -96,6 +96,7 @@ const cronoloxia = z.object({
     visitante: equipo,
     golesLocal: entero,
     golesVisitante: entero,
+    foto: fotoFondo.nullable().optional(),
     eventos: z
       .array(
         z.object({
