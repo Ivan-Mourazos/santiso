@@ -1,7 +1,8 @@
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { partidos } from "./calendario";
 import { checkEnum, marcasTiempo } from "./comunes";
 import { competiciones } from "./competicion";
+import { jugadores } from "./plantilla";
 
 /** Qué pasó con un acta de la federación al traerla. */
 export const ESTADOS_ACTA_RFGF = ["resultado", "guardada", "revisar", "error"] as const;
@@ -81,3 +82,43 @@ export const rfgfPartidos = sqliteTable("rfgf_partidos", {
   cambioEn: text("cambio_en"),
   ...marcasTiempo(),
 });
+
+/**
+ * Un jugador del club tal como lo conoce la federación, en una competición: su código (sale
+ * en la página de cada partido) y las cifras oficiales de la temporada. Sirve para contrastar
+ * las estadísticas del Studio con las de la federación.
+ */
+export const rfgfJugadores = sqliteTable(
+  "rfgf_jugadores",
+  {
+    /** Código del jugador en la federación. */
+    codigo: text("codigo").notNull(),
+    competicionId: text("competicion_id")
+      .notNull()
+      .references(() => competiciones.id, { onDelete: "cascade" }),
+    /** El de la plantilla, si el nombre se reconoció sin duda. */
+    jugadorId: text("jugador_id").references(() => jugadores.id, { onDelete: "set null" }),
+    /** «APELLIDOS, NOMBRE», como lo escribe la federación. */
+    nombre: text("nombre").notNull(),
+    /** El último partido en el que se le vio: con él se pide su página. */
+    codActa: text("cod_acta").notNull(),
+    /** Las cifras oficiales; `null` hasta la primera lectura. */
+    cifras: text("cifras", { mode: "json" }).$type<{
+      convocados: number;
+      titular: number;
+      suplente: number;
+      jugados: number;
+      amarillas: number;
+      doblesAmarillas: number;
+      rojas: number;
+      goles: number;
+    }>(),
+    /** Cuándo se leyeron esas cifras, ISO. */
+    leidoEn: text("leido_en"),
+    ...marcasTiempo(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.codigo, t.competicionId] }),
+    index("rfgf_jugadores_jugador_idx").on(t.jugadorId),
+  ],
+);

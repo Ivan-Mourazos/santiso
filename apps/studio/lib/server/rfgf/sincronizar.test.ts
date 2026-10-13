@@ -69,16 +69,37 @@ function paginaJornada(local: string, visitante: string, codActa: string | null)
     <a href="NFG_VisEquipos?cod_primaria=1000119&Codigo_Equipo=2">${visitante}</a></body></html>`;
 }
 
+/** La página web del partido: el visitante (el Santiso en la ficha de prueba) lleva dos jugadores. */
+const filaJugador = (codigo: string, nombre: string) =>
+  `<tr onclick="location.href='NFG_EstadisticasJugador?cod_primaria=5000274&jugador=${codigo}&codacta=900&nueva_ventana=';"> <td>1</td> <td> ${nombre}</td> </tr>`;
+const PAGINA_PARTIDO = `<html><body><strong>Titulares</strong><table>${filaJugador("11", "RIVAL UN, XAN")}</table>
+<strong>Titulares</strong><table>${filaJugador("21", "APELLIDO 20, PERSONA")}${filaJugador("22", "DESCONOCIDO TOTAL, NADIE")}</table></body></html>`;
+const PAGINA_JUGADOR = `<html><body><a>Generar PDF</a><h4>APELLIDO 20, PERSONA</h4><span>Equipo:</span><b>EQUIPO VISITANTE</b>
+<b>LIGA | GRUPO 1</b><strong>Temporada 2025-2026</strong>
+<td>Convocados</td><td>3</td><td>Titular</td><td>2</td><td>Suplente</td><td>1</td><td>Jugados</td><td>3</td>
+<td>Total</td><td>1</td><td>Tarjeta amarilla</td><td>1</td><td>Doble tarjeta amarilla</td><td>0</td><td>Tarjeta roja</td><td>0</td>
+<h5>Goles</h5><td>Total</td><td>4</td></body></html>`;
+
 function descargadorDe(html: string, jornada: string[] = []) {
   // `pdf` son las actas; los PDF de jornada se cuentan aparte.
   const pedidas = {
     html: [] as string[],
+    /** Páginas de partido y de jugador, para las cifras oficiales: se cuentan aparte. */
+    jugadores: [] as string[],
     pdf: [] as string[],
     jornadas: [] as number[],
     clasificaciones: 0,
   };
   const descargador: DescargadorRfgf = {
     async html(url) {
+      if (url.includes("NFG_EstadisticasJugador")) {
+        pedidas.jugadores.push(url);
+        return PAGINA_JUGADOR;
+      }
+      if (url.includes("NFG_CmpPartido")) {
+        pedidas.jugadores.push(url);
+        return PAGINA_PARTIDO;
+      }
       pedidas.html.push(url);
       return html;
     },
@@ -570,4 +591,30 @@ it("compara la clasificación con la oficial y deja dicho en qué no cuadra", as
   );
   const [despues] = await db.select().from(s.rfgfCompeticiones);
   expect(despues?.clasificacion?.diferencias).toEqual([]);
+});
+
+
+it("apunta a los jugadores del club con su código y trae sus cifras oficiales", async () => {
+  const { s, competicionId, sincronizarCompeticion, leer } = await preparar();
+  const { descargador, pedidas } = descargadorDe(
+    paginaJornada("EQUIPO LOCAL", "EQUIPO VISITANTE", "900"),
+  );
+
+  // Pedida a mano: guarda el acta y, con ella, mira quién jugó y lee sus páginas.
+  const resumen = await sincronizarCompeticion(competicionId, descargador, AHORA, false, true);
+  expect(resumen?.errores).toEqual([]);
+  const db = await leer();
+  const jugadores = await db.select().from(s.rfgfJugadores);
+  // Solo los del lado del club; el rival no se apunta.
+  expect(jugadores.map((j) => j.codigo).sort()).toEqual(["21", "22"]);
+  const reconocido = jugadores.find((j) => j.codigo === "21")!;
+  expect(reconocido.jugadorId).not.toBeNull();
+  expect(reconocido.cifras).toMatchObject({ convocados: 3, titular: 2, goles: 4, amarillas: 1 });
+  // Un nombre que no está en la plantilla se guarda sin enlazar: no se inventa a quién es.
+  expect(jugadores.find((j) => j.codigo === "22")!.jugadorId).toBeNull();
+  expect(pedidas.jugadores.filter((url) => url.includes("NFG_CmpPartido"))).toHaveLength(1);
+
+  // Otra pasada con el mismo último partido no vuelve a pedir su página.
+  await sincronizarCompeticion(competicionId, descargador, AHORA, false, true);
+  expect(pedidas.jugadores.filter((url) => url.includes("NFG_CmpPartido"))).toHaveLength(1);
 });

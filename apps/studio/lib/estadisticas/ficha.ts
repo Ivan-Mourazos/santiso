@@ -57,6 +57,41 @@ export interface FichaJugador {
   };
   /** Del más reciente al más antiguo. */
   partidos: PartidoDeFicha[];
+  /** Lo que dice la federación, por competición; vacío si aún no se ha traído. */
+  oficial: CifrasOficiales[];
+}
+
+/** Las cifras de un jugador en una competición según la web de la federación. */
+export interface CifrasOficiales {
+  competicionId: string;
+  competicion: string;
+  /** ISO de la última lectura. */
+  leidoEn: string;
+  convocados: number;
+  titular: number;
+  jugados: number;
+  goles: number;
+  amarillas: number;
+  rojas: number;
+}
+
+/**
+ * En qué no coinciden las cifras del Studio con las oficiales, en frases. Solo se puede
+ * comparar cuando la ficha abarca justo esa competición; si no, lista vacía.
+ */
+export function diferenciasConOficial(
+  propias: { convocados: number; titularidades: number; goles: number },
+  oficial: CifrasOficiales,
+): string[] {
+  // Las tarjetas no se comparan: la federación cuenta aparte la doble amarilla.
+  const pares: [string, number, number][] = [
+    ["convocatorias", propias.convocados, oficial.convocados],
+    ["titularidades", propias.titularidades, oficial.titular],
+    ["goles", propias.goles, oficial.goles],
+  ];
+  return pares
+    .filter(([, aqui, alli]) => aqui !== alli)
+    .map(([que, aqui, alli]) => `${que}: ${alli} en la federación y ${aqui} aquí`);
 }
 
 export function construirPartidos(

@@ -54,6 +54,7 @@ import { clasificacionDeCompeticion } from "@/lib/server/consultas/clasificacion
 import { listarJugadores } from "@/lib/server/consultas/jugadores";
 import { obtenerDb } from "@/lib/server/db";
 import type { DescargadorRfgf } from "./descargador";
+import { sincronizarJugadores } from "./jugadores";
 
 type EstadoActa = (typeof schema.ESTADOS_ACTA_RFGF)[number];
 
@@ -545,6 +546,16 @@ export async function sincronizarCompeticion(
     } catch (error) {
       const detalle = error instanceof Error ? error.message : "fallo desconocido";
       resumen.errores.push(`Clasificación oficial: ${detalle}`);
+    }
+  }
+
+  // Y las cifras oficiales de unos pocos jugadores del club, para contrastar las del Studio.
+  if (mirarHorarios) {
+    try {
+      await sincronizarJugadores(competicionId, fila.categoria, grupo, descargador, ahora);
+    } catch (error) {
+      const detalle = error instanceof Error ? error.message : "fallo desconocido";
+      resumen.errores.push(`Estadísticas de jugadores: ${detalle}`);
     }
   }
 

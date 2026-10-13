@@ -119,6 +119,20 @@ export async function fichaDeJugador(ambito: AmbitoFicha): Promise<FichaJugador 
         )
     : [];
 
+  const oficiales = await db
+    .select({
+      competicionId: schema.rfgfJugadores.competicionId,
+      competicion: schema.competiciones.nombre,
+      cifras: schema.rfgfJugadores.cifras,
+      leidoEn: schema.rfgfJugadores.leidoEn,
+    })
+    .from(schema.rfgfJugadores)
+    .innerJoin(
+      schema.competiciones,
+      eq(schema.competiciones.id, schema.rfgfJugadores.competicionId),
+    )
+    .where(eq(schema.rfgfJugadores.jugadorId, ambito.jugadorId));
+
   return {
     jugador: {
       id: persona.id,
@@ -130,6 +144,23 @@ export async function fichaDeJugador(ambito: AmbitoFicha): Promise<FichaJugador 
       fechaNacimiento: persona.fechaNacimiento ?? null,
       historial: persona.historial ?? [],
     },
+    oficial: oficiales.flatMap((fila) =>
+      fila.cifras && fila.leidoEn
+        ? [
+            {
+              competicionId: fila.competicionId,
+              competicion: fila.competicion,
+              leidoEn: fila.leidoEn,
+              convocados: fila.cifras.convocados,
+              titular: fila.cifras.titular,
+              jugados: fila.cifras.jugados,
+              goles: fila.cifras.goles,
+              amarillas: fila.cifras.amarillas + fila.cifras.doblesAmarillas,
+              rojas: fila.cifras.rojas,
+            },
+          ]
+        : [],
+    ),
     partidos: construirPartidos(
       ambito.jugadorId,
       partidos,

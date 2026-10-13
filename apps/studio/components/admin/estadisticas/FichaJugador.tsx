@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { LoadingState } from "@/components/ui/foundation/States";
 import {
+  diferenciasConOficial,
   papelEnPartido,
   resultadoDePartido,
   totalesDeFicha,
@@ -115,6 +116,35 @@ export default function FichaJugador({
             ))}
           </dl>
 
+          {ficha.oficial.map((oficial) => {
+            // Solo se contrasta cuando la ficha abarca justo esa competición.
+            const diferencias =
+              competicionId === oficial.competicionId
+                ? diferenciasConOficial(totales, oficial)
+                : null;
+            return (
+              <div
+                key={oficial.competicionId}
+                className={styles.fichaOficial}
+                data-cuadra={diferencias ? diferencias.length === 0 : undefined}
+              >
+                <p>
+                  <strong>Federación · {oficial.competicion}</strong>
+                </p>
+                <p>
+                  {oficial.convocados} convocatorias · {oficial.titular} de titular ·{" "}
+                  {oficial.jugados} jugados · {oficial.goles} goles · {oficial.amarillas} amarillas
+                  · {oficial.rojas} rojas
+                </p>
+                {diferencias &&
+                  (diferencias.length === 0 ? (
+                    <p>Coincide con lo apuntado aquí.</p>
+                  ) : (
+                    <p>No coincide: {diferencias.join("; ")}.</p>
+                  ))}
+              </div>
+            );
+          })}
           {ficha.jugador.historial.length > 0 && (
             <details className={styles.fichaHistorial}>
               <summary>Historial deportivo ({ficha.jugador.historial.length} temporadas)</summary>
