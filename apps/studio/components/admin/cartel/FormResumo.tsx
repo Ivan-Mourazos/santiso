@@ -54,19 +54,6 @@ export const FormResumo = (props: Props & { tipo: string }) => {
           onChange={(e) => set("golesRival", e.target.value)}
         />
       </div>
-
-      <div className={styles.casillaBloque}>
-        <label className={styles.casilla}>
-          <input
-            type="checkbox"
-            className={styles.check}
-            checked={form.showCarouselIndicator}
-            onChange={(e) => set("showCarouselIndicator", e.target.checked)}
-          />
-          Mostrar indicador de carrusel (Instagram)
-        </label>
-        <p className={styles.aviso}>Añade un texto sutil abajo para invitar a deslizar.</p>
-      </div>
     </>
   );
 };

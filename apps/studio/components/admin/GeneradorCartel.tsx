@@ -140,16 +140,6 @@ export default function GeneradorCartel({
           data-activo={vistaMovil === "datos"}
         >
           {/* Template-specific fields */}
-          {(tipo === "partido" || tipo === "proximos") && (
-            <Select
-              label="Formato de cartel"
-              value={formato}
-              onChange={(e) => setFormato(e.target.value as FormatoCartel)}
-            >
-              <option value="publicacion">Publicación · 4:5</option>
-              <option value="historia">Historia · 9:16</option>
-            </Select>
-          )}
           {tipo === "proximos" && (
             <PaqueteAxenda
               form={form}
@@ -236,25 +226,22 @@ export default function GeneradorCartel({
               form={form}
               set={set}
               handleMultiusosFile={handleMultiusosFile}
-              jugadores={jugadores}
-              jugFileName={jugFileName}
-              handleJugadorFile={handleJugadorFile}
             />
           )}
           {tipo === "clasificacion" && <FormClasificacion form={form} set={set} />}
 
-          {/* Santiso side (shared) */}
-          {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
-            <div className={styles.lado} role="group" aria-label="Santiso en el cartel">
-              <span>Santiso en el cartel</span>
+          {/* Con un partido del calendario la localía ya se sabe: solo se pregunta a mano. */}
+          {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && !form.partido_id && (
+            <div className={styles.lado} role="group" aria-label="Dónde juega el Santiso">
+              <span>El Santiso juega</span>
               <div className={styles.ladoBotones}>
                 <Toggle
-                  label="← Izquierda"
+                  label="En casa"
                   active={form.santisoSide === "left"}
                   onClick={() => set("santisoSide", "left")}
                 />
                 <Toggle
-                  label="Derecha →"
+                  label="Fuera"
                   active={form.santisoSide === "right"}
                   onClick={() => set("santisoSide", "right")}
                 />
@@ -263,6 +250,17 @@ export default function GeneradorCartel({
           )}
 
           <PlegableMovil titulo="Más opciones">
+            {/* Casi todo se publica en 4:5: la historia queda aquí, para la rara vez que haga falta. */}
+            {(tipo === "partido" || tipo === "proximos") && (
+              <Select
+                label="Formato de cartel"
+                value={formato}
+                onChange={(e) => setFormato(e.target.value as FormatoCartel)}
+              >
+                <option value="publicacion">Publicación · 4:5</option>
+                <option value="historia">Historia · 9:16</option>
+              </Select>
+            )}
             <div className={styles.acciones}>
               <Button variant="secondary" onClick={resetForm}>
                 Limpiar datos

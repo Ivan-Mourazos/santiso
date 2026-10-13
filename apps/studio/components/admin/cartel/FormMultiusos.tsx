@@ -5,7 +5,7 @@
 
 import React from "react";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
-import { CategorySelector, Deslizador, SectionLabel, Toggle } from "./Common";
+import { CategorySelector, SectionLabel } from "./Common";
 import styles from "./Formularios.module.css";
 import { PlegableMovil } from "./PlegableMovil";
 import type { FormState, MultiusosTema } from "./types";
@@ -14,15 +14,6 @@ interface Props {
   form: FormState;
   set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
   handleMultiusosFile: (num: 1 | 2, file: File | null) => void;
-  jugadores: {
-    id: string;
-    nombre?: string | null;
-    apodo?: string | null;
-    categoria?: string | null;
-    foto_url?: string | null;
-  }[];
-  jugFileName: string;
-  handleJugadorFile: (file: File) => void;
 }
 
 const TEMAS: { id: MultiusosTema; label: string; icon: string }[] = [
@@ -37,31 +28,10 @@ export const FormMultiusos: React.FC<Props> = ({
   form,
   set,
   handleMultiusosFile,
-  jugadores,
-  jugFileName,
-  handleJugadorFile,
 }) => {
-  const getDisplayName = (j: Props["jugadores"][number]) => {
-    if (!j) return "";
-    if (j.apodo) return j.apodo;
-    if (!j.nombre) return "";
-    const parts = j.nombre.split(" ");
-    return parts.length > 1 ? `${parts[0]} ${parts[1]}` : j.nombre;
-  };
-  const jugadoresCategoria = jugadores.filter((j) => j.categoria === form.categoria);
-
   return (
     <>
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
-
-      <SectionLabel>Visibilidad de Activos</SectionLabel>
-      <div style={{ display: "flex", gap: "0.8rem", marginBottom: "1.5rem" }}>
-        <Toggle
-          label="Logos y Patrocinadores"
-          active={form.showAssets}
-          onClick={() => set("showAssets", !form.showAssets)}
-        />
-      </div>
 
       <div className={styles.campo}>
         <Select
@@ -96,89 +66,7 @@ export const FormMultiusos: React.FC<Props> = ({
         />
       </div>
 
-      <PlegableMovil titulo="Jugador e imágenes">
-        <SectionLabel>Jugador Destacado (Opcional)</SectionLabel>
-        <p style={{ fontSize: "0.75rem", color: "#888", marginBottom: "1rem" }}>
-          Sube o selecciona un jugador para integrarlo de forma gigante (heroica) en el diseño.
-          Ideal para renovaciones, fichajes o MVP.
-        </p>
-
-        <div className={styles.campo}>
-          <Select
-            label="Elegir un jugador de la plantilla"
-            onChange={(e) => {
-              const url = e.target.value;
-              set("jugadorFotoUrl", url);
-              // resetear recortes
-              set("jugadorXOffset", 0);
-              set("jugadorYOffset", 0);
-              set("jugadorZoom", 100);
-            }}
-          >
-            <option value="">Sin jugador o con foto propia</option>
-            {jugadoresCategoria.map((j) => {
-              if (!j.foto_url) return null;
-              return (
-                <option key={j.id} value={j.foto_url}>
-                  {getDisplayName(j)}
-                </option>
-              );
-            })}
-          </Select>
-          <span className={styles.etiqueta}>O subir la foto a mano (sin fondo)</span>
-          <label className="file-input-label">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-            </svg>
-            {jugFileName || "Subir foto del jugador"}
-            <input
-              type="file"
-              className="hidden-input"
-              accept="image/*"
-              onChange={(e) => {
-                if (e.target.files?.[0]) handleJugadorFile(e.target.files[0]);
-              }}
-            />
-          </label>
-        </div>
-
-        {form.jugadorFotoUrl && (
-          <div className={styles.encuadre}>
-            <h5>Encuadre del jugador</h5>
-            <Deslizador
-              label="Horizontal"
-              min={-300}
-              max={300}
-              value={form.jugadorXOffset}
-              onChange={(v) => set("jugadorXOffset", v)}
-              mostrarValor
-            />
-            <Deslizador
-              label="Vertical"
-              min={-300}
-              max={300}
-              value={form.jugadorYOffset}
-              onChange={(v) => set("jugadorYOffset", v)}
-              mostrarValor
-            />
-            <Deslizador
-              label="Tamaño (%)"
-              min={50}
-              max={250}
-              value={form.jugadorZoom}
-              onChange={(v) => set("jugadorZoom", v)}
-              mostrarValor
-            />
-          </div>
-        )}
-
+      <PlegableMovil titulo="Imágenes">
         <SectionLabel>Imágenes Enmarcadas (Opcional)</SectionLabel>
         <p style={{ fontSize: "0.75rem", color: "#888", marginBottom: "1rem" }}>
           Sube capturas (ej. tabla de clasificación, cuadrante de eliminatorias o foto de

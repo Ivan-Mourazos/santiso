@@ -64,6 +64,7 @@ for (const ancho of [360, 390]) {
     await tarjetas.nth(1).tap();
     await expect(page.getByLabel("Rival del partido 1")).toBeHidden();
     await page.getByLabel("Rival del partido 2").fill("A.C.U.D. Camporrapado");
+    await page.locator("summary").filter({ hasText: "Más opciones" }).tap();
     await page.getByLabel("Formato de cartel").selectOption("historia");
     await page.getByRole("button", { name: "Preparar carrusel Axenda", exact: true }).tap();
     await expect(
