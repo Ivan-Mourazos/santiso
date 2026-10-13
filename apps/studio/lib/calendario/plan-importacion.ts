@@ -66,6 +66,12 @@ export interface PlanImportacion {
 const PARECIDO_MINIMO = 0.6;
 
 
+/** El nombre sin la categoría («veteranos», «veterans»), si queda algo; si no, tal cual. */
+function sinCategoria(nombre: string): string {
+  const corto = nombre.replace(/\bveteran[oa]?s?\b/giu, " ").replace(/\s+/gu, " ").trim();
+  return corto || nombre.trim();
+}
+
 /**
  * Empareja un nombre del PDF con un equipo. Primero por clave idéntica, que es lo que ya usa
  * la tabla de equipos; si no, por parecido de tokens. Un empate entre dos equipos **no** se
@@ -75,6 +81,14 @@ const PARECIDO_MINIMO = 0.6;
 function emparejar(nombre: string, equipos: EquipoConocido[]): EquipoConocido | null {
   const clave = claveEquipo(nombre);
   const exactos = equipos.filter((equipo) => claveEquipo(equipo.nombre) === clave);
+  // En su liga de veteranos la federación añade la categoría al nombre («MELIDE VETERANOS»)
+  // y el Studio guarda el club a secas («Melide»): la palabra no distingue a nadie.
+  if (exactos.length === 0 && sinCategoria(nombre) !== nombre.trim()) {
+    const corto = equipos.filter(
+      (equipo) => claveEquipo(sinCategoria(equipo.nombre)) === claveEquipo(sinCategoria(nombre)),
+    );
+    if (corto.length === 1) return corto[0] ?? null;
+  }
   if (exactos.length === 1) return exactos[0] ?? null;
   if (exactos.length > 1) return null;
 
