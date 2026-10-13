@@ -39,6 +39,30 @@ const bd = (parcial: Partial<EstadoBd> = {}): EstadoBd => ({
 });
 
 describe("emparejado de equipos", () => {
+  it("la categoría añadida por la federación no impide casar el club («MELIDE VETERANOS»)", () => {
+    const plan = planDeImportacion(
+      calendario([
+        jornada(1, [
+          ["MELIDE VETERANOS", "S.D. TOURO VETERANOS"],
+          ["PREFABRICADOS FARO RODEIRO VETERANS", "ULLA OIL VETERANOS"],
+        ]),
+      ]),
+      bd({
+        equipos: [
+          { id: "mel", nombre: "Melide" },
+          { id: "tou", nombre: "S.D. Touro" },
+          { id: "pre", nombre: "Prefabricados Faro Rodeiro" },
+          { id: "ull", nombre: "Ulla Oil" },
+        ],
+      }),
+    );
+    expect(plan.sinResolver).toEqual([]);
+    expect(plan.cruces.map((c) => [c.localId, c.visitanteId])).toEqual([
+      ["mel", "tou"],
+      ["pre", "ull"],
+    ]);
+  });
+
   it("empareja por nombre idéntico salvo tildes, mayúsculas y puntuación", () => {
     const plan = planDeImportacion(
       calendario([jornada(1, [["U.D. SANTISO F.C.", "C.D. BERRES"]])]),
