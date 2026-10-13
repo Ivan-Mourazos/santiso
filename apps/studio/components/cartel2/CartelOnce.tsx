@@ -1,9 +1,20 @@
 /* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
-import { categoriaCartel, fechaCorta, urlFoto, type DatosOnce } from "@/lib/cartel2/modelo";
+import {
+  categoriaCartel,
+  cuerpo,
+  fechaCorta,
+  urlFoto,
+  type DatosOnce,
+} from "@/lib/cartel2/modelo";
 import { Escudo } from "./Escudo";
 import { Base } from "./Base";
 import b from "./Base.module.css";
 import s from "./CartelOnce.module.css";
+
+/** Ancho de un nombre: media lista (952 − 24 de calle) menos dorsal y separación. */
+const ANCHO_NOMBRE = (952 - 24) / 2 - 62 - 14;
+/** Ancho medio de una letra del nombre (Barlow Condensed 800 en mayúsculas), en em. */
+const EM_NOMBRE = 0.47;
 
 /**
  * O Noso 11: foto (de un jugador o del equipo) a un lado, fundida con el fondo, y el once
@@ -83,7 +94,19 @@ export function CartelOnce({ datos }: { datos: DatosOnce }) {
               {columna.map((j, i) => (
                 <li key={`${j.dorsal}-${i}`} data-lectura-fila>
                   <span className={`${b.display} ${s.dorsal}`}>{j.dorsal}</span>
-                  <span className={s.nombre} data-lectura-columna>
+                  <span
+                    className={s.nombre}
+                    style={{
+                      fontSize: cuerpo(
+                        j.nombre.toUpperCase(),
+                        ANCHO_NOMBRE - (j.capitan ? 36 : 0),
+                        44,
+                        24,
+                        EM_NOMBRE,
+                      ),
+                    }}
+                    data-lectura-columna
+                  >
                     {j.nombre.toUpperCase()}
                     {j.capitan && <span className={s.capitan}> C</span>}
                   </span>
