@@ -6,7 +6,7 @@ test("jornada: entrada centrada en un partido y una sola acción principal", asy
   const errores: string[] = [];
   const externas = vigilarSalidasAInternet(page);
   page.on("pageerror", (e) => errores.push(e.message));
-  await page.goto("/admin");
+  await page.goto("/admin/jornada");
   await expect(page).toHaveURL(/\/admin\/jornada/);
   await expect(page.locator("[data-mesa-partido]")).toBeVisible({ timeout: 30000 });
   await expect(page.locator("[data-accion-principal]")).toHaveCount(1);

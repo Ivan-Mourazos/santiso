@@ -12,12 +12,14 @@ import {
   type ReactNode,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { cambiarParametros } from "@/lib/navigation/contexto";
+import { cambiarParametros, type AccesoPanel } from "@/lib/navigation/contexto";
 import { ConfirmDialog } from "@/components/ui/foundation/ConfirmDialog";
 import { Toast } from "@/components/ui/foundation/Toast";
 import styles from "./StudioShell.module.css";
 
 type StudioValue = {
+  /** Quién usa el panel; `null` con el acceso por contraseña apagado. */
+  acceso: AccesoPanel;
   params: URLSearchParams;
   navigate: (href: string) => boolean;
   setParams: (patch: Record<string, string | null>, replace?: boolean) => boolean;
@@ -43,7 +45,13 @@ export function useUnsavedChanges(dirty: boolean) {
     return () => register?.(id, false);
   }, [register, id, dirty]);
 }
-export function StudioProvider({ children }: { children: ReactNode }) {
+export function StudioProvider({
+  children,
+  acceso = null,
+}: {
+  children: ReactNode;
+  acceso?: AccesoPanel;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
@@ -175,8 +183,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
   }, [authorize]);
   const value = useMemo(
-    () => ({ params, navigate, setParams, showToast, showConfirm, register }),
-    [params, navigate, setParams, showToast, showConfirm, register],
+    () => ({ acceso, params, navigate, setParams, showToast, showConfirm, register }),
+    [acceso, params, navigate, setParams, showToast, showConfirm, register],
   );
   return (
     <StudioContext.Provider value={value}>

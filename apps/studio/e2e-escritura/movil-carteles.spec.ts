@@ -42,7 +42,7 @@ for (const ancho of [360, 390]) {
       await page.goto(url);
       await expect(page.getByLabel("Rival", { exact: true })).toHaveValue(/Rival .*Ficticio/i);
       await page.getByRole("tab", { name: "Vista previa", exact: true }).tap();
-      await page.getByRole("button", { name: "Foto de fondo", exact: true }).tap();
+      await page.getByRole("button", { name: "Fotos del partido", exact: true }).tap();
       const galeria = page.getByRole("dialog", { name: "Fotos del partido", exact: true });
       await expect(galeria).toBeVisible();
       const camara = galeria.getByLabel("Tomar foto", { exact: true });
@@ -91,7 +91,7 @@ for (const ancho of [360, 390]) {
       await page.reload();
       await expect(page.getByLabel("Rival", { exact: true })).toHaveValue(/Rival .*Ficticio/i);
       await page.getByRole("tab", { name: "Vista previa", exact: true }).tap();
-      await page.getByRole("button", { name: "Foto de fondo", exact: true }).tap();
+      await page.getByRole("button", { name: "Fotos del partido", exact: true }).tap();
       const foco = galeria.getByRole("listitem").first().locator("[data-foco]");
       const coordenadas = await foco.evaluate((el) => ({
         x: parseFloat((el as HTMLElement).style.left),
@@ -101,14 +101,14 @@ for (const ancho of [360, 390]) {
       expect(coordenadas.y).toBeCloseTo(20, 0);
       await galeria.getByRole("button", { name: "Usar en el cartel", exact: true }).first().tap();
       await expect(galeria).toBeHidden();
-      await expect(page.getByRole("button", { name: "Cambiar foto", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Fotos del partido", exact: true })).toBeVisible();
       await expect(page.locator('[data-vista-cartel] img[src*="/media/partidos/"]')).toBeVisible();
       if (process.env.STUDIO_CAPTURAS_DIR)
         await page.screenshot({
           path: path.join(process.env.STUDIO_CAPTURAS_DIR, `resumo-foto-${ancho}.png`),
         });
       // Deja galería vacía para que ambas anchuras comprueben la misma situación.
-      await page.getByRole("button", { name: "Cambiar foto", exact: true }).tap();
+      await page.getByRole("button", { name: "Fotos del partido", exact: true }).tap();
       await galeria.getByRole("button", { name: "Quitar foto 2", exact: true }).tap();
       await galeria.getByRole("button", { name: "Quitar foto 1", exact: true }).tap();
       await expect(galeria.getByText("Este partido todavía no tiene fotos.")).toBeVisible();

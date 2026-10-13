@@ -20,7 +20,7 @@ async function sesionDe(browser: Browser, quien: { usuario: string; clave: strin
   const contexto = await browser.newContext();
   const page = await contexto.newPage();
   await entrar(page, quien.usuario, quien.clave);
-  await expect(page).toHaveURL(/\/admin\/jornada/);
+  await expect(page).toHaveURL(/\/admin\/inicio/);
   return { contexto, page };
 }
 
@@ -61,7 +61,7 @@ test("la primera vez se crea el administrador y se entra", async ({ page }) => {
   await expect(page.locator('p[role="alert"]')).toHaveText("Las dos contraseñas no coinciden.");
   await page.getByLabel("Repite la contraseña").fill(ADMIN.clave);
   await page.getByRole("button", { name: "Crear y entrar" }).click();
-  await expect(page).toHaveURL(/\/admin\/jornada/);
+  await expect(page).toHaveURL(/\/admin\/inicio/);
   await expect(page.getByText(ADMIN.nombre)).toBeVisible();
 
   // Ya hay alguien: la pantalla de entrada deja de ofrecer crear el administrador.
@@ -77,7 +77,7 @@ test("el administrador crea al míster", async ({ browser }) => {
   const { contexto, page } = await sesionDe(browser, ADMIN);
   // Con sesión, la pantalla de entrada manda al panel.
   await page.goto("/entrar");
-  await expect(page).toHaveURL(/\/admin\/jornada/);
+  await expect(page).toHaveURL(/\/admin\/inicio/);
   await page.getByRole("link", { name: "Usuarios" }).click();
   await expect(page.getByRole("heading", { name: "Quién puede entrar" })).toBeVisible();
   await page.getByRole("textbox", { name: "Nombre", exact: true }).fill(MISTER.nombre);
@@ -96,7 +96,7 @@ test("el míster entra, usa el día a día y no ve lo del administrador", async 
   await expect(page).toHaveURL(/\/entrar$/);
   await page.getByLabel("Contraseña").fill(MISTER.clave);
   await page.getByRole("button", { name: "Entrar" }).click();
-  await expect(page).toHaveURL(/\/admin\/jornada/);
+  await expect(page).toHaveURL(/\/admin\/inicio/);
 
   const menu = page.getByRole("navigation", { name: "Navegación principal" });
   await expect(menu.getByRole("link", { name: "Multas" })).toBeVisible();
@@ -118,13 +118,13 @@ test("el míster entra, usa el día a día y no ve lo del administrador", async 
 test("en el móvil cada uno tiene sus pestañas", async ({ browser }) => {
   const movil = { viewport: { width: 360, height: 780 }, hasTouch: true };
   for (const [quien, esperadas, ausente] of [
-    [MISTER, ["Jornada", "Convocar", "Once", "Multas"], "Carteles"],
-    [ADMIN, ["Jornada", "Carteles", "Multas"], "Convocar"],
+    [MISTER, ["Inicio", "Convocar", "Once", "Multas"], "Carteles"],
+    [ADMIN, ["Inicio", "Jornada", "Carteles", "Multas"], "Convocar"],
   ] as const) {
     const contexto = await browser.newContext(movil);
     const page = await contexto.newPage();
     await entrar(page, quien.usuario, quien.clave);
-    await expect(page).toHaveURL(/\/admin\/jornada/);
+    await expect(page).toHaveURL(/\/admin\/inicio/);
     const pestanas = page.getByRole("navigation", { name: "Accesos rápidos" });
     for (const nombre of esperadas) {
       const caja = (await pestanas.getByRole("link", { name: nombre, exact: true }).boundingBox())!;
