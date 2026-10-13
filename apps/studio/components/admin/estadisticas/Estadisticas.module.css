@@ -428,3 +428,29 @@
     min-height: 44px;
   }
 }
+
+/* Historial deportivo dentro de la ficha: plegado, para no empujar los partidos. */
+.fichaHistorial summary {
+  min-height: 36px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.fichaHistorial ul {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+.fichaHistorial li {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+}
+.fichaHistorial strong {
+  color: var(--ui-accent, #facc15);
+}
+.fichaHistorial span {
+  overflow-wrap: anywhere;
+}
