@@ -1,9 +1,9 @@
 "use server";
 
 import { schema } from "@santiso/db";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { capturar, fallo, type Resultado } from "@/lib/resultado";
-import { grupoDeEnlace } from "@/lib/rfgf/enlace";
+import { grupoDeEnlace, urlActaPdf } from "@/lib/rfgf/enlace";
 import { obtenerDb } from "@/lib/server/db";
 import { crearDescargador } from "@/lib/server/rfgf/descargador";
 import { sincronizarTodo } from "@/lib/server/rfgf/sincronizar";
@@ -13,6 +13,10 @@ export interface ActaPorRevisar {
   codActa: string;
   partido: string;
   motivo: string;
+  /** `acta`: el acta del Santiso no se pudo guardar. `datos`: faltan goles y tarjetas. `red`: no llegó. */
+  tipo: "acta" | "datos" | "red";
+  /** El PDF del acta en la web de la federación, para verla. */
+  enlace: string;
 }
 
 export interface CompeticionRfgf {
@@ -55,15 +59,21 @@ export async function cargarEstadoRfgf(): Promise<Resultado<CompeticionRfgf[]>> 
         codActa: schema.rfgfActas.codActa,
         competicionId: schema.rfgfActas.competicionId,
         motivo: schema.rfgfActas.detalle,
+        aviso: schema.rfgfActas.aviso,
+        estado: schema.rfgfActas.estado,
         local: sql<string | null>`(select e.nombre from ${schema.partidos} p join ${schema.equipos} e on e.id = p.equipo_local_id where p.id = ${schema.rfgfActas.partidoId})`,
         visitante: sql<string | null>`(select e.nombre from ${schema.partidos} p join ${schema.equipos} e on e.id = p.equipo_visitante_id where p.id = ${schema.rfgfActas.partidoId})`,
       })
       .from(schema.rfgfActas)
       .where(
-        and(
-          eq(schema.rfgfActas.estado, "revisar"),
-          // Deja de estar pendiente en cuanto el partido tiene su acta, venga de donde venga.
-          sql`not exists (select 1 from ${schema.partidoParticipaciones} where ${schema.partidoParticipaciones.partidoId} = ${schema.rfgfActas.partidoId})`,
+        or(
+          and(
+            eq(schema.rfgfActas.estado, "revisar"),
+            // Deja de estar pendiente en cuanto el partido tiene su acta, venga de donde venga.
+            sql`not exists (select 1 from ${schema.partidoParticipaciones} where ${schema.partidoParticipaciones.partidoId} = ${schema.rfgfActas.partidoId})`,
+          ),
+          eq(schema.rfgfActas.estado, "error"),
+          ne(schema.rfgfActas.aviso, ""),
         ),
       );
 
@@ -76,11 +86,29 @@ export async function cargarEstadoRfgf(): Promise<Resultado<CompeticionRfgf[]>> 
       resumen: c.resumen ?? "",
       revisar: pendientes
         .filter((p) => p.competicionId === c.competicionId)
-        .map((p) => ({
-          codActa: p.codActa,
-          partido: p.local && p.visitante ? `${p.local} – ${p.visitante}` : "Partido sin identificar",
-          motivo: p.motivo,
-        })),
+        .map((p) => {
+          const grupo = grupoDeEnlace(c.enlace ?? "");
+          // En un fallo de red el cruce va delante del motivo: aún no se casó con un partido.
+          const [cruce, ...resto] = p.estado === "error" ? p.motivo.split(": ") : [];
+          return {
+            codActa: p.codActa,
+            partido:
+              p.local && p.visitante
+                ? `${p.local} – ${p.visitante}`
+                : cruce && resto.length
+                  ? cruce
+                  : "Partido sin identificar",
+            motivo:
+              p.estado === "error" ? resto.join(": ") || p.motivo : p.aviso || p.motivo,
+            tipo:
+              p.estado === "error"
+                ? ("red" as const)
+                : p.estado === "revisar"
+                  ? ("acta" as const)
+                  : ("datos" as const),
+            enlace: grupo ? urlActaPdf(grupo, p.codActa) : "",
+          };
+        }),
     }));
   });
 }
@@ -148,7 +176,17 @@ export async function reintentarActaRfgf(codActa: string): Promise<Resultado<nul
     const { db } = await obtenerDb();
     await db
       .delete(schema.rfgfActas)
-      .where(and(eq(schema.rfgfActas.codActa, codActa), eq(schema.rfgfActas.estado, "revisar")));
+      // Fuera el apunte si tiene algún problema: la próxima comprobación la vuelve a traer.
+      // Lo que se guardó bien no se toca.
+      .where(
+        and(
+          eq(schema.rfgfActas.codActa, codActa),
+          or(
+            inArray(schema.rfgfActas.estado, ["revisar", "error"]),
+            ne(schema.rfgfActas.aviso, ""),
+          ),
+        ),
+      );
     return null;
   });
 }

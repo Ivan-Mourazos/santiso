@@ -41,3 +41,22 @@ test("jornada: los pasos enseñan su estado y tras el acta se abren las publicac
   for (const nombre of ["Resultado", "Cronoloxía", "O noso 11"])
     await expect(page.getByRole("link", { name: nombre, exact: false }).last()).toBeVisible();
 });
+
+test("jornada: antes del partido avisa de sanciones del rival y de cambios de la federación", async ({
+  page,
+}) => {
+  await page.goto(ruta("sin-nada"));
+  const mesa = page.locator("[data-mesa-partido]");
+  await expect(mesa.getByText("La federación cambió este partido:")).toBeVisible({ timeout: 30000 });
+  await expect(mesa.getByText("07/06 17:00", { exact: false }).first()).toBeVisible();
+  const sanciones = mesa.getByRole("region", { name: "Sanciones y apercibidos" });
+  await expect(sanciones.getByText("Xan Apercibido Ficticio", { exact: false })).toBeVisible();
+  await expect(sanciones.getByText(/4 amarillas: con la siguiente/)).toBeVisible();
+  await expect(sanciones.getByText("Brais Expulsado Ficticio", { exact: false })).toBeVisible();
+  await expect(sanciones.getByText(/al menos 1 partido/)).toBeVisible();
+
+  // En un partido ya jugado no pinta nada de eso.
+  await page.goto(ruta("acta"));
+  await expect(page.locator("[data-mesa-partido]")).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole("region", { name: "Sanciones y apercibidos" })).toHaveCount(0);
+});

@@ -91,8 +91,9 @@ export function partidoDeActa<T extends PartidoLocal>(
 export const JORNADAS_ATRASADAS = 2;
 
 /**
- * Las jornadas jugadas más antiguas con algún partido cuyos goles y tarjetas aún no están en
- * las tablas de la liga. Pocas cada vez: son siete actas por jornada y no hay prisa.
+ * Las jornadas jugadas más recientes con algún partido cuyos goles y tarjetas aún no están en
+ * las tablas de la liga. Lo último primero: las sanciones para el siguiente partido salen de la
+ * jornada recién jugada. Pocas cada vez: son siete actas por jornada.
  */
 export function jornadasSinEventos(partidos: readonly PartidoLocal[], ahora: string): number[] {
   const jornadas = new Set(
@@ -100,7 +101,7 @@ export function jornadasSinEventos(partidos: readonly PartidoLocal[], ahora: str
       .filter((p) => p.conMarcador && !p.conEventos && p.fecha && p.fecha <= ahora)
       .map((p) => p.jornada),
   );
-  return [...jornadas].sort((a, b) => a - b).slice(0, JORNADAS_ATRASADAS);
+  return [...jornadas].sort((a, b) => b - a).slice(0, JORNADAS_ATRASADAS);
 }
 
 /** Hora del día a la que se hace la comprobación diaria de la federación. */

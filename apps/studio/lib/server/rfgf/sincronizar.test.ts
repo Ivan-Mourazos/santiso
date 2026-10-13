@@ -372,6 +372,8 @@ it("la federación manda siempre: lo cambiado a mano vuelve a lo que ella public
     await conPartidoPorJugar();
   const federacion = cruce("21-09-2025", "17:00", "Municipal de Proba - Hierba Artificial");
   await sincronizarCompeticion(competicionId, descargadorDe("", federacion).descargador, AHORA);
+  // Ponerle campo a un partido que no lo tenía es rellenar: no es un cambio del que avisar.
+  expect(await db.select().from(s.rfgfPartidos)).toMatchObject([{ cambio: "", cambioEn: null }]);
   // A mano, a las 19:00.
   await db.update(s.partidos).set({ fecha: "2025-09-21T19:00" }).where(eq(s.partidos.id, porJugarId));
 
@@ -383,6 +385,10 @@ it("la federación manda siempre: lo cambiado a mano vuelve a lo que ella public
   );
   expect(otraVez?.horarios).toEqual(["J2 Equipo Visitante – Equipo Local: 21/09 17:00"]);
   expect((await leerPartido()).fecha).toBe("2025-09-21T17:00");
+  // Esta vez sí pisó una hora que ya había: queda apuntado para avisar en Jornada.
+  const [visto] = await db.select().from(s.rfgfPartidos);
+  expect(visto).toMatchObject({ cambio: "21/09 17:00" });
+  expect(visto?.cambioEn).toMatch(/^\d{4}-/);
 
   // Y si no hay nada distinto, no se anuncia ningún cambio.
   const sinNovedad = await sincronizarCompeticion(

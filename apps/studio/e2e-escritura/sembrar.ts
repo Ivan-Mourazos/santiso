@@ -499,6 +499,36 @@ async function sembrar() {
     }
   }
 
+  // Un rival con cuatro amarillas (apercibido) y uno expulsado en su último partido jugado:
+  // lo que la mesa de Jornada enseña de cara al siguiente.
+  await db.insert(schema.ligaEventos).values([
+    ...Array.from({ length: 4 }, () => ({
+      partidoId: "vestiario-acta",
+      equipoId: "vestiario-rival",
+      persona: "Xan Apercibido Ficticio",
+      personaClave: "xan apercibido ficticio",
+      tipo: "amarilla" as const,
+    })),
+    {
+      partidoId: "vestiario-acta",
+      equipoId: "vestiario-rival",
+      persona: "Brais Expulsado Ficticio",
+      personaClave: "brais expulsado ficticio",
+      tipo: "roja" as const,
+    },
+  ]);
+  await db.insert(schema.rfgfCompeticiones).values({
+    competicionId: "vestiario-copa",
+    enlace: "https://www.futgal.es/pnfg/NPcd/NFG_VisCalendario_Vis?cod_primaria=1&codtemporada=1&codcompeticion=1&codgrupo=1",
+  });
+  await db.insert(schema.rfgfPartidos).values({
+    partidoId: "vestiario-sin-nada",
+    fecha: "2099-06-07T17:00",
+    campo: "",
+    cambio: "07/06 17:00",
+    cambioEn: new Date().toISOString(),
+  });
+
   cerrar();
   console.log(`Datos de prueba en ${DIR_ESCRITURA}`);
 }

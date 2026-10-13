@@ -79,6 +79,11 @@ export default function TarjetaPartido({
                 : "Fuera"}
         </span>
       </div>
+      {p.cambioFederacion && (
+        <p className={styles.cambio} role="status">
+          <strong>La federación cambió este partido:</strong> {p.cambioFederacion.texto}.
+        </p>
+      )}
       <div className={styles.rival}>
         <div>
           <p className={styles.propio}>{p.santiso} · contra</p>
@@ -133,6 +138,22 @@ export default function TarjetaPartido({
           </p>
         )}
       </div>
+      {p.avisos.length > 0 && (
+        <section className={styles.sanciones} aria-label="Sanciones y apercibidos">
+          <p className={styles.etiqueta}>Sanciones y apercibidos</p>
+          <ul>
+            {p.avisos.map((a) => (
+              <li key={`${a.propio}-${a.persona}`} data-situacion={a.situacion}>
+                <strong>
+                  {a.persona}
+                  <small> · {a.propio ? p.santiso : p.rival.nombre}</small>
+                </strong>
+                <span>{a.motivo}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <details className={styles.masTareas}>
         <summary>Más tareas del partido</summary>
         {p.clasificacion && (

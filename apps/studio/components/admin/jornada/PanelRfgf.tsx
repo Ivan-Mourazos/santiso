@@ -10,6 +10,7 @@ import {
   reintentarActaRfgf,
   type CompeticionRfgf,
 } from "@/lib/server/acciones/rfgf";
+import { ProblemasFederacion } from "./ProblemasFederacion";
 import styles from "./Jornada.module.css";
 
 interface Props {
@@ -95,32 +96,11 @@ export default function PanelRfgf({ showToast, onNovedades }: Props) {
 
   return (
     <section className={styles.rfgf} aria-label="Federación">
-      {porRevisar.length > 0 && (
-        <div className={styles.rfgfAviso} role="alert">
-          <strong>La federación tiene un acta que no pude guardar sola</strong>
-          <ul>
-            {porRevisar.map((acta) => (
-              <li key={acta.codActa}>
-                <span>
-                  {acta.partido}: {acta.motivo}.
-                </span>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={ocupado}
-                  onClick={() => void reintentar(acta.codActa)}
-                >
-                  Reintentar
-                </Button>
-              </li>
-            ))}
-          </ul>
-          <p>
-            Si es un jugador nuevo, dalo de alta en Jugadores y pulsa «Reintentar». También puedes
-            meter el acta a mano desde Importar.
-          </p>
-        </div>
-      )}
+      <ProblemasFederacion
+        actas={porRevisar}
+        ocupado={ocupado}
+        onReintentar={(codActa) => void reintentar(codActa)}
+      />
       {enlazadas.length > 0 && (
         <div className={styles.rfgfAhora}>
           <p>

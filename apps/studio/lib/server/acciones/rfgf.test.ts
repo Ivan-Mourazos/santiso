@@ -126,3 +126,49 @@ it("un acta por revisar se enseña hasta que el partido tiene acta, y se puede r
   const final = await acciones.cargarEstadoRfgf();
   expect(final.ok && final.datos[0]?.revisar).toEqual([]);
 });
+
+it("enseña también lo que no llegó y lo que se leyó a medias, cada cosa con su explicación", async () => {
+  const { s, acciones, leer, ligaId, partidoId } = await preparar();
+  const db = await leer();
+  await db.insert(s.rfgfCompeticiones).values({ competicionId: ligaId, enlace: ENLACE });
+  await db.insert(s.rfgfActas).values([
+    {
+      codActa: "10",
+      competicionId: ligaId,
+      partidoId: null,
+      estado: "error",
+      detalle: "EQUIPO A – EQUIPO B: La federación no devolvió un PDF.",
+    },
+    {
+      codActa: "11",
+      competicionId: ligaId,
+      partidoId,
+      estado: "resultado",
+      detalle: "Goles y tarjetas apuntados.",
+      aviso: "No pude leer sus goles y tarjetas (Evento no reconocido).",
+    },
+    { codActa: "12", competicionId: ligaId, partidoId, estado: "resultado", detalle: "1–0" },
+  ]);
+  const estado = await acciones.cargarEstadoRfgf();
+  if (!estado.ok) throw new Error(estado.error);
+  const revisar = estado.datos[0]!.revisar.sort((a, b) => a.codActa.localeCompare(b.codActa));
+  expect(revisar).toMatchObject([
+    {
+      codActa: "10",
+      tipo: "red",
+      partido: "EQUIPO A – EQUIPO B",
+      motivo: "La federación no devolvió un PDF.",
+    },
+    {
+      codActa: "11",
+      tipo: "datos",
+      partido: "C.D. Berres – U.D. Santiso F.C.",
+      motivo: "No pude leer sus goles y tarjetas (Evento no reconocido).",
+    },
+  ]);
+  expect(revisar[0]?.enlace).toContain("CodActa=10");
+
+  // Reintentar las quita para volver a pedirlas; la que está bien se queda.
+  for (const codActa of ["10", "11", "12"]) await acciones.reintentarActaRfgf(codActa);
+  expect((await db.select().from(s.rfgfActas)).map((a) => a.codActa)).toEqual(["12"]);
+});

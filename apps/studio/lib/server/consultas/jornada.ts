@@ -6,6 +6,7 @@ import { momentoLocal, trasPartido } from "@/lib/jornada/vestiario";
 import { semanaDe, type Semana } from "@/lib/jornada/semana";
 import { urlMedia } from "@/lib/media";
 import { clasificacionDeCompeticion } from "@/lib/server/consultas/clasificacion";
+import { avisosDeLiga } from "@/lib/server/consultas/liga";
 import { temporadaActivaId } from "@/lib/server/consultas/temporadas";
 import { obtenerDb } from "@/lib/server/db";
 
@@ -35,6 +36,10 @@ export interface PartidoDeLaSemana {
   campo: string | null;
   /** Quién arbitró; `null` hasta que la federación lo publica. */
   arbitro: string | null;
+  /** El último cambio de la federación sobre este partido, si es reciente. */
+  cambioFederacion: { texto: string; cuando: string } | null;
+  /** Apercibidos, sancionados y expulsados de los dos equipos; solo en partidos por jugar. */
+  avisos: { persona: string; propio: boolean; situacion: string; motivo: string }[];
   preparacion: { convocatoria: number | null; titulares: number; capitan: boolean };
   /** `null` = todavía sin acta guardada. */
   acta: ActaDeLaSemana | null;
@@ -212,8 +217,31 @@ export async function pantallaJornada(
     }
   }
 
+  // Avisos de sanción: una consulta por competición, y solo si le queda algún partido por jugar.
+  const avisosPor = new Map<string, Awaited<ReturnType<typeof avisosDeLiga>>>();
+  for (const f of filas) {
+    if (f.golesLocal === null && !avisosPor.has(f.competicionId)) {
+      avisosPor.set(f.competicionId, await avisosDeLiga(f.competicionId));
+    }
+  }
+  const cambios = ids.length
+    ? await db
+        .select({
+          partidoId: schema.rfgfPartidos.partidoId,
+          cambio: schema.rfgfPartidos.cambio,
+          cambioEn: schema.rfgfPartidos.cambioEn,
+        })
+        .from(schema.rfgfPartidos)
+        .where(inArray(schema.rfgfPartidos.partidoId, ids))
+    : [];
+  // Un cambio deja de ser noticia a los cinco días.
+  const haceCincoDias = new Date(Date.now() - 5 * 86_400_000).toISOString();
+
   const partidos = filas.map((f) => {
     const santisoLocal = Boolean(f.localPropio);
+    const cambio = cambios.find(
+      (c) => c.partidoId === f.id && c.cambio && c.cambioEn && c.cambioEn >= haceCincoDias,
+    );
     const tabla = tablas.get(f.competicionId);
     const idSantiso = santisoLocal ? f.localId : f.visitanteId;
     const indice = tabla ? tabla.findIndex((fila) => fila.equipoId === idSantiso) : -1;
@@ -243,6 +271,21 @@ export async function pantallaJornada(
       golesRival: santisoLocal ? f.golesVisitante : f.golesLocal,
       campo: f.campo,
       arbitro: f.arbitro,
+      cambioFederacion:
+        cambio?.cambioEn && f.golesLocal === null
+          ? { texto: cambio.cambio, cuando: cambio.cambioEn }
+          : null,
+      avisos:
+        f.golesLocal === null
+          ? (avisosPor.get(f.competicionId) ?? [])
+              .filter((a) => a.equipoId === f.localId || a.equipoId === f.visitanteId)
+              .map((a) => ({
+                persona: a.persona,
+                propio: a.equipoId === idSantiso,
+                situacion: a.situacion ?? "",
+                motivo: a.motivo,
+              }))
+          : [],
       preparacion: {
         convocatoria: previasPor.has(f.id) ? (seleccionadosPor.get(f.id) ?? 0) : null,
         titulares: alineaciones.filter((a) => a.partidoId === f.id && a.titular).length,

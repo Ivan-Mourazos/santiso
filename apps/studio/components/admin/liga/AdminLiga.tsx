@@ -7,7 +7,13 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation
 import { Tabs } from "@/components/ui/foundation/Tabs";
 import type { Disciplina, Goleador } from "@/lib/liga/tablas";
 import { cargarLiga, guardarCicloAmarillas } from "@/lib/server/acciones/liga";
-import { comprobarRfgfAhora } from "@/lib/server/acciones/rfgf";
+import { ProblemasFederacion } from "@/components/admin/jornada/ProblemasFederacion";
+import {
+  cargarEstadoRfgf,
+  comprobarRfgfAhora,
+  reintentarActaRfgf,
+  type ActaPorRevisar,
+} from "@/lib/server/acciones/rfgf";
 import type { PantallaLiga } from "@/lib/server/consultas/liga";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import styles from "./Liga.module.css";
@@ -106,6 +112,7 @@ export default function AdminLiga({ categoria, showToast }: Props) {
   const [ciclo, setCiclo] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [trayendo, setTrayendo] = useState(false);
+  const [problemas, setProblemas] = useState<ActaPorRevisar[]>([]);
   const generacion = useRef(0);
 
   const cargar = useCallback(async (competicionId: string) => {
@@ -121,6 +128,14 @@ export default function AdminLiga({ categoria, showToast }: Props) {
       }
       setPantalla(resultado.datos);
       setCiclo(String(resultado.datos.ciclo));
+      // Qué partidos de esta competición no se trajeron bien, con su motivo.
+      const federacion = await cargarEstadoRfgf();
+      if (esta !== generacion.current) return;
+      setProblemas(
+        federacion.ok
+          ? (federacion.datos.find((c) => c.competicionId === competicionId)?.revisar ?? [])
+          : [],
+      );
     } catch {
       if (esta === generacion.current) setError("No se pudieron cargar los datos de la liga.");
     } finally {
@@ -143,6 +158,13 @@ export default function AdminLiga({ categoria, showToast }: Props) {
     } finally {
       setTrayendo(false);
     }
+  }
+
+  async function reintentar(codActa: string) {
+    if (!selectedCompetitionId || trayendo) return;
+    const preparado = await reintentarActaRfgf(codActa);
+    if (!preparado.ok) return showToast(preparado.error, "error");
+    await traerAhora();
   }
 
   async function guardarCiclo() {
@@ -219,15 +241,22 @@ export default function AdminLiga({ categoria, showToast }: Props) {
             {pantalla.partidosJugados === 0
               ? "Todavía no se ha jugado ningún partido."
               : pantalla.partidosCargados < pantalla.partidosJugados
-                ? `Cargadas las actas de ${pantalla.partidosCargados} de ${pantalla.partidosJugados} partidos jugados. Las demás van llegando solas de la federación.`
+                ? `Cargadas las actas de ${pantalla.partidosCargados} de ${pantalla.partidosJugados} partidos jugados.${
+                    pantalla.jornadasPorTraer.length
+                      ? ` Falta por traer: jornada${pantalla.jornadasPorTraer.length > 1 ? "s" : ""} ${pantalla.jornadasPorTraer.join(", ")}. Lo de esas jornadas todavía no sale aquí.`
+                      : ""
+                  }`
                 : `Al día: ${pantalla.partidosJugados} partidos jugados.`}
-            {pantalla.partidosSinLeer > 0 &&
-              ` Hay ${pantalla.partidosSinLeer} acta${pantalla.partidosSinLeer > 1 ? "s" : ""} que no se supo leer: sus goles y tarjetas faltan aquí.`}
           </p>
+          <ProblemasFederacion
+            actas={problemas}
+            ocupado={trayendo}
+            onReintentar={(codActa) => void reintentar(codActa)}
+          />
           {pantalla.partidosCargados + pantalla.partidosSinLeer < pantalla.partidosJugados && (
             <div className={styles.traer}>
               <Button variant="secondary" pending={trayendo} pendingLabel="Mirando la federación…" onClick={() => void traerAhora()}>
-                Traer ahora dos jornadas más
+                Traer ahora las jornadas que faltan (dos cada vez)
               </Button>
             </div>
           )}
