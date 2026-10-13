@@ -33,7 +33,7 @@ const limpiar = (texto: string) => texto.normalize("NFC").replace(/\s+/gu, " ").
 // Saltos tras un guion no añaden espacios al nombre; nunca dividimos por '-'.
 const clave = (texto: string) => limpiar(texto).replace(/\s/gu, "");
 
-function comprobarPagina(pagina: Pagina): FragmentoCalendario[] {
+function comprobarPagina(pagina: Pagina, hastaElPie = false): FragmentoCalendario[] {
   if (pagina.length > 20_000) throw new Error("Demasiados fragmentos en el calendario");
   for (const f of pagina) {
     if (
@@ -47,8 +47,19 @@ function comprobarPagina(pagina: Pagina): FragmentoCalendario[] {
       throw new Error("Coordenadas del calendario inválidas");
     }
   }
-  // La plantilla reserva el 5% inferior para competición/paginación.
-  return pagina.filter((f) => f.y < 0.95 && limpiar(f.texto));
+  // El pie son tres textos: federación, competición («… | GRUPO 2») y paginación. Con 16 equipos
+  // la última jornada baja hasta su misma altura, así que el pie se quita por lo que dice y no
+  // por dónde está (solo en las hojas de jornadas). Sin pie reconocible, el 5 % inferior de siempre.
+  // La paginación llega troceada («Página:», «2», «de», «6»): cae entera por su renglón.
+  const paginacion = pagina
+    .filter((f) => f.y > 0.9 && /^Página:/u.test(limpiar(f.texto)))
+    .map((f) => f.y);
+  const esPie = (f: FragmentoCalendario) =>
+    f.y > 0.9 &&
+    (/^REAL FEDERACI[OÓ]N|\|/u.test(limpiar(f.texto)) ||
+      paginacion.some((y) => Math.abs(y - f.y) <= TOLERANCIA_FILA));
+  const hayPie = hastaElPie && pagina.some(esPie);
+  return pagina.filter((f) => limpiar(f.texto) && (hayPie ? !esPie(f) : f.y < 0.95));
 }
 
 function lineas(fragmentos: Pagina): FragmentoCalendario[] {
@@ -155,14 +166,20 @@ function partidos(fragmentos: Pagina, equipos: EquipoCalendario[]): JornadaCalen
     const izquierda = fila.filter((f) => f.x < separador.x);
     const derecha = fila.filter((f) => f.x > separador.x);
     if (izquierda.length + derecha.length !== fila.length) throw new Error("Partido ambiguo");
-    const resolver = (lado: Pagina) =>
-      catalogo.get(
-        clave(
-          lineas(lado)
-            .map((f) => f.texto)
-            .join(" "),
-        ),
+    const resolver = (lado: Pagina) => {
+      const leido = clave(
+        lineas(lado)
+          .map((f) => f.texto)
+          .join(" "),
       );
+      const exacto = catalogo.get(leido);
+      if (exacto || leido.length < 8) return exacto;
+      // Al final de la hoja, el segundo renglón de un nombre largo queda bajo el pie
+      // («PREFABRICADOS FARO RODEIRO» sin su «VETERANS»). Vale si es el comienzo de un único
+      // equipo; la validación final comprueba que no falte ni se repita ningún cruce.
+      const candidatos = [...catalogo].filter(([nombre]) => nombre.startsWith(leido));
+      return candidatos.length === 1 ? candidatos[0]![1] : undefined;
+    };
     const local = resolver(izquierda),
       visitante = resolver(derecha);
     if (!local || !visitante) throw new Error("Partido incompleto o equipo desconocido");
@@ -180,7 +197,7 @@ function partidos(fragmentos: Pagina, equipos: EquipoCalendario[]): JornadaCalen
 }
 
 function leerJornadas(pagina: Pagina, calendario: Calendario): void {
-  const contenido = comprobarPagina(pagina);
+  const contenido = comprobarPagina(pagina, true);
   if (contenido.some((f) => /Calendario de Competiciones|Temporada/u.test(f.texto))) {
     const datos = identificacion(lineas(contenido));
     if (datos.competicion !== calendario.competicion || datos.temporada !== calendario.temporada) {
@@ -205,7 +222,7 @@ function leerJornadas(pagina: Pagina, calendario: Calendario): void {
       ) {
         throw new Error("Jornadas duplicadas o inconsistentes con las vueltas");
       }
-      const fin = cabeceras[i + 1]?.y ?? 0.95;
+      const fin = cabeceras[i + 1]?.y ?? 1;
       const fragmentos = columna.filter(
         (f) => f.y > encabezado.y + TOLERANCIA_FILA && f.y < fin - TOLERANCIA_FILA,
       );

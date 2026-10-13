@@ -298,3 +298,15 @@ it("anexos posteriores no afectan resultado del parser puro", () => {
   const p = [...copia(), [{ texto: "ANEXO SINTETICO NO INTERPRETABLE", x: 0, y: NaN }]];
   expect(parsearCalendario(p)).toEqual(parsearCalendario(senior));
 });
+
+describe("calendario con muchos equipos", () => {
+  it("lee la última jornada de la hoja aunque baje hasta la altura del pie", () => {
+    // Con 16 equipos la federación llena la hoja y los últimos partidos pasan del 95 %.
+    const esPie = (f: FragmentoCalendario) => f.y > 0.96;
+    const paginas = copia().map((pagina, i) =>
+      i === 0 ? pagina : pagina.map((f) => (esPie(f) ? f : { ...f, y: f.y * 1.02 })),
+    );
+    expect(paginas[1]!.some((f) => !esPie(f) && f.y > 0.95)).toBe(true);
+    expect(parsearCalendario(paginas)).toEqual(parsearCalendario(copia()));
+  });
+});
