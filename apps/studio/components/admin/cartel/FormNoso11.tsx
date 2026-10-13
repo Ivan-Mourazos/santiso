@@ -19,6 +19,7 @@ interface CartelPlayerOption {
   apodo?: string | null;
   dorsal?: number | null;
   categoria?: string | null;
+  foto_url?: string | null;
 }
 
 interface Props {
@@ -121,9 +122,31 @@ export const FormNoso11: React.FC<Props> = ({
           </div>
         )}
 
+        {modoFoto === "retrato" && jugadoresCategoria.some((j) => j.foto_url) && (
+          <Select
+            label="Jugador de la plantilla"
+            value={jugadoresCategoria.some((j) => j.foto_url === form.jugadorFotoUrl) ? form.jugadorFotoUrl : ""}
+            onChange={(e) => {
+              set("jugadorFotoUrl", e.target.value);
+              set("jugadorXOffset", 0.5);
+              set("jugadorYOffset", 0.2);
+              set("jugadorZoom", 1);
+            }}
+          >
+            <option value="">Elegir jugador…</option>
+            {jugadoresCategoria.map((j) =>
+              j.foto_url ? (
+                <option key={j.id} value={j.foto_url}>
+                  {getDisplayName(j)}
+                </option>
+              ) : null,
+            )}
+          </Select>
+        )}
+
         <div className={styles.campo}>
           <span className={styles.etiqueta}>
-            {modoFoto === "fondo" ? "Foto del campo" : "Foto del jugador destacado"}
+            {modoFoto === "fondo" ? "Foto del campo" : "O sube otra foto del jugador"}
           </span>
           <label className="file-input-label">
             <svg
