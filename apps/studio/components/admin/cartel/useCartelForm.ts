@@ -3,6 +3,7 @@
  * Hook to manage the poster generator form state and helpers.
  */
 
+import { prepararFotoSubida } from "@/lib/cartel2/subida";
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -276,12 +277,12 @@ export function useCartelForm(partidoInicial?: string | null) {
     setForm((p) => ({ ...p, rivalEscudoUrl: url }));
   }
 
+  /** La foto se reduce al tamaño del cartel: una del móvil, por grande que sea, siempre entra. */
   function handleJugadorFile(file: File) {
-    if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
-    const url = URL.createObjectURL(file);
-    fileUrlRef.current = url;
     setJugFileName(file.name);
-    setForm((p) => ({ ...p, jugadorFotoUrl: url }));
+    void prepararFotoSubida(file)
+      .then((url) => setForm((p) => ({ ...p, jugadorFotoUrl: url })))
+      .catch(() => setJugFileName(""));
   }
 
   function updatePlayer(list: "titulares" | "suplentes", i: number, patch: Partial<Player>) {

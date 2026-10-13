@@ -156,6 +156,8 @@ export interface DatosCronoloxia extends Logos, Competicion {
   eventos: EventoCartel[];
   fecha: string;
   campo: string;
+  /** Foto de fondo opcional, como en el resumo. */
+  foto?: FotoCartel | null;
 }
 
 export interface PartidoProximo {

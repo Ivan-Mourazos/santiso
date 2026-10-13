@@ -101,6 +101,7 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
       variante="centro"
       izquierda={datos.local}
       derecha={datos.visitante}
+      foto={datos.foto ?? null}
       institucionales={datos.institucionales}
       patrocinadores={datos.patrocinadores}
     >

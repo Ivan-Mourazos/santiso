@@ -243,6 +243,7 @@ export function peticionDeFormulario(
           eventos: eventos(form.events, partido.santisoLocal),
           fecha: form.fecha,
           campo: form.estadio || form.lugar,
+          foto: opciones.foto,
         },
       };
     case "proximos":

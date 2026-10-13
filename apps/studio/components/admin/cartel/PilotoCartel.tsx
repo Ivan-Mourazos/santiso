@@ -1,5 +1,6 @@
 "use client";
 
+import { prepararFotoSubida } from "@/lib/cartel2/subida";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useEsMovil } from "@/components/ui/foundation/FiltrosMovil";
 import { Cartel } from "@/components/cartel2/Cartel";
@@ -15,6 +16,7 @@ import {
   type FotoCartel,
   type PeticionCartel,
 } from "@/lib/cartel2/modelo";
+import { Deslizador } from "./Common";
 import styles from "./PilotoCartel.module.css";
 import type { AssetUrls, FormState, TemplateId } from "./types";
 import type { CartelTeam } from "./useCartelForm";
@@ -301,35 +303,31 @@ export default function PilotoCartel({
       <div className={styles.cabecera}>
         <h3>Previsualización</h3>
         <div className={styles.controles}>
-          {tipo === "resumo" && (
+          {(tipo === "resumo" || tipo === "cronoloxia") && (
             <>
-              {/* Con el partido cargado, de su galería; si no, una foto suelta del equipo. */}
-              {form.partido_id ? (
+              {/* De la galería del partido cargado, o cualquier foto subida en el momento. */}
+              {form.partido_id && (
                 <Button size="sm" variant="secondary" onClick={() => setGaleria(true)}>
-                  {foto ? "Cambiar foto" : "Foto de fondo"}
+                  Fotos del partido
                 </Button>
-              ) : (
-                <label className={styles.botonFoto}>
-                  {foto ? "Cambiar foto" : "Foto de fondo"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const fichero = e.target.files?.[0];
-                      setFoto(
-                        fichero
-                          ? {
-                              url: URL.createObjectURL(fichero),
-                              x: 0.5,
-                              y: 0.4,
-                              estilo: foto?.estilo ?? "color",
-                            }
-                          : null,
-                      );
-                    }}
-                  />
-                </label>
               )}
+              <label className={styles.botonFoto}>
+                {foto ? "Subir otra foto" : "Subir foto de fondo"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const fichero = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!fichero) return;
+                    void prepararFotoSubida(fichero)
+                      .then((url) =>
+                        setFoto({ url, x: 0.5, y: 0.4, estilo: foto?.estilo ?? "color" }),
+                      )
+                      .catch(() => showToast("No se pudo leer la foto.", "error"));
+                  }}
+                />
+              </label>
               {foto && (
                 <>
                   <div className={styles.grupo} role="group" aria-label="Estilo de la foto">
@@ -392,6 +390,38 @@ export default function PilotoCartel({
           </div>
         </div>
       </div>
+      {foto && (tipo === "resumo" || tipo === "cronoloxia") && (
+        <details className={styles.encuadre}>
+          <summary>Ajustar la foto</summary>
+          <Deslizador
+            label="Mover a los lados"
+            min={0}
+            max={1}
+            step={0.01}
+            value={foto.x}
+            onChange={(x) => setFoto({ ...foto, x })}
+            extremos={["Izquierda", "Derecha"]}
+          />
+          <Deslizador
+            label="Mover arriba o abajo"
+            min={0}
+            max={1}
+            step={0.01}
+            value={foto.y}
+            onChange={(y) => setFoto({ ...foto, y })}
+            extremos={["Arriba", "Abajo"]}
+          />
+          <Deslizador
+            label="Acercar"
+            min={1}
+            max={4}
+            step={0.01}
+            value={foto.zoom ?? 1}
+            onChange={(zoom) => setFoto({ ...foto, zoom })}
+            extremos={["Entera", "Cerca"]}
+          />
+        </details>
+      )}
       <div ref={caja} className={styles.vista}>
         {escala > 0 && (
           <div
