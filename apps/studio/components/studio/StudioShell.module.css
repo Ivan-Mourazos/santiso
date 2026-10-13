@@ -234,15 +234,24 @@
    * Cabecera de una sola fila, siempre a la vista: lleva el selector de categoría o de
    * plantilla y no debe perderse al bajar por la página.
    */
+  /* Fija de verdad (no `sticky`): en el iPhone, lo que se desliza bajo la barra de estado sale
+     difuminado, y una cabecera pegajosa cuenta como contenido que se desliza. */
   .header {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 40;
     flex-wrap: nowrap;
     gap: 0.5rem;
-    min-height: 52px;
+    box-sizing: border-box;
+    height: var(--studio-cabecera);
+    min-height: 0;
     padding: calc(0.25rem + env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right)) 0.25rem
       max(0.75rem, env(safe-area-inset-left));
+  }
+  .main {
+    padding-top: var(--studio-cabecera);
   }
   .heading {
     flex: 1;
