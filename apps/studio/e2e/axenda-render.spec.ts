@@ -367,12 +367,15 @@ test("Lectura capacidad: listas y anuncios excesivos avisan y no generan PNG rec
 }) => {
   test.setTimeout(120000);
   const casos: PeticionCartel[] = [];
+  // La clasificación ya no desborda: la tabla encoge filas y nombres hasta con 20 equipos de
+  // nombre largo, y el PNG sale.
   for (const n of [14, 20]) {
     const p = casoLectura("clasificacion", NOMBRES_LECTURA.at(-1)!);
     if (p.plantilla !== "clasificacion" || p.datos.tipo !== "liga") throw new Error("plantilla");
     const fila = p.datos.filas[0]!;
     p.datos.filas = Array.from({ length: n }, (_, i) => ({ ...fila, posicion: i + 1 }));
-    casos.push(p);
+    const r = await request.post("/api/carteles/png", { data: p, timeout: 30000 });
+    expect(r.status(), `clasificación con ${n} equipos`).toBe(200);
   }
   const cron = casoLectura("cronoloxia", NOMBRES_LECTURA.at(-1)!);
   if (cron.plantilla !== "cronoloxia") throw new Error("plantilla");
