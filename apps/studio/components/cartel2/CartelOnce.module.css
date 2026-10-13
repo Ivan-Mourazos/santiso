@@ -166,3 +166,41 @@
 .titulares li.hueco {
   visibility: hidden;
 }
+
+/* Retrato de jugador: la foto se ve a un lado y el once va en una columna, una línea por
+   jugador. Las filas se reparten el alto que dejan la cabecera y los suplentes. */
+.conRetrato .titulares {
+  grid-template-columns: minmax(0, 1fr);
+}
+.conRetrato .titulares ol {
+  display: grid;
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 0;
+}
+.conRetrato .titulares li {
+  height: auto;
+  min-height: 0;
+}
+.conRetrato .dorsal {
+  font-size: 36px;
+  line-height: 1.5;
+}
+.conRetrato .nombre {
+  line-height: 1.15;
+}
+.conRetrato .titulo {
+  font-size: 54px;
+  line-height: 1.5;
+}
+.conRetrato .subtitulo {
+  font-size: 28px;
+  line-height: 1.2;
+}
+.conRetrato .suplentes {
+  font-size: 26px;
+  line-height: 1.2;
+}
+.conRetrato .etiquetaSuplentes {
+  font-size: 22px;
+  margin-bottom: 2px;
+}

@@ -13,6 +13,8 @@ import s from "./CartelOnce.module.css";
 
 /** Ancho de un nombre: media lista (952 − 24 de calle) menos dorsal y separación. */
 const ANCHO_NOMBRE = (952 - 24) / 2 - 62 - 14;
+/** Con retrato la lista mide 620 y va en una columna. */
+const ANCHO_NOMBRE_RETRATO = 620 - 62 - 14;
 /** Ancho medio de una letra del nombre (Barlow Condensed 800 en mayúsculas), en em. */
 const EM_NOMBRE = 0.47;
 
@@ -23,6 +25,12 @@ const EM_NOMBRE = 0.47;
 export function CartelOnce({ datos }: { datos: DatosOnce }) {
   const titulares = datos.titulares.slice(0, 11);
   const suplentes = datos.suplentes;
+  // Con retrato de jugador la foto se ve a un lado y el once va en una sola columna; con foto
+  // de campo (o sin foto) la lista ocupa todo el ancho, en dos columnas.
+  const retrato = !!datos.foto && datos.modoFoto === "retrato";
+  const columnas = retrato ? [titulares] : [titulares.slice(0, 6), titulares.slice(6)];
+  const anchoNombre = retrato ? ANCHO_NOMBRE_RETRATO : ANCHO_NOMBRE;
+  const filas = retrato ? titulares.length : 6;
   const subtitulo = [
     datos.rival ? `VS ${datos.rival.nombre.toUpperCase()}` : "",
     fechaCorta(datos.fecha),
@@ -49,7 +57,7 @@ export function CartelOnce({ datos }: { datos: DatosOnce }) {
       logosArriba="centro"
       institucionales={datos.institucionales}
       patrocinadores={datos.patrocinadores}
-      className={`${datos.invertido ? s.invertido : ""} ${s.listaAmplia} ${!datos.foto || datos.modoFoto === "fondo" ? s.sinFoto : ""}`}
+      className={`${datos.invertido ? s.invertido : ""} ${retrato ? s.conRetrato : `${s.listaAmplia} ${s.sinFoto}`}`}
     >
       <div className={s.retrato}>
         {datos.foto ? (
@@ -89,7 +97,7 @@ export function CartelOnce({ datos }: { datos: DatosOnce }) {
         </div>
 
         <div className={s.titulares} data-lectura-bloque>
-          {[titulares.slice(0, 6), titulares.slice(6)].map((columna, c) => (
+          {columnas.map((columna, c) => (
             <ol key={c}>
               {columna.map((j, i) => (
                 <li key={`${j.dorsal}-${i}`} data-lectura-fila>
@@ -99,8 +107,8 @@ export function CartelOnce({ datos }: { datos: DatosOnce }) {
                     style={{
                       fontSize: cuerpo(
                         j.nombre.toUpperCase(),
-                        ANCHO_NOMBRE - (j.capitan ? 36 : 0),
-                        44,
+                        anchoNombre - (j.capitan ? 36 : 0),
+                        retrato ? 40 : 44,
                         24,
                         EM_NOMBRE,
                       ),
@@ -114,7 +122,7 @@ export function CartelOnce({ datos }: { datos: DatosOnce }) {
               ))}
               {/* La columna corta se completa con filas vacías: así las dos reparten su altura
                   igual y cada nombre queda a la altura de su vecino. */}
-              {Array.from({ length: Math.max(0, 6 - columna.length) }, (_, i) => (
+              {Array.from({ length: Math.max(0, filas - columna.length) }, (_, i) => (
                 <li key={`hueco-${i}`} className={s.hueco} aria-hidden="true" />
               ))}
             </ol>
