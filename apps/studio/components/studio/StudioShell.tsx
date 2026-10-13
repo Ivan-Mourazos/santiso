@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useId, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, type CSSProperties, type ReactNode } from "react";
 import {
   SECCIONES,
   categoriaDe,
@@ -13,7 +13,6 @@ import {
 import { cerrarSesionYSalir } from "@/components/acceso/salir";
 import { TEMPLATES } from "@/components/admin/cartel/types";
 import { Button } from "@/components/ui/foundation/Button";
-import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Select } from "@/components/ui/foundation/Fields";
 import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
@@ -50,6 +49,7 @@ const PESTANAS = [
  */
 const PESTANAS_TECNICO = [
   INICIO,
+  PESTANAS[1],
   {
     id: "convocatoria",
     label: "Convocar",
@@ -62,6 +62,9 @@ const PESTANAS_TECNICO = [
   },
   PESTANAS[3],
 ] as const;
+
+/** Marca de sesión: la app ya arrancó en esta pestaña. */
+const ARRANQUE = "santiso_arrancada";
 
 function Icono({ trazo }: { trazo: string }) {
   return (
@@ -90,9 +93,28 @@ export function StudioShell({
 }) {
   const pathname = usePathname();
   const { params, navigate, setParams } = useStudio();
-  const [menu, setMenu] = useState(false);
-  const menuId = useId();
   const section = SECCIONES.find((item) => pathname === `/admin/${item.id}`);
+  // Un icono instalado antes de existir «Inicio» guardó «Jornada» como entrada y el teléfono no
+  // la actualiza: si la app arranca desde el icono y cae ahí, se lleva a la portada. Solo en el
+  // arranque (una vez por sesión), no al ir a Jornada a propósito.
+  const seccionActual = section?.id;
+  useEffect(() => {
+    let arrancada = true;
+    try {
+      arrancada = sessionStorage.getItem(ARRANQUE) === "1";
+      sessionStorage.setItem(ARRANQUE, "1");
+    } catch {
+      // Sin almacenamiento de sesión no se puede saber si es el arranque: no se redirige.
+    }
+    const instalada =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (!arrancada && instalada && seccionActual === "jornada" && !window.location.search) {
+      window.location.replace("/admin/inicio");
+    }
+    // Solo al montar: después, ir a Jornada es una decisión de quien usa la app.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const secciones = seccionesDelMenu(acceso);
   const sinPermiso = !!section && reservada(section.id, acceso);
   const pestanas = acceso?.rol === "tecnico" ? PESTANAS_TECNICO : PESTANAS;
@@ -123,11 +145,7 @@ export function StudioShell({
                 className={styles.link}
                 onNavigate={(event) => {
                   event.preventDefault();
-                  if (item.id === section?.id) {
-                    setMenu(false);
-                    return;
-                  }
-                  if (navigate(rutaSeccion(item.id, params))) setMenu(false);
+                  if (item.id !== section?.id) navigate(rutaSeccion(item.id, params));
                 }}
               >
                 {item.label}
@@ -170,6 +188,19 @@ export function StudioShell({
       <div className={styles.main}>
         <header className={styles.header}>
           <div className={styles.heading}>
+            {section?.id !== "inicio" && (
+              <button
+                type="button"
+                className={styles.atras}
+                aria-label="Atrás"
+                onClick={() => {
+                  if (window.history.length > 1) window.history.back();
+                  else navigate(rutaSeccion("inicio", new URLSearchParams()));
+                }}
+              >
+                <Icono trazo="M15 5l-7 7 7 7" />
+              </button>
+            )}
             <div>
               <p className={styles.eyebrow}>{section?.grupo ?? "Studio"}</p>
               <h1>{section?.label ?? "Panel"}</h1>
@@ -222,7 +253,7 @@ export function StudioShell({
         <nav
           aria-label="Accesos rápidos"
           className={styles.tabs}
-          style={{ "--pestanas": pestanas.length + 1 } as CSSProperties}
+          style={{ "--pestanas": pestanas.length } as CSSProperties}
         >
           {pestanas.map((pestana) => (
             <Link
@@ -239,33 +270,8 @@ export function StudioShell({
               {pestana.label}
             </Link>
           ))}
-          <button
-            type="button"
-            className={styles.tab}
-            data-activa={!pestanas.some((pestana) => pestana.id === section?.id)}
-            aria-expanded={menu}
-            aria-controls={menuId}
-            aria-haspopup="dialog"
-            onClick={(event) => {
-              // Safari no enfoca los botones al tocarlos: conserva el destino de retorno.
-              event.currentTarget.focus();
-              setMenu(true);
-            }}
-          >
-            <Icono trazo="M4 7h16M4 12h16M4 17h16" />
-            Más
-          </button>
         </nav>
       </div>
-      <Dialog
-        id={menuId}
-        open={menu}
-        onClose={() => setMenu(false)}
-        title="Menú de Studio"
-        mobilePresentation="sheet"
-      >
-        {navigation()}
-      </Dialog>
     </div>
   );
 }

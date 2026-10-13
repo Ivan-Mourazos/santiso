@@ -24,7 +24,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#0b0b0c" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="UD Santiso" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        {/* Sin `black-translucent`: con él la app se pinta bajo la barra de la hora y, desde
+            iOS 26, el sistema difumina esa franja (la cabecera salía borrosa). El iPhone lee
+            esto al añadir el icono: los ya instalados hay que volver a añadirlos. */}
       </head>
       <body suppressHydrationWarning>{children}</body>
     </html>
