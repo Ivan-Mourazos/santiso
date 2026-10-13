@@ -13,7 +13,7 @@ import type { ReglaClasificacion } from "@santiso/domain";
 import { Button } from "@/components/ui/foundation/Button";
 import { Select } from "@/components/ui/foundation/Fields";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
-import type { FilaClasificacion } from "@/lib/dto";
+import type { FilaClasificacion, PantallaClasificacion } from "@/lib/dto";
 import { cargarPantallaClasificacion } from "@/lib/server/acciones/clasificacion";
 import { useStudio } from "@/components/studio/StudioContext";
 import { useCompeticiones } from "@/lib/useCompeticiones";
@@ -58,6 +58,7 @@ export default function AdminClasificacion({ categoria }: Props) {
   } = useCompeticiones(categoria, true);
   const [filas, setFilas] = useState<FilaClasificacion[]>([]);
   const [reglas, setReglas] = useState<ReglaClasificacion[]>([]);
+  const [oficial, setOficial] = useState<PantallaClasificacion["oficial"]>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
@@ -78,6 +79,7 @@ export default function AdminClasificacion({ categoria }: Props) {
       }
       setFilas(pantalla.datos.filas);
       setReglas(pantalla.datos.reglas);
+      setOficial(pantalla.datos.oficial);
       setCompeticionCargada(competicionId);
       setError(null);
     } catch (e) {
@@ -298,6 +300,31 @@ export default function AdminClasificacion({ categoria }: Props) {
           todavía no se pueden editar.
         </p>
       </div>
+
+      {oficial && competicionCargada === selectedCompetitionId && (
+        <div
+          className={styles.oficial}
+          role="status"
+          data-cuadra={oficial.diferencias.length === 0}
+        >
+          {oficial.diferencias.length === 0 ? (
+            <p>Coincide con la clasificación oficial de la federación (jornada {oficial.jornada}).</p>
+          ) : (
+            <>
+              <p>
+                <strong>
+                  No cuadra con la clasificación oficial de la federación (jornada {oficial.jornada}):
+                </strong>
+              </p>
+              <ul>
+                {oficial.diferencias.map((diferencia) => (
+                  <li key={diferencia}>{diferencia}</li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
 
       <div className={styles.selectores}>
         {/* La temporada vive en la URL, como en el resto del panel: la de una temporada pasada

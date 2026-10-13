@@ -69,3 +69,16 @@ export function urlActaPdf(grupo: GrupoRfgf, codActa: string): string {
   });
   return `${BASE}NFG_CmpPartido?${consulta}`;
 }
+
+/** El PDF de la clasificación oficial tras una jornada («Generar PDF» en su página). */
+export function urlClasificacionPdf(grupo: GrupoRfgf, jornada: number): string {
+  const consulta = new URLSearchParams({
+    cod_primaria: grupo.codPrimaria,
+    codcompeticion: grupo.codCompeticion,
+    codtemporada: grupo.codTemporada,
+    codgrupo: grupo.codGrupo,
+    CodJornada: String(jornada),
+    NPcd_Pdf: "1",
+  });
+  return `${BASE}NFG_VisClasificacion?${consulta}`;
+}

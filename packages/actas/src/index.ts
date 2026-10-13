@@ -20,3 +20,5 @@ export type {
 } from "./calendario";
 export { parsearJornada, parsearJornadaPdf } from "./jornada";
 export type { JornadaFederacion, PartidoJornada } from "./jornada";
+export { parsearClasificacion, parsearClasificacionPdf } from "./clasificacion";
+export type { ClasificacionOficial, FilaOficial } from "./clasificacion";

@@ -4,6 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   marcadorDeFichaPdf,
+  parsearClasificacionPdf,
   parsearFichaPdf,
   parsearJornadaPdf,
   type Ficha,
@@ -16,6 +17,7 @@ import { mejorCampo } from "@/lib/importar/emparejar";
 import {
   grupoDeEnlace,
   urlActaPdf,
+  urlClasificacionPdf,
   urlJornada,
   urlJornadaPdf,
   type GrupoRfgf,
@@ -39,6 +41,7 @@ import {
   partidoDeActa,
   type PartidoLocal,
 } from "@/lib/rfgf/plan";
+import { compararClasificacion } from "@/lib/rfgf/clasificacion";
 import { guardarActa } from "@/lib/server/acciones/actas";
 import {
   cambiarCampoPartido,
@@ -47,6 +50,7 @@ import {
 } from "@/lib/server/acciones/calendario";
 import { asegurarCampo } from "@/lib/server/acciones/campos";
 import { listarCampos } from "@/lib/server/consultas/campos";
+import { clasificacionDeCompeticion } from "@/lib/server/consultas/clasificacion";
 import { listarJugadores } from "@/lib/server/consultas/jugadores";
 import { obtenerDb } from "@/lib/server/db";
 import type { DescargadorRfgf } from "./descargador";
@@ -364,6 +368,40 @@ async function tratarActa(
 }
 
 /**
+ * Baja la clasificación oficial tras la última jornada jugada y la compara con la del Studio.
+ * `null` si todavía no se ha jugado nada (no hay con qué comparar).
+ */
+async function compararConOficial(
+  competicionId: string,
+  grupo: GrupoRfgf,
+  descargador: DescargadorRfgf,
+  ahora: Date,
+) {
+  const partidos = await partidosDeCompeticion(competicionId);
+  const jugadas = partidos.filter((p) => p.conMarcador).map((p) => p.jornada);
+  if (jugadas.length === 0) return null;
+  const oficial = await parsearClasificacionPdf(
+    await descargador.pdf(urlClasificacionPdf(grupo, Math.max(...jugadas))),
+  );
+  if (oficial.filas.length === 0) return null;
+  const propia = await clasificacionDeCompeticion(competicionId);
+  return {
+    jornada: oficial.jornada,
+    comparadaEn: ahora.toISOString(),
+    ...compararClasificacion(
+      oficial.filas,
+      propia.map((f) => ({
+        equipo: f.nombre,
+        puntos: f.puntos,
+        jugados: f.jugados,
+        golesFavor: f.golesFavor,
+        golesContra: f.golesContra,
+      })),
+    ),
+  };
+}
+
+/**
  * Mira en la federación las jornadas de una competición que tienen algo pendiente y guarda lo
  * que haya nuevo. No lanza: lo que falle queda en `errores` y se reintenta en la siguiente
  * pasada.
@@ -384,6 +422,7 @@ export async function sincronizarCompeticion(
       horariosEn: schema.rfgfCompeticiones.horariosEn,
       nombre: schema.competiciones.nombre,
       categoria: schema.competiciones.categoria,
+      formato: schema.competiciones.formato,
     })
     .from(schema.rfgfCompeticiones)
     .innerJoin(
@@ -497,12 +536,27 @@ export async function sincronizarCompeticion(
     }
   }
 
+  // Con todo ya guardado, la clasificación del Studio se contrasta con la oficial de la última
+  // jornada jugada. Una descarga más, con la cadencia de los horarios.
+  let comparacion: Awaited<ReturnType<typeof compararConOficial>> = null;
+  if (mirarHorarios && fila.formato === "liga") {
+    try {
+      comparacion = await compararConOficial(competicionId, grupo, descargador, ahora);
+    } catch (error) {
+      const detalle = error instanceof Error ? error.message : "fallo desconocido";
+      resumen.errores.push(`Clasificación oficial: ${detalle}`);
+    }
+  }
+
   const partes = [
     resumen.actas ? `${resumen.actas} acta${resumen.actas > 1 ? "s" : ""} guardada${resumen.actas > 1 ? "s" : ""}` : "",
     resumen.resultados ? `${resumen.resultados} resultado${resumen.resultados > 1 ? "s" : ""}` : "",
     // Los cambios de horario se cuentan con su detalle: es lo que hay que saber de un vistazo.
     ...resumen.horarios.slice(0, 3),
     resumen.horarios.length > 3 ? `y ${resumen.horarios.length - 3} horarios más` : "",
+    comparacion?.diferencias.length
+      ? `la clasificación no cuadra con la oficial en ${comparacion.diferencias.length} equipo${comparacion.diferencias.length > 1 ? "s" : ""}`
+      : "",
     resumen.revisar.length ? `${resumen.revisar.length} por revisar` : "",
     resumen.errores.length ? `${resumen.errores.length} con error` : "",
   ].filter(Boolean);
@@ -511,6 +565,7 @@ export async function sincronizarCompeticion(
     .set({
       comprobadoEn: ahora.toISOString(),
       ...(mirarHorarios ? { horariosEn: ahora.toISOString() } : {}),
+      ...(comparacion ? { clasificacion: comparacion } : {}),
       // Una pasada sin novedades no borra lo último que pasó.
       ...(partes.length > 0 ? { resumen: partes.join(" · ") } : {}),
     })

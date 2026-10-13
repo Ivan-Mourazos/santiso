@@ -53,6 +53,13 @@ export interface FilaClasificacion extends LineaClasificacion {
 export interface PantallaClasificacion {
   filas: FilaClasificacion[];
   reglas: ReglaClasificacion[];
+  /** Cómo queda frente a la oficial de la federación; `null` si no se ha comparado. */
+  oficial: {
+    jornada: number;
+    comparadaEn: string;
+    diferencias: string[];
+    sanciones: { equipo: string; puntos: number }[];
+  } | null;
 }
 
 /** @deprecated Ver TemporadaDto. `foto_url` es ahora una ruta local `/media/<clave>`. */

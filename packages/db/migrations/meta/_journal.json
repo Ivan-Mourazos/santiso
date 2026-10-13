@@ -120,6 +120,13 @@
       "when": 1791849206529,
       "tag": "0016_rfgf-aviso",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1791865640497,
+      "tag": "0017_clasificacion-oficial",
+      "breakpoints": true
     }
   ]
 }

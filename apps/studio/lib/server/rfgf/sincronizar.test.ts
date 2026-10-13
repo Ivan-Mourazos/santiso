@@ -24,8 +24,18 @@ vi.mock("@santiso/actas", async (original) => {
     ...real,
     parsearJornadaPdf: async (bytes: Uint8Array) =>
       real.parsearJornada(new TextDecoder().decode(bytes)),
+    // La clasificación oficial de mentira: vacía (nada que comparar) salvo que la prueba ponga una.
+    parsearClasificacionPdf: async () => ({
+      competicion: "TERCERA",
+      jornada: 1,
+      filas: globalThis.clasificacionDeMentira ?? [],
+    }),
   };
 });
+
+declare global {
+  var clasificacionDeMentira: import("@santiso/actas").FilaOficial[] | undefined;
+}
 
 /** El texto del PDF de una jornada. Sin partidos, no dice nada de ninguno. */
 function pdfJornada(numero: number, partidos: string[] = []) {
@@ -46,6 +56,7 @@ afterEach(async () => {
   if (anterior === undefined) delete process.env.SANTISO_DATA_DIR;
   else process.env.SANTISO_DATA_DIR = anterior;
   vi.restoreAllMocks();
+  globalThis.clasificacionDeMentira = undefined;
 });
 
 /** La página de una jornada con un único partido y su acta cerrada. */
@@ -60,13 +71,22 @@ function paginaJornada(local: string, visitante: string, codActa: string | null)
 
 function descargadorDe(html: string, jornada: string[] = []) {
   // `pdf` son las actas; los PDF de jornada se cuentan aparte.
-  const pedidas = { html: [] as string[], pdf: [] as string[], jornadas: [] as number[] };
+  const pedidas = {
+    html: [] as string[],
+    pdf: [] as string[],
+    jornadas: [] as number[],
+    clasificaciones: 0,
+  };
   const descargador: DescargadorRfgf = {
     async html(url) {
       pedidas.html.push(url);
       return html;
     },
     async pdf(url) {
+      if (url.includes("NFG_VisClasificacion")) {
+        pedidas.clasificaciones += 1;
+        return new Uint8Array();
+      }
       const numero = /NFG_CmpJornada\?.*CodJornada=(\d+)/.exec(url)?.[1];
       if (numero) {
         pedidas.jornadas.push(Number(numero));
@@ -500,4 +520,54 @@ it("guarda el árbitro de un partido ya jugado, aunque ya tuviera marcador", asy
     new Date(AHORA.getTime() + 4 * 3_600_000),
   );
   expect(despues.pedidas.jornadas).toEqual([2]);
+});
+
+it("compara la clasificación con la oficial y deja dicho en qué no cuadra", async () => {
+  const { s, db, competicionId, sincronizarCompeticion } = await conPartidoPorJugar();
+  const oficial = (equipo: string, puntos: number, golesFavor: number, golesContra: number) => ({
+    posicion: 1,
+    equipo,
+    puntos,
+    jugados: 1,
+    ganados: 0,
+    empatados: 0,
+    perdidos: 0,
+    golesFavor,
+    golesContra,
+    sancion: 0,
+  });
+  // La clasificación del Studio sale de los equipos inscritos en la competición.
+  const equipos = await db.select().from(s.equipos);
+  await db
+    .insert(s.competicionEquipos)
+    .values(equipos.map((e) => ({ competicionId, equipoId: e.id })));
+  // En la base, Equipo Local ganó 1–0. La oficial coincide en uno y discrepa en el otro.
+  globalThis.clasificacionDeMentira = [
+    oficial("EQUIPO LOCAL", 3, 1, 0),
+    oficial("EQUIPO VISITANTE", 1, 0, 1),
+  ];
+  const { descargador, pedidas } = descargadorDe("");
+  const resumen = await sincronizarCompeticion(competicionId, descargador, AHORA);
+  expect(resumen?.errores).toEqual([]);
+  expect(pedidas.clasificaciones).toBe(1);
+  const [fila] = await db.select().from(s.rfgfCompeticiones);
+  expect(fila?.clasificacion).toMatchObject({
+    jornada: 1,
+    diferencias: ["Equipo Visitante: 1 puntos en la oficial y 0 aquí."],
+    sanciones: [],
+  });
+  expect(fila?.resumen).toContain("la clasificación no cuadra con la oficial en 1 equipo");
+
+  // Cuando cuadra, se guarda sin diferencias.
+  globalThis.clasificacionDeMentira = [
+    oficial("EQUIPO LOCAL", 3, 1, 0),
+    oficial("EQUIPO VISITANTE", 0, 0, 1),
+  ];
+  await sincronizarCompeticion(
+    competicionId,
+    descargadorDe("").descargador,
+    new Date(AHORA.getTime() + 4 * 3_600_000),
+  );
+  const [despues] = await db.select().from(s.rfgfCompeticiones);
+  expect(despues?.clasificacion?.diferencias).toEqual([]);
 });

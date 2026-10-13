@@ -1,5 +1,7 @@
 "use server";
 
+import { schema } from "@santiso/db";
+import { eq } from "drizzle-orm";
 import type { PantallaClasificacion, PartidoDto } from "@/lib/dto";
 import { capturar, type Resultado } from "@/lib/resultado";
 import {
@@ -8,6 +10,7 @@ import {
 } from "@/lib/server/consultas/calendario";
 import { clasificacionDeCompeticion } from "@/lib/server/consultas/clasificacion";
 import { reglasDeCompeticion } from "@/lib/server/consultas/competiciones";
+import { obtenerDb } from "@/lib/server/db";
 
 /** Partidos de una competición para el cliente; `consultas/` lleva `server-only`. */
 export async function cargarPartidosDeCompeticion(competicionId: string): Promise<PartidoDto[]> {
@@ -33,6 +36,11 @@ export async function cargarPantallaClasificacion(
       clasificacionDeCompeticion(competicionId),
       reglasDeCompeticion(competicionId),
     ]);
-    return { filas, reglas };
+    const { db } = await obtenerDb();
+    const [enlazada] = await db
+      .select({ clasificacion: schema.rfgfCompeticiones.clasificacion })
+      .from(schema.rfgfCompeticiones)
+      .where(eq(schema.rfgfCompeticiones.competicionId, competicionId));
+    return { filas, reglas, oficial: enlazada?.clasificacion ?? null };
   });
 }

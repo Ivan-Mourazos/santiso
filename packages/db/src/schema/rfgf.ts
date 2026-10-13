@@ -23,6 +23,13 @@ export const rfgfCompeticiones = sqliteTable("rfgf_competiciones", {
   resumen: text("resumen").notNull().default(""),
   /** Última vez que se miraron los horarios de las jornadas por jugar, ISO. */
   horariosEn: text("horarios_en"),
+  /** Cómo queda la clasificación del Studio frente a la oficial, la última vez que se comparó. */
+  clasificacion: text("clasificacion", { mode: "json" }).$type<{
+    jornada: number;
+    comparadaEn: string;
+    diferencias: string[];
+    sanciones: { equipo: string; puntos: number }[];
+  }>(),
   ...marcasTiempo(),
 });
 
