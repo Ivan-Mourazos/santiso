@@ -62,9 +62,7 @@ for (const seccion of SECCIONES) {
       const caja = (await pestanas.getByRole("link", { name: nombre }).boundingBox())!;
       expect(Math.round(caja.height)).toBeGreaterThanOrEqual(44);
     }
-    expect(
-      Math.round((await pestanas.getByRole("button", { name: "Más" }).boundingBox())!.height),
-    ).toBeGreaterThanOrEqual(44);
+    await expect(pestanas.getByRole("button", { name: "Más" })).toHaveCount(0);
   });
 }
 

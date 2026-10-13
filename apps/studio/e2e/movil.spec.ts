@@ -92,10 +92,12 @@ for (const ancho of [360, 390]) {
 }
 
 for (const ancho of [360, 390]) {
-  test(`marco táctil y cajón inferior a ${ancho}px`, async ({ page }) => {
+  test(`marco táctil y barra inferior a ${ancho}px`, async ({ page }) => {
     await page.setViewportSize({ width: ancho, height: 844 });
     await abrir(page, "equipos");
-    const menuButton = page.getByRole("button", { name: "Más", exact: true });
+    const menuButton = page
+      .getByRole("navigation", { name: "Accesos rápidos" })
+      .getByRole("link", { name: "Inicio", exact: true });
     const menuBox = (await menuButton.boundingBox())!;
     expect(menuBox.height).toBeGreaterThanOrEqual(44);
     expect(menuBox.y).toBeGreaterThan(650);
@@ -125,25 +127,10 @@ for (const ancho of [360, 390]) {
     expect(
       await campo.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
     ).toBeGreaterThanOrEqual(16);
+    // Sin «Más»: desde la barra se vuelve a la portada, y de ahí se llega a todo.
+    await expect(page.getByRole("button", { name: "Más", exact: true })).toHaveCount(0);
     await menuButton.click();
-    const menu = page.getByRole("dialog", { name: "Menú de Studio" });
-    await expect(menu).toBeVisible();
-    const box = (await menu.boundingBox())!;
-    expect(box.y + box.height).toBeGreaterThanOrEqual(834);
-    expect(box.height).toBeLessThanOrEqual(844);
-    expect(box.height).toBeLessThan(700);
-    expect(box.width).toBeLessThanOrEqual(ancho);
-    for (const link of await menu.getByRole("link").all()) {
-      expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-    }
-    await menu.getByRole("button", { name: "Cerrar diálogo" }).click();
-    await expect(menu).toBeHidden();
-    await expect(menuButton).toBeFocused();
-    await menuButton.click();
-    await menu.getByRole("link", { name: "Ajustes gráficos", exact: true }).click();
-    await expect(menu).toBeHidden();
-    await expect(page).toHaveURL(/ajustes-graficos/);
-    await comprobarAncho(page);
+    await expect(page).toHaveURL(/\/admin\/inicio/);
   });
 }
 
