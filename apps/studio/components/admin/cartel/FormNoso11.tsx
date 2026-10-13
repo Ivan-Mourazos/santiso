@@ -8,6 +8,7 @@ import { Field, Select } from "@/components/ui/foundation/Fields";
 import type { Player } from "@/lib/cartel/types";
 import { SectionLabel, CategorySelector, Deslizador, MatchSelector, Toggle } from "./Common";
 import type { SelectorMatch } from "./Common";
+import { Button } from "@/components/ui/foundation/Button";
 import styles from "./Formularios.module.css";
 import { PlegableMovil } from "./PlegableMovil";
 import type { FormState } from "./types";
@@ -224,52 +225,31 @@ export const FormNoso11: React.FC<Props> = ({
                 width: "100%",
               }}
             />
-            <button
+            <Button size="sm" variant={p.eCapitan ? "primary" : "secondary"}
+ aria-pressed={p.eCapitan}
               title="Capitán"
               onClick={() => updatePlayer("titulares", i, { eCapitan: !p.eCapitan })}
-              style={{
-                background: p.eCapitan ? "#4aa8d8" : "rgba(255,255,255,0.04)",
-                border: "1px solid var(--border)",
-                padding: "0.4rem",
-                borderRadius: "0.4rem",
-                cursor: "pointer",
-              }}
+              
             >
               C
-            </button>
+            </Button>
             <div style={{ display: "flex", gap: "2px" }}>
-              <button
-                type="button"
+              <Button size="sm" variant="secondary"
                 title="Subir"
                 disabled={i === 0}
                 onClick={() => swapPlayers?.("titulares", i, i - 1)}
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid var(--border)",
-                  padding: "0.2rem 0.4rem",
-                  borderRadius: "0.3rem",
-                  cursor: i === 0 ? "default" : "pointer",
-                  opacity: i === 0 ? 0.3 : 1,
-                }}
+                
               >
                 ▲
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button size="sm" variant="secondary"
                 title="Bajar"
                 disabled={i === form.titulares.length - 1}
                 onClick={() => swapPlayers?.("titulares", i, i + 1)}
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid var(--border)",
-                  padding: "0.2rem 0.4rem",
-                  borderRadius: "0.3rem",
-                  cursor: i === form.titulares.length - 1 ? "default" : "pointer",
-                  opacity: i === form.titulares.length - 1 ? 0.3 : 1,
-                }}
+                
               >
                 ▼
-              </button>
+              </Button>
             </div>
           </div>
         ))}
@@ -314,38 +294,22 @@ export const FormNoso11: React.FC<Props> = ({
                 }}
               />
               <div style={{ display: "flex", gap: "2px" }}>
-                <button
-                  type="button"
+                <Button size="sm" variant="secondary"
                   title="Subir"
                   disabled={i === 0}
                   onClick={() => swapPlayers?.("suplentes", i, i - 1)}
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid var(--border)",
-                    padding: "0.2rem 0.4rem",
-                    borderRadius: "0.3rem",
-                    cursor: i === 0 ? "default" : "pointer",
-                    opacity: i === 0 ? 0.3 : 1,
-                  }}
+                  
                 >
                   ▲
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button size="sm" variant="secondary"
                   title="Bajar"
                   disabled={i === form.suplentes.length - 1}
                   onClick={() => swapPlayers?.("suplentes", i, i + 1)}
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid var(--border)",
-                    padding: "0.2rem 0.4rem",
-                    borderRadius: "0.3rem",
-                    cursor: i === form.suplentes.length - 1 ? "default" : "pointer",
-                    opacity: i === form.suplentes.length - 1 ? 0.3 : 1,
-                  }}
+                  
                 >
                   ▼
-                </button>
+                </Button>
               </div>
             </div>
           ))}

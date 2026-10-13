@@ -6,6 +6,7 @@
 import React from "react";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
 import { CategorySelector, SectionLabel } from "./Common";
+import { Button } from "@/components/ui/foundation/Button";
 import styles from "./Formularios.module.css";
 import { PlegableMovil } from "./PlegableMovil";
 import type { FormState, MultiusosTema } from "./types";
@@ -116,21 +117,13 @@ export const FormMultiusos: React.FC<Props> = ({
                 />
               </label>
               {form.multiusosImg1Url && (
-                <button
-                  type="button"
+                <Button size="sm" variant="danger"
                   onClick={() => handleMultiusosFile(1, null)}
-                  style={{
-                    background: "rgba(239, 68, 68, 0.2)",
-                    border: "none",
-                    color: "#ef4444",
-                    padding: "0.6rem",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                  }}
+                  
                   title="Quitar"
                 >
                   ✕
-                </button>
+                </Button>
               )}
             </div>
             {form.multiusosImg1Url && (
@@ -191,21 +184,13 @@ export const FormMultiusos: React.FC<Props> = ({
                 />
               </label>
               {form.multiusosImg2Url && (
-                <button
-                  type="button"
+                <Button size="sm" variant="danger"
                   onClick={() => handleMultiusosFile(2, null)}
-                  style={{
-                    background: "rgba(239, 68, 68, 0.2)",
-                    border: "none",
-                    color: "#ef4444",
-                    padding: "0.6rem",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                  }}
+                  
                   title="Quitar"
                 >
                   ✕
-                </button>
+                </Button>
               )}
             </div>
             {form.multiusosImg2Url && (

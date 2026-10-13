@@ -138,7 +138,11 @@ export function PaqueteAxenda({
         jornada.
       </p>
       <div className={s.acciones}>
-        <Button onClick={() => void preparar()} disabled={ocupado || compartiendo}>
+        <Button
+          variant={listo ? "secondary" : "primary"}
+          onClick={() => void preparar()}
+          disabled={ocupado || compartiendo}
+        >
           {ocupado ? "Preparando carrusel…" : "Preparar carrusel Axenda"}
         </Button>
         {listo && (

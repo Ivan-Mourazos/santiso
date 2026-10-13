@@ -383,6 +383,7 @@ export default function PilotoCartel({
           <div className={styles.descarga} data-listo={!!pngActual}>
             <Button
               size="sm"
+              variant={esMovil ? "secondary" : "primary"}
               onClick={() => void descargar()}
               disabled={exportando || compartiendo || previas.cargando || !!previas.error}
             >
