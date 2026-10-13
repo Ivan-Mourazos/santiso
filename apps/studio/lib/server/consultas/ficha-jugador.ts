@@ -133,6 +133,20 @@ export async function fichaDeJugador(ambito: AmbitoFicha): Promise<FichaJugador 
     )
     .where(eq(schema.rfgfJugadores.jugadorId, ambito.jugadorId));
 
+  const pasadas = await db
+    .select({
+      temporada: schema.rfgfGruposHistoricos.temporada,
+      competicion: schema.rfgfGruposHistoricos.competicion,
+      grupo: schema.rfgfGruposHistoricos.grupo,
+      cifras: schema.rfgfHistorico.cifras,
+    })
+    .from(schema.rfgfHistorico)
+    .innerJoin(
+      schema.rfgfGruposHistoricos,
+      eq(schema.rfgfGruposHistoricos.codGrupo, schema.rfgfHistorico.codGrupo),
+    )
+    .where(eq(schema.rfgfHistorico.jugadorId, ambito.jugadorId));
+
   return {
     jugador: {
       id: persona.id,
@@ -144,6 +158,26 @@ export async function fichaDeJugador(ambito: AmbitoFicha): Promise<FichaJugador 
       fechaNacimiento: persona.fechaNacimiento ?? null,
       historial: persona.historial ?? [],
     },
+    // Solo los grupos en los que de verdad estuvo: sin convocatorias no jugó ahí.
+    anteriores: pasadas
+      .flatMap((fila) =>
+        fila.cifras && fila.cifras.convocados > 0
+          ? [
+              {
+                temporada: fila.temporada,
+                competicion: fila.competicion,
+                grupo: fila.grupo,
+                convocados: fila.cifras.convocados,
+                titular: fila.cifras.titular,
+                jugados: fila.cifras.jugados,
+                goles: fila.cifras.goles,
+                amarillas: fila.cifras.amarillas + fila.cifras.doblesAmarillas,
+                rojas: fila.cifras.rojas,
+              },
+            ]
+          : [],
+      )
+      .sort((a, b) => b.temporada.localeCompare(a.temporada)),
     oficial: oficiales.flatMap((fila) =>
       fila.cifras && fila.leidoEn
         ? [

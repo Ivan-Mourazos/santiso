@@ -59,6 +59,22 @@ export interface FichaJugador {
   partidos: PartidoDeFicha[];
   /** Lo que dice la federación, por competición; vacío si aún no se ha traído. */
   oficial: CifrasOficiales[];
+  /** Temporadas pasadas en el club según la federación, de la más reciente a la más antigua. */
+  anteriores: TemporadaAnterior[];
+}
+
+/** Las cifras de un jugador en un grupo de una temporada pasada. */
+export interface TemporadaAnterior {
+  /** «2025-2026». */
+  temporada: string;
+  competicion: string;
+  grupo: string;
+  convocados: number;
+  titular: number;
+  jugados: number;
+  goles: number;
+  amarillas: number;
+  rojas: number;
 }
 
 /** Las cifras de un jugador en una competición según la web de la federación. */

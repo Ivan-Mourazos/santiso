@@ -3,6 +3,7 @@ import "server-only";
 import { tocaPasadaDiaria } from "@/lib/rfgf/plan";
 import { comoSistema } from "@/lib/server/db";
 import { crearDescargador } from "./descargador";
+import { avanzarHistorico } from "./historico";
 import { sincronizarTodo, ultimaComprobacion } from "./sincronizar";
 
 /** Cada cuánto se mira el reloj para ver si ya toca la comprobación del día. */
@@ -44,6 +45,12 @@ export function iniciarProgramadorRfgf() {
       }
     } catch (error) {
       console.error("[rfgf] La comprobación falló.", error);
+    }
+    // Aparte, el repaso de temporadas pasadas: dos páginas por tic, hasta que no quede nada.
+    try {
+      await comoSistema(() => avanzarHistorico(crearDescargador(), new Date()));
+    } catch (error) {
+      console.error("[rfgf] El repaso de temporadas pasadas falló.", error);
     }
   };
   globalThis.santisoProgramadorRfgf = setInterval(() => void comprobar(), CADA_MS);

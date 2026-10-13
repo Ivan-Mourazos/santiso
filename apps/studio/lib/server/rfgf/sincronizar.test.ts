@@ -618,3 +618,56 @@ it("apunta a los jugadores del club con su código y trae sus cifras oficiales",
   await sincronizarCompeticion(competicionId, descargador, AHORA, false, true);
   expect(pedidas.jugadores.filter((url) => url.includes("NFG_CmpPartido"))).toHaveLength(1);
 });
+
+it("repasa una temporada pasada poco a poco y apunta el año en el historial del jugador", async () => {
+  const { s, competicionId, sincronizarCompeticion, leer } = await preparar();
+  const jornada = paginaJornada("EQUIPO LOCAL", "EQUIPO VISITANTE", "900");
+  const { descargador } = descargadorDe(jornada);
+  // Primero la pasada normal: deja identificado al jugador 21 del club.
+  await sincronizarCompeticion(competicionId, descargador, AHORA, false, true);
+
+  const competiciones = `<h4>&nbsp;2025-2026</h4><table><tr><td><a href='NFG_VisCompeticiones_Vis?&codcompeticion=30'>LIGA</a></td>
+    <td><a href='NFG_VisGrupos_Vis?cod_primaria=1&codgrupo=300'>GRUPO ACTUAL</a></td></tr></table>
+    <h4>&nbsp;2024-2025</h4><table><tr><td><a href='NFG_VisCompeticiones_Vis?&codcompeticion=20'>LIGA VIEJA</a></td>
+    <td><a href='NFG_VisGrupos_Vis?cod_primaria=1&codgrupo=200'>GRUPO VIEJO</a></td></tr></table>
+    <h4>&nbsp;2015-2016</h4><table><tr><td><a href='NFG_VisCompeticiones_Vis?&codcompeticion=10'>MUY VIEJA</a></td>
+    <td><a href='NFG_VisGrupos_Vis?cod_primaria=1&codgrupo=100'>GRUPO ANTIGUO</a></td></tr></table>`;
+  const pedidas: string[] = [];
+  const historico: DescargadorRfgf = {
+    async html(url) {
+      pedidas.push(url);
+      if (url.includes("NFG_VisCompeticiones_Equipo")) return competiciones;
+      if (url.includes("NFG_EstadisticasJugador")) return PAGINA_JUGADOR;
+      return jornada;
+    },
+    async pdf() {
+      throw new Error("El repaso histórico no pide PDF.");
+    },
+  };
+  const { avanzarHistorico } = await import("./historico");
+  // Dos páginas por paso: descubrir (2), preparar el grupo (1) y leer a cada jugador (1 c/u).
+  expect(await avanzarHistorico(historico, AHORA, 2)).toBe(2);
+  const db = await leer();
+  const grupos = await db.select().from(s.rfgfGruposHistoricos);
+  // Solo las temporadas pasadas dentro del plazo: ni la actual ni la de hace diez años.
+  expect(grupos.map((g) => [g.codGrupo, g.temporada, g.estado, g.codEquipo])).toEqual([
+    ["200", "2024-2025", "pendiente", "2"],
+  ]);
+
+  while ((await avanzarHistorico(historico, AHORA, 2)) > 0);
+  const [grupo] = await db.select().from(s.rfgfGruposHistoricos);
+  expect(grupo).toMatchObject({ estado: "listo", codActa: "900" });
+  const filas = await db.select().from(s.rfgfHistorico);
+  expect(filas).toHaveLength(1);
+  expect(filas[0]!.cifras).toMatchObject({ convocados: 3, goles: 4 });
+  const [persona] = await db
+    .select()
+    .from(s.jugadores)
+    .where((await import("drizzle-orm")).eq(s.jugadores.id, filas[0]!.jugadorId));
+  expect(persona!.historial).toEqual(["24/25: Equipo Visitante"]);
+
+  // Terminado: no vuelve a pedir nada.
+  const antes = pedidas.length;
+  expect(await avanzarHistorico(historico, AHORA, 2)).toBe(0);
+  expect(pedidas).toHaveLength(antes);
+});

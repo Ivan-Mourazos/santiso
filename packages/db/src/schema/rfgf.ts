@@ -122,3 +122,62 @@ export const rfgfJugadores = sqliteTable(
     index("rfgf_jugadores_jugador_idx").on(t.jugadorId),
   ],
 );
+
+/** En qué punto está un grupo de una temporada pasada. */
+export const ESTADOS_GRUPO_HISTORICO = ["pendiente", "listo", "sin_acta"] as const;
+
+/**
+ * Un grupo en el que jugó un equipo del club en una temporada pasada, sacado de la página
+ * «competiciones del equipo» de la federación. Para pedir las cifras de un jugador en ese
+ * grupo hace falta el código de un partido suyo: se busca una vez y se guarda aquí.
+ */
+export const rfgfGruposHistoricos = sqliteTable(
+  "rfgf_grupos_historicos",
+  {
+    codGrupo: text("cod_grupo").primaryKey(),
+    categoria: text("categoria").notNull(),
+    /** «2025-2026». */
+    temporada: text("temporada").notNull(),
+    competicion: text("competicion").notNull(),
+    grupo: text("grupo").notNull(),
+    codCompeticion: text("cod_competicion").notNull(),
+    /** Código del equipo del club en la federación. */
+    codEquipo: text("cod_equipo").notNull(),
+    /** Un partido de ese grupo con el club; `null` hasta encontrarlo. */
+    codActa: text("cod_acta"),
+    estado: text("estado", { enum: ESTADOS_GRUPO_HISTORICO }).notNull().default("pendiente"),
+    /** Jornadas ya miradas buscando ese partido. */
+    intentos: integer("intentos").notNull().default(0),
+    ...marcasTiempo(),
+  },
+  () => [checkEnum("rfgf_grupos_historicos_estado_ck", "estado", ESTADOS_GRUPO_HISTORICO)],
+);
+
+/** Las cifras oficiales de un jugador del club en un grupo de una temporada pasada. */
+export const rfgfHistorico = sqliteTable(
+  "rfgf_historico",
+  {
+    jugadorId: text("jugador_id")
+      .notNull()
+      .references(() => jugadores.id, { onDelete: "cascade" }),
+    codGrupo: text("cod_grupo")
+      .notNull()
+      .references(() => rfgfGruposHistoricos.codGrupo, { onDelete: "cascade" }),
+    /** Código del jugador en la federación. */
+    codigo: text("codigo").notNull(),
+    /** `null` hasta leer su página. */
+    cifras: text("cifras", { mode: "json" }).$type<{
+      convocados: number;
+      titular: number;
+      suplente: number;
+      jugados: number;
+      amarillas: number;
+      doblesAmarillas: number;
+      rojas: number;
+      goles: number;
+    }>(),
+    leidoEn: text("leido_en"),
+    ...marcasTiempo(),
+  },
+  (t) => [primaryKey({ columns: [t.jugadorId, t.codGrupo] })],
+);
