@@ -76,6 +76,26 @@ describe("sincronización con la federación", () => {
   });
 });
 
+describe("jugadores en la federación", () => {
+  it("un código por competición; borrar al jugador solo lo desenlaza", async () => {
+    const { db } = conexion;
+    const { competicion } = await sembrar();
+    const [jugador] = await db.insert(s.jugadores).values({ nombre: "Xan Proba" }).returning();
+    const fila = {
+      codigo: "225808",
+      competicionId: competicion.id,
+      jugadorId: jugador!.id,
+      nombre: "PROBA, XAN",
+      codActa: "1444198",
+    };
+    await db.insert(s.rfgfJugadores).values(fila);
+    await rechaza(db.insert(s.rfgfJugadores).values(fila));
+    await db.delete(s.jugadores).where(eq(s.jugadores.id, jugador!.id));
+    const [resto] = await db.select().from(s.rfgfJugadores);
+    expect(resto).toMatchObject({ codigo: "225808", jugadorId: null, cifras: null });
+  });
+});
+
 describe("convocatorias previas", () => {
   it("partido único, par jugador único y borrado en cascada, aparte del acta", async () => {
     const { db } = conexion;

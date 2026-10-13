@@ -454,3 +454,23 @@
 .fichaHistorial span {
   overflow-wrap: anywhere;
 }
+
+/* Cifras oficiales de la federación en la ficha, con el contraste cuando se puede hacer. */
+.fichaOficial {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 4px solid var(--ui-border, #333);
+  background: rgb(255 255 255 / 4%);
+  font-size: var(--ui-text-sm, 0.875rem);
+  overflow-wrap: anywhere;
+}
+.fichaOficial p {
+  margin: 0;
+}
+.fichaOficial[data-cuadra="true"] {
+  border-left-color: var(--ui-success, #4ade80);
+}
+.fichaOficial[data-cuadra="false"] {
+  border-left-color: var(--ui-warning, #f59e0b);
+}

@@ -94,3 +94,29 @@ export function urlCalendarioPdf(grupo: GrupoRfgf): string {
   });
   return `${BASE}NFG_VisCalendario_Vis?${consulta}`;
 }
+
+/** La página de un partido en la web (no el PDF): lista a los jugadores con su código. */
+export function urlActaWeb(grupo: GrupoRfgf, codActa: string): string {
+  const consulta = new URLSearchParams({
+    cod_primaria: grupo.codPrimaria,
+    CodActa: codActa,
+    cod_acta: codActa,
+  });
+  return `${BASE}NFG_CmpPartido?${consulta}`;
+}
+
+/** Sección de estadísticas de jugadores en la web de la federación. */
+const COD_ESTADISTICAS = "5000274";
+
+/**
+ * La página de estadísticas de un jugador. Las cifras son las de la competición del partido
+ * indicado: con uno de otra temporada, las de aquella.
+ */
+export function urlEstadisticasJugador(codigo: string, codActa: string): string {
+  const consulta = new URLSearchParams({
+    cod_primaria: COD_ESTADISTICAS,
+    jugador: codigo,
+    codacta: codActa,
+  });
+  return `${BASE}NFG_EstadisticasJugador?${consulta}`;
+}

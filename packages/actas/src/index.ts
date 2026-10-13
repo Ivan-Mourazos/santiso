@@ -22,3 +22,5 @@ export { parsearJornada, parsearJornadaPdf } from "./jornada";
 export type { JornadaFederacion, PartidoJornada } from "./jornada";
 export { parsearClasificacion, parsearClasificacionPdf } from "./clasificacion";
 export type { ClasificacionOficial, FilaOficial } from "./clasificacion";
+export { jugadoresDeActaHtml, parsearEstadisticasJugador } from "./jugador-rfgf";
+export type { EstadisticasOficiales, JugadorDeActa } from "./jugador-rfgf";
