@@ -18,7 +18,13 @@ import { Select } from "@/components/ui/foundation/Fields";
 import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
 /** Lo del día de partido, a un toque en el móvil; el resto del menú queda en «Más». */
+const INICIO = {
+  id: "inicio",
+  label: "Inicio",
+  icono: "M4 11l8-7 8 7M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9",
+} as const;
 const PESTANAS = [
+  INICIO,
   {
     id: "jornada",
     label: "Jornada",
@@ -43,7 +49,7 @@ const PESTANAS = [
  * los lleva el delegado; a él le quedan en «Más».
  */
 const PESTANAS_TECNICO = [
-  PESTANAS[0],
+  INICIO,
   {
     id: "convocatoria",
     label: "Convocar",
@@ -54,7 +60,7 @@ const PESTANAS_TECNICO = [
     label: "Once",
     icono: "M4 5h16v14H4ZM12 5v14M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5ZM4 9h2.5v6H4M20 9h-2.5v6H20",
   },
-  PESTANAS[2],
+  PESTANAS[3],
 ] as const;
 
 function Icono({ trazo }: { trazo: string }) {
@@ -140,10 +146,10 @@ export function StudioShell({
       <aside className={styles.sidebar}>
         <Link
           className={styles.brand}
-          href={rutaSeccion("jornada", params)}
+          href={rutaSeccion("inicio", params)}
           onNavigate={(e) => {
             e.preventDefault();
-            if (section?.id !== "jornada") navigate(rutaSeccion("jornada", params));
+            if (section?.id !== "inicio") navigate(rutaSeccion("inicio", params));
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- icono estático de /public */}

@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/foundation/Fields";
 import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
 const loading = () => <LoadingState title="Cargando sección…" />;
+const Home = dynamic(() => import("@/components/admin/inicio/AdminInicio"), { loading });
 const Week = dynamic(() => import("@/components/admin/jornada/AdminJornada"), { loading });
 const Calendar = dynamic(() => import("@/components/admin/calendario/AdminCalendario"), {
   loading,
@@ -68,6 +69,7 @@ export function StudioSection({ section }: { section: Seccion }) {
   if (!hydrated) return <LoadingState title="Preparando sección…" />;
   return (
     <div key={key} className={styles.panel}>
+      {section === "inicio" && <Home />}
       {section === "jornada" && <Week />}
       {section === "calendario" && <Calendar {...feedback} categoria={category} />}
       {section === "clasificacion" && <League categoria={category} />}

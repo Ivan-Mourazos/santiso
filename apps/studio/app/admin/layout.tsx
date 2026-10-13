@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <div className={`${theme.theme} ${outfit.variable} ${nunito.variable}`}>
       <Suspense fallback={<LoadingState title="Abriendo Studio…" />}>
-        <StudioProvider>
+        <StudioProvider acceso={acceso}>
           <StudioShell acceso={acceso}>{children}</StudioShell>
         </StudioProvider>
       </Suspense>
