@@ -3,6 +3,15 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { erroresDeLectura } from "@/lib/cartel2/lectura";
 import s from "./ContenidoLegible.module.css";
 
+/**
+ * El PNG lo pinta un Chromium y allí se decide si el contenido cabe. En el navegador solo se
+ * adelanta ese aviso cuando el motor es el mismo: Safari (y todo navegador de iPhone) mide el
+ * texto distinto y avisaba de carteles que sí cabían. Allí manda la respuesta del servidor.
+ */
+function mideComoElExportador() {
+  return /Chrome\//u.test(navigator.userAgent);
+}
+
 /** Conserva todos los datos; una pieza desbordada muestra aviso y no se puede exportar. */
 export function ContenidoLegible({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -10,6 +19,7 @@ export function ContenidoLegible({ children }: { children: ReactNode }) {
   useEffect(() => {
     let vigente = true;
     const comprobar = async () => {
+      if (!mideComoElExportador()) return;
       await document.fonts.ready;
       await new Promise<void>((r) => requestAnimationFrame(() => r()));
       const cartel = ref.current?.closest("[data-cartel]");
