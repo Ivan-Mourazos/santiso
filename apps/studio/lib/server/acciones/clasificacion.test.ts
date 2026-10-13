@@ -153,7 +153,7 @@ describe("cargarPantallaClasificacion", () => {
     const { acciones } = await entorno();
     expect(await acciones.cargarPantallaClasificacion("no-existe")).toEqual({
       ok: true,
-      datos: { filas: [], reglas: [] },
+      datos: { filas: [], reglas: [], oficial: null },
     });
   });
 });

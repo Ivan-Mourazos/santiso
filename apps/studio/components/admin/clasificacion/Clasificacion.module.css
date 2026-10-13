@@ -343,3 +343,24 @@
     min-height: 44px;
   }
 }
+
+/* Contraste con la clasificación oficial de la federación. */
+.oficial {
+  padding: 0.6rem 0.75rem;
+  border-left: 4px solid var(--ui-warning);
+  background: rgb(245 158 11 / 12%);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.oficial[data-cuadra="true"] {
+  border-left-color: var(--ui-success);
+  background: rgb(74 222 128 / 8%);
+  color: var(--ui-muted);
+}
+.oficial p {
+  margin: 0;
+}
+.oficial ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+}

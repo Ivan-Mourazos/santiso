@@ -1,0 +1,1 @@
+ALTER TABLE `rfgf_competiciones` ADD `clasificacion` text;
