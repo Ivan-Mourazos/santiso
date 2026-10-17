@@ -495,6 +495,39 @@ describe("leerPeticion", () => {
     expect(leerPeticion(sinEstilo)).toBeNull();
   });
 
+  it("solo admite imágenes de /media/ o data:, nunca otra máquina", () => {
+    const p = peticionDeFormulario("resumo", formulario(), recursos, opciones);
+    if (p.plantilla !== "resultado") throw new Error("plantilla");
+    const conEscudo = (escudo: string) =>
+      leerPeticion({ ...p, datos: { ...p.datos, local: { ...p.datos.local, escudo } } });
+    for (const buena of [
+      "",
+      "/media/escudos/berres.webp",
+      "/media/escudos/A%C3%B1o%20nuevo..webp",
+      "data:image/png;base64,iVBORw0KGgo=",
+      "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%2F%3E",
+    ]) {
+      expect(conEscudo(buena), buena).not.toBeNull();
+    }
+    for (const mala of [
+      "http://127.0.0.1:1/probe",
+      "https://example.com/a.png",
+      "//example.com/a.png",
+      "/api/carteles/png",
+      "/media/../api/x",
+      "/media/%2e%2E/api/x",
+      "/media//example.com/a.png",
+      "/media/a.webp?x=1",
+      "/media\\..\\api",
+      "data:text/html;base64,PGgxPg==",
+      "file:///C:/Windows/win.ini",
+    ]) {
+      expect(conEscudo(mala), mala).toBeNull();
+    }
+    const conLogo = { ...p, datos: { ...p.datos, patrocinadores: ["http://10.0.0.1/x.png"] } };
+    expect(leerPeticion(conLogo)).toBeNull();
+  });
+
   it("rechaza lo que no tiene forma de cartel", () => {
     expect(leerPeticion(null)).toBeNull();
     expect(leerPeticion({ plantilla: "otra", datos: {} })).toBeNull();
