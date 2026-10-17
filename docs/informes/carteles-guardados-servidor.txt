@@ -1,0 +1,108 @@
+Carteles guardados por partido: servidor
+Fecha: 17/10/2026
+
+Resultado
+- Tabla carteles_partido, migración 0020_carteles-partido y restricciones verificadas.
+- Guardado de PNG, extracción de imágenes data:, reapertura y detección de cambios.
+- Ruta POST /api/carteles/guardar con sesión, cookie para Chromium y origen local desde PORT.
+- Acción cargarCartelesPartido(partidoIds), con Resultado y capturar.
+- pnpm check: código de salida 0. Sin cambios de pantalla, merge ni push.
+
+Ficheros cambiados
+- packages/db/src/schema/carteles.ts
+- packages/db/src/schema/index.ts
+- packages/db/src/schema.test.ts
+- packages/db/migrations/0020_carteles-partido.sql
+- packages/db/migrations/meta/0020_snapshot.json
+- packages/db/migrations/meta/_journal.json
+- apps/studio/lib/server/carteles/guardados.ts
+- apps/studio/lib/server/carteles/guardados.test.ts
+- apps/studio/app/api/carteles/guardar/route.ts
+- apps/studio/lib/server/acciones/carteles-guardados.ts
+- docs/informes/carteles-guardados-servidor.txt
+
+Contrato para pantallas
+- cargarCartelesPartido(ids): Promise<Resultado<CartelesDePartidos>>.
+- CartelesDePartidos: Record<string, Partial<Record<PasoCartelPartido, CartelGuardado[]>>>.
+- CartelGuardado: { formato, url, generadoEn, desactualizado }.
+- Partidos y pasos sin PNG no aparecen; una consulta sin IDs devuelve {}.
+- POST /api/carteles/guardar recibe { partidoId, paso, peticiones: PeticionCartel[] }.
+  Devuelve CartelGuardado[] del paso; errores 400/401/404/422/500 según corresponda.
+- peticionGuardada(partidoId, paso): Promise<PeticionCartel[]>.
+  Devuelve una petición por formato, en orden formatosDe(paso), o [] si no existe.
+- formatosDe y tipos CartelGuardado, CartelesDePartidos, PasoCartelPartido se exportan
+  desde lib/server/carteles/guardados.ts; importar tipos con import type desde cliente.
+
+Decisiones
+- Catálogo único PASOS relaciona paso, plantilla técnica y formatos disponibles:
+  partido -> partido, publicación e historia; convocatoria -> convocatoria, publicación;
+  once -> alineacion, historia; resultado -> resultado, publicación;
+  cronoloxia -> cronoloxia, publicación; noso11 -> once, publicación.
+- Se permite guardar solo uno de los formatos del paso sin borrar el otro.
+  Formatos duplicados o explícitamente incompatibles se rechazan antes de renderizar.
+- Todas las peticiones se validan con leerPeticion y todos los renders terminan antes
+  de escribir ficheros o sustituir filas. Una transacción agrupa los upserts del paso.
+  Los PNG anteriores se borran después del commit; si falla la escritura o el upsert,
+  se retiran los PNG nuevos y se conservan las filas anteriores.
+- Se usa resolverRutaMedia de media.ts: misma raíz DIR_MEDIA y SANTISO_DATA_DIR.
+  Los nombres nuevos combinan tiempo y UUID para evitar colisiones.
+- Las fotos se deduplican por SHA-256 de sus bytes. SVG se convierte a PNG con sharp,
+  porque /media sirve imágenes rasterizadas y excluye SVG. La petición guardada
+  conserva URL /media/...; el render recibe la petición original validada.
+- Huellas SHA-256 con claves JSON ordenadas mediante comparación determinista.
+  Listas sin orden de presentación se ordenan por contenido; la alineación conserva orden.
+  Se excluyen IDs técnicos, marcas de tiempo y árbitro; el marcador no afecta a partido.
+- Todos los pasos incluyen cabecera del partido (fecha/hora, campo y población,
+  equipos y condición local/visitante, competición, categoría y jornada), también
+  visible en las plantillas posteriores. Convocatoria añade selección y datos de quedada;
+  once añade alineación previa, orden y capitán; resultado añade marcador y goles;
+  cronoloxia añade marcador y todos los eventos; noso11 añade titulares y suplentes del acta.
+- Nombres/apodos y dorsales se resuelven según temporada y categoría del partido.
+  Resultado omite minutos de los goles y tarjetas: no se muestran en ese cartel.
+- La huella se toma antes del render: un cambio de datos durante Chromium deja
+  el PNG marcado como desactualizado al consultarlo, en vez de atribuirle datos nuevos.
+- Las consultas se agrupan por lotes de hasta 200 partidos; no hay consultas SQL
+  dentro del recorrido de cada partido. La prueba agrupa tres partidos con PNG.
+
+Fuera y límites
+- Ningún componente de pantalla ni dibujo/esquema del motor se ha modificado.
+- partido_participaciones no guarda capitán por partido: noso11 no incorpora ese dato
+  a la huella. El capitán de partido_alineaciones sí afecta a once, pero no se inventa
+  un capitán del acta usando la previa o la capitanía de temporada.
+- partido_eventos distingue gol, tarjeta_amarilla, tarjeta_roja y cambio, con propia.
+  No se inventan distinciones de penalti o doble amarilla que esa tabla no guarda.
+- Fotos de fondo, logos, colores y ajustes manuales permanecen en la petición guardada;
+  no se infiere desde ella una relación nueva con otras tablas para la huella.
+- No se aplica la migración sobre la base real. No se escribe en data/.
+- No se ejecuta e2e: esta tarea no cambia pantallas. Chromium queda simulado en Vitest.
+- No se añade recogida general de fotos sin referencias ni PNG de partidos borrados.
+  Si falla una operación después de extraer fotos, pueden quedar fotos deduplicadas sin fila.
+
+Pruebas
+- Esquema: enum de paso/formato, unicidad, FK, JSON y cascada.
+- Servicio: fecha/campo, convocatoria, independencia previa/acta, goles/tarjetas,
+  minutos, formatos, sustitución y borrado, fallo del segundo render, extracción data:,
+  desactualizado, lectura agrupada, rutas inseguras y acción con Resultado.
+- Ruta: plantilla incompatible, éxito con cookie/origen local, entrada inválida,
+  falta de sesión, partido ausente y ErrorCapacidadCartel.
+- Base de juguete en memoria y media en mkdtemp(os.tmpdir()); ninguna prueba usa data/.
+
+Final real de pnpm check (código 0)
+
+> santiso@ format:check C:\Users\Ivan_\orca\workspaces\santiso\carteles-guardados
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> santiso@ test C:\Users\Ivan_\orca\workspaces\santiso\carteles-guardados
+> vitest run
+
+
+ RUN  v4.1.11 C:/Users/Ivan_/orca/workspaces/santiso/carteles-guardados
+
+
+ Test Files  121 passed (121)
+      Tests  902 passed | 1 skipped (903)
+   Start at  15:37:46
+   Duration  21.07s (transform 5.34s, setup 0ms, import 31.99s, tests 71.18s, environment 17ms)
