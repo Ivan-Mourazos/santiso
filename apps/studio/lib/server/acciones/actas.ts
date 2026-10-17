@@ -92,11 +92,12 @@ export async function cargarActaGuardada(partidoId: string): Promise<Resultado<P
  * transacción, así que un fallo a medias dejaba el partido sin datos y sin forma de volver.
  */
 export async function guardarActa(partidoId: string, acta: ParsedActa): Promise<Resultado<null>> {
-  const golesLocal = Number(acta.marcadorLocal);
-  const golesVisitante = Number(acta.marcadorVisitante);
-  const valido = (n: number) => Number.isInteger(n) && n >= 0;
-  if (!valido(golesLocal) || !valido(golesVisitante)) {
-    return fallo("El marcador del acta no es válido.");
+  // Solo cifras: `Number("")` es 0 y un marcador sin rellenar acababa en un 0–0 finalizado.
+  const goles = (texto: string) => (/^\d{1,2}$/.test(texto.trim()) ? Number(texto) : null);
+  const golesLocal = goles(acta.marcadorLocal);
+  const golesVisitante = goles(acta.marcadorVisitante);
+  if (golesLocal === null || golesVisitante === null) {
+    return fallo("Falta el marcador del acta o no es válido.");
   }
 
   // La transformación se hace antes de abrir la transacción: si el acta trae algo imposible,

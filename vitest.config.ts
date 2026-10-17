@@ -17,5 +17,10 @@ export default defineConfig({
       "apps/studio/{lib,app}/**/*.test.ts",
     ],
     environment: "node",
+    // Las pruebas de acciones montan una BD migrada y cargan los módulos en frío: el primer caso
+    // de cada fichero tarda 1–2 s en reposo y pasa de 5 s con el PC cargado. Al agotar el tiempo,
+    // el caso seguía corriendo y pisaba el estado del siguiente (cookie de `sesion.test.ts`).
+    testTimeout: 20_000,
+    hookTimeout: 30_000,
   },
 });
