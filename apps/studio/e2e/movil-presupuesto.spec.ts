@@ -58,11 +58,12 @@ for (const seccion of SECCIONES) {
     const cabecera = (await page.locator("header").first().boundingBox())!;
     expect(cabecera.height).toBeLessThanOrEqual(60);
     const pestanas = page.getByRole("navigation", { name: "Accesos rápidos" });
-    for (const nombre of ["Jornada", "Carteles", "Multas"]) {
+    for (const nombre of ["Liga", "Carteles", "Multas"]) {
       const caja = (await pestanas.getByRole("link", { name: nombre }).boundingBox())!;
       expect(Math.round(caja.height)).toBeGreaterThanOrEqual(44);
     }
-    await expect(pestanas.getByRole("button", { name: "Más" })).toHaveCount(0);
+    const mas = (await pestanas.getByRole("button", { name: "Más" }).boundingBox())!;
+    expect(Math.round(mas.height)).toBeGreaterThanOrEqual(44);
   });
 }
 

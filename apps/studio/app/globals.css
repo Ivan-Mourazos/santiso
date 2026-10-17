@@ -1744,3 +1744,63 @@ input[type="number"] {
   cursor: not-allowed;
 }
 
+
+/* ── Transición entre pantallas ───────────────────────────────────────
+   Entrar: la pantalla nueva llega desde la derecha y la vieja se aparta un poco a la izquierda.
+   Volver: al revés. Cambiar de pestaña: fundido corto. */
+::view-transition-old(.nav-forward) {
+  animation: 120ms cubic-bezier(0.2, 0, 0, 1) both vt-salir, 300ms cubic-bezier(0.2, 0, 0, 1) both vt-izquierda;
+}
+::view-transition-new(.nav-forward) {
+  animation: 300ms cubic-bezier(0.05, 0.7, 0.1, 1) both vt-desde-derecha;
+}
+::view-transition-old(.nav-back) {
+  animation: 120ms cubic-bezier(0.2, 0, 0, 1) both vt-salir, 250ms cubic-bezier(0.2, 0, 0, 1) both vt-derecha;
+}
+::view-transition-new(.nav-back) {
+  animation: 250ms cubic-bezier(0.05, 0.7, 0.1, 1) both vt-desde-izquierda;
+}
+::view-transition-old(.nav-tab) {
+  animation: 90ms cubic-bezier(0.2, 0, 0, 1) both vt-salir;
+}
+::view-transition-new(.nav-tab) {
+  animation: 200ms cubic-bezier(0.2, 0, 0, 1) 60ms both vt-entrar;
+}
+@keyframes vt-salir {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-entrar {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes vt-izquierda {
+  to {
+    transform: translateX(-24%);
+  }
+}
+@keyframes vt-derecha {
+  to {
+    transform: translateX(24%);
+  }
+}
+@keyframes vt-desde-derecha {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes vt-desde-izquierda {
+  from {
+    transform: translateX(-30%);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation: none !important;
+  }
+}

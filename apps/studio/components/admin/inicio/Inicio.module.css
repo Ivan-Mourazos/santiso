@@ -1,107 +1,208 @@
 /*
- * Portada: una rejilla de botones grandes que ocupa justo el alto de la pantalla, sin deslizar.
- * En móvil descuenta la cabecera fija y la barra de pestañas; en escritorio, la cabecera.
+ * Portada: arriba el partido que toca de cada equipo; debajo, la lista de categorías en filas
+ * de 56 px (icono, título, para qué sirve y flecha).
  */
 .inicio {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: var(--ui-space-3, 0.75rem);
-  height: calc(100dvh - 64px - 2.5rem);
-  min-height: 420px;
-  max-width: 1100px;
+  gap: var(--ui-space-3);
+  max-width: 640px;
 }
 .cabecera {
   display: flex;
   align-items: center;
-  gap: var(--ui-space-3, 0.75rem);
+  gap: var(--ui-space-3);
   min-width: 0;
 }
 .titulo {
+  margin: var(--ui-space-2) 0 0;
+  color: var(--ui-muted);
+  font: 800 var(--ui-text-xs) / 1.2 var(--ui-font-body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.cabecera .titulo {
   margin: 0;
-  font: 800 var(--ui-text-lg)/1.2 var(--ui-font-title, sans-serif);
-  overflow-wrap: anywhere;
 }
 .volver {
   flex: none;
   min-height: 44px;
-  padding: 0.3rem 0.9rem;
-  border: 1px solid var(--ui-border, #333);
+  padding: 0 var(--ui-space-3);
+  border: 0;
   border-radius: var(--ui-radius);
-  background: var(--ui-control-face, #222);
-  color: var(--ui-text, #fff);
-  font: 800 var(--ui-text-body) var(--ui-font-body, sans-serif);
+  background: var(--ui-control);
+  color: var(--ui-text);
+  font: 800 var(--ui-text-body) var(--ui-font-body);
   cursor: pointer;
 }
-.rejilla {
+.lista {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-rows: minmax(0, 1fr);
-  gap: var(--ui-space-3, 0.75rem);
-  min-height: 0;
-}
-.boton {
-  display: grid;
-  gap: 0.25rem;
-  align-content: center;
-  justify-items: center;
-  min-width: 0;
-  min-height: 0;
-  padding: 0.5rem;
-  border: 1px solid var(--ui-border, #333);
-  border-radius: var(--ui-radius-lg);
-  background: var(--ui-panel-face, var(--ui-surface, #171717));
-  box-shadow: var(--ui-control-shadow, none);
-  color: var(--ui-text, #fff);
-  font-family: var(--ui-font-body, sans-serif);
-  text-align: center;
-  text-decoration: none;
-  cursor: pointer;
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
   overflow: hidden;
 }
-.boton svg {
+.fila {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  width: 100%;
+  min-height: var(--ui-row);
+  padding: var(--ui-space-2) var(--ui-space-4);
+  border: 0;
+  border-bottom: 1px solid var(--ui-line);
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--ui-duration) var(--ui-ease);
+}
+.fila:last-child {
+  border-bottom: 0;
+}
+.fila svg {
+  flex: none;
   color: var(--ui-accent);
 }
-.boton strong {
-  font: 800 var(--ui-text-lg)/1.15 var(--ui-font-title, sans-serif);
-  overflow-wrap: anywhere;
+.fila strong {
+  font-weight: 800;
+  font-size: var(--ui-text-base);
 }
-.boton span {
-  color: var(--ui-muted, #aaa);
+.filaTexto {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.filaTexto span {
+  color: var(--ui-muted);
   font-size: var(--ui-text-sm);
-  line-height: 1.2;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.boton:hover {
-  border-color: var(--ui-accent);
+.flecha {
+  margin-left: auto;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-lg);
 }
-.boton:focus-visible,
+.fila:active {
+  background: var(--ui-raised);
+}
+@media (hover: hover) {
+  .fila:hover {
+    background: var(--ui-raised);
+  }
+}
+.fila:focus-visible,
 .volver:focus-visible {
   outline: 3px solid var(--ui-accent);
-  outline-offset: 3px;
+  outline-offset: -3px;
 }
-@media (max-width: 900px) {
-  .inicio {
-    /* Cabecera fija (con la muesca del iPhone), barra de pestañas y márgenes del contenido. */
-    height: calc(
-      100dvh - var(--studio-cabecera, 52px) - 0.75rem - 4.5rem - env(safe-area-inset-bottom, 0px)
-    );
-    min-height: 0;
-  }
-  .rejilla {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--ui-space-2, 0.5rem);
-  }
-  /* Con un número impar de botones, el último ocupa la fila entera en vez de quedar cojo. */
-  .rejilla > :last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-  }
-  /* Una categoría con pocas pantallas: una columna de botones anchos. */
-  .rejilla[data-cuantos="2"],
-  .rejilla[data-cuantos="3"],
-  .rejilla[data-cuantos="4"] {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .boton strong {
-    font-size: var(--ui-text-base);
-  }
+
+/* ── Nuestros partidos ───────────────────────────────────────────── */
+.partidos {
+  display: grid;
+  gap: var(--ui-space-2);
+}
+.esqueleto {
+  height: 148px;
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+}
+.partido {
+  position: relative;
+  display: grid;
+  gap: var(--ui-space-1);
+  padding: var(--ui-space-3) var(--ui-space-4) var(--ui-space-4);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+}
+.partidoContexto {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.categoria {
+  padding: 2px var(--ui-space-2);
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-raised);
+  color: var(--ui-text);
+  font-weight: 800;
+  font-size: var(--ui-text-xs);
+}
+.partidoRival {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  min-width: 0;
+}
+.partidoRival h3 {
+  min-width: 0;
+  margin: 0;
+  font: 800 var(--ui-text-xl) / 1.15 var(--ui-font-title);
+  overflow-wrap: anywhere;
+}
+/* Toda la tarjeta lleva al partido; el botón del siguiente paso queda por encima. */
+.partidoRival h3 a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.partidoRival h3 a:focus-visible {
+  outline: none;
+}
+.partidoRival h3 a:focus-visible::after {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: -3px;
+}
+.partidoRival strong {
+  flex: none;
+  font: 800 var(--ui-text-xl) / 1 var(--ui-font-title);
+  font-variant-numeric: tabular-nums;
+}
+.partidoCuando {
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.partidoCuando::first-letter {
+  text-transform: uppercase;
+}
+.siguiente {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  min-height: var(--ui-control-h);
+  margin-top: var(--ui-space-2);
+  padding: var(--ui-space-2) var(--ui-space-4);
+  border-radius: var(--ui-radius);
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent);
+  font-weight: 800;
+  font-size: var(--ui-text-body);
+  text-decoration: none;
+  transition: transform var(--ui-duration) var(--ui-ease);
+}
+.siguiente > span:first-child {
+  display: grid;
+}
+.siguiente small {
+  color: var(--ui-muted);
+  font-weight: 700;
+  font-size: var(--ui-text-xs);
+}
+.siguiente:active {
+  transform: scale(0.98);
+}
+.siguiente:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
 }

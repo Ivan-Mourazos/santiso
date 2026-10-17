@@ -17,11 +17,14 @@ import { ConfirmDialog } from "@/components/ui/foundation/ConfirmDialog";
 import { Toast } from "@/components/ui/foundation/Toast";
 import styles from "./StudioShell.module.css";
 
+export type TipoNavegacion = "nav-forward" | "nav-back" | "nav-tab";
+
 type StudioValue = {
   /** Quién usa el panel; `null` con el acceso por contraseña apagado. */
   acceso: AccesoPanel;
   params: URLSearchParams;
-  navigate: (href: string) => boolean;
+  /** `tipo`: cómo se anima el cambio de pantalla (entrar, volver o cambiar de pestaña). */
+  navigate: (href: string, tipo?: TipoNavegacion) => boolean;
   setParams: (patch: Record<string, string | null>, replace?: boolean) => boolean;
   /** Los avisos buenos se van solos a los 4 s (6 s si traen acción); los errores se quedan. */
   showToast: (
@@ -104,11 +107,11 @@ export function StudioProvider({
     locationRef.current = { pathname, query };
   }, [pathname, query]);
   const navigate = useCallback(
-    (href: string) => {
+    (href: string, tipo: TipoNavegacion = "nav-forward") => {
       if (new URL(href, window.location.href).href === window.location.href) return true;
       if (!authorize()) return false;
       drafts.current.clear();
-      router.push(href);
+      router.push(href, { transitionTypes: [tipo] });
       return true;
     },
     [authorize, router],

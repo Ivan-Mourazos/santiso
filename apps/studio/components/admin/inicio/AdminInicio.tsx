@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useStudio } from "@/components/studio/StudioContext";
+import NuestrosPartidos from "./NuestrosPartidos";
 import styles from "./Inicio.module.css";
 
 interface Destino {
@@ -22,17 +23,10 @@ interface Categoria {
 }
 
 /**
- * La portada va por tareas, no por secciones: cada botón es una categoría y dentro están sus
- * pantallas. Una categoría con un solo destino entra directa.
+ * Debajo de nuestros partidos, la portada va por tareas: cada fila es una categoría y dentro
+ * están sus pantallas. Una categoría con un solo destino entra directa.
  */
 const CATEGORIAS: Categoria[] = [
-  {
-    id: "semana",
-    titulo: "Esta semana",
-    para: "Los partidos y lo que falta",
-    icono: "M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z",
-    destinos: [{ texto: "Jornada", href: "/admin/jornada" }],
-  },
   {
     id: "preparar",
     titulo: "Preparar partido",
@@ -127,8 +121,8 @@ function Icono({ trazo }: { trazo: string }) {
     <svg
       aria-hidden="true"
       viewBox="0 0 24 24"
-      width="28"
-      height="28"
+      width="22"
+      height="22"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
@@ -140,9 +134,11 @@ function Icono({ trazo }: { trazo: string }) {
   );
 }
 
+const FLECHA = <span className={styles.flecha} aria-hidden="true">›</span>;
+
 /**
- * Portada del Studio: una rejilla de categorías que cabe en la pantalla sin deslizar. Al tocar
- * una se entra en ella (`?menu=`) y se ven sus pantallas, también sin deslizar.
+ * Portada del Studio: el partido que toca de cada equipo y, debajo, la lista de categorías. Al
+ * tocar una se entra en ella (`?menu=`) y se ven sus pantallas.
  */
 export default function AdminInicio() {
   const { acceso, params, setParams } = useStudio();
@@ -166,10 +162,16 @@ export default function AdminInicio() {
             {abierta.titulo}
           </h2>
         </div>
-        <div className={styles.rejilla} data-cuantos={abierta.destinos.length}>
+        <div className={styles.lista}>
           {abierta.destinos.map((destino) => (
-            <Link key={destino.href} className={styles.boton} href={destino.href}>
+            <Link
+              key={destino.href}
+              className={styles.fila}
+              href={destino.href}
+              transitionTypes={["nav-forward"]}
+            >
               <strong>{destino.texto}</strong>
+              {FLECHA}
             </Link>
           ))}
         </div>
@@ -179,28 +181,37 @@ export default function AdminInicio() {
 
   return (
     <section className={styles.inicio} aria-labelledby="inicio-titulo">
+      <NuestrosPartidos />
       <h2 id="inicio-titulo" className={styles.titulo}>
         ¿Qué quieres hacer?
       </h2>
-      <div className={styles.rejilla} data-cuantos={categorias.length}>
+      <div className={styles.lista}>
         {categorias.map((categoria) => {
           const contenido = (
             <>
               <Icono trazo={categoria.icono} />
-              <strong>{categoria.titulo}</strong>
-              <span>{categoria.para}</span>
+              <span className={styles.filaTexto}>
+                <strong>{categoria.titulo}</strong>
+                <span>{categoria.para}</span>
+              </span>
+              {FLECHA}
             </>
           );
           // Con un solo destino no hay nada que elegir: se entra directo.
           return categoria.destinos.length === 1 ? (
-            <Link key={categoria.id} className={styles.boton} href={categoria.destinos[0]!.href}>
+            <Link
+              key={categoria.id}
+              className={styles.fila}
+              href={categoria.destinos[0]!.href}
+              transitionTypes={["nav-forward"]}
+            >
               {contenido}
             </Link>
           ) : (
             <button
               key={categoria.id}
               type="button"
-              className={styles.boton}
+              className={styles.fila}
               onClick={() => setParams({ menu: categoria.id })}
             >
               {contenido}

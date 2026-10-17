@@ -127,8 +127,13 @@ for (const ancho of [360, 390]) {
     expect(
       await campo.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
     ).toBeGreaterThanOrEqual(16);
-    // Sin «Más»: desde la barra se vuelve a la portada, y de ahí se llega a todo.
-    await expect(page.getByRole("button", { name: "Más", exact: true })).toHaveCount(0);
+    // «Más» abre el menú entero en una hoja desde abajo; elegir lleva a la pantalla y la cierra.
+    await page.getByRole("button", { name: "Más", exact: true }).click();
+    const hoja = page.getByRole("dialog", { name: "Todo el Studio" });
+    await expect(hoja.getByRole("link", { name: "Jugadores", exact: true })).toBeInViewport();
+    await hoja.getByRole("link", { name: "Jugadores", exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/jugadores/);
+    await expect(hoja).toBeHidden();
     await menuButton.click();
     await expect(page).toHaveURL(/\/admin\/inicio/);
   });

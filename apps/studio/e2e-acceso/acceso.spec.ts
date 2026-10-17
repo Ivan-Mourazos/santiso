@@ -118,8 +118,8 @@ test("el míster entra, usa el día a día y no ve lo del administrador", async 
 test("en el móvil cada uno tiene sus pestañas", async ({ browser }) => {
   const movil = { viewport: { width: 360, height: 780 }, hasTouch: true };
   for (const [quien, esperadas, ausente] of [
-    [MISTER, ["Inicio", "Jornada", "Convocar", "Once", "Multas"], "Carteles"],
-    [ADMIN, ["Inicio", "Jornada", "Carteles", "Multas"], "Convocar"],
+    [MISTER, ["Inicio", "Liga", "Once", "Multas"], "Carteles"],
+    [ADMIN, ["Inicio", "Liga", "Carteles", "Multas"], "Once"],
   ] as const) {
     const contexto = await browser.newContext(movil);
     const page = await contexto.newPage();
@@ -131,7 +131,8 @@ test("en el móvil cada uno tiene sus pestañas", async ({ browser }) => {
       expect(Math.round(caja.height)).toBeGreaterThanOrEqual(44);
     }
     await expect(pestanas.getByRole("link", { name: ausente, exact: true })).toHaveCount(0);
-    await expect(pestanas.getByRole("button", { name: "Más" })).toHaveCount(0);
+    // El resto del menú, en la hoja de «Más».
+    await expect(pestanas.getByRole("button", { name: "Más" })).toHaveCount(1);
     // Ninguna etiqueta se sale de su pestaña ni ensancha la pantalla.
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
     const desbordadas = await pestanas

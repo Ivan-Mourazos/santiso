@@ -74,7 +74,9 @@
   flex: 1;
   min-width: 0;
 }
+/* Cabecera y barra se quedan quietas mientras la pantalla se desliza. */
 .header {
+  view-transition-name: cabecera;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -105,10 +107,63 @@
   font-size: var(--ui-text-xs);
   margin: 0;
 }
+/* Senior / Veteranos: selector de píldora pequeño. */
 .categories {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-raised);
+}
+.categories button {
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--ui-radius-pill);
+  color: var(--ui-muted);
+}
+.categories button[aria-pressed="true"] {
+  background: var(--ui-accent);
+  color: var(--ui-on-accent);
+}
+/* Pestañas de la competición, bajo la cabecera. */
+.subnav {
+  display: flex;
+  gap: var(--ui-space-1);
+  margin: 0 0 var(--ui-space-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--ui-line);
+}
+.subnav a {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--ui-space-3);
+  border-bottom: 2px solid transparent;
+  color: var(--ui-muted);
+  font-weight: 800;
+  font-size: var(--ui-text-body);
+  transition: color var(--ui-duration) var(--ui-ease);
+}
+.subnav a[aria-current="page"] {
+  border-bottom-color: var(--ui-accent);
+  color: var(--ui-text);
+}
+.subnav a:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
+}
+/* El menú completo, en la hoja de «Más». */
+.menuMas .nav {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ui-space-4);
+}
+.menuMas .link {
+  min-height: 48px;
+}
+.menuMas .cuenta {
+  margin-top: var(--ui-space-4);
 }
 .template {
   width: min(100%, 22rem);
@@ -149,6 +204,7 @@
 }
 .tabs {
   display: none;
+  view-transition-name: pestanas;
 }
 .aviso {
   margin: 0;
@@ -221,8 +277,19 @@
     color: var(--ui-muted);
     font: 700 var(--ui-text-xs)/1.1 var(--ui-font-body);
     cursor: pointer;
+    transition: color var(--ui-duration) var(--ui-ease);
   }
-  .tab[aria-current="page"],
+  /* Indicador de la pestaña encendida: píldora suave tras el icono (Material 3). */
+  .tab svg {
+    width: 56px;
+    height: 26px;
+    padding: 2px 0;
+    border-radius: var(--ui-radius-pill);
+    transition: background-color var(--ui-duration-md) var(--ui-ease);
+  }
+  .tab[data-activa="true"] svg {
+    background: var(--ui-accent-soft);
+  }
   .tab[data-activa="true"] {
     color: var(--ui-accent);
   }
@@ -302,13 +369,12 @@
       calc(4.5rem + env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
   }
   .categories {
-    flex-wrap: nowrap;
     flex-shrink: 0;
-    gap: 0.25rem;
   }
   .categories button {
     min-height: 44px;
-    padding-inline: 0.65rem;
+    min-width: 0;
+    padding-inline: var(--ui-space-3);
     font-size: var(--ui-text-sm);
   }
   .template {

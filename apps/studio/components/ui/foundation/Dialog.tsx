@@ -33,6 +33,9 @@ export function Dialog({
   const id = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  // `showModal` enfoca el primer elemento enfocable, que es la guarda: sin esto saltaba al último
+  // control y la lista aparecía desplazada hasta abajo.
+  const abriendo = useRef(false);
   const focusRef = useRef(initialFocusRef);
   useEffect(() => {
     focusRef.current = initialFocusRef;
@@ -45,7 +48,9 @@ export function Dialog({
     const body = dialog.ownerDocument.body;
     const previousOverflow = body.style.overflow;
     body.style.overflow = "hidden";
+    abriendo.current = true;
     dialog.showModal();
+    abriendo.current = false;
     (focusRef.current?.current ?? headingRef.current)?.focus();
     return () => {
       dialog.close();
@@ -95,7 +100,7 @@ export function Dialog({
         tabIndex={0}
         data-focus-guard=""
         className={styles.focusGuard}
-        onFocus={() => focusEdge("last")}
+        onFocus={() => !abriendo.current && focusEdge("last")}
       />
       <div className={styles.header}>
         <h2 ref={headingRef} tabIndex={-1} id={id + "-title"} className={styles.title}>

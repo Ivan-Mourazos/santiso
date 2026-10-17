@@ -1,16 +1,11 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * La portada: botones de categoría que caben en la pantalla sin deslizar; se entra en una
- * categoría, se ven sus pantallas (también sin deslizar) y se llega a la elegida. Solo lee.
+ * La portada: nuestros partidos arriba y, debajo, filas de categoría; se entra en una categoría,
+ * se ven sus pantallas y se llega a la elegida. Solo lee.
  */
 const sinDeslizar = async (page: import("@playwright/test").Page) => {
-  const [alto, ventana, ancho] = await page.evaluate(() => [
-    document.documentElement.scrollHeight,
-    window.innerHeight,
-    document.documentElement.scrollWidth,
-  ]);
-  expect(alto).toBeLessThanOrEqual(ventana);
+  const ancho = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(ancho).toBeLessThanOrEqual(page.viewportSize()!.width);
 };
 
@@ -18,12 +13,18 @@ for (const [ancho, alto] of [
   [360, 640],
   [390, 844],
 ] as const) {
-  test(`inicio: categorías sin deslizar y entrada a un cartel a ${ancho}px`, async ({ page }) => {
+  test(`inicio: partidos, categorías y entrada a un cartel a ${ancho}px`, async ({ page }) => {
     await page.setViewportSize({ width: ancho, height: alto });
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/admin\/inicio/);
     await expect(page.getByRole("heading", { name: "¿Qué quieres hacer?" })).toBeVisible();
     await expect(page.getByRole("button", { name: /^Carteles/ })).toBeVisible();
+    // El partido que toca, con su siguiente paso, antes que el menú.
+    const partido = page.locator("[data-partido-inicio]").first();
+    await expect(partido).toBeVisible();
+    const paso = (await partido.locator("[data-accion-principal]").boundingBox())!;
+    expect(paso.height).toBeGreaterThanOrEqual(44);
+    expect(paso.y + paso.height).toBeLessThanOrEqual(alto);
     await sinDeslizar(page);
 
     await page.getByRole("button", { name: /^Carteles/ }).tap();
