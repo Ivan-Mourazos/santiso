@@ -52,8 +52,14 @@ const CATEGORIAS: Categoria[] = [
       { texto: "Resultado y acta de la jornada", href: "/admin/jornada" },
       { texto: "Importar acta o resultados", href: "/admin/importar" },
       { texto: "Calendario completo", href: "/admin/importar-jornada?origen=calendario" },
-      { texto: "Federación: qué hay traído y qué falta", href: "/admin/federacion", admin: true },
     ],
+  },
+  {
+    id: "federacion",
+    titulo: "Federación",
+    para: "Traer resultados, actas y datos",
+    icono: "M4 20h16M6 20V10M10 20V10M14 20V10M18 20V10M3 10l9-6 9 6Z",
+    destinos: [{ texto: "Federación", href: "/admin/federacion", admin: true }],
   },
   {
     id: "carteles",

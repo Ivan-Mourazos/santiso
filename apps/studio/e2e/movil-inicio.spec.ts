@@ -37,6 +37,11 @@ for (const [ancho, alto] of [
     await page.getByRole("button", { name: /^La liga/ }).tap();
     await page.getByRole("link", { name: "Goleadores y tarjetas" }).tap();
     await expect(page).toHaveURL(/\/admin\/liga/);
+
+    // La federación tiene su propio botón en la portada y entra directa.
+    await page.goto("/admin/inicio");
+    await page.getByRole("link", { name: /^Federación/ }).tap();
+    await expect(page).toHaveURL(/\/admin\/federacion/);
   });
 }
 
