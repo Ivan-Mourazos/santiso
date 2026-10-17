@@ -62,10 +62,10 @@ test("jornada: con el cartel de partido guardado, lo siguiente es la convocatori
     timeout: 30000,
   });
   // El cartel de partido se guarda en sus dos formatos a la vez.
-  await expect(panel.getByRole("img", { name: "Cartel de partido · Publicación" })).toBeVisible({
+  await expect(panel.getByRole("button", { name: "Ver en grande: Publicación" })).toBeVisible({
     timeout: 60000,
   });
-  await expect(panel.getByRole("img", { name: "Cartel de partido · Historia" })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Ver en grande: Historia" })).toBeVisible();
   await page.goto(ruta("convocado"));
   await expect(mesa.getByText("Cartel guardado", { exact: true })).toBeVisible({
     timeout: 30000,
