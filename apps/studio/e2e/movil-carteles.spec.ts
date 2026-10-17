@@ -7,20 +7,20 @@ const PNG = Buffer.from(
 
 async function abrir(page: Page) {
   await page.goto("/admin/carteles");
-  await expect(page.getByRole("tab", { name: "Datos", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Plantilla de cartel", { exact: true })).toBeVisible();
   await page.waitForLoadState("networkidle");
   // El cartel de partido se rellena eligiendo partido; los campos sueltos van plegados.
   await page.locator("summary").filter({ hasText: "Editar datos a mano" }).tap();
 }
 
+/** Sin pestañas: datos y vista previa van en la misma pantalla, uno debajo del otro. */
 async function vista(page: Page) {
-  const tab = page.getByRole("tab", { name: "Vista previa", exact: true });
-  if ((await tab.getAttribute("aria-selected")) !== "true") await tab.tap();
+  await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
   await expect(page.locator("[data-vista-cartel] [data-cartel]")).toBeVisible();
 }
 
 for (const ancho of [360, 390]) {
-  test(`carteles: pestañas conservan datos y siete plantillas caben a ${ancho}px`, async ({
+  test(`carteles: datos y vista previa juntos, siete plantillas caben a ${ancho}px`, async ({
     page,
   }) => {
     test.setTimeout(120000);
@@ -29,8 +29,8 @@ for (const ancho of [360, 390]) {
     await expect(page.getByLabel("Rival", { exact: true })).toBeVisible();
     await page.getByLabel("Rival", { exact: true }).fill("Rival móvil de prueba");
     await vista(page);
-    await expect(page.getByLabel("Rival", { exact: true })).toBeHidden();
-    await page.getByRole("tab", { name: "Datos", exact: true }).tap();
+    // Ya no hay pestañas: los datos siguen ahí mientras se ve el cartel.
+    await expect(page.getByRole("tab")).toHaveCount(0);
     await expect(page.getByLabel("Rival", { exact: true })).toHaveValue("Rival móvil de prueba");
     const selector = page.getByLabel("Plantilla de cartel", { exact: true });
     expect(Math.round((await selector.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
@@ -61,7 +61,6 @@ for (const ancho of [360, 390]) {
         .evaluateAll((controles) => controles.map((el) => el.getBoundingClientRect().height));
       // En Android la densidad de píxeles es fraccionaria: 44 px salen como 43,99999.
       expect(Math.round(Math.min(...altos))).toBeGreaterThanOrEqual(44);
-      await page.getByRole("tab", { name: "Datos", exact: true }).tap();
       if (plantilla === "cronoloxia")
         await page.getByRole("button", { name: "+ Evento", exact: true }).tap();
       if (plantilla === "clasificacion") await page.getByRole("button", { name: /Manual/ }).tap();
@@ -141,7 +140,6 @@ for (const modo of ["compartir", "sin-api", "no-admite", "cancelar", "error"] as
       expect(descargas).toEqual([]);
     }
     expect(peticiones).toBe(1);
-    await page.getByRole("tab", { name: "Datos", exact: true }).tap();
     await page.getByLabel("Rival", { exact: true }).fill("PNG nuevo necesario");
     await vista(page);
     // Con datos nuevos el PNG anterior ya no vale: se prepara otro, también solo.
@@ -150,7 +148,7 @@ for (const modo of ["compartir", "sin-api", "no-admite", "cancelar", "error"] as
   });
 }
 
-test("carteles: copia texto retocado sin zoom y conserva edición al cambiar de pestaña", async ({
+test("carteles: copia texto retocado sin zoom y conserva la edición al ver el cartel", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -177,7 +175,6 @@ test("carteles: copia texto retocado sin zoom y conserva edición al cambiar de 
   await copiar.tap();
   await expect(page.locator("html")).toHaveAttribute("data-copiado", "Texto móvil retocado 📸");
   await vista(page);
-  await page.getByRole("tab", { name: "Datos", exact: true }).tap();
   await expect(texto).toHaveValue("Texto móvil retocado 📸");
 });
 
@@ -210,7 +207,6 @@ test("carteles: respuesta PNG tardía no habilita compartir datos antiguos", asy
   await vista(page);
   // La primera preparación (automática) queda en el aire mientras se cambian los datos.
   await expect.poll(() => peticiones).toBe(1);
-  await page.getByRole("tab", { name: "Datos", exact: true }).tap();
   await page.getByLabel("Rival", { exact: true }).fill("Rival cambiado durante exportación");
   await vista(page);
   soltar[0]!();

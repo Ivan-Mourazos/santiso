@@ -6,25 +6,13 @@ import { schema } from "@santiso/db";
 import { aliasedTable, and, asc, eq, inArray } from "drizzle-orm";
 import sharp from "sharp";
 import { leerPeticion } from "@/lib/cartel2/esquema";
-import type { FormatoCartel, PeticionCartel, Plantilla } from "@/lib/cartel2/modelo";
+import type { FormatoCartel, PeticionCartel } from "@/lib/cartel2/modelo";
+import { PASOS, type CartelGuardado } from "@/lib/cartel2/pasos";
 import { renderizarCartel } from "@/lib/server/cartel2/render";
 import { exigirSesion, obtenerDb } from "@/lib/server/db";
 import { resolverRutaMedia } from "@/lib/server/media";
 
 export type PasoCartelPartido = schema.PasoCartelPartido;
-
-/** Único catálogo de los formatos disponibles y de la plantilla técnica de cada paso. */
-const PASOS: Record<
-  PasoCartelPartido,
-  { plantilla: Plantilla; formatos: readonly FormatoCartel[] }
-> = {
-  partido: { plantilla: "partido", formatos: ["publicacion", "historia"] },
-  convocatoria: { plantilla: "convocatoria", formatos: ["publicacion"] },
-  once: { plantilla: "alineacion", formatos: ["historia"] },
-  resultado: { plantilla: "resultado", formatos: ["publicacion"] },
-  cronoloxia: { plantilla: "cronoloxia", formatos: ["publicacion"] },
-  noso11: { plantilla: "once", formatos: ["publicacion"] },
-};
 
 export function formatosDe(paso: PasoCartelPartido): readonly FormatoCartel[] {
   return PASOS[paso].formatos;
@@ -409,12 +397,7 @@ export async function guardarCartelesPaso({
   }
 }
 
-export interface CartelGuardado {
-  formato: FormatoCartel;
-  url: string;
-  generadoEn: string;
-  desactualizado: boolean;
-}
+export type { CartelGuardado };
 export type CartelesDePartidos = Record<
   string,
   Partial<Record<PasoCartelPartido, CartelGuardado[]>>

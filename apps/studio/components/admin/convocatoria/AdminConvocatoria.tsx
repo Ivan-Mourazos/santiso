@@ -1,7 +1,7 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- PNG local generado, sin optimizador */
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CartelesDelPaso } from "@/components/admin/cartel/CartelesDelPaso";
 import { useCartelAssets } from "@/components/admin/cartel/useCartelAssets";
 import { useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
@@ -11,6 +11,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation
 import { nombreDeCartel } from "@/lib/alineacion/modelo";
 import { aHex, COLOR_RIVAL_RESERVA } from "@/lib/cartel2/color";
 import { fechaCorta } from "@/lib/cartel2/modelo";
+import type { CartelGuardado } from "@/lib/cartel2/pasos";
 import {
   convocatoriaInicial,
   errorDeConvocatoria,
@@ -19,6 +20,7 @@ import {
   type Convocatoria,
   type PantallaConvocatoria,
 } from "@/lib/convocatoria/modelo";
+import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados";
 import {
   cargarPantallaConvocatoria,
   guardarConvocatoria,
@@ -42,7 +44,7 @@ export default function AdminConvocatoria({
   const [persistida, setPersistida] = useState(false);
   const [ocupada, setOcupada] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [png, setPng] = useState<{ url: string; fichero: File } | null>(null);
+  const [carteles, setCarteles] = useState<CartelGuardado[] | null>(null);
   const generacion = useRef(0);
   const sucio = JSON.stringify(c) !== JSON.stringify(guardada);
   useUnsavedChanges(sucio);
@@ -62,7 +64,12 @@ export default function AdminConvocatoria({
         setC(r.datos.convocatoria);
         setGuardada(r.datos.convocatoria);
         setPersistida(r.datos.guardada);
-        setPng(null);
+        setCarteles(null);
+        if (r.datos.partidoId) {
+          const guardados = await cargarCartelesPartido([r.datos.partidoId]);
+          if (turno !== generacion.current) return;
+          setCarteles(guardados.ok ? (guardados.datos[r.datos.partidoId]?.convocatoria ?? []) : []);
+        }
       } catch {
         if (turno === generacion.current) setError("No se pudo cargar la convocatoria.");
       } finally {
@@ -81,19 +88,11 @@ export default function AdminConvocatoria({
       invalidarCarga();
     };
   }, [cargar, partidoInicial, invalidarCarga]);
-  const url = png?.url;
-  useEffect(
-    () => () => {
-      if (url) URL.revokeObjectURL(url);
-    },
-    [url],
-  );
 
   const partido = pantalla?.partidos.find((p) => p.id === pantalla.partidoId);
   const bloqueada = Boolean(partido?.finalizado);
   const invalid = errorDeConvocatoria(c);
   function cambiar(patch: Partial<Convocatoria>) {
-    setPng(null);
     setC((antes) => ({ ...antes, ...patch }));
   }
   async function guardar() {
@@ -121,57 +120,23 @@ export default function AdminConvocatoria({
       if (turno === generacion.current) setOcupada(false);
     }
   }
-  async function generar() {
-    if (!partido || !pantalla || invalid) return;
-    const turno = generacion.current;
-    // Ver el cartel no guarda nada: se pinta con lo que hay en pantalla.
-    const peticion = peticionDeConvocatoria(categoria, partido, pantalla.jugadores, c, {
-      institucionales: (recursos.xuntaIsLeft
-        ? [recursos.xunta, recursos.rfgf]
-        : [recursos.rfgf, recursos.xunta]
-      ).filter(Boolean),
-      patrocinadores: recursos.sponsors,
-      colorRival: aHex(COLOR_RIVAL_RESERVA),
-    });
-    const respuesta = await fetch("/api/carteles/png", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(peticion),
-    });
-    if (respuesta.status === 422) {
-      const aviso = (await respuesta.json()) as { error: string };
-      showToast(aviso.error, "error");
-      return;
-    }
-    if (!respuesta.ok) throw new Error(String(respuesta.status));
-    const blob = await respuesta.blob();
-    if (turno !== generacion.current) return;
-    const fichero = new File(
-      [blob],
-      `convocatoria-${partido.fecha?.slice(0, 10) || "partido"}.png`,
-      { type: "image/png" },
-    );
-    setPng({ url: URL.createObjectURL(blob), fichero });
-  }
-  function descargar() {
-    if (!png) return;
-    const a = document.createElement("a");
-    a.href = png.url;
-    a.download = png.fichero.name;
-    a.click();
-  }
-  async function compartir() {
-    if (!png) return;
-    const datos = { files: [png.fichero] };
-    if (!navigator.canShare?.(datos)) {
-      descargar();
-      return;
-    }
-    try {
-      await navigator.share(datos);
-    } catch (e) {
-      if (!(e instanceof DOMException && e.name === "AbortError")) descargar();
-    }
+  /**
+   * La petición del cartel con lo que hay en pantalla. Antes se guarda la convocatoria: el
+   * cartel guardado tiene que corresponder a lo guardado, o el aviso de «desactualizado» mentiría.
+   */
+  async function prepararCartel() {
+    if (!partido || !pantalla || invalid) return null;
+    if (!bloqueada && (!persistida || sucio) && !(await guardar())) return null;
+    return [
+      peticionDeConvocatoria(categoria, partido, pantalla.jugadores, c, {
+        institucionales: (recursos.xuntaIsLeft
+          ? [recursos.xunta, recursos.rfgf]
+          : [recursos.rfgf, recursos.xunta]
+        ).filter(Boolean),
+        patrocinadores: recursos.sponsors,
+        colorRival: aHex(COLOR_RIVAL_RESERVA),
+      }),
+    ];
   }
   if (error)
     return (
@@ -226,139 +191,129 @@ export default function AdminConvocatoria({
         <p role="status">Migración de convocatorias pendiente de aplicar.</p>
       )}
       {bloqueada && <p role="status">Partido ya jugado: convocatoria de solo lectura.</p>}
-      {png ? (
-        <section className={s.png} aria-label="Cartel generado">
-          <img src={png.url} alt="Cartel de convocatoria" />
-          <div className={s.acciones}>
-            <Button onClick={() => void compartir()}>Guardar o compartir</Button>
-            <Button variant="secondary" onClick={descargar}>
-              Descargar
-            </Button>
-            <Button variant="secondary" onClick={() => setPng(null)}>
-              Volver
-            </Button>
-          </div>
-        </section>
-      ) : (
-        <>
-          <AvisosPartido avisos={pantalla.avisos} />
-          <p className={s.contador} role="status">
-            {c.jugadores.length} convocados / {pantalla.jugadores.length}
-          </p>
-          <ul className={s.jugadores} aria-label={`Plantilla ${categoria}`}>
-            {pantalla.jugadores.map((j) => {
-              const aviso = avisoDe(pantalla.avisos, j.id);
-              return (
-              <li key={j.id}>
-                <button
-                  type="button"
-                  aria-pressed={c.jugadores.includes(j.id)}
-                  aria-label={`Convocar: ${nombreDeCartel(j)}${aviso ? `, ${aviso.situacion}` : ""}`}
-                  disabled={ocupada || bloqueada}
-                  onClick={() =>
-                    cambiar({
-                      jugadores: c.jugadores.includes(j.id)
-                        ? c.jugadores.filter((id) => id !== j.id)
-                        : [...c.jugadores, j.id],
-                    })
-                  }
-                >
-                  <b>{j.dorsal ?? "—"}</b>
-                  <span>
-                    {nombreDeCartel(j)}
-                    <MarcaAviso aviso={aviso} />
-                  </span>
-                </button>
-              </li>
+      <AvisosPartido avisos={pantalla.avisos} />
+      <p className={s.contador} role="status">
+        {c.jugadores.length} convocados / {pantalla.jugadores.length}
+      </p>
+      <ul className={s.jugadores} aria-label={`Plantilla ${categoria}`}>
+        {pantalla.jugadores.map((j) => {
+          const aviso = avisoDe(pantalla.avisos, j.id);
+          return (
+            <li key={j.id}>
+              <button
+                type="button"
+                aria-pressed={c.jugadores.includes(j.id)}
+                aria-label={`Convocar: ${nombreDeCartel(j)}${aviso ? `, ${aviso.situacion}` : ""}`}
+                disabled={ocupada || bloqueada}
+                onClick={() =>
+                  cambiar({
+                    jugadores: c.jugadores.includes(j.id)
+                      ? c.jugadores.filter((id) => id !== j.id)
+                      : [...c.jugadores, j.id],
+                  })
+                }
+              >
+                <b>{j.dorsal ?? "—"}</b>
+                <span>
+                  {nombreDeCartel(j)}
+                  <MarcaAviso aviso={aviso} />
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {invalid && <p role="status">{invalid}</p>}
+      <details className={s.detalles} open>
+        <summary>Datos de la quedada</summary>
+        <fieldset disabled={ocupada || bloqueada} className={s.campos}>
+          <Field
+            label="Hora de quedada"
+            type="time"
+            value={c.horaQuedada}
+            onChange={(e) => cambiar({ horaQuedada: e.target.value })}
+          />
+          <Field
+            label="Lugar de quedada"
+            maxLength={200}
+            value={c.lugarQuedada}
+            onChange={(e) => cambiar({ lugarQuedada: e.target.value })}
+          />
+          <Field
+            label="Equipación"
+            maxLength={120}
+            value={c.equipacion}
+            onChange={(e) => cambiar({ equipacion: e.target.value })}
+          />
+          <Textarea
+            label="Nota"
+            rows={2}
+            maxLength={400}
+            value={c.nota}
+            onChange={(e) => cambiar({ nota: e.target.value })}
+          />
+        </fieldset>
+      </details>
+      <details className={s.detalles}>
+        <summary>Texto para WhatsApp</summary>
+        <Textarea label="Convocatoria para WhatsApp" value={texto} readOnly rows={6} />
+      </details>
+      <div className={s.acciones}>
+        <Button
+          variant="secondary"
+          disabled={ocupada || Boolean(invalid)}
+          onClick={() =>
+            void ejecutar(async () => {
+              await navigator.clipboard.writeText(texto);
+              showToast("Texto copiado");
+            })
+          }
+        >
+          Copiar texto
+        </Button>
+        <Button
+          variant="secondary"
+          disabled={noGuardar}
+          onClick={() =>
+            void ejecutar(async () => {
+              if ((!persistida || sucio) && !(await guardar())) return;
+              router.push(
+                `/admin/alineacion?categoria=${encodeURIComponent(categoria)}&partido=${partido.id}`,
               );
-            })}
-          </ul>
-          {invalid && <p role="status">{invalid}</p>}
-          <details className={s.detalles} open>
-            <summary>Datos de la quedada</summary>
-            <fieldset disabled={ocupada || bloqueada} className={s.campos}>
-              <Field
-                label="Hora de quedada"
-                type="time"
-                value={c.horaQuedada}
-                onChange={(e) => cambiar({ horaQuedada: e.target.value })}
-              />
-              <Field
-                label="Lugar de quedada"
-                maxLength={200}
-                value={c.lugarQuedada}
-                onChange={(e) => cambiar({ lugarQuedada: e.target.value })}
-              />
-              <Field
-                label="Equipación"
-                maxLength={120}
-                value={c.equipacion}
-                onChange={(e) => cambiar({ equipacion: e.target.value })}
-              />
-              <Textarea
-                label="Nota"
-                rows={2}
-                maxLength={400}
-                value={c.nota}
-                onChange={(e) => cambiar({ nota: e.target.value })}
-              />
-            </fieldset>
-          </details>
-          <details className={s.detalles}>
-            <summary>Texto para WhatsApp</summary>
-            <Textarea label="Convocatoria para WhatsApp" value={texto} readOnly rows={6} />
-          </details>
-          <div className={s.acciones}>
-            <Button
-              variant="secondary"
-              disabled={ocupada || Boolean(invalid)}
-              onClick={() =>
-                void ejecutar(async () => {
-                  await navigator.clipboard.writeText(texto);
-                  showToast("Texto copiado");
-                })
-              }
-            >
-              Copiar texto
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={noGuardar}
-              onClick={() =>
-                void ejecutar(async () => {
-                  if ((!persistida || sucio) && !(await guardar())) return;
-                  router.push(
-                    `/admin/alineacion?categoria=${encodeURIComponent(categoria)}&partido=${partido.id}`,
-                  );
-                })
-              }
-            >
-              {!persistida || sucio ? "Guardar y pasar a alineación" : "Pasar a alineación"}
-            </Button>
-          </div>
-          <div className={s.barra} aria-label="Acciones de convocatoria">
-            <Button
-              variant="secondary"
-              disabled={noGuardar || (persistida && !sucio)}
-              onClick={() =>
-                void ejecutar(async () => {
-                  if (await guardar()) showToast("Convocatoria guardada");
-                })
-              }
-            >
-              Guardar
-            </Button>
-            <Button
-              pending={ocupada}
-              pendingLabel="Preparando…"
-              disabled={ocupada || Boolean(invalid) || pantalla.migracionPendiente}
-              onClick={() => void ejecutar(generar)}
-            >
-              Ver cartel
-            </Button>
-          </div>
-        </>
+            })
+          }
+        >
+          {!persistida || sucio ? "Guardar y pasar al once inicial" : "Pasar al once inicial"}
+        </Button>
+      </div>
+      {carteles === null ? (
+        <LoadingState title="Cargando carteles guardados…" />
+      ) : (
+        <CartelesDelPaso
+          key={partido.id}
+          partidoId={partido.id}
+          paso="convocatoria"
+          guardados={carteles}
+          preparar={prepararCartel}
+          motivo={
+            invalid ?? (pantalla.migracionPendiente ? "Falta aplicar la migración." : null)
+          }
+          showToast={showToast}
+        />
       )}
+      <div className={s.barra} aria-label="Acciones de convocatoria">
+        <Button
+          variant="secondary"
+          disabled={noGuardar || (persistida && !sucio)}
+          onClick={() =>
+            void ejecutar(async () => {
+              if (await guardar()) showToast("Convocatoria guardada");
+            })
+          }
+        >
+          Guardar
+        </Button>
+      </div>
     </div>
   );
 }

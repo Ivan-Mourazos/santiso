@@ -76,6 +76,7 @@ const partido = z.object({
     campo: texto(),
     localidad: texto().optional(),
     contexto,
+    foto: fotoFondo.nullable().optional(),
   }),
 });
 

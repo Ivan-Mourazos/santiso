@@ -96,6 +96,8 @@ export interface DatosPartido extends Logos, Competicion {
   campo: string;
   localidad?: string;
   contexto?: ContextoDeportivo;
+  /** Foto de fondo entera, opcional: casi nunca se usa, pero se puede. */
+  foto?: FotoCartel | null;
 }
 
 export interface FormaEquipo {

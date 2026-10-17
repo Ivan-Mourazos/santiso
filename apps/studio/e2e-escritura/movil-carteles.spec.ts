@@ -41,7 +41,7 @@ for (const ancho of [360, 390]) {
       const url = `/admin/carteles?plantilla=resumo&partido=${id}`;
       await page.goto(url);
       await expect(page.getByLabel("Rival", { exact: true })).toHaveValue(/Rival .*Ficticio/i);
-      await page.getByRole("tab", { name: "Vista previa", exact: true }).tap();
+      await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
       await page.getByRole("button", { name: "Fotos del partido", exact: true }).tap();
       const galeria = page.getByRole("dialog", { name: "Fotos del partido", exact: true });
       await expect(galeria).toBeVisible();
@@ -90,7 +90,7 @@ for (const ancho of [360, 390]) {
       await expect(primera.getByRole("button", { name: "Encuadre", exact: true })).toBeVisible();
       await page.reload();
       await expect(page.getByLabel("Rival", { exact: true })).toHaveValue(/Rival .*Ficticio/i);
-      await page.getByRole("tab", { name: "Vista previa", exact: true }).tap();
+      await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
       await page.getByRole("button", { name: "Fotos del partido", exact: true }).tap();
       const foco = galeria.getByRole("listitem").first().locator("[data-foco]");
       const coordenadas = await foco.evaluate((el) => ({

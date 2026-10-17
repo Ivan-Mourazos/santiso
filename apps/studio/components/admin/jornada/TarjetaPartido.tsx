@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import GaleriaPartido from "@/components/admin/fotos/GaleriaPartido";
 import { useStudio } from "@/components/studio/StudioContext";
 import type { PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
+import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados";
 import {
+  type CartelesDelPartido,
   enlacesPartido,
   marcador,
   preparaConvocatoria,
@@ -59,8 +61,26 @@ export default function TarjetaPartido({
 }) {
   const { showToast } = useStudio();
   const [galeria, setGaleria] = useState(false);
+  // Los carteles guardados dicen qué pasos están hechos; hasta tenerlos, cuentan como pendientes.
+  const [carteles, setCarteles] = useState<{ id: string; deEste: CartelesDelPartido } | null>(
+    null,
+  );
+  useEffect(() => {
+    let vigente = true;
+    void cargarCartelesPartido([p.id]).then((r) => {
+      if (vigente && r.ok) setCarteles({ id: p.id, deEste: r.datos[p.id] ?? {} });
+    });
+    return () => {
+      vigente = false;
+    };
+  }, [p.id]);
   const cuando = fechaPartido(p.fecha);
-  const { despues, pasos, principal } = progresoPartido(p, momento, categoria);
+  const { despues, pasos, principal } = progresoPartido(
+    p,
+    momento,
+    categoria,
+    carteles?.id === p.id ? carteles.deEste : {},
+  );
   const e = enlacesPartido(p, categoria);
   const marcado = tieneResultado(p);
   return (

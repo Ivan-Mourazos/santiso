@@ -1,0 +1,86 @@
+.panel {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+}
+.panel[data-estado="desactualizado"] {
+  border-color: var(--ui-warning);
+}
+.estado {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.panel[data-estado="hecho"] .estado {
+  color: var(--ui-success, inherit);
+}
+.imagenes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.imagen {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  flex: 1 1 14rem;
+  max-width: 22rem;
+}
+.imagen[data-formato="historia"] {
+  max-width: 14rem;
+}
+.imagen img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+.imagen figcaption {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ui-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.acciones button {
+  flex: 1;
+  min-height: 44px;
+}
+.motivo {
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: 0.875rem;
+}
+.generar {
+  min-height: 48px;
+}
+.logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.logos legend {
+  width: 100%;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ui-muted);
+}
+.logos label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.logos input {
+  width: 22px;
+  height: 22px;
+}

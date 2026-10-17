@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe.configure({ mode: "serial" });
 
-test("guardar convocatoria, reabrir, exportar PNG y pasar convocados a alineación", async ({
+test("guardar convocatoria, generar y guardar su cartel, y pasar convocados al once", async ({
   page,
 }) => {
   const errores: string[] = [];
@@ -27,25 +27,29 @@ test("guardar convocatoria, reabrir, exportar PNG y pasar convocados a alineaci�
   );
   await expect(page.getByLabel("Equipación", { exact: true })).toHaveValue("Amarela");
   await expect(page.getByLabel("Nota", { exact: true })).toHaveValue("Puntualidade");
-  // Ver el cartel con cambios sin guardar no los guarda.
-  await plantilla.getByRole("button", { name: "Convocar: Tres Aliñación Ficticio" }).click();
-  await expect(page.getByText("3 convocados / 3")).toBeVisible();
-  await page.getByRole("button", { name: "Ver cartel", exact: true }).click();
-  await expect(page.getByRole("img", { name: "Cartel de convocatoria" })).toBeVisible({
-    timeout: 60000,
-  });
-  page.once("dialog", (d) => d.accept());
-  await page.goto(ruta);
-  await expect(page.getByText("2 convocados / 3")).toBeVisible({ timeout: 30000 });
-  await page.getByRole("button", { name: "Ver cartel", exact: true }).click();
-  const cartel = page.getByRole("img", { name: "Cartel de convocatoria" });
+  // Generar guarda la convocatoria y el cartel; al volver sigue ahí, sin regenerar.
+  const panel = page.getByRole("region", { name: "Convocatoria: carteles guardados" });
+  await expect(panel.getByText("Todavía sin generar.")).toBeVisible();
+  await panel.getByRole("button", { name: "Generar cartel", exact: true }).click();
+  const cartel = panel.getByRole("img", { name: "Convocatoria · Publicación" });
   await expect(cartel).toBeVisible({ timeout: 60000 });
+  await expect(cartel).toHaveJSProperty("complete", true);
   expect(
     await cartel.evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight]),
   ).toEqual([2160, 2700]);
-  await expect(page.getByRole("button", { name: "Guardar o compartir", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Volver", exact: true }).click();
-  await page.getByRole("button", { name: "Pasar a alineación", exact: true }).click();
+  await expect(panel.getByRole("button", { name: "Guardar o compartir", exact: true })).toBeVisible();
+  await page.goto(ruta);
+  await expect(panel.getByText(/^✓ Generado/)).toBeVisible({ timeout: 30000 });
+  await expect(panel.getByRole("img", { name: "Convocatoria · Publicación" })).toBeVisible();
+  // Cambiar un dato que sale en el cartel lo deja desactualizado, pero se conserva el anterior.
+  await page.getByLabel("Hora de quedada", { exact: true }).fill("16:30");
+  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(page.getByText("Convocatoria guardada", { exact: true })).toBeVisible();
+  await page.goto(ruta);
+  await expect(panel.getByText(/Han cambiado los datos/)).toBeVisible({ timeout: 30000 });
+  await expect(panel.getByRole("button", { name: "Actualizar cartel", exact: true })).toBeVisible();
+  await expect(panel.getByRole("img", { name: "Convocatoria · Publicación" })).toBeVisible();
+  await page.getByRole("button", { name: "Pasar al once inicial", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/alineacion\?.*partido=convocatoria-e2e/);
   const ali = page.getByRole("list", { name: "Plantilla Senior" });
   await expect(ali.getByRole("button", { name: /^Uno Aliñación Ficticio:/ })).toBeVisible({
@@ -82,7 +86,7 @@ test("guardado pendiente no redirige tras abandonar convocatoria", async ({ page
     await route.fulfill({ response: respuesta });
     completar();
   });
-  await page.getByRole("button", { name: "Guardar y pasar a alineación", exact: true }).click();
+  await page.getByRole("button", { name: "Guardar y pasar al once inicial", exact: true }).click();
   await recibida;
   page.once("dialog", (d) => d.accept());
   await page.getByRole("link", { name: "Jornada", exact: true }).first().click();

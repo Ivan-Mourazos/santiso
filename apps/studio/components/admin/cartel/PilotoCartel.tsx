@@ -22,6 +22,8 @@ import type { AssetUrls, FormState, TemplateId } from "./types";
 import type { CartelTeam } from "./useCartelForm";
 import { recursosDeCartel } from "@/lib/cartel2/recursos";
 import { usePreviasCartel } from "./usePreviasCartel";
+import { CartelesDelPaso } from "./CartelesDelPaso";
+import { PASOS, type CartelGuardado, type PasoCartel } from "@/lib/cartel2/pasos";
 
 /** Color dominante de un escudo, leído en un lienzo pequeño; `null` si no se puede. */
 export async function colorDeEscudo(url: string): Promise<string | null> {
@@ -87,6 +89,7 @@ export default function PilotoCartel({
   recursos,
   equipos,
   showToast,
+  guardado = null,
 }: {
   tipo: TemplateId;
   formato?: FormatoCartel;
@@ -95,6 +98,11 @@ export default function PilotoCartel({
   /** Equipos del Senior y de Veteranos: de aquí salen el escudo del Santiso y los marcados en 3D. */
   equipos: CartelTeam[];
   showToast: (msg: string, type?: "success" | "error") => void;
+  /**
+   * Cartel de un partido concreto: en vez de exportar suelto, se generan y guardan sus formatos
+   * (ver `CartelesDelPaso`). Sin él, el cartel se descarga o comparte sin guardar.
+   */
+  guardado?: { partidoId: string; paso: PasoCartel; guardados: CartelGuardado[] } | null;
 }) {
   // Un solo diseño de cartel de partido: ya no se elige.
   const composicion: Composicion = "diagonal";
@@ -102,6 +110,7 @@ export default function PilotoCartel({
   const [foto, setFoto] = useState<FotoCartel | null>(null);
   const [galeria, setGaleria] = useState(false);
   const [hueco, setHueco] = useState({ ancho: 0, alto: 0 });
+  const [enPantalla, setEnPantalla] = useState(false);
   const [exportando, setExportando] = useState(false);
   const [png, setPng] = useState<{ clave: string; archivo: File } | null>(null);
   const [compartiendo, setCompartiendo] = useState(false);
@@ -175,6 +184,16 @@ export default function PilotoCartel({
     observador.observe(nodo);
     return () => observador.disconnect();
   }, []);
+  useEffect(() => {
+    const nodo = caja.current;
+    if (!nodo) return;
+    const observador = new IntersectionObserver(
+      ([entrada]) => setEnPantalla(Boolean(entrada?.isIntersecting)),
+      { threshold: 0.5 },
+    );
+    observador.observe(nodo);
+    return () => observador.disconnect();
+  }, []);
 
   const peticion: PeticionCartel = useMemo(
     () =>
@@ -230,6 +249,24 @@ export default function PilotoCartel({
     }
   }
 
+  /** Las peticiones de cada formato del paso, para generarlas y guardarlas juntas. */
+  async function prepararGuardado(): Promise<PeticionCartel[] | null> {
+    if (!guardado || previas.cargando || previas.error) return null;
+    return Promise.all(
+      PASOS[guardado.paso].formatos.map((f) =>
+        exportable(
+          peticionDeFormulario(tipo, form, recursosDeCartel(equipos, recursos), {
+            color: (url) => (url && colores[url]) || aHex(COLOR_RIVAL_RESERVA),
+            composicion,
+            foto,
+            formato: f,
+            previas: previas.datos,
+          }),
+        ),
+      ),
+    );
+  }
+
   // En el móvil el PNG se prepara solo en cuanto la vista previa se queda quieta: así «Guardar
   // o compartir» abre la hoja del sistema al primer toque (en iOS, «Guardar imagen»). No puede
   // prepararse dentro de ese toque: Safari solo deja compartir justo después de tocar, y pintar
@@ -241,13 +278,15 @@ export default function PilotoCartel({
     prepararSolo.current = generar;
   });
   const previaLista = !previas.cargando && !previas.error;
-  const aLaVista = hueco.ancho > 0;
+  // Datos y vista previa van en la misma pantalla: el PNG solo se prepara solo cuando el cartel
+  // está de verdad a la vista, no mientras se rellenan los datos más arriba.
+  const aLaVista = hueco.ancho > 0 && enPantalla;
   useEffect(() => {
-    if (!esMovil || !aLaVista || !previaLista || pngActual || exportando) return;
+    if (guardado || !esMovil || !aLaVista || !previaLista || pngActual || exportando) return;
     if (falloAlPreparar.current === clavePng) return;
     const espera = setTimeout(() => void prepararSolo.current(), ESPERA_PREPARAR_MS);
     return () => clearTimeout(espera);
-  }, [esMovil, aLaVista, previaLista, pngActual, exportando, clavePng]);
+  }, [guardado, esMovil, aLaVista, previaLista, pngActual, exportando, clavePng]);
 
   function guardar(archivo: File) {
     const url = URL.createObjectURL(archivo);
@@ -285,6 +324,7 @@ export default function PilotoCartel({
   }
 
   return (
+    <>
     <section
       ref={panel}
       className={styles.piloto}
@@ -303,7 +343,7 @@ export default function PilotoCartel({
       <div className={styles.cabecera}>
         <h3>Previsualización</h3>
         <div className={styles.controles}>
-          {(tipo === "resumo" || tipo === "cronoloxia") && (
+          {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
             <>
               {/* De la galería del partido cargado, o cualquier foto subida en el momento. */}
               {form.partido_id && (
@@ -363,6 +403,8 @@ export default function PilotoCartel({
               )}
             </>
           )}
+          {!guardado && (
+            <>
           <div className={styles.movil}>
             {pngActual ? (
               <Button size="sm" onClick={() => void compartir()} disabled={compartiendo}>
@@ -388,9 +430,11 @@ export default function PilotoCartel({
               {exportando ? "Generando…" : "Descargar PNG"}
             </Button>
           </div>
+            </>
+          )}
         </div>
       </div>
-      {foto && (tipo === "resumo" || tipo === "cronoloxia") && (
+      {foto && (tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
         <details className={styles.encuadre}>
           <summary>Ajustar la foto</summary>
           <Deslizador
@@ -451,5 +495,23 @@ export default function PilotoCartel({
         />
       )}
     </section>
+    {guardado && (
+      <CartelesDelPaso
+        key={`${guardado.partidoId}:${guardado.paso}`}
+        partidoId={guardado.partidoId}
+        paso={guardado.paso}
+        guardados={guardado.guardados}
+        preparar={prepararGuardado}
+        motivo={
+          previas.error
+            ? "No se pudieron cargar los datos previos del partido."
+            : previas.cargando
+              ? "Cargando datos del partido…"
+              : null
+        }
+        showToast={showToast}
+      />
+    )}
+    </>
   );
 }

@@ -1,4 +1,8 @@
+import { estadoPaso, type CartelGuardado, type PasoCartel } from "@/lib/cartel2/pasos";
 import type { PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
+
+/** Carteles guardados de un partido, por paso. */
+export type CartelesDelPartido = Partial<Record<PasoCartel, CartelGuardado[]>>;
 
 /** Hora de pared local, igual que las fechas guardadas en el calendario. */
 export function momentoLocal(ahora = new Date()) {
@@ -70,13 +74,43 @@ export function enlacesPartido(p: PartidoDeLaSemana, categoria: string) {
   };
 }
 
-/** Solo los datos guardados prueban un paso. Abrir Carteles no confirma una publicación. */
-export function progresoPartido(p: PartidoDeLaSemana, ahora: string, categoria = "Senior") {
+/** Lo que dice un cartel guardado de su paso, para la tarjeta del partido. */
+function cartel(
+  guardados: readonly CartelGuardado[] | undefined,
+): { estado: string; hecho: boolean } {
+  const estado = estadoPaso(guardados);
+  if (estado === "hecho") return { estado: "Cartel guardado", hecho: true };
+  if (estado === "desactualizado") return { estado: "⚠ Cartel desactualizado", hecho: false };
+  return { estado: "Sin cartel", hecho: false };
+}
+
+/**
+ * Solo los datos guardados prueban un paso: la convocatoria o el once guardados y el cartel
+ * guardado con datos al día. Compartirlo pasa fuera del Studio: «guardado» no es «publicado».
+ */
+export function progresoPartido(
+  p: PartidoDeLaSemana,
+  ahora: string,
+  categoria = "Senior",
+  carteles: CartelesDelPartido = {},
+) {
   const e = enlacesPartido(p, categoria);
   const despues = trasPartido(p, ahora);
   const resultado = marcador(p);
   const convocados = p.preparacion.convocatoria;
   const once = p.preparacion.titulares === 11 && p.preparacion.capitan;
+  const cPartido = cartel(carteles.partido);
+  const cConvocatoria = cartel(carteles.convocatoria);
+  const cOnce = cartel(carteles.once);
+  const cResultado = cartel(carteles.resultado);
+  const cCronoloxia = cartel(carteles.cronoloxia);
+  const cNoso11 = cartel(carteles.noso11);
+  const pasoCartelPartido: PasoPartido = {
+    titulo: "Cartel de partido",
+    estado: cPartido.estado,
+    tono: cPartido.hecho ? "hecho" : "pendiente",
+    href: e.cartel("partido"),
+  };
   const pasos: PasoPartido[] = despues
     ? [
         {
@@ -92,47 +126,41 @@ export function progresoPartido(p: PartidoDeLaSemana, ahora: string, categoria =
           href: e.acta,
         },
         {
-          titulo: "Publicaciones",
-          estado:
-            p.acta && tieneResultado(p)
-              ? ""
-              : tieneResultado(p)
-                ? "Resultado disponible"
-                : "Espera resultado",
-          tono: tieneResultado(p) ? "pendiente" : "espera",
+          titulo: "Cartel de resultado",
+          estado: tieneResultado(p) ? cResultado.estado : "Espera resultado",
+          tono: !tieneResultado(p) ? "espera" : cResultado.hecho ? "hecho" : "pendiente",
           href: e.cartel("resumo"),
+        },
+        {
+          titulo: "Cronoloxía",
+          estado: p.acta ? cCronoloxia.estado : "Espera acta",
+          tono: !p.acta ? "espera" : cCronoloxia.hecho ? "hecho" : "pendiente",
+          href: e.cartel("cronoloxia"),
+        },
+        {
+          titulo: "O Noso 11",
+          estado: cNoso11.estado,
+          tono: cNoso11.hecho ? "hecho" : "pendiente",
+          href: e.cartel("noso11"),
         },
       ]
     : !preparaConvocatoria(categoria)
-      ? [
-          {
-            titulo: "Cartel",
-            estado: "",
-            tono: "pendiente",
-            href: e.cartel("partido"),
-          },
-        ]
+      ? [pasoCartelPartido]
       : [
-        {
-          titulo: "Convocatoria",
-          estado: convocados ? `${convocados} guardados` : "Pendiente",
-          tono: convocados ? "hecho" : "pendiente",
-          href: e.convocatoria,
-        },
-        {
-          titulo: "Once",
-          estado: `${p.preparacion.titulares}/11${p.preparacion.titulares === 11 && !p.preparacion.capitan ? " · falta capitán" : ""}`,
-          tono: once ? "hecho" : "pendiente",
-          href: e.once,
-        },
-        {
-          titulo: "Cartel",
-          // Compartir pasa fuera del Studio: no se puede saber si está hecho, así que no lleva estado.
-          estado: "",
-          tono: "pendiente",
-          href: e.cartel("partido"),
-        },
-      ];
+          pasoCartelPartido,
+          {
+            titulo: "Convocatoria",
+            estado: convocados ? `${convocados} convocados · ${cConvocatoria.estado}` : "Pendiente",
+            tono: convocados && cConvocatoria.hecho ? "hecho" : "pendiente",
+            href: e.convocatoria,
+          },
+          {
+            titulo: "Once inicial",
+            estado: `${p.preparacion.titulares}/11${p.preparacion.titulares === 11 && !p.preparacion.capitan ? " · falta capitán" : once ? ` · ${cOnce.estado}` : ""}`,
+            tono: once && cOnce.hecho ? "hecho" : "pendiente",
+            href: e.once,
+          },
+        ];
   const principal =
     p.estado === "cancelado" || p.estado === "aplazado"
       ? { titulo: "Revisar fecha del partido", href: e.calendario }
@@ -141,13 +169,21 @@ export function progresoPartido(p: PartidoDeLaSemana, ahora: string, categoria =
           ? { titulo: "Anotar resultado", href: e.calendario }
           : !p.acta
             ? { titulo: "Completar acta", href: e.acta }
-            : { titulo: "Preparar publicaciones", href: e.cartel("resumo") }
-        : !preparaConvocatoria(categoria)
+            : !cResultado.hecho
+              ? { titulo: "Hacer cartel de resultado", href: e.cartel("resumo") }
+              : !cCronoloxia.hecho
+                ? { titulo: "Hacer cronoloxía", href: e.cartel("cronoloxia") }
+                : !cNoso11.hecho
+                  ? { titulo: "Hacer O Noso 11", href: e.cartel("noso11") }
+                  : { titulo: "Carteles listos: compartir", href: e.cartel("resumo") }
+        : !cPartido.hecho
           ? { titulo: "Preparar cartel de partido", href: e.cartel("partido") }
-          : !convocados
-          ? { titulo: "Preparar convocatoria", href: e.convocatoria }
-          : !once
-            ? { titulo: "Completar once", href: e.once }
-            : { titulo: "Preparar cartel de partido", href: e.cartel("partido") };
+          : !preparaConvocatoria(categoria)
+            ? { titulo: "Revisar cartel de partido", href: e.cartel("partido") }
+            : !convocados || !cConvocatoria.hecho
+              ? { titulo: "Preparar convocatoria", href: e.convocatoria }
+              : !once || !cOnce.hecho
+                ? { titulo: "Completar once inicial", href: e.once }
+                : { titulo: "Todo listo: compartir", href: e.cartel("partido") };
   return { despues, pasos, principal };
 }

@@ -39,20 +39,25 @@ test("elegir titulares, suplente y capitán, generar la historia y recuperarla a
     "false",
   );
 
-  // «Ver historia» guarda y enseña el PNG 9:16 con sus acciones.
-  await page.getByRole("button", { name: "Ver historia" }).click();
-  const historia = page.getByRole("img", { name: "Historia con la alineación" });
+  // «Generar cartel» guarda la alineación y la historia 9:16, que queda guardada con el partido.
+  const panel = page.getByRole("region", { name: "Once inicial: carteles guardados" });
+  await panel.getByRole("button", { name: "Generar cartel", exact: true }).click();
+  const historia = panel.getByRole("img", { name: "Once inicial · Historia" });
   await expect(historia).toBeVisible({ timeout: 60000 });
+  await expect(historia).toHaveJSProperty("complete", true);
   const medidas = await historia.evaluate((img: HTMLImageElement) => [
     img.naturalWidth,
     img.naturalHeight,
   ]);
   expect(medidas).toEqual([2160, 3840]);
-  await expect(page.getByRole("button", { name: "Compartir" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Descargar" })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Guardar o compartir" })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Descargar" })).toBeVisible();
 
-  // Al volver a entrar sigue ahí: se guardó con el partido.
+  // Al volver a entrar siguen ahí la alineación y su historia.
   await page.goto("/admin/alineacion?partido=alineacion-e2e");
+  await expect(panel.getByRole("img", { name: "Once inicial · Historia" })).toBeVisible({
+    timeout: 30000,
+  });
   await expect(page.getByText("2 / 11 titulares")).toBeVisible({ timeout: 30000 });
   await expect(
     page
