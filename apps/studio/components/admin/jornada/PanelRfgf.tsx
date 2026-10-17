@@ -80,7 +80,9 @@ export default function PanelRfgf({ showToast, onNovedades }: Props) {
         {enlazadas.length === 0
           ? "Sin enlazar con la federación. "
           : `Federación: ${enlazadas.map((c) => `${c.categoria}, ${c.resumen || cuando(c.comprobadoEn)}`).join(" · ")}. `}
-        <Link href="/admin/federacion">Ver qué hay traído y traer lo que falte</Link>
+        <Link href="/admin/federacion" className={styles.rfgfIr}>
+          Ver qué hay traído y traer lo que falte
+        </Link>
       </p>
     </section>
   );

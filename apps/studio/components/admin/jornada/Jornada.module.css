@@ -552,3 +552,10 @@ button.acceso {
   align-items: center;
   color: var(--ui-accent);
 }
+
+/* Enlace a Federación: se toca con el dedo, 44 px como el resto de controles. */
+.rfgfIr {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

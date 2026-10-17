@@ -64,7 +64,10 @@ test("jornada: conserva destinos del partido, fotos y federación", async ({ pag
     "href",
     "/admin/carteles?plantilla=proximos&rellenar=1",
   );
-  await expect(page.locator("summary").filter({ hasText: "Federación" })).toBeVisible();
+  // La federación en Jornada solo avisa y lleva a su sección.
+  await expect(
+    page.getByRole("link", { name: "Ver qué hay traído y traer lo que falte" }),
+  ).toHaveAttribute("href", "/admin/federacion");
   // Abrir Carteles solo rellena el editor; nunca generar ni guardar en datos reales.
   const rival = await partido.getByRole("heading", { level: 2 }).textContent();
   await partido.getByRole("link", { name: "Cartel de partido", exact: false }).click();
