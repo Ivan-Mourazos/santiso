@@ -12,6 +12,7 @@ import {
   cargarEstadoRfgf,
   comprobarRfgfAhora,
   guardarEnlaceRfgf,
+  pedirPartidosHistoricosRfgf,
   reintentarActaRfgf,
   traerActaRfgf,
   traerCifrasJugadoresRfgf,
@@ -23,6 +24,7 @@ import {
 import type { Resultado } from "@/lib/resultado";
 import type { EstadoFederacion, PartidoFederacion } from "@/lib/server/rfgf/estado";
 import type { ResultadoClasificacionRfgf } from "@/lib/server/rfgf/demanda";
+import { ArchivoPartidos } from "./ArchivoPartidos";
 import s from "./Federacion.module.css";
 
 type Historico = Extract<Awaited<ReturnType<typeof cargarEstadoHistoricoRfgf>>, { ok: true }>["datos"];
@@ -441,8 +443,9 @@ export default function AdminFederacion({
         <section className={s.bloque} aria-label="Temporadas pasadas">
           <h3>Temporadas pasadas</h3>
           <p className={s.nota}>
-            Las temporadas anteriores del club se repasan solas, poco a poco. Aquí ves cómo van y
-            puedes adelantar una.
+            Las cifras de los jugadores de temporadas anteriores se repasan solas, poco a poco.
+            Los partidos del Santiso de cada temporada se traen solo si los pides: tardan unas
+            horas, para no saturar a la federación, y se guardan aparte del calendario actual.
           </p>
           <ul className={s.historico}>
             {historico.map((g) => (
@@ -459,6 +462,33 @@ export default function AdminFederacion({
                     {g.intentos ? ` · ${g.intentos} intentos` : ""}
                   </small>
                 </div>
+                <div className={s.archivo}>
+                  <span>Partidos del Santiso: {g.archivoPartidos.texto}</span>
+                  {g.archivoPartidos.estado === "no_pedido" ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={ocupado}
+                      aria-label={`Traer partidos: ${g.temporada} · ${g.competicion}`}
+                      onClick={() =>
+                        void traer(
+                          `partidos:${g.codGrupo}`,
+                          async () => {
+                            const r = await pedirPartidosHistoricosRfgf(g.codGrupo);
+                            await cargarHistorico();
+                            return r;
+                          },
+                          () =>
+                            "Pedidos. Se irán trayendo poco a poco, unas horas por temporada.",
+                        )
+                      }
+                    >
+                      Traer partidos
+                    </Button>
+                  ) : (
+                    <ArchivoPartidos codGrupo={g.codGrupo} />
+                  )}
+                </div>
                 {g.estado !== "listo" && (
                   <Button
                     size="sm"
@@ -466,7 +496,7 @@ export default function AdminFederacion({
                     disabled={ocupado}
                     pending={trayendo === `grupo:${g.codGrupo}`}
                     pendingLabel="Trayendo…"
-                    aria-label={`Traer temporada ${g.temporada} · ${g.competicion}`}
+                    aria-label={`Adelantar cifras de jugadores: ${g.temporada} · ${g.competicion}`}
                     onClick={() =>
                       void traer(
                         `grupo:${g.codGrupo}`,
@@ -479,7 +509,7 @@ export default function AdminFederacion({
                       )
                     }
                   >
-                    Traer
+                    Adelantar cifras
                   </Button>
                 )}
               </li>

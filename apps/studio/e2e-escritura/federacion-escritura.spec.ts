@@ -38,3 +38,24 @@ test("federación: jornadas y partidos de cada competición, sin traer nada sin 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
   expect(errores).toEqual([]);
 });
+
+test("federación: partidos de temporadas pasadas, archivados y a pedir", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto("/admin/federacion?categoria=Senior");
+  const pasadas = page.getByRole("region", { name: "Temporadas pasadas" });
+  await expect(pasadas).toBeVisible({ timeout: 30000 });
+  // La de 2023-24 ya está traída: se despliega sin salir a la red.
+  await expect(pasadas.getByText("Partidos del Santiso: Terminado")).toBeVisible();
+  await pasadas.locator("summary").filter({ hasText: "Ver partidos" }).click();
+  await expect(pasadas.getByText("U.D. Santiso 2–1 Antigo Rival Ficticio")).toBeVisible();
+  await expect(pasadas.getByText(/⚽ VELLO GOLEADOR, XAN 23'/)).toBeVisible();
+  await expect(pasadas.getByText(/🟨 RIVAL AMONESTADO, PEPE 40'/)).toBeVisible();
+  // La de 2022-23 está sin pedir: pedirla solo la pone en cola, no descarga nada.
+  const pedir = pasadas.getByRole("button", {
+    name: "Traer partidos: 2022-2023 · TERCEIRA FICTICIA",
+  });
+  await pedir.click();
+  await expect(page.getByText(/Se irán trayendo poco a poco/)).toBeVisible();
+  await expect(pasadas.getByText("Partidos del Santiso: En cola")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});

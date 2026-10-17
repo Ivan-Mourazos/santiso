@@ -193,3 +193,54 @@
     display: none;
   }
 }
+.archivo {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  font-size: 0.875rem;
+}
+.archivo > button {
+  justify-self: start;
+}
+.archivoPartidos > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 700;
+}
+.partidosHistoricos {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.partidosHistoricos li {
+  display: grid;
+  gap: 2px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ui-border);
+}
+.cabeceraHistorico {
+  display: grid;
+  gap: 2px;
+}
+.cabeceraHistorico span {
+  color: var(--ui-muted);
+  font-size: 0.8rem;
+}
+.cabeceraHistorico strong {
+  overflow-wrap: anywhere;
+}
+.eventos {
+  margin: 0;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.enlaceActa {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 0.875rem;
+}
