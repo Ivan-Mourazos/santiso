@@ -31,16 +31,21 @@ test("guardar convocatoria, generar y guardar su cartel, y pasar convocados al o
   const panel = page.getByRole("region", { name: "Convocatoria: carteles guardados" });
   await expect(panel.getByText("Todavía sin generar.")).toBeVisible();
   await panel.getByRole("button", { name: "Generar cartel", exact: true }).click();
-  const cartel = panel.getByRole("img", { name: "Convocatoria · Publicación" });
-  await expect(cartel).toBeVisible({ timeout: 60000 });
+  // Sin miniatura: «Ver» lo abre en grande.
+  await panel.getByRole("button", { name: "Ver en grande: Publicación" }).click({ timeout: 60000 });
+  const cartel = page.getByRole("dialog").getByRole("img", { name: "Convocatoria · Publicación" });
+  await expect(cartel).toBeVisible();
   await expect(cartel).toHaveJSProperty("complete", true);
   expect(
     await cartel.evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight]),
   ).toEqual([2160, 2700]);
-  await expect(panel.getByRole("button", { name: "Guardar o compartir", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Cerrar diálogo" }).click();
+  await expect(
+    panel.getByRole("button", { name: "Guardar o compartir: Publicación", exact: true }),
+  ).toBeVisible();
   await page.goto(ruta);
   await expect(panel.getByText(/^✓ Generado/)).toBeVisible({ timeout: 30000 });
-  await expect(panel.getByRole("img", { name: "Convocatoria · Publicación" })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Ver en grande: Publicación" })).toBeVisible();
   // Cambiar un dato que sale en el cartel lo deja desactualizado, pero se conserva el anterior.
   await page.getByLabel("Hora de quedada", { exact: true }).fill("16:30");
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
@@ -48,7 +53,7 @@ test("guardar convocatoria, generar y guardar su cartel, y pasar convocados al o
   await page.goto(ruta);
   await expect(panel.getByText(/Han cambiado los datos/)).toBeVisible({ timeout: 30000 });
   await expect(panel.getByRole("button", { name: "Actualizar cartel", exact: true })).toBeVisible();
-  await expect(panel.getByRole("img", { name: "Convocatoria · Publicación" })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Ver en grande: Publicación" })).toBeVisible();
   await page.getByRole("button", { name: "Pasar al once inicial", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/alineacion\?.*partido=convocatoria-e2e/);
   const ali = page.getByRole("list", { name: "Plantilla Senior" });

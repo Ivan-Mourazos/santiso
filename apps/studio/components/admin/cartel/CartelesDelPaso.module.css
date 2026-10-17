@@ -15,32 +15,27 @@
 .panel[data-estado="hecho"] .estado {
   color: var(--ui-success, inherit);
 }
-.imagenes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+.formatos {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
-.imagen {
+.formato {
   display: grid;
   gap: 6px;
-  margin: 0;
-  flex: 1 1 14rem;
-  max-width: 22rem;
 }
-.imagen[data-formato="historia"] {
-  max-width: 14rem;
-}
-.imagen img {
-  width: 100%;
-  height: auto;
-  border-radius: 10px;
-}
-.imagen figcaption {
-  font-size: 0.8rem;
-  font-weight: 700;
+.formato small {
+  font-weight: 400;
   color: var(--ui-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+}
+.grande {
+  display: block;
+  width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: 8px;
 }
 .acciones {
   display: flex;

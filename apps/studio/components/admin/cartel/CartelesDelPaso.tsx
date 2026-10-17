@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- PNG guardado en /media, sin optimizador */
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
+import { Dialog } from "@/components/ui/foundation/Dialog";
 import type { PeticionCartel } from "@/lib/cartel2/modelo";
 import {
   conLogos,
@@ -49,6 +50,7 @@ export function CartelesDelPaso({
 }) {
   const [guardados, setGuardados] = useState(iniciales);
   const [generando, setGenerando] = useState(false);
+  const [viendo, setViendo] = useState<CartelGuardado | null>(null);
   const [logos, setLogos] = useState<LogosElegidos>({ institucionales: true, patrocinadores: true });
   // Los PNG ya descargados como fichero: compartir en iOS solo funciona justo tras el toque,
   // sin esperar a la red, así que se bajan antes.
@@ -140,22 +142,59 @@ export function CartelesDelPaso({
         {estado === "desactualizado" &&
           "⚠ Han cambiado los datos desde que se generó. Sigue guardado el anterior hasta que lo actualices."}
       </p>
+      {/* Sin miniaturas: la vista previa ya enseña el cartel. «Ver» lo abre en grande. */}
       {guardados.length > 0 && (
-        <div className={s.imagenes}>
+        <ul className={s.formatos} aria-label="Carteles guardados">
           {guardados.map((g) => (
-            <figure key={g.formato} className={s.imagen} data-formato={g.formato}>
-              <img src={g.url} alt={`${nombre} · ${NOMBRE_FORMATO[g.formato]}`} />
-              <figcaption>{NOMBRE_FORMATO[g.formato]}</figcaption>
+            <li key={g.formato} className={s.formato}>
+              <strong>
+                {NOMBRE_FORMATO[g.formato]}
+                <small>{g.formato === "historia" ? " · 9:16" : " · 4:5"}</small>
+              </strong>
               <div className={s.acciones}>
-                <Button onClick={() => void compartir(g)}>Guardar o compartir</Button>
-                <Button variant="secondary" onClick={() => descargar(g)}>
+                <Button
+                  onClick={() => void compartir(g)}
+                  aria-label={`Guardar o compartir: ${NOMBRE_FORMATO[g.formato]}`}
+                >
+                  Guardar o compartir
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => descargar(g)}
+                  aria-label={`Descargar: ${NOMBRE_FORMATO[g.formato]}`}
+                >
                   Descargar
                 </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setViendo(g)}
+                  aria-label={`Ver en grande: ${NOMBRE_FORMATO[g.formato]}`}
+                >
+                  Ver
+                </Button>
               </div>
-            </figure>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
+      <Dialog
+        open={viendo !== null}
+        onClose={() => setViendo(null)}
+        title={viendo ? `${nombre} · ${NOMBRE_FORMATO[viendo.formato]}` : nombre}
+        footer={
+          viendo && (
+            <Button onClick={() => void compartir(viendo)}>Guardar o compartir</Button>
+          )
+        }
+      >
+        {viendo && (
+          <img
+            className={s.grande}
+            src={viendo.url}
+            alt={`${nombre} · ${NOMBRE_FORMATO[viendo.formato]}`}
+          />
+        )}
+      </Dialog>
       <fieldset className={s.logos}>
         <legend>Logos del cartel</legend>
         <label>
