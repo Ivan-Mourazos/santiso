@@ -81,11 +81,12 @@ export function StudioSection({ section }: { section: Seccion }) {
       {section === "equipos" && <Teams {...feedback} categoria={category} />}
       {section === "patrocinadores" && <Sponsors {...feedback} />}
       {section === "temporadas" && <Seasons {...feedback} />}
+      {/* Solo el Senior convoca y alinea: Veteranos no prepara el partido así. */}
       {section === "convocatoria" && (
-        <Callup categoria={category} partidoInicial={params.get("partido")} showToast={showToast} />
+        <Callup categoria="Senior" partidoInicial={params.get("partido")} showToast={showToast} />
       )}
       {section === "alineacion" && (
-        <Lineup categoria={category} partidoInicial={params.get("partido")} showToast={showToast} />
+        <Lineup categoria="Senior" partidoInicial={params.get("partido")} showToast={showToast} />
       )}
       {section === "multas" && <Fines {...feedback} />}
       {section === "carteles" && (

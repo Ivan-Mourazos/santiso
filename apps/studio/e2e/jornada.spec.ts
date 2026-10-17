@@ -40,7 +40,7 @@ test("jornada: conserva destinos del partido, fotos y federación", async ({ pag
   await partido.getByText("Más tareas del partido", { exact: true }).click();
   for (const [nombre, destino] of [
     ["Convocatoria", "/admin/convocatoria?"],
-    ["Alineación", "/admin/alineacion?"],
+    ["Once inicial", "/admin/alineacion?"],
     ["Cartel de partido", "/admin/carteles?plantilla=partido&"],
     ["Cambiar fecha, hora o campo", "/admin/calendario?"],
     ["Ver clasificación", "/admin/clasificacion?"],

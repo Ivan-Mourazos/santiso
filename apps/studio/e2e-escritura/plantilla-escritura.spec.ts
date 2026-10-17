@@ -20,7 +20,9 @@ test("2026/27 se construye trayendo de 2025/26 con dorsal nuevo, sin tocar 2025/
 }) => {
   await page.goto("/admin/jugadores?categoria=Senior");
   await elegirTemporada(page, "2026/27 (activa)");
-  await expect(page.getByText("Todavía no hay jugadores en Senior 2026/27.")).toBeVisible();
+  // 2026/27 solo tiene los tres jugadores de convocatoria y alineación (`sembrar.ts`).
+  await expect(fila(page, "Uno Aliñación Ficticio")).toBeVisible();
+  await expect(fila(page, "Brais Rei Ficticio")).toHaveCount(0);
 
   await page.getByRole("button", { name: "Añadir de 2025/26" }).click();
   const dialogo = page.getByRole("dialog", { name: "Añadir de 2025/26" });
