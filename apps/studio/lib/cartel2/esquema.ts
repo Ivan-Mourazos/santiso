@@ -12,8 +12,25 @@ import {
 } from "./modelo";
 
 const texto = (max = 200) => z.string().max(max);
-/** URL de imagen: `/media/…`, `data:` (subida a mano) o `blob:` ya convertida. */
-const imagen = z.string().max(12_000_000);
+/**
+ * Una imagen que el Chromium del PC puede abrir: un fichero de `/media/` del propio Studio o
+ * una foto subida a mano ya pasada a `data:`. Nada más: con una URL cualquiera, quien pide el
+ * cartel haría que el PC llamase a otra máquina de su red o de internet. Vacía, sin imagen.
+ */
+export function esImagenLocal(url: string) {
+  if (url === "") return true;
+  // `data:` va dentro de la propia petición: no sale a la red. Un SVG en `<img>` tampoco.
+  if (/^data:image\/(png|jpeg|webp|gif|avif|svg\+xml)[;,]/.test(url)) return true;
+  // Que no salga de /media/: sin tramos vacíos, `.` ni `..` (tampoco escritos `%2e`), ni `\`.
+  if (!url.startsWith("/media/") || /[\\\s?#]/.test(url)) return false;
+  return url
+    .slice("/media/".length)
+    .split("/")
+    .every((tramo) => !["", ".", ".."].includes(tramo.replace(/%2e/gi, ".")));
+}
+const imagenDe = (max: number) =>
+  z.string().max(max).refine(esImagenLocal, "Imagen fuera del Studio.");
+const imagen = imagenDe(12_000_000);
 const color = z.string().regex(/^#[0-9a-f]{6}$/i);
 const entero = z.number().int().min(0).max(999);
 
@@ -26,8 +43,8 @@ const equipo = z.object({
   relieve: z.boolean(),
 });
 const logos = {
-  institucionales: z.array(texto(500)).max(4),
-  patrocinadores: z.array(texto(500)).max(12),
+  institucionales: z.array(imagenDe(500)).max(4),
+  patrocinadores: z.array(imagenDe(500)).max(12),
 };
 const cabecera = { categoria: texto(40), competicion: texto(200), jornada: texto(10) };
 const lado = z.enum(["local", "visitante"]);

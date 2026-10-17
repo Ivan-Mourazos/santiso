@@ -9,10 +9,13 @@ import { renderizarCartel } from "@/lib/server/cartel2/render";
  * Origen por el que el Chromium local abre `/render/cartel`: siempre el propio servidor en
  * 127.0.0.1. Con el Studio abierto desde el móvil (Tailscale) la petición llega con otro
  * nombre de máquina, y pintar el cartel dando la vuelta por la red sería más lento y frágil.
+ * Nunca se toma de la cabecera Host: el Chromium llevaría la sesión a la máquina que dijese.
+ * `next dev` y `next start` siempre ponen PORT.
  */
-function origenLocal(request: Request) {
+function origenLocal() {
   const puerto = process.env.PORT;
-  return puerto ? `http://127.0.0.1:${puerto}` : new URL(request.url).origin;
+  if (!puerto || !/^\d+$/.test(puerto)) throw new Error("Falta PORT para abrir el render.");
+  return `http://127.0.0.1:${puerto}`;
 }
 
 /** Exporta un cartel del motor nuevo a PNG. */
@@ -26,7 +29,7 @@ export async function POST(request: Request) {
   try {
     // El Chromium que fotografía el cartel entra con la sesión de quien lo pide.
     const sesion = (await cookies()).get(COOKIE_SESION)?.value;
-    const png = await renderizarCartel(origenLocal(request), peticion, sesion);
+    const png = await renderizarCartel(origenLocal(), peticion, sesion);
     return new Response(new Uint8Array(png), {
       headers: { "content-type": "image/png", "cache-control": "no-store" },
     });

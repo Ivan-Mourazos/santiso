@@ -41,8 +41,14 @@ export async function renderizarCartel(
   ).newContext({
     viewport: { width: medidas.ancho, height: medidas.alto },
     deviceScaleFactor: 2,
+    serviceWorkers: "block",
   });
   try {
+    // Segunda barrera tras el esquema: el Chromium solo habla con el propio Studio. Las `data:`
+    // no pasan por aquí; cualquier otra dirección se corta antes de salir del PC.
+    await contexto.route("**/*", (ruta) =>
+      ruta.request().url().startsWith(`${origen}/`) ? ruta.continue() : ruta.abort("blockedbyclient"),
+    );
     if (sesion) {
       await contexto.addCookies([
         { name: COOKIE_SESION, value: sesion, url: origen, httpOnly: true, sameSite: "Lax" },
