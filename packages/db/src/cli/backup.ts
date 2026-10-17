@@ -8,6 +8,9 @@ if (!existsSync(RUTA_BD)) {
   process.exit(1);
 }
 const { cliente, cerrar } = await abrirDb(urlArchivo(RUTA_BD));
-const destino = await copiarBd(cliente);
-cerrar();
-console.log(`Copia creada: ${destino}`);
+try {
+  const destino = await copiarBd(cliente);
+  console.log(`Copia completa creada: ${destino}`);
+} finally {
+  cerrar();
+}
