@@ -239,6 +239,34 @@ describe("guardarActa", () => {
     ).toMatchObject({ ok: false });
   });
 
+  // `Number("")` es 0: un marcador sin rellenar acababa guardado como 0–0 y finalizado.
+  it.each([
+    ["", "1"],
+    ["2", ""],
+    ["  ", "  "],
+    ["1.5", "0"],
+    ["1e1", "0"],
+    ["-1", "0"],
+    ["100", "0"],
+  ])("rechaza el marcador %j–%j sin tocar el partido", async (local, visitante) => {
+    const { acciones, partidoId } = await entorno();
+    expect(
+      await acciones.guardarActa(
+        partidoId,
+        acta({ marcadorLocal: local, marcadorVisitante: visitante }),
+      ),
+    ).toMatchObject({ ok: false });
+    const { partido } = await estado(partidoId);
+    expect(partido).toMatchObject({ golesLocal: null, golesVisitante: null });
+  });
+
+  it("acepta un marcador con espacios alrededor", async () => {
+    const { acciones, partidoId } = await entorno();
+    expect(
+      await acciones.guardarActa(partidoId, acta({ marcadorLocal: " 2 ", marcadorVisitante: "0" })),
+    ).toMatchObject({ ok: true });
+  });
+
   it("rechaza guardar en un partido que no existe", async () => {
     const { acciones } = await entorno();
     expect(await acciones.guardarActa("no-existe", acta())).toMatchObject({ ok: false });
