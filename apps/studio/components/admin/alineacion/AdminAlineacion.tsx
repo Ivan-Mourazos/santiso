@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- media local y PNG generado: sin optimizador */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCartelAssets } from "@/components/admin/cartel/useCartelAssets";
+import { AvisosPartido, avisoDe, MarcaAviso } from "@/components/admin/liga/AvisosPartido";
 import { FotoFondoControl } from "@/components/cartel2/FotoFondoControl";
 import { useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
@@ -257,6 +258,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
         />
       ) : (
         <>
+          <AvisosPartido avisos={pantalla.avisos} />
           <p className={styles.contador} role="status">
             <strong data-completo={alineacion.titulares.length === TITULARES}>
               {alineacion.titulares.length} / {TITULARES} titulares
@@ -270,6 +272,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
             {pantalla.jugadores.map((j) => {
               const papel = papelDe(alineacion, j.id);
               const nombre = nombreDeCartel(j);
+              const aviso = avisoDe(pantalla.avisos, j.id);
               return (
                 <li key={j.id} data-papel={papel}>
                   <button
@@ -277,7 +280,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
                     className={styles.jugador}
                     onClick={() => tocar(j.id)}
                     disabled={bloqueada || ocupada}
-                    aria-label={`${nombre}: ${ETIQUETA[papel] === "—" ? "fuera" : ETIQUETA[papel]}`}
+                    aria-label={`${nombre}: ${ETIQUETA[papel] === "—" ? "fuera" : ETIQUETA[papel]}${aviso ? `, ${aviso.situacion}` : ""}`}
                   >
                     <span className={styles.dorsal}>{j.dorsal ?? ""}</span>
                     {j.fotoUrl ? (
@@ -285,7 +288,10 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
                     ) : (
                       <span className={styles.foto} aria-hidden="true" />
                     )}
-                    <span className={styles.nombre}>{nombre}</span>
+                    <span className={styles.nombre}>
+                      {nombre}
+                      <MarcaAviso aviso={aviso} />
+                    </span>
                     <span className={styles.papel}>{ETIQUETA[papel]}</span>
                   </button>
                   {papel === "titular" && (

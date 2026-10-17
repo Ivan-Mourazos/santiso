@@ -7,6 +7,7 @@ import {
   type PantallaConvocatoria,
 } from "@/lib/convocatoria/modelo";
 import { partidosDelClub, plantilla } from "./alineacion";
+import { avisosDelPartido } from "./liga";
 import { temporadaActivaId } from "./temporadas";
 import { obtenerDb } from "@/lib/server/db";
 
@@ -55,6 +56,7 @@ export async function pantallaConvocatoria(
       convocatoria: convocatoriaInicial([]),
       guardada: false,
       migracionPendiente: !disponible,
+      avisos: [],
     };
   const [partidos, jugadores] = await Promise.all([
     partidosDelClub(temporada, categoria, hoy, pedido),
@@ -73,5 +75,6 @@ export async function pantallaConvocatoria(
     convocatoria,
     guardada: Boolean(guardada && guardada.jugadores.length === convocatoria.jugadores.length),
     migracionPendiente: !disponible,
+    avisos: elegido ? await avisosDelPartido(elegido.id, jugadores) : [],
   };
 }

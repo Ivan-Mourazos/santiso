@@ -420,6 +420,39 @@ async function sembrar() {
     equipoVisitanteId: equiposCopa[3]!.id,
     fecha: "2000-01-01T17:00",
   });
+  // Un partido ya jugado de la misma copa: «Uno» expulsado y «Tres» con cuatro
+  // amarillas. Convocatoria y alineación lo avisan junto a su nombre. La federación escribe
+  // «APELLIDOS, NOMBRE».
+  const [avisosJornada] = await db
+    .insert(schema.jornadas)
+    .values({ competicionId: convocatoriaCompeticion!.id, numero: 2 })
+    .returning();
+  await db.insert(schema.partidos).values({
+    id: "convocatoria-avisos",
+    jornadaId: avisosJornada!.id,
+    equipoLocalId: equiposCopa[3]!.id,
+    equipoVisitanteId: equiposCopa[0]!.id,
+    fecha: "1999-12-25T17:00",
+    estado: "finalizado",
+    golesLocal: 1,
+    golesVisitante: 1,
+  });
+  await db.insert(schema.ligaEventos).values([
+    ...Array.from({ length: 4 }, () => ({
+      partidoId: "convocatoria-avisos",
+      equipoId: equiposCopa[0]!.id,
+      persona: "ALIÑACIÓN FICTICIO, TRES",
+      personaClave: claveNombre("ALIÑACIÓN FICTICIO, TRES"),
+      tipo: "amarilla" as const,
+    })),
+    {
+      partidoId: "convocatoria-avisos",
+      equipoId: equiposCopa[0]!.id,
+      persona: "ALIÑACIÓN FICTICIO, UNO",
+      personaClave: claveNombre("ALIÑACIÓN FICTICIO, UNO"),
+      tipo: "roja" as const,
+    },
+  ]);
 
   // Jornada como mesa de partido: una copa Senior propia, en 2099 para no cruzarse con nada,
   // con un partido en cada punto del recorrido (ver `jornada-escritura.spec.ts`).

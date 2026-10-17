@@ -7,6 +7,7 @@ import {
   type RecursosAlineacion,
 } from "@/lib/alineacion/modelo";
 import { fechaCorta, type PeticionCartel } from "@/lib/cartel2/modelo";
+import type { AvisoJugador } from "@/lib/liga/avisos";
 
 export interface Convocatoria {
   jugadores: string[];
@@ -22,6 +23,8 @@ export interface PantallaConvocatoria {
   convocatoria: Convocatoria;
   guardada: boolean;
   migracionPendiente: boolean;
+  /** Sanciones y apercibidos de la liga para el partido elegido. */
+  avisos: AvisoJugador[];
 }
 export function convocatoriaInicial(ids: string[]): Convocatoria {
   return {
