@@ -1,0 +1,195 @@
+.panel {
+  display: grid;
+  gap: 16px;
+  padding-bottom: 32px;
+}
+.cabecera {
+  display: grid;
+  gap: 6px;
+}
+.cabecera h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.nota {
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: 0.875rem;
+}
+.aviso {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--ui-warning);
+  font-size: 0.875rem;
+}
+.cifras {
+  margin: 0;
+  font-size: 0.95rem;
+}
+.bloque {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+}
+.bloque h3,
+.bloque > summary {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.bloque > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.opcion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ui-border);
+}
+.opcion > div,
+.historico li > div {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+.opcion span,
+.historico span {
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.opcion small,
+.historico small {
+  color: var(--ui-muted);
+  font-size: 0.8rem;
+}
+.opcion button,
+.historico button {
+  min-height: 44px;
+}
+.detalle {
+  padding: 10px;
+  border-left: 3px solid var(--ui-warning);
+  font-size: 0.875rem;
+}
+.detalle ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.detalle em {
+  color: var(--ui-muted);
+}
+.jornadas,
+.partidos,
+.historico {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.jornada {
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+}
+.jornada[data-estado="incompleta"] {
+  border-color: var(--ui-warning);
+}
+.jornada summary {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 4px 10px;
+  min-height: 48px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+.numero {
+  font-weight: 800;
+}
+.fecha,
+.resumen {
+  color: var(--ui-muted);
+}
+.estado {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.jornada[data-estado="completa"] .estado {
+  color: var(--ui-success, inherit);
+}
+.jornada[data-estado="incompleta"] .estado {
+  color: var(--ui-warning);
+}
+.jornada[open] {
+  padding-bottom: 10px;
+}
+.jornada[open] > button {
+  margin: 4px 10px 0;
+  min-height: 44px;
+}
+.partidos {
+  padding: 4px 10px;
+}
+.partidos li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--ui-border);
+  font-size: 0.875rem;
+}
+.partidos li[data-propio="true"] .cruce {
+  font-weight: 700;
+}
+.cruce {
+  overflow-wrap: anywhere;
+}
+.acta {
+  grid-column: 1;
+  color: var(--ui-muted);
+  font-size: 0.8rem;
+}
+.acta[data-acta="revisar"],
+.acta[data-acta="error"] {
+  color: var(--ui-warning);
+}
+.partidos li > button {
+  grid-column: 2;
+  grid-row: 2;
+  min-height: 44px;
+}
+.historico li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ui-border);
+}
+.enlace {
+  display: grid;
+  gap: 6px;
+}
+.enlace button {
+  justify-self: start;
+  min-height: 44px;
+}
+@media (max-width: 420px) {
+  .jornada summary {
+    grid-template-columns: auto 1fr auto;
+  }
+  .fecha {
+    display: none;
+  }
+}

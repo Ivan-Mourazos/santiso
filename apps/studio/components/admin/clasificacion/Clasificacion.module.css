@@ -227,6 +227,9 @@
 }
 
 .accionZonas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   padding-bottom: 0.2rem;
 }
 

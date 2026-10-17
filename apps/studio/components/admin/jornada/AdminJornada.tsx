@@ -148,6 +148,7 @@ export default function AdminJornada() {
                 partido={partido}
                 categoria={categoria!.categoria}
                 momento={pantalla.momento}
+                onNovedades={() => void cargar(dia)}
               />
             ) : (
               <EmptyState

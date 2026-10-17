@@ -52,6 +52,7 @@ const CATEGORIAS: Categoria[] = [
       { texto: "Resultado y acta de la jornada", href: "/admin/jornada" },
       { texto: "Importar acta o resultados", href: "/admin/importar" },
       { texto: "Calendario completo", href: "/admin/importar-jornada?origen=calendario" },
+      { texto: "Federación: qué hay traído y qué falta", href: "/admin/federacion", admin: true },
     ],
   },
   {
