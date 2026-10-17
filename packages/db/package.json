@@ -14,6 +14,7 @@
     "studio": "drizzle-kit studio",
     "migrate": "tsx src/cli/migrar.ts",
     "backup": "tsx src/cli/backup.ts",
+    "verificar-copia": "tsx src/cli/verificar-copia.ts",
     "limpiar-temporada": "tsx src/cli/limpiar-temporada.ts"
   },
   "dependencies": {

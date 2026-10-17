@@ -25,12 +25,13 @@ describe("copiarBd", () => {
       origen.cliente,
       path.join(dir, "backups"),
       new Date("2026-09-13T20:15:03Z"),
+      path.join(dir, "media"),
     );
     origen.cerrar();
 
-    expect(path.basename(destino)).toBe("santiso-2026-09-13T20-15-03.db");
+    expect(path.basename(destino)).toBe("santiso-2026-09-13T20-15-03");
     expect(existsSync(destino)).toBe(true);
-    const copia = await abrirDb(urlArchivo(destino));
+    const copia = await abrirDb(urlArchivo(path.join(destino, "santiso.db")));
     const integridad = (await copia.cliente.execute("PRAGMA integrity_check")).rows[0]?.[
       "integrity_check"
     ];
