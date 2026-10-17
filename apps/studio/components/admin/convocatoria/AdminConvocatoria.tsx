@@ -6,6 +6,7 @@ import { useCartelAssets } from "@/components/admin/cartel/useCartelAssets";
 import { useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
+import { AvisosPartido, avisoDe, MarcaAviso } from "@/components/admin/liga/AvisosPartido";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import { nombreDeCartel } from "@/lib/alineacion/modelo";
 import { aHex, COLOR_RIVAL_RESERVA } from "@/lib/cartel2/color";
@@ -240,16 +241,19 @@ export default function AdminConvocatoria({
         </section>
       ) : (
         <>
+          <AvisosPartido avisos={pantalla.avisos} />
           <p className={s.contador} role="status">
             {c.jugadores.length} convocados / {pantalla.jugadores.length}
           </p>
           <ul className={s.jugadores} aria-label={`Plantilla ${categoria}`}>
-            {pantalla.jugadores.map((j) => (
+            {pantalla.jugadores.map((j) => {
+              const aviso = avisoDe(pantalla.avisos, j.id);
+              return (
               <li key={j.id}>
                 <button
                   type="button"
                   aria-pressed={c.jugadores.includes(j.id)}
-                  aria-label={`Convocar: ${nombreDeCartel(j)}`}
+                  aria-label={`Convocar: ${nombreDeCartel(j)}${aviso ? `, ${aviso.situacion}` : ""}`}
                   disabled={ocupada || bloqueada}
                   onClick={() =>
                     cambiar({
@@ -260,10 +264,14 @@ export default function AdminConvocatoria({
                   }
                 >
                   <b>{j.dorsal ?? "—"}</b>
-                  <span>{nombreDeCartel(j)}</span>
+                  <span>
+                    {nombreDeCartel(j)}
+                    <MarcaAviso aviso={aviso} />
+                  </span>
                 </button>
               </li>
-            ))}
+              );
+            })}
           </ul>
           {invalid && <p role="status">{invalid}</p>}
           <details className={s.detalles} open>

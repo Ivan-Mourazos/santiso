@@ -92,3 +92,33 @@ test("guardado pendiente no redirige tras abandonar convocatoria", async ({ page
   await page.waitForLoadState("networkidle");
   await expect(page).toHaveURL(/\/admin\/jornada/);
 });
+
+test("avisa de expulsados y apercibidos al convocar y al alinear", async ({ page }) => {
+  const errores: string[] = [];
+  page.on("pageerror", (e) => errores.push(e.message));
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto("/admin/convocatoria?categoria=Veteranos&partido=convocatoria-e2e");
+  const avisos = page.getByRole("region", { name: "Sanciones y apercibidos" });
+  await expect(avisos).toBeVisible({ timeout: 30000 });
+  await expect(avisos.getByText("ALIÑACIÓN FICTICIO, UNO")).toBeVisible();
+  await expect(avisos.getByText("ALIÑACIÓN FICTICIO, TRES")).toBeVisible();
+  // Los nombres de la federación se reconocen en la plantilla: la marca sale junto al jugador.
+  const plantilla = page.getByRole("list", { name: "Plantilla Veteranos" });
+  const uno = plantilla.getByRole("button", { name: "Convocar: Uno Aliñación Ficticio, expulsado" });
+  await expect(uno).toContainText("Expulsado");
+  await expect(
+    plantilla.getByRole("button", { name: "Convocar: Tres Aliñación Ficticio, apercibido" }),
+  ).toContainText("Apercibido");
+  await expect(plantilla.getByRole("button", { name: "Convocar: Dous", exact: true })).toBeVisible();
+
+  await page.goto("/admin/alineacion?categoria=Veteranos&partido=convocatoria-e2e");
+  await expect(page.getByRole("region", { name: "Sanciones y apercibidos" })).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(
+    page
+      .getByRole("list", { name: "Plantilla Veteranos" })
+      .getByRole("button", { name: /^Uno Aliñación Ficticio: .*, expulsado$/ }),
+  ).toContainText("Expulsado");
+  expect(errores).toEqual([]);
+});

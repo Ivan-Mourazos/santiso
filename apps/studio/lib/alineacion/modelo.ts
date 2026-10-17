@@ -3,6 +3,7 @@
  * formato historia que sale de ello. Puro: sin base de datos ni navegador.
  */
 import type { JugadorOnce, PeticionCartel } from "@/lib/cartel2/modelo";
+import type { AvisoJugador } from "@/lib/liga/avisos";
 
 export const TITULARES = 11;
 export const MAX_SUPLENTES = 12;
@@ -43,6 +44,8 @@ export interface PantallaAlineacion {
   partidoId: string | null;
   jugadores: JugadorAlineacion[];
   alineacion: Alineacion;
+  /** Sanciones y apercibidos de la liga para el partido elegido. */
+  avisos: AvisoJugador[];
 }
 
 export const ALINEACION_VACIA: Alineacion = { titulares: [], suplentes: [], capitanId: null };

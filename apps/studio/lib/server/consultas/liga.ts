@@ -1,6 +1,8 @@
 import "server-only";
 import { schema } from "@santiso/db";
-import { and, eq, isNotNull } from "drizzle-orm";
+import { aliasedTable, and, eq, isNotNull } from "drizzle-orm";
+import type { JugadorPlantilla } from "@/lib/actas/enlazar";
+import { avisosDePlantilla, type AvisoJugador } from "@/lib/liga/avisos";
 import {
   disciplina,
   goleadores,
@@ -121,4 +123,31 @@ export async function pantallaLiga(competicionId: string): Promise<PantallaLiga>
 /** Solo quien tiene algo que contar (apercibido, sancionado o expulsado) en una competición. */
 export async function avisosDeLiga(competicionId: string): Promise<Disciplina[]> {
   return (await pantallaLiga(competicionId)).disciplina.filter((d) => d.situacion !== null);
+}
+
+/**
+ * Sanciones y apercibidos del Santiso para un partido por jugar, sobre su plantilla. Un partido
+ * ya jugado no tiene avisos: la situación de la liga es de cara al siguiente.
+ */
+export async function avisosDelPartido(
+  partidoId: string,
+  plantilla: readonly JugadorPlantilla[],
+): Promise<AvisoJugador[]> {
+  const { db } = await obtenerDb();
+  const local = aliasedTable(schema.equipos, "local");
+  const [partido] = await db
+    .select({
+      competicionId: schema.jornadas.competicionId,
+      golesLocal: schema.partidos.golesLocal,
+      localId: schema.partidos.equipoLocalId,
+      visitanteId: schema.partidos.equipoVisitanteId,
+      localPropio: local.esPropio,
+    })
+    .from(schema.partidos)
+    .innerJoin(schema.jornadas, eq(schema.jornadas.id, schema.partidos.jornadaId))
+    .innerJoin(local, eq(local.id, schema.partidos.equipoLocalId))
+    .where(eq(schema.partidos.id, partidoId));
+  if (!partido || partido.golesLocal !== null) return [];
+  const propio = partido.localPropio ? partido.localId : partido.visitanteId;
+  return avisosDePlantilla(await avisosDeLiga(partido.competicionId), propio, plantilla);
 }

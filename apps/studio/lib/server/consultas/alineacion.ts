@@ -10,6 +10,7 @@ import {
   type PartidoAlineacion,
 } from "@/lib/alineacion/modelo";
 import { urlMedia } from "@/lib/media";
+import { avisosDelPartido } from "@/lib/server/consultas/liga";
 import { temporadaActivaId } from "@/lib/server/consultas/temporadas";
 import { obtenerDb } from "@/lib/server/db";
 
@@ -170,7 +171,13 @@ export async function pantallaAlineacion(
 ): Promise<PantallaAlineacion> {
   const temporadaId = await temporadaActivaId();
   if (!temporadaId) {
-    return { partidos: [], partidoId: null, jugadores: [], alineacion: ALINEACION_VACIA };
+    return {
+      partidos: [],
+      partidoId: null,
+      jugadores: [],
+      alineacion: ALINEACION_VACIA,
+      avisos: [],
+    };
   }
   const [partidos, jugadores] = await Promise.all([
     partidosDelClub(temporadaId, categoria, hoy, partidoPedido),
@@ -190,5 +197,6 @@ export async function pantallaAlineacion(
     partidoId: elegido?.id ?? null,
     jugadores: disponibles,
     alineacion,
+    avisos: elegido ? await avisosDelPartido(elegido.id, jugadores) : [],
   };
 }
