@@ -11,7 +11,7 @@ declare global {
 }
 
 /**
- * Copia diaria de la base de datos. Solo con `STUDIO_COPIA_DIARIA=1`, que lleva la copia de uso
+ * Copia diaria de la base de datos y media. Solo con `STUDIO_COPIA_DIARIA=1`, que lleva la copia de uso
  * diario: desde que entra más gente a escribir, un error ajeno tiene que poder deshacerse.
  */
 export function iniciarProgramadorCopias() {
