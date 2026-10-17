@@ -1,7 +1,8 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- media local y PNG generado: sin optimizador */
+/* eslint-disable @next/next/no-img-element -- fotos de la plantilla en /media: sin optimizador */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CartelesDelPaso } from "@/components/admin/cartel/CartelesDelPaso";
 import { useCartelAssets } from "@/components/admin/cartel/useCartelAssets";
 import { AvisosPartido, avisoDe, MarcaAviso } from "@/components/admin/liga/AvisosPartido";
 import { FotoFondoControl } from "@/components/cartel2/FotoFondoControl";
@@ -22,7 +23,9 @@ import {
 } from "@/lib/alineacion/modelo";
 import { aHex, COLOR_RIVAL_RESERVA } from "@/lib/cartel2/color";
 import { fechaCorta, type FotoCartel } from "@/lib/cartel2/modelo";
+import type { CartelGuardado } from "@/lib/cartel2/pasos";
 import { cargarPantallaAlineacion, guardarAlineacion } from "@/lib/server/acciones/alineacion";
+import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados";
 import styles from "./Alineacion.module.css";
 
 interface Props {
@@ -37,7 +40,7 @@ const ETIQUETA = { titular: "Titular", suplente: "Suplente", fuera: "—" } as c
 /**
  * Alineación antes del partido, pensada para hacerla con el móvil en el campo: se toca a cada
  * jugador (titular → suplente → fuera), se marca al capitán y se genera la historia de
- * Instagram (9:16) para compartirla. Se guarda aparte del acta.
+ * Instagram (9:16), que queda guardada con el partido. Se guarda aparte del acta.
  */
 export default function AdminAlineacion({ categoria, partidoInicial, showToast }: Props) {
   const [pantalla, setPantalla] = useState<PantallaAlineacion | null>(null);
@@ -46,7 +49,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
   const [guardada, setGuardada] = useState<Alineacion>(ALINEACION_VACIA);
   const [ocupada, setOcupada] = useState(false);
   const [fotoFondo, setFotoFondo] = useState<FotoCartel | null>(null);
-  const [historia, setHistoria] = useState<{ url: string; fichero: File } | null>(null);
+  const [carteles, setCarteles] = useState<CartelGuardado[] | null>(null);
   const generacion = useRef(0);
   const recursos = useCartelAssets("noso11");
 
@@ -63,6 +66,11 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
       setPantalla(r.datos);
       setAlineacion(r.datos.alineacion);
       setGuardada(r.datos.alineacion);
+      setCarteles(null);
+      if (!r.datos.partidoId) return;
+      const guardados = await cargarCartelesPartido([r.datos.partidoId]);
+      if (esta !== generacion.current) return;
+      setCarteles(guardados.ok ? (guardados.datos[r.datos.partidoId]?.once ?? []) : []);
     },
     [categoria],
   );
@@ -71,14 +79,6 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
     const id = window.setTimeout(() => void cargar(partidoInicial ?? null), 0);
     return () => window.clearTimeout(id);
   }, [cargar, partidoInicial]);
-
-  // El PNG generado es un `blob:`: se libera al cambiarlo o al salir.
-  const urlHistoria = historia?.url;
-  useEffect(() => {
-    return () => {
-      if (urlHistoria) URL.revokeObjectURL(urlHistoria);
-    };
-  }, [urlHistoria]);
 
   const partido = pantalla?.partidos.find((p) => p.id === pantalla.partidoId) ?? null;
   const bloqueada = Boolean(partido?.finalizado);
@@ -98,7 +98,6 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
 
   function tocar(jugadorId: string) {
     if (bloqueada || !pantalla) return;
-    setHistoria(null);
     setAlineacion((antes) => {
       let despues = alternar(antes, jugadorId);
       // El capitán de la plantilla se propone solo al entrar en el once.
@@ -130,52 +129,11 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
     }
   }
 
-  /** Guarda (si hace falta) y genera el PNG: compartir después es inmediato, como pide iOS. */
-  async function generar() {
-    if (!peticion || !partido) return;
-    setOcupada(true);
-    try {
-      if (sucio && !bloqueada && !(await guardar())) return;
-      const respuesta = await fetch("/api/carteles/png", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(peticion),
-      });
-      if (respuesta.status === 422) {
-        const aviso = (await respuesta.json()) as { error: string };
-        showToast(aviso.error, "error");
-        return;
-      }
-      if (!respuesta.ok) throw new Error(String(respuesta.status));
-      const blob = await respuesta.blob();
-      const dia = (partido.fecha ?? "").slice(0, 10) || "partido";
-      const fichero = new File([blob], `alineacion-${dia}.png`, { type: "image/png" });
-      setHistoria({ url: URL.createObjectURL(blob), fichero });
-    } catch {
-      showToast("No se pudo generar la historia. Vuelve a intentarlo.", "error");
-    } finally {
-      setOcupada(false);
-    }
-  }
-
-  function descargar() {
-    if (!historia) return;
-    const enlace = document.createElement("a");
-    enlace.href = historia.url;
-    enlace.download = historia.fichero.name;
-    enlace.click();
-  }
-
-  async function compartir() {
-    if (!historia) return;
-    const datos = { files: [historia.fichero] };
-    if (!navigator.canShare?.(datos)) return descargar();
-    try {
-      await navigator.share(datos);
-    } catch (e) {
-      // Cerrar la hoja de compartir no es un error.
-      if (!(e instanceof DOMException && e.name === "AbortError")) descargar();
-    }
+  /** La historia con lo que hay en pantalla; antes se guarda, para que el cartel case con la base. */
+  async function prepararCartel() {
+    if (!peticion) return null;
+    if (sucio && !bloqueada && !(await guardar())) return null;
+    return [peticion];
   }
 
   if (error) {
@@ -214,7 +172,6 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
             disabled={ocupada}
             onChange={(e) => {
               if (sucio && !window.confirm("Hay cambios sin guardar. ¿Descartarlos?")) return;
-              setHistoria(null);
               void cargar(e.target.value);
             }}
           >
@@ -238,20 +195,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
         )}
       </header>
 
-      {historia ? (
-        <section className={styles.historia} aria-label="Historia generada">
-          <img src={historia.url} alt="Historia con la alineación" />
-          <div className={styles.acciones}>
-            <Button onClick={() => void compartir()}>Guardar o compartir</Button>
-            <Button variant="secondary" onClick={descargar}>
-              Descargar
-            </Button>
-            <Button variant="secondary" onClick={() => setHistoria(null)}>
-              Volver
-            </Button>
-          </div>
-        </section>
-      ) : pantalla.jugadores.length === 0 ? (
+      {pantalla.jugadores.length === 0 ? (
         <EmptyState
           title={`La plantilla de ${categoria} está vacía.`}
           detail="Da de alta a los jugadores en Plantilla › Jugadores."
@@ -301,10 +245,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
                       aria-pressed={alineacion.capitanId === j.id}
                       aria-label={`Capitán: ${nombre}`}
                       disabled={bloqueada || ocupada}
-                      onClick={() => {
-                        setHistoria(null);
-                        setAlineacion((antes) => conCapitan(antes, j.id));
-                      }}
+                      onClick={() => setAlineacion((antes) => conCapitan(antes, j.id))}
                     >
                       C
                     </button>
@@ -314,15 +255,22 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
             })}
           </ul>
 
-          <FotoFondoControl
-            foto={fotoFondo}
-            onChange={(foto) => {
-              setFotoFondo(foto);
-              setHistoria(null);
-            }}
-          />
-          <div className={styles.barra}>
-            {!bloqueada && (
+          <FotoFondoControl foto={fotoFondo} onChange={setFotoFondo} />
+          {carteles === null ? (
+            <LoadingState title="Cargando carteles guardados…" />
+          ) : (
+            <CartelesDelPaso
+              key={partido.id}
+              partidoId={partido.id}
+              paso="once"
+              guardados={carteles}
+              preparar={prepararCartel}
+              motivo={alineacion.titulares.length === 0 ? "Elige al menos un titular." : null}
+              showToast={showToast}
+            />
+          )}
+          {!bloqueada && (
+            <div className={styles.barra}>
               <Button
                 variant="secondary"
                 onClick={() => void guardarSolo()}
@@ -330,16 +278,8 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
               >
                 Guardar
               </Button>
-            )}
-            <Button
-              onClick={() => void generar()}
-              pending={ocupada}
-              pendingLabel="Generando…"
-              disabled={alineacion.titulares.length === 0}
-            >
-              Ver historia
-            </Button>
-          </div>
+            </div>
+          )}
         </>
       )}
     </div>

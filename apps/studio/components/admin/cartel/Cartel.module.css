@@ -4,9 +4,6 @@
   display: grid;
   gap: var(--ui-space-4, 1rem);
 }
-.pestanas {
-  display: none;
-}
 .columnas {
   display: grid;
   grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
@@ -197,26 +194,6 @@
 }
 
 @media (max-width: 900px) {
-  .pantalla {
-    padding-top: 64px;
-  }
-  .pestanas {
-    position: fixed;
-    top: var(--studio-cabecera, 52px);
-    left: max(0.75rem, env(safe-area-inset-left));
-    right: max(0.75rem, env(safe-area-inset-right));
-    z-index: 5;
-    background: var(--ui-bg, #0b0b0c);
-    /* Aire bajo la cabecera: las pestañas no van pegadas a su línea. */
-    padding-block: 0.6rem 0.35rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-  }
-  .formulario[data-activo="false"],
-  .previsualizacion[data-activo="false"] {
-    display: none;
-  }
   .formulario {
     padding: 0;
     border: 0;
@@ -224,7 +201,7 @@
     background: none;
   }
   .formulario :is(summary, button, input, select, textarea) {
-    scroll-margin-block: 120px;
+    scroll-margin-block: 72px;
   }
   .formulario > * {
     margin-bottom: 0.5rem;

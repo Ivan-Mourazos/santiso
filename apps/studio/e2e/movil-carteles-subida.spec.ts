@@ -28,7 +28,7 @@ for (const plantilla of ["cronoloxia", "resumo"]) {
       await ruta.fulfill({ status: 200, contentType: "image/png", body: PNG });
     });
     await page.goto(`/admin/carteles?plantilla=${plantilla}`);
-    await page.getByRole("tab", { name: "Vista previa" }).tap();
+    await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
     await page
       .locator("label", { hasText: "Subir foto de fondo" })
       .locator("input")
@@ -65,7 +65,7 @@ test("carteles: foto propia de jugador en O noso 11", async ({ page }) => {
     .locator("label", { hasText: "Subir foto del jugador" })
     .locator("input")
     .setInputFiles({ name: "jugador.jpg", mimeType: "image/jpeg", buffer: await fotoGrande() });
-  await page.getByRole("tab", { name: "Vista previa" }).tap();
+  await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
   const retrato = page.locator("[data-vista-cartel] img[src^='data:image/jpeg']");
   await expect(retrato).toBeVisible();
   expect(await retrato.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(2160);

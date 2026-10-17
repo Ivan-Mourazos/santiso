@@ -2,15 +2,16 @@ import { expect, test } from "@playwright/test";
 
 /**
  * `sembrar.ts` deja en la copa «Vestiario» un partido en cada punto del recorrido. Cada uno
- * cae en su propia semana.
+ * cae en su propia semana. Antes del partido, lo primero es el cartel de partido; sin carteles
+ * guardados, es lo que pide cada uno.
  */
 const RECORRIDO = [
-  ["sin-nada", "2099-06-07", "Preparar convocatoria"],
-  ["convocado", "2099-06-14", "Completar once"],
+  ["sin-nada", "2099-06-07", "Preparar cartel de partido"],
+  ["convocado", "2099-06-14", "Preparar cartel de partido"],
   ["once", "2099-06-21", "Preparar cartel de partido"],
   ["jugado", "2001-06-03", "Anotar resultado"],
   ["resultado", "2099-07-05", "Completar acta"],
-  ["acta", "2099-07-12", "Preparar publicaciones"],
+  ["acta", "2099-07-12", "Hacer cartel de resultado"],
 ] as const;
 
 const ruta = (paso: string) => {
@@ -31,8 +32,10 @@ test("jornada: los pasos enseñan su estado y tras el acta se abren las publicac
   page,
 }) => {
   await page.goto(ruta("once"));
-  await expect(page.getByText("11 guardados", { exact: true })).toBeVisible({ timeout: 30000 });
-  await expect(page.getByText("11/11", { exact: true })).toBeVisible();
+  await expect(page.getByText("11 convocados · Sin cartel", { exact: true })).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(page.getByText("11/11 · Sin cartel", { exact: true })).toBeVisible();
 
   await page.goto(ruta("acta"));
   await expect(page.getByText("Guardada", { exact: true })).toBeVisible({ timeout: 30000 });
@@ -40,6 +43,34 @@ test("jornada: los pasos enseñan su estado y tras el acta se abren las publicac
   await page.getByText("Más tareas del partido", { exact: true }).click();
   for (const nombre of ["Resultado", "Cronoloxía", "O noso 11"])
     await expect(page.getByRole("link", { name: nombre, exact: false }).last()).toBeVisible();
+});
+
+test("jornada: con el cartel de partido guardado, lo siguiente es la convocatoria", async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  await page.goto(ruta("convocado"));
+  const mesa = page.locator("[data-mesa-partido]");
+  await expect(mesa.locator("[data-accion-principal]")).toHaveText(
+    "Preparar cartel de partido→",
+    { timeout: 30000 },
+  );
+  await mesa.locator("[data-accion-principal]").click();
+  await expect(page).toHaveURL(/plantilla=partido&partido=vestiario-convocado/);
+  const panel = page.getByRole("region", { name: "Cartel de partido: carteles guardados" });
+  await panel.getByRole("button", { name: "Generar cartel", exact: true }).click({
+    timeout: 30000,
+  });
+  // El cartel de partido se guarda en sus dos formatos a la vez.
+  await expect(panel.getByRole("img", { name: "Cartel de partido · Publicación" })).toBeVisible({
+    timeout: 60000,
+  });
+  await expect(panel.getByRole("img", { name: "Cartel de partido · Historia" })).toBeVisible();
+  await page.goto(ruta("convocado"));
+  await expect(mesa.getByText("Cartel guardado", { exact: true })).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(mesa.locator("[data-accion-principal]")).toHaveText("Preparar convocatoria→");
 });
 
 test("jornada: antes del partido avisa de sanciones del rival y de cambios de la federación", async ({

@@ -8,9 +8,11 @@ for (const pantalla of ["convocatoria", "alineacion"] as const) {
     page,
   }) => {
     await page.goto("/admin/" + pantalla);
-    const boton = page.getByRole("button", {
-      name: pantalla === "convocatoria" ? "Ver cartel" : "Ver historia",
-      exact: true,
+    const panel = page.getByRole("region", {
+      name: `${pantalla === "convocatoria" ? "Convocatoria" : "Once inicial"}: carteles guardados`,
+    });
+    const boton = panel.getByRole("button", {
+      name: /^(Generar cartel|Actualizar cartel|Volver a generar)$/,
     });
     await expect(boton).toBeVisible({ timeout: 30000 });
     // Corre contra los datos reales: si ahora mismo no hay nada que pintar (alineación vacía,
@@ -25,7 +27,8 @@ for (const pantalla of ["convocatoria", "alineacion"] as const) {
         await ruta.abort();
       } else await ruta.fallback();
     });
-    await page.route("**/api/carteles/png", (ruta) =>
+    // Guardar el cartel también queda interceptado: nunca llega al servidor real.
+    await page.route("**/api/carteles/guardar", (ruta) =>
       ruta.fulfill({
         status: 422,
         contentType: "application/json",
@@ -33,6 +36,12 @@ for (const pantalla of ["convocatoria", "alineacion"] as const) {
           error: "El contenido no cabe con letra legible. Reduce datos o prepara dos láminas.",
         }),
       }),
+    );
+    // Con cambios sin guardar, generar guardaría antes: aquí no puede, así que no se prueba.
+    const guardar = page.getByRole("button", { name: "Guardar", exact: true });
+    test.skip(
+      (await guardar.count()) > 0 && (await guardar.isEnabled()),
+      "Hay cambios sin guardar: generar los guardaría.",
     );
     await boton.click();
     await expect(
@@ -70,7 +79,7 @@ for (const ancho of [360, 390]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       ancho,
     );
-    // No «Ver historia»: puede guardar la alineación. No generar ni guardar en base real.
+    // No «Generar cartel»: guarda la alineación y el cartel. Nada se escribe en la base real.
   });
   test(`convocatoria: hora y lugar de quedada editables sin desplegar a ${ancho}px`, async ({
     page,
@@ -90,6 +99,6 @@ for (const ancho of [360, 390]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       ancho,
     );
-    // Solo edición del borrador: no Guardar, Ver cartel ni Pasar a alineación.
+    // Solo edición del borrador: no Guardar, Generar cartel ni Pasar al once inicial.
   });
 }

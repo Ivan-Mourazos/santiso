@@ -202,6 +202,7 @@ export function peticionDeFormulario(
           campo: form.lugar,
           ...previa,
           localidad: form.localidad ?? previa.localidad ?? "",
+          foto: opciones.foto,
         },
       };
     }

@@ -21,14 +21,16 @@ test("Partido: recupera la previa después de un fallo de transporte", async ({ 
     } else await ruta.continue();
   });
   await cargar.tap();
-  await page.getByRole("tab", { name: "Vista previa", exact: true }).tap();
+  await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
   await expect(
     page.getByRole("alert").filter({ hasText: "No se pudo cargar la previa" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Reintentar previa", exact: true }).tap();
-  // Con la previa ya cargada, el PNG se prepara solo: el botón pasa a ser el de guardar.
+  // Con el partido cargado, el cartel se guarda con él: con la previa ya leída, se puede generar.
+  // No se pulsa: guardaría en la base real.
+  const panel = page.getByRole("region", { name: "Cartel de partido: carteles guardados" });
   await expect(
-    page.getByRole("button", { name: /^(Preparar PNG|Guardar o compartir)$/ }),
+    panel.getByRole("button", { name: /^(Generar cartel|Actualizar cartel|Volver a generar)$/ }),
   ).toBeEnabled({ timeout: 60000 });
   await expect(page.getByRole("button", { name: "Reintentar previa", exact: true })).toBeHidden();
 });
@@ -68,10 +70,15 @@ for (const ancho of [360, 390]) {
     await page.getByLabel("Formato de cartel").selectOption("historia");
     await page.getByRole("button", { name: "Preparar carrusel Axenda", exact: true }).tap();
     await expect(
-      page.getByRole("button", { name: "Guardar o compartir", exact: true }),
+      page
+        .getByRole("region", { name: "Carrusel Axenda" })
+        .getByRole("button", { name: "Guardar o compartir", exact: true }),
     ).toBeVisible();
-    expect(peticiones.map((p) => p.plantilla)).toEqual(["proximos", "partido", "partido"]);
-    expect(peticiones.every((p) => p.formato === "historia")).toBe(true);
+    // Las tres últimas son las láminas del carrusel. Antes puede haber otra: con la vista previa
+    // a la vista, el móvil prepara solo el PNG suelto del cartel.
+    const carrusel = peticiones.slice(-3);
+    expect(carrusel.map((p) => p.plantilla)).toEqual(["proximos", "partido", "partido"]);
+    expect(carrusel.every((p) => p.formato === "historia")).toBe(true);
     const caption = page.getByRole("textbox", { name: "Texto para Instagram", exact: true });
     const opcionesTexto = page.locator("summary").filter({ hasText: "Texto para Instagram" });
     // El aviso «Carrusel listo…» queda encima del final de la página: se cierra antes de seguir.
@@ -80,7 +87,10 @@ for (const ancho of [360, 390]) {
     await opcionesTexto.evaluate((n) => n.scrollIntoView({ block: "center" }));
     await opcionesTexto.tap();
     await caption.fill("Axenda editada 💛🖤");
-    await page.getByRole("button", { name: "Guardar o compartir", exact: true }).tap();
+    await page
+      .getByRole("region", { name: "Carrusel Axenda" })
+      .getByRole("button", { name: "Guardar o compartir", exact: true })
+      .tap();
     expect(
       await page.evaluate(
         () => (window as unknown as { axendaCompartida: unknown }).axendaCompartida,
@@ -102,9 +112,11 @@ for (const ancho of [360, 390]) {
     await tarjetas.nth(0).tap();
     await page.getByLabel("Rival del partido 1").fill("Outro rival");
     await expect(
-      page.getByRole("button", { name: "Guardar o compartir", exact: true }),
+      page
+        .getByRole("region", { name: "Carrusel Axenda" })
+        .getByRole("button", { name: "Guardar o compartir", exact: true }),
     ).toBeHidden();
-    await page.getByRole("tab", { name: "Vista previa", exact: true }).tap();
+    await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
     await expect(page.locator("[data-vista-cartel] [data-cartel]")).toBeVisible();
     const medidas = await page.locator("[data-vista-cartel] [data-cartel]").evaluate((n) => ({
       w: parseFloat(getComputedStyle(n).width),

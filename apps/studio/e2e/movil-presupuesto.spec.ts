@@ -94,12 +94,12 @@ for (const ancho of [360, 390]) {
     expect(Math.max(...altos)).toBeLessThanOrEqual(64);
   });
   for (const plantilla of PLANTILLAS_CARTEL) {
-    test(`carteles ${plantilla}: presupuesto de formulario y vista a un toque a ${ancho}px`, async ({
+    test(`carteles ${plantilla}: presupuesto de formulario y vista debajo a ${ancho}px`, async ({
       page,
     }) => {
       await page.setViewportSize({ width: ancho, height: 664 });
       await abrir(page, `carteles?plantilla=${plantilla}`);
-      const datos = page.getByRole("tabpanel", { name: "Datos", exact: true });
+      const datos = page.getByRole("region", { name: "Datos del cartel", exact: true });
       const primero = datos
         .locator("input:visible, select:visible, summary:visible, button:visible")
         .first();
@@ -126,12 +126,8 @@ for (const ancho of [360, 390]) {
         await filas.first().tap();
         expect((await datos.boundingBox())!.height).toBeLessThanOrEqual(1100);
       }
-      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-      const vista = page.getByRole("tab", { name: "Vista previa", exact: true });
-      const tab = (await vista.boundingBox())!;
-      expect(tab.y).toBeGreaterThanOrEqual(0);
-      expect(tab.y + tab.height).toBeLessThanOrEqual(600);
-      await vista.tap();
+      // Sin pestañas: la vista previa va debajo de los datos, en la misma pantalla.
+      await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
       await expect(page.locator("[data-vista-cartel] [data-cartel]")).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         ancho,

@@ -8,3 +8,4 @@ export * from "./convocatoria";
 export * from "./rfgf";
 export * from "./acceso";
 export * from "./liga";
+export * from "./carteles";

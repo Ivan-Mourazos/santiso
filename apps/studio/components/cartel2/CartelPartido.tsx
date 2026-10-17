@@ -98,6 +98,7 @@ export function CartelPartido({
       derecha={datos.visitante}
       lineas
       historia={historia}
+      foto={datos.foto ?? null}
       logosArriba="centro"
       institucionales={datos.institucionales}
       patrocinadores={datos.patrocinadores}

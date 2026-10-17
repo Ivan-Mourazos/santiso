@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useId } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { LIMITE_INSTAGRAM, textoInstagram } from "@/lib/cartel/instagram";
 
@@ -24,6 +24,16 @@ import { PaqueteAxenda } from "./cartel/PaqueteAxenda";
 import { PlegableMovil } from "./cartel/PlegableMovil";
 import { Select } from "@/components/ui/foundation/Fields";
 import type { FormatoCartel } from "@/lib/cartel2/modelo";
+import type { CartelGuardado, PasoCartel } from "@/lib/cartel2/pasos";
+import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados";
+
+/** Plantillas del generador que son un paso del partido: con partido elegido, se guardan. */
+const PASO_DE_PLANTILLA: Partial<Record<TemplateId, PasoCartel>> = {
+  partido: "partido",
+  resumo: "resultado",
+  cronoloxia: "cronoloxia",
+  noso11: "noso11",
+};
 
 interface Props {
   /** Plantilla elegida en la cabecera del panel (`?plantilla=`). */
@@ -68,14 +78,37 @@ export default function GeneradorCartel({
 
   const tipo = templateId || "partido";
   const [copied, setCopied] = useState(false);
-  const [vistaMovil, setVistaMovil] = useState("datos");
   const [formato, setFormato] = useState<FormatoCartel>("publicacion");
-  const panelId = useId();
 
   const tipoForAssets: TemplateId = TEMPLATES.some((t) => t.id === tipo)
     ? (tipo as TemplateId)
     : "partido";
   const assetUrls = useCartelAssets(tipoForAssets);
+
+  // Con un partido del calendario elegido, el cartel es un paso de ese partido: se guarda.
+  const paso = PASO_DE_PLANTILLA[tipoForAssets] ?? null;
+  const partidoId = paso ? form.partido_id || null : null;
+  const [guardados, setGuardados] = useState<{
+    clave: string;
+    lista: CartelGuardado[];
+  } | null>(null);
+  const claveGuardados = partidoId && paso ? `${partidoId}:${paso}` : null;
+  useEffect(() => {
+    if (!claveGuardados || !partidoId || !paso) return;
+    let vigente = true;
+    void cargarCartelesPartido([partidoId]).then((r) => {
+      if (vigente) {
+        setGuardados({ clave: claveGuardados, lista: r.ok ? (r.datos[partidoId]?.[paso] ?? []) : [] });
+      }
+    });
+    return () => {
+      vigente = false;
+    };
+  }, [claveGuardados, partidoId, paso]);
+  const guardado =
+    partidoId && paso && guardados?.clave === claveGuardados
+      ? { partidoId, paso, guardados: guardados.lista }
+      : null;
 
   // ── Texto de Instagram: se genera del formulario y se puede retocar antes de copiarlo. Lo
   // retocado vale mientras el texto generado no cambie; si cambian los datos, manda el nuevo.
@@ -98,47 +131,8 @@ export default function GeneradorCartel({
   return (
     <div className={styles.pantalla}>
       <AvisoError mensaje={errorDatos} />
-      <div className={styles.pestanas} role="tablist" aria-label="Editor de cartel">
-        {[
-          ["datos", "Datos"],
-          ["vista", "Vista previa"],
-        ].map(([id, nombre]) => (
-          <Button
-            key={id}
-            id={`${panelId}-${id}-tab`}
-            role="tab"
-            aria-selected={vistaMovil === id}
-            aria-controls={`${panelId}-${id}`}
-            tabIndex={vistaMovil === id ? 0 : -1}
-            variant={vistaMovil === id ? "primary" : "secondary"}
-            onClick={() => setVistaMovil(id)}
-            onKeyDown={(evento) => {
-              if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(evento.key)) return;
-              evento.preventDefault();
-              const siguiente =
-                evento.key === "Home"
-                  ? "datos"
-                  : evento.key === "End"
-                    ? "vista"
-                    : id === "datos"
-                      ? "vista"
-                      : "datos";
-              setVistaMovil(siguiente);
-              document.getElementById(`${panelId}-${siguiente}-tab`)?.focus();
-            }}
-          >
-            {nombre}
-          </Button>
-        ))}
-      </div>
       <div className={styles.columnas}>
-        <div
-          id={`${panelId}-datos`}
-          role="tabpanel"
-          aria-labelledby={`${panelId}-datos-tab`}
-          className={styles.formulario}
-          data-activo={vistaMovil === "datos"}
-        >
+        <section className={styles.formulario} aria-label="Datos del cartel">
           {/* Template-specific fields */}
           {tipo === "proximos" && (
             <PaqueteAxenda
@@ -302,15 +296,9 @@ export default function GeneradorCartel({
               </section>
             </PlegableMovil>
           )}
-        </div>
+        </section>
 
-        <div
-          id={`${panelId}-vista`}
-          role="tabpanel"
-          aria-labelledby={`${panelId}-vista-tab`}
-          className={styles.previsualizacion}
-          data-activo={vistaMovil === "vista"}
-        >
+        <div className={styles.previsualizacion}>
           <PilotoCartel
             tipo={tipoForAssets}
             formato={formato}
@@ -318,6 +306,7 @@ export default function GeneradorCartel({
             recursos={assetUrls}
             equipos={equipos}
             showToast={showToast}
+            guardado={guardado}
           />
           <PlegableMovil titulo="Logos y patrocinadores">
             <div className={styles.pie}>
