@@ -9,6 +9,7 @@ import { FiltrosMovil, useEsMovil } from "@/components/ui/foundation/FiltrosMovi
 import { partidosRecientes } from "@/lib/calendario/partidos-recientes";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import { borrarJornada } from "@/lib/server/acciones/calendario";
+import { traerHorariosRfgf } from "@/lib/server/acciones/rfgf";
 import Descansos from "./Descansos";
 import DialogoJornadas from "./DialogoJornadas";
 import FilaPartido, { CabeceraPartidos } from "./FilaPartido";
@@ -39,7 +40,8 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
   const anterioresAbiertos = anterioresEn === claveAnteriores;
   const recientes = partidosRecientes(c.partidos);
   const partidosVisibles = movil && !anterioresAbiertos ? recientes.actuales : c.partidos;
-  const { setParams } = useStudio();
+  const { setParams, acceso } = useStudio();
+  const [trayendo, setTrayendo] = useState(false);
   const [dialogo, setDialogo] = useState<"jornadas" | null>(null);
   /** Solo en móvil: lo que se usa una vez al año (crear o borrar jornadas) queda plegado. */
   const [gestion, setGestion] = useState(false);
@@ -191,6 +193,33 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
           >
             Jornadas…
           </Button>
+          {/* Fechas, horas y campos de lo que queda por jugar, ya, sin esperar a la noche. */}
+          {competicion && acceso?.rol !== "tecnico" && (
+            <Button
+              size="sm"
+              variant="secondary"
+              pending={trayendo}
+              pendingLabel="Trayendo horarios…"
+              onClick={() => {
+                setTrayendo(true);
+                void traerHorariosRfgf(competicion.id)
+                  .then(async (r) => {
+                    if (!r.ok) return showToast(r.error, "error");
+                    const cambios = r.datos.horarios.length;
+                    showToast(
+                      cambios
+                        ? `${cambios} cambio${cambios > 1 ? "s" : ""} de horario traído${cambios > 1 ? "s" : ""} de la federación`
+                        : r.datos.avisos[0] || "Los horarios ya estaban al día.",
+                    );
+                    await c.cargarJornadas();
+                  })
+                  .catch(() => showToast("No se pudo hablar con la federación.", "error"))
+                  .finally(() => setTrayendo(false));
+              }}
+            >
+              Traer horarios de la federación
+            </Button>
+          )}
           {jornada && c.vista === "jornada" && (
             <Button size="sm" variant="danger" onClick={borrarLaJornada}>
               Borrar jornada

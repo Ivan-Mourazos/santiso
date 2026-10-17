@@ -128,6 +128,7 @@ export function StudioShell({
     "jugadores",
     "tecnicos",
     "equipos",
+    "federacion",
   ].some((id) => id === section?.id);
   function navigation() {
     return (

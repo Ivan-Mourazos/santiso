@@ -1,0 +1,258 @@
+FEDERACIÓN: SERVIDOR BAJO DEMANDA
+17/10/2026
+
+Resultado
+---------
+Servidor preparado para consultar estado y traer una jornada, un acta, horarios,
+cifras de jugadores, clasificación o un grupo histórico. Sin cambios de esquema,
+pantallas ni programador diario. Ninguna petición a futgal.es ni a otras redes.
+Las pruebas usan base migrada temporal y DescargadorRfgf simulado.
+
+Contratos de lectura
+--------------------
+apps/studio/lib/server/rfgf/estado.ts:
+  estadoFederacion(competicionId, ahora = new Date())
+    Promise<EstadoFederacion | null>. Solo lectura; null si no existe competición.
+    También admite competiciones sin enlazar: enlace vacío y marcas nulas.
+    competicion: id, nombre, categoria, enlace, comprobadoEn, horariosEn, resumen,
+      clasificacion (ComparacionClasificacion | null).
+    jornadas: numero, fecha (primera fecha conocida), estado, partidos,
+      conResultado, conActaTratada, pendientes, encuentros[].
+    encuentros: id, local, visitante, marcador ([local, visitante] | null), fecha,
+      propio, acta { codActa, estado, detalle, aviso }.
+    acta.estado: guardada | resultado | revisar | error | sin_acta.
+    jugadores: plantilla, conCifras, lecturaMasAntigua, lecturaMasReciente.
+      Solo cuentan personas inscritas en categoría y temporada de la competición,
+      enlazadas con rfgf_jugadores y con cifras; no personas sin reconocer.
+      Fechas ISO o null; una persona cuenta una vez aunque tenga varios códigos.
+
+    Jornada completa: todos sus encuentros jugados, con resultado y eventos
+      tratados; los propios también necesitan convocatoria. Incompleta: hay
+      partidos empezados o con resultado y queda algo pendiente o por jugar.
+      Por_jugar: ninguno empezado ni con resultado; incluye jornadas vacías.
+    Reutiliza leFaltaAlgo, jornadasPendientes y jornadasSinEventos por jornada
+      para que los límites de cada pasada no oculten otras jornadas incompletas.
+    conActaTratada cuenta rfgf_actas.eventos, también en partidos ajenos y 0-0.
+    Los errores antiguos sin partidoId se emparejan por su cruce únicamente
+      si el criterio existente encuentra un partido inequívoco; no se escribe.
+
+    clasificacion es la comparación guardada en rfgfCompeticiones.clasificacion,
+      con jornada, comparadaEn, diferencias y sanciones. El esquema conserva
+      comparación, no filas oficiales originales: consultar estado no permite
+      volver a comparar con cambios locales posteriores. actualizarClasificacion
+      vuelve a leer la oficial cuando se pide expresamente.
+
+apps/studio/lib/server/rfgf/historico.ts:
+  estadoHistorico(): grupos guardados con codGrupo, categoria, temporada,
+    competicion, grupo, codCompeticion, codEquipo, codActa, estado, intentos,
+    marcas de tiempo, jugadores (previstos) y conCifras (cifras no nulas).
+    Solo lectura; incluye grupos sin_acta y categorías aún sin identificar.
+    Estado listo significa que hay acta de referencia, no que se hayan leído
+    todos los jugadores. Para comprobar avance, comparar jugadores y conCifras.
+
+Contratos de descargas
+----------------------
+apps/studio/lib/server/rfgf/demanda.ts. Todas devuelven promesas. DescargadorRfgf
+se inyecta; ahora es opcional, pensado para pruebas reproducibles.
+
+ResumenPeticionRfgf extiende ResumenRfgf:
+  competicionId, competicion, resultados (guardados/corregidos), actas (completas
+  del club), horarios[], revisar[], errores[], actasTratadas (también ajenas o
+  que quedan por revisar), jugadores (cifras leídas), avisos[].
+  errores contiene fallos parciales; un Resultado.ok no implica errores vacío.
+  avisos informa reserva ocupada o ausencia de acta, sin tratarlos como errores.
+
+  traerJornada(competicionId, numero, descargador, ahora?)
+    Solo PDF y HTML de esa jornada, después sus actas de partidos jugados.
+    PDF pone resultados, horarios y árbitro; al pedirlo a mano corrige también
+    resultado/árbitro existentes. No borra resultados porque PDF no los traiga.
+    Actas guardada/resultado con eventos y sin aviso no se repiten. Revisar,
+    error, sin eventos o con aviso se reintentan. Una jornada ajena no descarga.
+
+  traerActa(competicionId, partidoId, descargador, ahora?)
+    Siempre vuelve a tratar ese PDF y sustituye resultado, eventos de liga y,
+    si reconoce plantilla propia, convocatoria y eventos del acta completa.
+    Si existe codActa local, solo descarga ese PDF; si no, busca el código en
+    HTML de su jornada. Si aún no se publica, devuelve aviso y errores vacío.
+    Un partido de otra competición no se descarga.
+
+  traerHorarios(competicionId, descargador, ahora?)
+    PDF de todas las jornadas que tienen algún encuentro por jugar; reutiliza
+    criterio de jornadasPorJugar por jornada, sin límite diario de dos jornadas.
+    No pide HTML, actas ni jugadores. Marca horariosEn si no hubo errores.
+
+  traerCifrasJugadores(competicionId, descargador, ahora?)
+    Una pasada existente de sincronizarJugadores: hasta cuatro páginas de
+    jugador y, si hace falta identificar último partido propio, su página HTML.
+    Sin partido propio de referencia, devuelve aviso y ninguna cifra inventada.
+
+  actualizarClasificacion(competicionId, descargador, ahora?)
+    ResultadoClasificacionRfgf: cuadra, jornadaOficial (number | null),
+    diferencias[], motivos[], avisos[], errores[].
+    Primero PDF oficial mediante compararConOficial. Si cuadra no descarga
+    jornadas ni actas. Si difiere, PDF de jornadas hasta la oficial que tienen
+    partidos de fecha pasada sin resultado, y segunda comparación oficial.
+    No descarga actas: resultado del PDF basta para recalcular clasificación.
+    Persiste comparación final; no aplica sanciones automáticamente.
+    También funciona sin ningún marcador local: pide última jornada con fecha
+    pasada. No da por jugado un aplazado solo por esa fecha: así lo explica.
+    motivos tiene una línea por diferencia. Cita sanción publicada, resultados
+    ausentes o falta de acta/eventos; no atribuye diferencias de puntos a falta
+    de acta. Si no consta explicación, dice que no hay motivo conocido.
+    Sin liga, jornadas jugadas u oficial utilizable: cuadra false y aviso.
+
+apps/studio/lib/server/rfgf/historico.ts:
+  traerTemporadaHistorica(codGrupo, descargador, ahora?)
+    ResumenHistoricoRfgf { codGrupo, paginas, jugadores, avisos[], errores[] }.
+    Solo grupo solicitado, dos páginas como máximo por llamada, incluidos
+    intentos de descarga fallidos. Prepara referencia si falta y lee jugadores.
+    No descubre otras categorías. Grupo inexistente lanza para capturar en acción;
+    sin_acta o sin jugadores identificados devuelve aviso. jugadores cuenta
+    nuevas filas con cifras, no intentos ni personas con lectura fallida.
+
+Reserva y pasada diaria
+-----------------------
+conCandadoRfgf, en candado.ts, comparte reserva global por proceso entre todas
+las operaciones anteriores, sincronizarTodo, sincronizarCompeticion y
+avanzarHistorico. No espera ni encola: operaciones concretas devuelven aviso
+claro sin descargar ni escribir. Firmas antiguas conservan salida de ocupado:
+sincronizarTodo [], sincronizarCompeticion null, avanzarHistorico 0.
+Reserva liberada en finally, también ante errores. Se mantiene durante operación
+completa, no solo cada descarga. Sobrevive a recarga de módulos en desarrollo.
+
+Se reutilizan tratarJornada, tratarActasJornada, tratarActa y compararConOficial
+de sincronizar.ts, con opciones manuales desactivadas por defecto. La pasada
+diaria conserva criterios, orden de descargas y resúmenes; sus 16 pruebas no se
+han modificado. programador.ts y descargador.ts quedan intactos, incluida pausa
+de 1.500 ms entre consultas del mismo descargador y sus reintentos de sesión.
+Reserva es local al proceso, coherente con servidor único de uso diario; no es
+un cerrojo distribuido entre procesos diferentes.
+
+Peticiones concretas actualizan último resumen cuando hay algo que contar, pero
+no comprobadoEn: una consulta parcial no aplaza la pasada diaria completa.
+
+Acciones públicas
+-----------------
+apps/studio/lib/server/acciones/rfgf.ts; todas usan Resultado<T>/capturar.
+Descargador real se crea dentro de acción; no es argumento accesible al cliente.
+  cargarEstadoFederacion(id): Resultado<EstadoFederacion | null>.
+    Basta sesión; barrera de lectura obtenerDb, sin exigir administrador.
+  traerJornadaRfgf(id, numero): Resultado<ResumenPeticionRfgf>.
+  traerActaRfgf(id, partidoId): Resultado<ResumenPeticionRfgf>.
+  traerHorariosRfgf(id): Resultado<ResumenPeticionRfgf>.
+  traerCifrasJugadoresRfgf(id): Resultado<ResumenPeticionRfgf>.
+  actualizarClasificacionRfgf(id): Resultado<ResultadoClasificacionRfgf>.
+  cargarEstadoHistoricoRfgf(): Resultado<estadoHistorico>.
+  traerTemporadaHistoricaRfgf(codGrupo): Resultado<ResumenHistoricoRfgf>.
+    Todas estas siete requieren soloAdmin antes de consultar/descargar.
+ComprobarRfgfAhora y reintentarActaRfgf siguen disponibles por compatibilidad,
+ahora también comprueban soloAdmin expresamente: el código anterior no lo hacía.
+No se ha añadido ni modificado ningún botón.
+
+Histórico: diagnóstico y arreglo
+-------------------------------
+Copia de santiso.db y su WAL de la carpeta de uso diario en directorio temporal;
+consulta SQLite mode=ro y query_only=1. quick_check=ok; foreign_key_check sin filas.
+No se abrieron conexiones a datos reales ni se modificaron esos archivos.
+
+Evidencia de copia: 10 grupos Senior, 3 listos de 2025-2026 y 7 pendientes de
+2024-2025 a 2021-2022 con intentos=0. Dos grupos listos tenían 16/16 jugadores
+leídos; tercero, AFICIONADOS - ELIMINATORIAS, tenía 0/16. Última actualización
+histórica 13/10/2026 17:33:47.753 UTC; pasada normal sí llegó al 16/10/2026.
+Veteranos tenía 16 jugadores identificados pero ningún grupo descubierto.
+
+Fallo comprobado en código y reproducido sin red: avanzarHistorico empezaba por
+leerUno; este seleccionaba siempre primer jugador sin leidoEn, por temporada y
+código. Si su descarga o parser fallaba, lanzaba antes de marcar progreso.
+Programador capturaba excepción y siguiente tic repetía exactamente misma fila.
+Ni prepararGrupo ni descubrirGrupos llegaban a ejecutarse. Además, prepararGrupo
+podía elegir primero una categoría sin jugadores y dejar esperando otras.
+
+La copia local acredita punto de atasco, no conserva HTML de respuesta fallida.
+No se puede afirmar sin inventar si desencadenante real fue fallo de red, página
+vacía o estadísticas no disponibles para eliminatorias. Prueba reproduce página
+sin estadísticas; mecanismo de bloqueo es el mismo ante fallo de descarga.
+
+Arreglo: descubrimiento al inicio si caben sus dos páginas; preparación de grupos
+antes de lecturas, filtrando categorías sin jugadores reconocidos. Fallos de una
+página se registran sin detener tanda; actualizadoEn rota intentos fallidos al
+final entre tics, y listas de visitados impiden repetirlos dentro de misma tanda.
+No se marca leidoEn ni se inventan cifras por un fallo. Un grupo se prepara como
+máximo una vez por llamada. También se cuenta intento que sí encontró referencia.
+Descubrimiento no empieza con presupuesto de una página: antes podía exceder dos
+cuando solo quedaba una. Se preserva cadencia existente de diez minutos.
+
+Viabilidad (sin código ni red)
+-----------------------------
+(a) Resultados y actas propias de temporadas anteriores: viable con los códigos
+ya guardados y parsers existentes, sujeto a que federación siga ofreciendo PDF.
+No implica que todas las temporadas o eliminatorias tengan formato compatible.
+
+Direcciones disponibles en lib/rfgf/enlace.ts:
+  NFG_VisCalendario_Vis?...&NPcd_Pdf=1: calendario completo, cruces y fechas
+    nominales. Fixture/calendario-senior.json: 14 equipos, 26 jornadas; veteranos:
+    16 equipos, 30 jornadas. Parser no devuelve resultados ni códigos de acta;
+    valida liga completa a doble vuelta. No basta para grupos de eliminatorias.
+  NFG_CmpJornada?...&CodJornada=N: HTML para códigos de equipo y codActa, usando
+    partidosConCodigos/partidosDeJornada. Nunca leer marcadores del HTML.
+  Mismo NFG_CmpJornada con NPcd_Pdf=1: resultados, día/hora/campo y árbitro;
+    parsearJornadaPdf, fixtures jornada-1.pdf y jornada-2.pdf.
+  NFG_CmpPartido?...&CodActa=C&cod_acta=C&NPcd_Pdf=1: acta propia, marcador,
+    convocatoria, goles y tarjetas. parsearFichaPdf; fixtures senior-1/6/18.pdf.
+    marcadorDeFichaPdf permite rescatar resultado si lectura completa falla.
+
+Coste lógico por grupo de una temporada, J jornadas relevantes y P partidos
+propios: 1 calendario PDF + J HTML + P actas PDF = 1 + J + P descargas para
+traer actas y obtener resultados de ellas. Si se quieren marcadores incluso
+cuando no haya acta legible/publicada, añadir J PDF de jornada: 1 + 2J + P.
+Ejemplo sin descansos, 26 partidos: 53 descargas mínimo o 79 con jornada PDF;
+30 partidos: 61 o 91. Si calendario/cruces ya se conocen, restar ese PDF; si
+codActa ya se conoce, evitar HTML correspondiente. Una sola acta cuyo código
+ya está guardado cuesta un PDF. Si hay varias fases, sumar coste de cada grupo.
+Son peticiones lógicas: apertura de sesión, redirecciones o reintentos HTTP
+pueden aumentarlas. Habría que repartir temporadas en tandas pequeñas con pausa,
+nunca ejecutar esas cifras seguidas; no se implementa importación retrospectiva.
+
+(b) jugador-rfgf.ts y fixtures HTML embebidas de jugador-rfgf.test.ts devuelven
+un equipo, una competición, una temporada y sus cifras. URL usa jugador y codacta;
+las cifras corresponden al contexto de ese partido. No contienen una trayectoria
+en otros clubes temporada a temporada ni un índice navegable de todos sus años.
+Cambiar acta de referencia permite consultar otro contexto ya conocido, pero
+no descubre por sí solo clubes o temporadas desconocidos. Con evidencia local
+no puede prometerse extracción de trayectoria completa de cualquier jugador.
+Historial actual solo añade años con convocatorias en grupos del propio club.
+
+Decisiones y límites
+--------------------
+Sin migraciones, componentes, red, pruebas sobre data/, merge ni push.
+Sin e2e: no cambian pantallas. Sin cambio de calendario automático, de umbrales
+diarios ni del límite de cuatro jugadores por pasada de competición.
+Sin importer de temporadas antiguas ni descubrimiento de clubes ajenos.
+Sin reparación de datos reales: código quedará operativo al integrarlo y arrancar
+la copia de uso diario; aquí solo se reprodujo sobre bases temporales.
+Si se necesita revisar errores antiguos sin partido inequívoco, cargarEstadoRfgf
+sigue ofreciendo lista global existente; estado detallado no inventa asociación.
+Si federación no publica cifras históricas, seguirán pendientes y visibles, pero
+no impedirán preparar otros grupos ni descubrir categorías.
+
+Verificación
+------------
+38 pruebas dirigidas correctas: 17 nuevas de demanda, 2 de permisos, 16 originales
+de sincronizar y 3 originales de acciones. Se observaron fallos antes del arreglo
+tanto en bloqueo por página de jugador como en descubrimiento de otra categoría.
+pnpm check completo (typecheck, lint, formato y Vitest): código de salida 0.
+Final real de salida de la pasada final 17:23:53:
+
+ Test Files  123 passed (123)
+      Tests  924 passed | 1 skipped (925)
+   Start at  17:23:53
+   Duration  20.73s (transform 4.92s, setup 0ms, import 29.72s, tests 73.52s, environment 19ms)
+
+stderr | apps/studio/lib/server/rfgf/demanda.test.ts > histórico: una página de jugador rota no bloquea grupos anteriores ni repite fallo en tanda
+[rfgf] Histórico: 2025-2026, jugador 1: La página no es la de estadísticas de un jugador.
+
+stderr | packages/actas/src/calendario.test.ts > adaptador PDF > rechaza PDF inválido
+Warning: Indexing all PDF objects
+
+stderr | packages/actas/src/pdf.test.ts > adaptador PDF > rechaza bytes inválidos
+Warning: Indexing all PDF objects

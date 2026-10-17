@@ -29,6 +29,9 @@ const Callup = dynamic(() => import("@/components/admin/convocatoria/AdminConvoc
   loading,
 });
 const Fines = dynamic(() => import("@/components/admin/multas/AdminMultas"), { loading });
+const Federation = dynamic(() => import("@/components/admin/federacion/AdminFederacion"), {
+  loading,
+});
 const Posters = dynamic(() => import("@/components/admin/GeneradorCartel"), { loading });
 const Acta = dynamic(() => import("@/components/admin/AdminActaImporter"), { loading });
 const Batch = dynamic(() => import("@/components/admin/AdminActaBatch"), { loading });
@@ -89,6 +92,7 @@ export function StudioSection({ section }: { section: Seccion }) {
         <Lineup categoria="Senior" partidoInicial={params.get("partido")} showToast={showToast} />
       )}
       {section === "multas" && <Fines {...feedback} />}
+      {section === "federacion" && <Federation showToast={showToast} categoria={category} />}
       {section === "carteles" && (
         <Posters
           templateId={template}

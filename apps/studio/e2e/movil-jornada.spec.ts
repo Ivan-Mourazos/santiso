@@ -35,9 +35,14 @@ for (const ancho of [360, 390]) {
     await ultimo.getByRole("button", { name: "Acta y publicaciones" }).tap();
     await expect(page.locator("[data-mesa-partido]")).toHaveAttribute("data-fase", "despues");
     await expect(page.locator("[data-accion-principal]")).toHaveCount(1);
-    await page.locator("summary").filter({ hasText: "Federación" }).tap();
-    // Solo abrir panel. No «Comprobar ahora» ni guardar URL.
-    await expect(page.getByRole("button", { name: "Comprobar ahora" })).toBeVisible();
+    // La federación en Jornada solo avisa y lleva a su sección; no se trae nada desde aquí.
+    const federacion = page.getByRole("region", { name: "Federación", exact: true });
+    if ((await federacion.count()) > 0) {
+      await expect(federacion.getByRole("button", { name: "Comprobar ahora" })).toHaveCount(0);
+      await expect(
+        federacion.getByRole("link", { name: "Ver qué hay traído y traer lo que falte" }),
+      ).toBeVisible();
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       ancho,
     );

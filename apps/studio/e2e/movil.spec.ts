@@ -234,20 +234,21 @@ for (const ancho of [360, 390]) {
 }
 
 for (const ancho of [360, 390]) {
-  test(`jornada: el panel de la federación desplegado cabe a ${ancho}px`, async ({ page }) => {
+  test(`federación: jornadas, botones y temporadas pasadas caben a ${ancho}px`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: ancho, height: 844 });
-    await abrir(page, "jornada");
-    const panel = page.getByRole("region", { name: "Federación" });
-    // Solo aparece si hay competiciones en la temporada activa.
-    if ((await panel.count()) === 0) return;
-    await panel.locator("summary").click();
-    await expect(panel.getByRole("button", { name: "Comprobar ahora" })).toBeVisible();
-    for (const control of await panel.locator("input:visible, button:visible").all()) {
+    await abrir(page, "federacion");
+    const jornadas = page.getByRole("region", { name: "Jornadas", exact: true });
+    await expect(jornadas.locator("details").first()).toBeVisible({ timeout: 30000 });
+    // Se abre la primera jornada para ver sus partidos. Ningún «Traer»: saldría a la red.
+    await jornadas.locator("details > summary").first().click();
+    await page.locator("main details:not([open]) > summary").filter({ hasText: "Enlaces" }).click();
+    for (const control of await page.locator("main input:visible, main button:visible").all()) {
       const caja = (await control.boundingBox())!;
       expect(Math.round(caja.height)).toBeGreaterThanOrEqual(44);
       expect(caja.x + caja.width).toBeLessThanOrEqual(ancho + 1);
     }
-    // Solo se despliega: no se pulsa «Comprobar ahora» ni «Guardar».
     await comprobarAncho(page);
   });
 }

@@ -1,12 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/ui/foundation/Button";
-import { Field } from "@/components/ui/foundation/Fields";
 import {
   cargarEstadoRfgf,
   comprobarRfgfAhora,
-  guardarEnlaceRfgf,
   reintentarActaRfgf,
   type CompeticionRfgf,
 } from "@/lib/server/acciones/rfgf";
@@ -34,19 +32,17 @@ function cuando(iso: string | null) {
 }
 
 /**
- * Sincronización con la web de la federación: resultados y actas llegan solos. Aquí se ve
- * cómo va, se enlaza cada competición una vez y se avisa de lo que no se pudo guardar solo.
+ * La federación en Jornada: resultados y actas llegan solos. Aquí solo se avisa de lo que no se
+ * pudo guardar solo; lo demás (qué hay traído, traer algo concreto, enlaces) está en Federación.
  */
 export default function PanelRfgf({ showToast, onNovedades }: Props) {
   const [estado, setEstado] = useState<CompeticionRfgf[] | null>(null);
-  const [enlaces, setEnlaces] = useState<Record<string, string>>({});
   const [ocupado, setOcupado] = useState(false);
 
   const cargar = useCallback(async () => {
     const resultado = await cargarEstadoRfgf();
     if (!resultado.ok) return;
     setEstado(resultado.datos);
-    setEnlaces(Object.fromEntries(resultado.datos.map((c) => [c.competicionId, c.enlace])));
   }, []);
 
   useEffect(() => {
@@ -58,37 +54,16 @@ export default function PanelRfgf({ showToast, onNovedades }: Props) {
   const porRevisar = estado.flatMap((c) => c.revisar);
   const enlazadas = estado.filter((c) => c.enlace);
 
-  async function comprobar() {
-    setOcupado(true);
-    try {
-      const resultado = await comprobarRfgfAhora();
-      if (!resultado.ok) return showToast(resultado.error, "error");
-      showToast(resultado.datos);
-      await cargar();
-      onNovedades();
-    } finally {
-      setOcupado(false);
-    }
-  }
-
-  async function guardarEnlace(competicionId: string) {
-    setOcupado(true);
-    try {
-      const resultado = await guardarEnlaceRfgf(competicionId, enlaces[competicionId] ?? "");
-      if (!resultado.ok) return showToast(resultado.error, "error");
-      showToast("Enlace guardado");
-      await cargar();
-    } finally {
-      setOcupado(false);
-    }
-  }
-
   async function reintentar(codActa: string) {
     setOcupado(true);
     try {
       const preparado = await reintentarActaRfgf(codActa);
       if (!preparado.ok) return showToast(preparado.error, "error");
-      await comprobar();
+      const resultado = await comprobarRfgfAhora();
+      if (!resultado.ok) return showToast(resultado.error, "error");
+      showToast(resultado.datos);
+      await cargar();
+      onNovedades();
     } finally {
       setOcupado(false);
     }
@@ -101,52 +76,14 @@ export default function PanelRfgf({ showToast, onNovedades }: Props) {
         ocupado={ocupado}
         onReintentar={(codActa) => void reintentar(codActa)}
       />
-      {enlazadas.length > 0 && (
-        <div className={styles.rfgfAhora}>
-          <p>
-            La federación se mira sola cada noche a las 21:00. Si quieres los datos ya (resultados,
-            horarios, goles y tarjetas), pídelos:
-          </p>
-          <Button variant="secondary" disabled={ocupado} onClick={() => void comprobar()}>
-            {ocupado ? "Mirando la federación…" : "Comprobar ahora"}
-          </Button>
-        </div>
-      )}
-      <details className={styles.rfgfDetalle}>
-        <summary>
-          <span>
-            Federación ·{" "}
-            {enlazadas.length === 0
-              ? "sin enlazar"
-              : enlazadas.map((c) => `${c.categoria}: ${c.resumen || cuando(c.comprobadoEn)}`).join(" · ")}
-          </span>
-        </summary>
-        <p className={styles.rfgfNota}>
-          Resultados, horarios, árbitros, goles y tarjetas se traen solos de futgal.es. Pega una
-          vez el enlace del calendario de cada competición.
-        </p>
-        {estado.map((c) => (
-          <div key={c.competicionId} className={styles.rfgfFila}>
-            <Field
-              label={`Enlace de ${c.nombre} (${c.categoria})`}
-              hint={c.enlace ? cuando(c.comprobadoEn) : "Sin enlazar: no se sincroniza."}
-              type="url"
-              inputMode="url"
-              placeholder="https://www.futgal.es/pnfg/NPcd/NFG_VisCalendario_Vis?…"
-              value={enlaces[c.competicionId] ?? ""}
-              onChange={(e) => setEnlaces({ ...enlaces, [c.competicionId]: e.target.value })}
-              disabled={ocupado}
-            />
-            <Button
-              variant="secondary"
-              disabled={ocupado || (enlaces[c.competicionId] ?? "") === c.enlace}
-              onClick={() => void guardarEnlace(c.competicionId)}
-            >
-              Guardar
-            </Button>
-          </div>
-        ))}
-      </details>
+      <p className={styles.rfgfNota}>
+        {enlazadas.length === 0
+          ? "Sin enlazar con la federación. "
+          : `Federación: ${enlazadas.map((c) => `${c.categoria}, ${c.resumen || cuando(c.comprobadoEn)}`).join(" · ")}. `}
+        <Link href="/admin/federacion" className={styles.rfgfIr}>
+          Ver qué hay traído y traer lo que falte
+        </Link>
+      </p>
     </section>
   );
 }

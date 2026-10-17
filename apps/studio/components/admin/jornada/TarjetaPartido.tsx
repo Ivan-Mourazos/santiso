@@ -6,6 +6,8 @@ import GaleriaPartido from "@/components/admin/fotos/GaleriaPartido";
 import { useStudio } from "@/components/studio/StudioContext";
 import type { PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
 import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados";
+import { traerActaRfgf } from "@/lib/server/acciones/rfgf";
+import { Button } from "@/components/ui/foundation/Button";
 import {
   type CartelesDelPartido,
   enlacesPartido,
@@ -54,12 +56,16 @@ export default function TarjetaPartido({
   partido: p,
   categoria,
   momento,
+  onNovedades,
 }: {
   partido: PartidoDeLaSemana;
   categoria: string;
   momento: string;
+  /** Se llama tras traer algo de la federación, para refrescar la semana. */
+  onNovedades?: () => void;
 }) {
-  const { showToast } = useStudio();
+  const { showToast, acceso } = useStudio();
+  const [trayendo, setTrayendo] = useState(false);
   const [galeria, setGaleria] = useState(false);
   // Los carteles guardados dicen qué pasos están hechos; hasta tenerlos, cuentan como pendientes.
   const [carteles, setCarteles] = useState<{ id: string; deEste: CartelesDelPartido } | null>(
@@ -197,6 +203,32 @@ export default function TarjetaPartido({
           )}
           <Acceso href={e.cartel("partido")}>Cartel de partido</Acceso>
           <Acceso href={e.calendario}>Cambiar fecha, hora o campo</Acceso>
+          {/* El acta llega sola cada noche; esto la pide ya, solo la de este partido. */}
+          {despues && acceso?.rol !== "tecnico" && (
+            <Button
+              variant="secondary"
+              pending={trayendo}
+              pendingLabel="Trayendo el acta…"
+              onClick={() => {
+                setTrayendo(true);
+                void traerActaRfgf(p.competicionId, p.id)
+                  .then((r) => {
+                    if (!r.ok) return showToast(r.error, "error");
+                    const avisos = r.datos.avisos.join(" · ");
+                    showToast(
+                      r.datos.actas || r.datos.resultados
+                        ? "Acta traída de la federación"
+                        : avisos || "La federación no tiene nada nuevo de este partido.",
+                    );
+                    onNovedades?.();
+                  })
+                  .catch(() => showToast("No se pudo hablar con la federación.", "error"))
+                  .finally(() => setTrayendo(false));
+              }}
+            >
+              Traer acta de la federación
+            </Button>
+          )}
           <Acceso href={e.acta} disponible={despues || Boolean(p.acta)} motivo="Tras el partido">
             {p.acta ? "Corregir acta" : "Meter acta a mano"}
           </Acceso>

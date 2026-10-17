@@ -16,6 +16,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation
 import type { FilaClasificacion, PantallaClasificacion } from "@/lib/dto";
 import { cargarPantallaClasificacion } from "@/lib/server/acciones/clasificacion";
 import { useStudio } from "@/components/studio/StudioContext";
+import { actualizarClasificacionRfgf } from "@/lib/server/acciones/rfgf";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import DialogoZonas from "./DialogoZonas";
 import styles from "./Clasificacion.module.css";
@@ -44,7 +45,12 @@ const conColor = (color: string) => ({ "--color-regla": color }) as CSSPropertie
  * La pantalla no calcula nada: pinta la tabla y marca las zonas que define la competición.
  */
 export default function AdminClasificacion({ categoria }: Props) {
-  const { setParams, showToast } = useStudio();
+  const { setParams, showToast, acceso } = useStudio();
+  const [actualizando, setActualizando] = useState(false);
+  // Por qué no cuadra, según la última «Actualizar» de esta competición.
+  const [motivos, setMotivos] = useState<{ competicionId: string; lista: string[] } | null>(
+    null,
+  );
   const [editandoZonas, setEditandoZonas] = useState(false);
   const {
     temporadas,
@@ -317,8 +323,13 @@ export default function AdminClasificacion({ categoria }: Props) {
                 </strong>
               </p>
               <ul>
-                {oficial.diferencias.map((diferencia) => (
-                  <li key={diferencia}>{diferencia}</li>
+                {oficial.diferencias.map((diferencia, i) => (
+                  <li key={diferencia}>
+                    {diferencia}
+                    {motivos?.competicionId === selectedCompetitionId && motivos.lista[i] && (
+                      <em> — {motivos.lista[i]}</em>
+                    )}
+                  </li>
                 ))}
               </ul>
             </>
@@ -371,6 +382,36 @@ export default function AdminClasificacion({ categoria }: Props) {
             >
               Zonas de la clasificación
             </Button>
+            {/* Compara con la oficial; si no cuadra, trae los resultados que falten. */}
+            {acceso?.rol !== "tecnico" && (
+              <Button
+                size="sm"
+                variant="secondary"
+                pending={actualizando}
+                pendingLabel="Comparando con la federación…"
+                disabled={cargando || competicionCargada !== selectedCompetitionId}
+                onClick={() => {
+                  const id = competicion.id;
+                  setActualizando(true);
+                  void actualizarClasificacionRfgf(id)
+                    .then(async (r) => {
+                      if (!r.ok) return showToast(r.error, "error");
+                      setMotivos({ competicionId: id, lista: r.datos.motivos });
+                      showToast(
+                        r.datos.cuadra
+                          ? "Coincide con la federación ✓"
+                          : "No coincide con la federación: mira el detalle arriba.",
+                        r.datos.cuadra ? "success" : "error",
+                      );
+                      await cargar(id);
+                    })
+                    .catch(() => showToast("No se pudo hablar con la federación.", "error"))
+                    .finally(() => setActualizando(false));
+                }}
+              >
+                Actualizar con la federación
+              </Button>
+            )}
           </div>
         )}
       </div>

@@ -575,7 +575,8 @@ async function sembrar() {
   ]);
   await db.insert(schema.rfgfCompeticiones).values({
     competicionId: "vestiario-copa",
-    enlace: "https://www.futgal.es/pnfg/NPcd/NFG_VisCalendario_Vis?cod_primaria=1&codtemporada=1&codcompeticion=1&codgrupo=1",
+    enlace:
+      "https://www.futgal.es/pnfg/NPcd/NFG_VisCalendario_Vis?cod_primaria=1&codtemporada=1&codcompeticion=1&codgrupo=1",
   });
   await db.insert(schema.rfgfPartidos).values({
     partidoId: "vestiario-sin-nada",
@@ -584,6 +585,66 @@ async function sembrar() {
     cambio: "07/06 17:00",
     cambioEn: new Date().toISOString(),
   });
+
+  // Temporadas pasadas (`federacion-escritura.spec.ts`): una con su archivo de partidos ya
+  // traído y otra sin pedir. Nada de esto toca el calendario ni las estadísticas.
+  const grupoHistorico = {
+    categoria: "Senior",
+    competicion: "TERCEIRA FICTICIA",
+    codCompeticion: "900",
+    codEquipo: "9000",
+    estado: "listo" as const,
+  };
+  await db.insert(schema.rfgfGruposHistoricos).values([
+    {
+      ...grupoHistorico,
+      codGrupo: "9001",
+      temporada: "2023-2024",
+      grupo: "GRUPO FICTICIO 1",
+      partidosPedidosEn: "2026-10-17T10:00:00.000Z",
+      partidosEstado: "terminado",
+    },
+    {
+      ...grupoHistorico,
+      codGrupo: "9002",
+      temporada: "2022-2023",
+      grupo: "GRUPO FICTICIO 2",
+    },
+  ]);
+  const [historico] = await db
+    .insert(schema.rfgfHistoricoPartidos)
+    .values({
+      codGrupo: "9001",
+      jornada: 3,
+      fechaNominal: "2023-10-01",
+      fecha: "2023-10-01T17:00",
+      local: "U.D. Santiso",
+      visitante: "Antigo Rival Ficticio",
+      santisoLocal: true,
+      golesLocal: 2,
+      golesVisitante: 1,
+      estado: "listo",
+      actaLeidaEn: "2026-10-17T11:00:00.000Z",
+    })
+    .returning();
+  await db.insert(schema.rfgfHistoricoEventos).values([
+    {
+      partidoId: historico!.id,
+      lado: "local",
+      persona: "VELLO GOLEADOR, XAN",
+      personaClave: claveNombre("VELLO GOLEADOR, XAN"),
+      tipo: "gol",
+      minuto: "23",
+    },
+    {
+      partidoId: historico!.id,
+      lado: "visitante",
+      persona: "RIVAL AMONESTADO, PEPE",
+      personaClave: claveNombre("RIVAL AMONESTADO, PEPE"),
+      tipo: "amarilla",
+      minuto: "40",
+    },
+  ]);
 
   cerrar();
   console.log(`Datos de prueba en ${DIR_ESCRITURA}`);
