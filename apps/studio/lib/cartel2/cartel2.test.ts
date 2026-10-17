@@ -170,7 +170,7 @@ describe("modelo", () => {
     expect(categoriaCartel("Veteranos")).toBe("VETERANOS");
   });
 
-  it("agrupa los goles por jugador, con penaltis y en propia marcados", () => {
+  it("agrupa los goles por jugador, sin minutos y con la propia marcada", () => {
     expect(
       goleadores(
         [
@@ -182,8 +182,8 @@ describe("modelo", () => {
         "local",
       ),
     ).toEqual([
-      { nombre: "Bareto", minutos: ["59'", "66' (pen.)"] },
-      { nombre: "Rival (p.p.)", minutos: ["80'"] },
+      { nombre: "Bareto", goles: 2 },
+      { nombre: "Rival (p.p.)", goles: 1 },
     ]);
   });
 });

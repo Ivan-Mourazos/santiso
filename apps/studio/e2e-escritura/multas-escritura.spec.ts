@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 /**
  * Multas del club sobre la base de juguete: las normas se cargan solas la primera vez y la
- * gente sale de la plantilla sembrada («Aliñación Ficticio», Veteranos).
+ * gente sale de la plantilla sembrada («Aliñación Ficticio», Senior).
  */
 test("poner una multa por prendas, cobrarla y verla en el bote", async ({ page }) => {
   const errores: string[] = [];
@@ -12,7 +12,7 @@ test("poner una multa por prendas, cobrarla y verla en el bote", async ({ page }
   const alta = page.getByRole("form", { name: "Nueva multa" });
   await expect(alta).toBeVisible({ timeout: 30000 });
 
-  await alta.getByLabel("A quién").selectOption({ label: "Uno Aliñación Ficticio · Veteranos · 1" });
+  await alta.getByLabel("A quién").selectOption({ label: "Uno Aliñación Ficticio · Senior · 1" });
   await alta.getByLabel("Motivo", { exact: true }).selectOption({
     label: "Non traer material — 1,00 €",
   });
@@ -39,7 +39,7 @@ test("poner una multa por prendas, cobrarla y verla en el bote", async ({ page }
 
   // Un motivo que no está en las normas: se escribe, con su importe.
   await page.getByRole("tab", { name: "Multas", exact: true }).click();
-  await alta.getByLabel("A quién").selectOption({ label: "Dous Aliñación Ficticio (Dous) · Veteranos · 2" });
+  await alta.getByLabel("A quién").selectOption({ label: "Dous Aliñación Ficticio (Dous) · Senior · 2" });
   await alta.getByLabel("Motivo", { exact: true }).selectOption({ label: "Otro motivo (escribirlo)…" });
   await alta.getByLabel("Motivo de la multa").fill("Non poñer bote no bar");
   await alta.getByLabel("Importe (€)").fill("2,5");

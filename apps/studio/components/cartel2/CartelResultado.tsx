@@ -63,7 +63,8 @@ export function CartelResultado({ datos }: { datos: DatosResultado }) {
                 <li key={g.nombre} data-lectura-fila>
                   <Balon tamano={28} />
                   <span className={s.nombre} data-lectura-columna>
-                    {g.nombre} <span className={s.minutos}>{g.minutos.join(", ")}</span>
+                    {g.nombre}
+                    {g.goles > 1 && <span className={s.veces}> ×{g.goles}</span>}
                   </span>
                 </li>
               ))}

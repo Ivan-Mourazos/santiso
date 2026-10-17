@@ -53,6 +53,16 @@ describe("mesa de trabajo", () => {
       ).principal.titulo,
     ).toBe("Preparar cartel de partido");
   });
+  it("Veteranos no convoca ni alinea: antes del partido solo queda el cartel", () => {
+    const { pasos, principal } = progresoPartido(partido(), ahora, "Veteranos");
+    expect(pasos.map((p) => p.titulo)).toEqual(["Cartel"]);
+    expect(principal.titulo).toBe("Preparar cartel de partido");
+    expect(progresoPartido(partido(), ahora, "Senior").pasos.map((p) => p.titulo)).toEqual([
+      "Convocatoria",
+      "Once",
+      "Cartel",
+    ]);
+  });
   it("no inventa confirmaciones de exportación ni de publicación", () => {
     const p = partido({ preparacion: { convocatoria: 18, titulares: 11, capitan: true } });
     expect(progresoPartido(p, ahora).pasos.at(-1)?.estado).toBe("");

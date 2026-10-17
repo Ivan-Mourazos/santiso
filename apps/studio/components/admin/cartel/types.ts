@@ -10,7 +10,7 @@ export const TEMPLATES = [
   { id: "resumo", label: "Resumo da Xornada", emoji: "📊" },
   { id: "cronoloxia", label: "Cronoloxía", emoji: "📋" },
   { id: "proximos", label: "Próximos Encontros", emoji: "📅" },
-  { id: "noso11", label: "O Noso 11", emoji: "👕" },
+  { id: "noso11", label: "O Noso 11 · tras el partido", emoji: "👕" },
   { id: "multiusos", label: "Multiusos / Anuncio", emoji: "📢" },
   { id: "clasificacion", label: "Clasificación / Copa", emoji: "📈" },
 ] as const;

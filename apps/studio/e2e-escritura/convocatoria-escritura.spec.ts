@@ -8,10 +8,10 @@ test("guardar convocatoria, reabrir, exportar PNG y pasar convocados a alineaci�
   const errores: string[] = [];
   page.on("pageerror", (e) => errores.push(e.message));
   await page.setViewportSize({ width: 390, height: 844 });
-  const ruta = "/admin/convocatoria?categoria=Veteranos&partido=convocatoria-e2e";
+  const ruta = "/admin/convocatoria?partido=convocatoria-e2e";
   await page.goto(ruta);
   await expect(page.getByText("3 convocados / 3")).toBeVisible({ timeout: 30000 });
-  const plantilla = page.getByRole("list", { name: "Plantilla Veteranos" });
+  const plantilla = page.getByRole("list", { name: "Plantilla Senior" });
   await plantilla.getByRole("button", { name: "Convocar: Tres Aliñación Ficticio" }).click();
   await page.getByLabel("Hora de quedada", { exact: true }).fill("16:00");
   await page.getByLabel("Lugar de quedada", { exact: true }).fill("Campo Calendario");
@@ -47,7 +47,7 @@ test("guardar convocatoria, reabrir, exportar PNG y pasar convocados a alineaci�
   await page.getByRole("button", { name: "Volver", exact: true }).click();
   await page.getByRole("button", { name: "Pasar a alineación", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/alineacion\?.*partido=convocatoria-e2e/);
-  const ali = page.getByRole("list", { name: "Plantilla Veteranos" });
+  const ali = page.getByRole("list", { name: "Plantilla Senior" });
   await expect(ali.getByRole("button", { name: /^Uno Aliñación Ficticio:/ })).toBeVisible({
     timeout: 30000,
   });
@@ -57,8 +57,8 @@ test("guardar convocatoria, reabrir, exportar PNG y pasar convocados a alineaci�
 });
 
 test("guardado pendiente no redirige tras abandonar convocatoria", async ({ page }) => {
-  await page.goto("/admin/convocatoria?categoria=Veteranos&partido=convocatoria-e2e");
-  const lista = page.getByRole("list", { name: "Plantilla Veteranos" });
+  await page.goto("/admin/convocatoria?partido=convocatoria-e2e");
+  const lista = page.getByRole("list", { name: "Plantilla Senior" });
   await expect(lista).toBeVisible({ timeout: 30000 });
   await lista.getByRole("button", { name: "Convocar: Tres Aliñación Ficticio" }).click();
   let anunciar!: () => void;
@@ -97,13 +97,13 @@ test("avisa de expulsados y apercibidos al convocar y al alinear", async ({ page
   const errores: string[] = [];
   page.on("pageerror", (e) => errores.push(e.message));
   await page.setViewportSize({ width: 360, height: 780 });
-  await page.goto("/admin/convocatoria?categoria=Veteranos&partido=convocatoria-e2e");
+  await page.goto("/admin/convocatoria?partido=convocatoria-e2e");
   const avisos = page.getByRole("region", { name: "Sanciones y apercibidos" });
   await expect(avisos).toBeVisible({ timeout: 30000 });
   await expect(avisos.getByText("ALIÑACIÓN FICTICIO, UNO")).toBeVisible();
   await expect(avisos.getByText("ALIÑACIÓN FICTICIO, TRES")).toBeVisible();
   // Los nombres de la federación se reconocen en la plantilla: la marca sale junto al jugador.
-  const plantilla = page.getByRole("list", { name: "Plantilla Veteranos" });
+  const plantilla = page.getByRole("list", { name: "Plantilla Senior" });
   const uno = plantilla.getByRole("button", { name: "Convocar: Uno Aliñación Ficticio, expulsado" });
   await expect(uno).toContainText("Expulsado");
   await expect(
@@ -111,13 +111,13 @@ test("avisa de expulsados y apercibidos al convocar y al alinear", async ({ page
   ).toContainText("Apercibido");
   await expect(plantilla.getByRole("button", { name: "Convocar: Dous", exact: true })).toBeVisible();
 
-  await page.goto("/admin/alineacion?categoria=Veteranos&partido=convocatoria-e2e");
+  await page.goto("/admin/alineacion?partido=convocatoria-e2e");
   await expect(page.getByRole("region", { name: "Sanciones y apercibidos" })).toBeVisible({
     timeout: 30000,
   });
   await expect(
     page
-      .getByRole("list", { name: "Plantilla Veteranos" })
+      .getByRole("list", { name: "Plantilla Senior" })
       .getByRole("button", { name: /^Uno Aliñación Ficticio: .*, expulsado$/ }),
   ).toContainText("Expulsado");
   expect(errores).toEqual([]);

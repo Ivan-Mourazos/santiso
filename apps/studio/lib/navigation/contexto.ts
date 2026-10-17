@@ -10,7 +10,7 @@ export const SECCIONES = [
   { id: "directiva", label: "Directiva", grupo: "Plantilla" },
   { id: "multas", label: "Multas", grupo: "Plantilla" },
   { id: "convocatoria", label: "Convocatoria", grupo: "Producción" },
-  { id: "alineacion", label: "Alineación", grupo: "Producción" },
+  { id: "alineacion", label: "Once inicial", grupo: "Producción" },
   { id: "carteles", label: "Carteles", grupo: "Producción" },
   { id: "importar", label: "Importar", grupo: "Producción" },
   // Siguen teniendo dirección propia (enlaces desde Jornada, lote, calendario PDF), pero se

@@ -6,6 +6,11 @@ export function momentoLocal(ahora = new Date()) {
   return `${ahora.getFullYear()}-${n(ahora.getMonth() + 1)}-${n(ahora.getDate())}T${n(ahora.getHours())}:${n(ahora.getMinutes())}`;
 }
 
+/** Veteranos no hace convocatoria ni once: solo el Senior prepara el partido así. */
+export function preparaConvocatoria(categoria: string) {
+  return categoria !== "Veteranos";
+}
+
 export function tieneResultado(p: PartidoDeLaSemana) {
   return p.golesSantiso !== null && p.golesRival !== null;
 }
@@ -98,7 +103,16 @@ export function progresoPartido(p: PartidoDeLaSemana, ahora: string, categoria =
           href: e.cartel("resumo"),
         },
       ]
-    : [
+    : !preparaConvocatoria(categoria)
+      ? [
+          {
+            titulo: "Cartel",
+            estado: "",
+            tono: "pendiente",
+            href: e.cartel("partido"),
+          },
+        ]
+      : [
         {
           titulo: "Convocatoria",
           estado: convocados ? `${convocados} guardados` : "Pendiente",
@@ -128,7 +142,9 @@ export function progresoPartido(p: PartidoDeLaSemana, ahora: string, categoria =
           : !p.acta
             ? { titulo: "Completar acta", href: e.acta }
             : { titulo: "Preparar publicaciones", href: e.cartel("resumo") }
-        : !convocados
+        : !preparaConvocatoria(categoria)
+          ? { titulo: "Preparar cartel de partido", href: e.cartel("partido") }
+          : !convocados
           ? { titulo: "Preparar convocatoria", href: e.convocatoria }
           : !once
             ? { titulo: "Completar once", href: e.once }

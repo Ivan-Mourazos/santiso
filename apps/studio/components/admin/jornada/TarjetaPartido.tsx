@@ -5,7 +5,13 @@ import { useState } from "react";
 import GaleriaPartido from "@/components/admin/fotos/GaleriaPartido";
 import { useStudio } from "@/components/studio/StudioContext";
 import type { PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
-import { enlacesPartido, marcador, progresoPartido, tieneResultado } from "@/lib/jornada/vestiario";
+import {
+  enlacesPartido,
+  marcador,
+  preparaConvocatoria,
+  progresoPartido,
+  tieneResultado,
+} from "@/lib/jornada/vestiario";
 import styles from "./Jornada.module.css";
 
 export function fechaPartido(fecha: string | null) {
@@ -163,8 +169,12 @@ export default function TarjetaPartido({
           </p>
         )}
         <div className={styles.accesos}>
-          <Acceso href={e.convocatoria}>Convocatoria</Acceso>
-          <Acceso href={e.once}>Alineación</Acceso>
+          {preparaConvocatoria(categoria) && (
+            <>
+              <Acceso href={e.convocatoria}>Convocatoria</Acceso>
+              <Acceso href={e.once}>Once inicial</Acceso>
+            </>
+          )}
           <Acceso href={e.cartel("partido")}>Cartel de partido</Acceso>
           <Acceso href={e.calendario}>Cambiar fecha, hora o campo</Acceso>
           <Acceso href={e.acta} disponible={despues || Boolean(p.acta)} motivo="Tras el partido">
@@ -173,6 +183,12 @@ export default function TarjetaPartido({
           <Acceso href={e.cartel("resumo")} disponible={marcado} motivo="Necesita resultado">
             Resultado
           </Acceso>
+          {/* Veteranos no alinea antes del partido: el once se publica después, con el resumen. */}
+          {!preparaConvocatoria(categoria) && (
+            <Acceso href={e.cartel("noso11")} disponible={despues} motivo="Tras el partido">
+              Cartel del once
+            </Acceso>
+          )}
           <Acceso href={e.cartel("cronoloxia")} disponible={Boolean(p.acta)} motivo="Necesita acta">
             Cronoloxía
           </Acceso>

@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 
 /**
  * Alineación antes del partido, sobre la base de juguete de `sembrar.ts`: el Norte – Sur de
- * «Copa Calendario» (Veteranos) y tres jugadores sembrados para esto. Va antes que las pruebas
- * de Calendario (orden alfabético), que borran ese partido.
+ * «Copa Convocatoria» (Senior) y tres jugadores sembrados para esto. Veteranos no alinea: aunque
+ * la dirección lo pida, la pantalla es la del Senior y no ofrece elegir categoría.
  */
 test("elegir titulares, suplente y capitán, generar la historia y recuperarla al volver", async ({
   page,
@@ -11,11 +11,12 @@ test("elegir titulares, suplente y capitán, generar la historia y recuperarla a
   const errores: string[] = [];
   page.on("pageerror", (error) => errores.push(error.message));
 
-  await page.goto("/admin/alineacion?categoria=Veteranos");
-  await expect(page.getByRole("heading", { name: /Norte Calendario – Sur Calendario/ })).toBeVisible(
-    { timeout: 30000 },
-  );
-  const plantilla = page.getByRole("list", { name: "Plantilla Veteranos" });
+  await page.goto("/admin/alineacion?categoria=Veteranos&partido=alineacion-e2e");
+  await expect(
+    page.getByRole("heading", { name: /Norte Convocatoria – Sur Convocatoria/ }),
+  ).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole("group", { name: "Categoría deportiva" })).toHaveCount(0);
+  const plantilla = page.getByRole("list", { name: "Plantilla Senior" });
   const jugador = (nombre: string) => plantilla.getByRole("button", { name: new RegExp(`^${nombre}:`) });
 
   // Un toque: titular. Dos: suplente.
@@ -25,7 +26,7 @@ test("elegir titulares, suplente y capitán, generar la historia y recuperarla a
   await jugador("Tres Aliñación Ficticio").click();
   await expect(page.getByText("2 / 11 titulares")).toBeVisible();
   await expect(page.getByText("1 suplente", { exact: true })).toBeVisible();
-  await expect(jugador("Tres Aliñación Ficticio")).toHaveAccessibleName(/Suplente$/);
+  await expect(jugador("Tres Aliñación Ficticio")).toHaveAccessibleName(/: Suplente(, apercibido)?$/);
 
   // El capitán de la plantilla (Dous) se propone solo al entrar en el once; se puede cambiar.
   await expect(plantilla.getByRole("button", { name: "Capitán: Dous" })).toHaveAttribute(
@@ -51,11 +52,11 @@ test("elegir titulares, suplente y capitán, generar la historia y recuperarla a
   await expect(page.getByRole("button", { name: "Descargar" })).toBeVisible();
 
   // Al volver a entrar sigue ahí: se guardó con el partido.
-  await page.goto("/admin/alineacion?categoria=Veteranos");
+  await page.goto("/admin/alineacion?partido=alineacion-e2e");
   await expect(page.getByText("2 / 11 titulares")).toBeVisible({ timeout: 30000 });
   await expect(
     page
-      .getByRole("list", { name: "Plantilla Veteranos" })
+      .getByRole("list", { name: "Plantilla Senior" })
       .getByRole("button", { name: "Capitán: Uno Aliñación Ficticio" }),
   ).toHaveAttribute("aria-pressed", "true");
   expect(errores).toEqual([]);
