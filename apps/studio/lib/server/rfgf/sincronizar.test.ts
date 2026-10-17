@@ -517,6 +517,27 @@ it("los cambios de los partidos del Santiso se cuentan los primeros", async () =
   ]);
 });
 
+it("si la federación corrige el árbitro, se cambia el guardado", async () => {
+  const { s, db, competicionId, partidoId, sincronizarCompeticion } = await conPartidoPorJugar();
+  await db
+    .update(s.partidos)
+    .set({ arbitro: "Arbitro Equivocado", golesLocal: null, golesVisitante: null, estado: "programado" })
+    .where(eq(s.partidos.id, partidoId));
+  const { descargador } = descargadorDe("", [
+    "EQUIPO LOCAL",
+    "1 - 0",
+    "14-09-2025",
+    "12:00",
+    "EQUIPO VISITANTE",
+    "Campo: O Campo - Hierba Natural Árbitro: APELIDO APELIDO,",
+    "NOME",
+  ]);
+  const resumen = await sincronizarCompeticion(competicionId, descargador, AHORA);
+  expect(resumen?.errores).toEqual([]);
+  const [partido] = await db.select().from(s.partidos).where(eq(s.partidos.id, partidoId));
+  expect(partido).toMatchObject({ arbitro: "Nome Apelido Apelido", golesLocal: 1 });
+});
+
 it("guarda el árbitro de un partido ya jugado, aunque ya tuviera marcador", async () => {
   const { s, db, competicionId, partidoId, sincronizarCompeticion } = await conPartidoPorJugar();
   await db.update(s.partidos).set({ arbitro: null }).where(eq(s.partidos.id, partidoId));

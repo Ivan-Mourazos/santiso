@@ -1,6 +1,7 @@
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
-import { parsearJornada } from "./jornada";
+import { parsearJornada, parsearJornadaPdf } from "./jornada";
 
 // Texto tal como sale de los PDF de la federación (Tercera Futgal, grupo 3, 2026/27).
 const POR_JUGAR = `TERCERA FUTGAL, SANTIAGO | GRUPO 3 Temporada 2026-2027
@@ -149,6 +150,56 @@ REAL FEDERACIÓN`;
       local: "RACING 1906",
       visitante: "ATLETICO 2010",
       marcador: [2, 1],
+    });
+  });
+
+  it("un árbitro partido en dos líneas conserva su nombre y no se pega al equipo siguiente", () => {
+    const texto = `LIGA X Temporada 2026-2027
+Jornada 6
+Resultados
+U.D. SANTISO F.C. SOLAINA
+0 - 1
+17-10-2026
+18:30
+S.D.C. RECESENDE
+Campo: Municipal de Santiso - Hierba Artificial Árbitro: FERNANDEZ MONTOUTO,
+RUBEN
+SR CALO - MILONGAS
+0 - 0
+17-10-2026
+20:00
+RESMON C.F.
+Campo: Munic. Rebordelo - Hierba Artificial Árbitro: REBOREDO RIADIGOS, JOSE
+LUIS
+S.D. CACHEIRAS
+0 - 0
+17-10-2026
+20:00
+MELIDE VETERANOS
+Campo: A Cañoteira - Hierba Artificial
+REAL FEDERACIÓN`;
+    // La coma final basta; «LUIS» solo se sabe por su sitio en el PDF.
+    const { partidos } = parsearJornada(texto, new Set(["LUIS"]));
+    expect(partidos.map((p) => [p.local, p.arbitro])).toEqual([
+      ["U.D. SANTISO F.C. SOLAINA", "FERNANDEZ MONTOUTO, RUBEN"],
+      ["SR CALO - MILONGAS", "REBOREDO RIADIGOS, JOSE LUIS"],
+      ["S.D. CACHEIRAS", null],
+    ]);
+  });
+
+  it("en el PDF real, cada árbitro con su partido y su nombre entero", async () => {
+    const bytes = await readFile(new URL("./fixtures/veteranos-6.pdf", import.meta.url));
+    const { partidos, sinLeer } = await parsearJornadaPdf(new Uint8Array(bytes));
+    expect(sinLeer).toEqual([]);
+    const arbitros = Object.fromEntries(partidos.map((p) => [p.local, p.arbitro]));
+    expect(arbitros).toMatchObject({
+      "C.D. VETERANOS BERMÉS": "ENRIQUEZ PEREIRO, OSCAR",
+      "U.D. SANTISO F.C. SOLAINA": "FERNANDEZ MONTOUTO, RUBEN",
+      "CLUB TABERNA DO PORTUGUES-BOQUEIXON VETERANOS": "BOTANA REY, PABLO",
+      "ULLA OIL VETERANOS": "HERNANDEZ GIADANS, AGUSTIN",
+      "VETERANOS BALOMPIE FOGAR DE BREOGAN": "PAZ HERMIDA, MANUEL",
+      "SR CALO - MILONGAS": "MARTINEZ SANTOS, OSCAR",
+      "S.D. CACHEIRAS": "REBOREDO RIADIGOS, JOSE LUIS",
     });
   });
 });

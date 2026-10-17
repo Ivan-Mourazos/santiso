@@ -90,6 +90,7 @@ export type PartidoConEquipos = PartidoLocal & {
   equipos: { local: string; visitante: string };
   golesLocal: number | null;
   golesVisitante: number | null;
+  arbitro: string | null;
 };
 
 export async function partidosDeCompeticion(competicionId: string): Promise<PartidoConEquipos[]> {
@@ -127,6 +128,7 @@ export async function partidosDeCompeticion(competicionId: string): Promise<Part
     fecha: f.fecha,
     campoId: f.campoId,
     conArbitro: Boolean(f.arbitro),
+    arbitro: f.arbitro,
     conMarcador: f.golesLocal !== null,
     golesLocal: f.golesLocal,
     golesVisitante: f.golesVisitante,
@@ -177,11 +179,13 @@ export async function tratarJornada(
     // Si el cruce no se reconoce no se toca nada: de eso ya avisa la lectura de actas.
     const partido = partidoDeActa(enPdf.local, enPdf.visitante, candidatos);
     if (!partido) continue;
-    // El árbitro sale en cuanto la jornada se cierra, tenga o no marcador ya el partido.
-    if (enPdf.arbitro && (!partido.conArbitro || actualizarResultados)) {
+    // El árbitro sale en cuanto la jornada se cierra, tenga o no marcador ya el partido. Si la
+    // federación lo corrige después, manda lo suyo: ya se tiene el PDF y no cuesta nada.
+    const arbitro = enPdf.arbitro ? nombreDeArbitro(enPdf.arbitro) : null;
+    if (arbitro && arbitro !== partido.arbitro) {
       await db
         .update(schema.partidos)
-        .set({ arbitro: nombreDeArbitro(enPdf.arbitro) })
+        .set({ arbitro })
         .where(eq(schema.partidos.id, partido.id));
     }
     if (partido.conMarcador && !actualizarResultados) continue;

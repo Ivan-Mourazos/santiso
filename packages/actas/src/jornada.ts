@@ -44,12 +44,41 @@ function campoDe(linea: string): Pick<PartidoJornada, "campo" | "superficie"> {
 }
 
 /**
+ * Un árbitro de nombre largo ocupa dos líneas («…MONTOUTO,» y «RUBEN»). Sin juntarlas se
+ * pierde el nombre de pila y la segunda línea se pega al equipo local del partido siguiente.
+ * Si la línea de «Campo:» acaba en coma, la siguiente es seguro el nombre; si no, solo cuando
+ * el PDF la sitúa bajo la columna del árbitro (`sigueArbitro`).
+ */
+function juntarArbitros(lineas: string[], sigueArbitro: ReadonlySet<string>): string[] {
+  const salida: string[] = [];
+  for (let i = 0; i < lineas.length; i++) {
+    const linea = lineas[i]!;
+    const siguiente = lineas[i + 1];
+    if (
+      siguiente !== undefined &&
+      /^Campo:.*Árbitro:/iu.test(linea) &&
+      (linea.endsWith(",") || sigueArbitro.has(siguiente))
+    ) {
+      salida.push(`${linea} ${siguiente}`);
+      i++;
+    } else {
+      salida.push(linea);
+    }
+  }
+  return salida;
+}
+
+/**
  * Lee el texto del PDF de una jornada («Generar PDF» en la página de la jornada). Cada partido
  * son unas líneas con el cruce y una línea «Campo: …» que lo cierra. Lo que no cuadre con esa
  * forma no se inventa: va a `sinLeer`.
  */
-export function parsearJornada(texto: string): JornadaFederacion {
-  const lineas = texto.split(/\r?\n/u).map(limpiar).filter(Boolean);
+export function parsearJornada(
+  texto: string,
+  /** Líneas que en el PDF caen bajo «Árbitro:»: son el final de su nombre, no otro equipo. */
+  sigueArbitro: ReadonlySet<string> = new Set(),
+): JornadaFederacion {
+  const lineas = juntarArbitros(texto.split(/\r?\n/u).map(limpiar).filter(Boolean), sigueArbitro);
   const cabecera = lineas.findIndex((linea) => /^Jornada\s+\d+$/iu.test(linea));
   if (cabecera < 0) throw new Error("El PDF no es de una jornada de la federación.");
   const numero = Number(/\d+/u.exec(lineas[cabecera]!)![0]);
@@ -91,6 +120,22 @@ export function parsearJornada(texto: string): JornadaFederacion {
 export async function parsearJornadaPdf(bytes: Uint8Array): Promise<JornadaFederacion> {
   const documento = await getDocumentProxy(bytes);
   if (documento.numPages > 4) throw new Error("El PDF de jornada tiene demasiadas páginas.");
+  // Lo que cae justo debajo de un «Árbitro:» y en su misma columna sigue su nombre.
+  const sigueArbitro = new Set<string>();
+  for (let n = 1; n <= documento.numPages; n++) {
+    const contenido = await (await documento.getPage(n)).getTextContent();
+    const items = contenido.items.filter((item) => "str" in item && item.str.trim()) as {
+      str: string;
+      transform: number[];
+    }[];
+    const arbitros = items.filter((item) => /^Árbitro:/iu.test(item.str.trim()));
+    for (const item of items)
+      for (const arbitro of arbitros) {
+        const dx = item.transform[4]! - arbitro.transform[4]!;
+        const dy = arbitro.transform[5]! - item.transform[5]!;
+        if (Math.abs(dx) < 4 && dy > 4 && dy < 16) sigueArbitro.add(limpiar(item.str));
+      }
+  }
   const { text } = await extractText(documento, { mergePages: true });
-  return parsearJornada(text);
+  return parsearJornada(text, sigueArbitro);
 }
