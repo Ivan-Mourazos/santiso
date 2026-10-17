@@ -17,11 +17,15 @@ export function EmptyState({
     </section>
   );
 }
+/** Esqueleto gris con forma de lista mientras llegan los datos. */
 export function LoadingState({ title = "Cargando…" }: { title?: string }) {
   return (
-    <p className={styles.state} role="status">
-      {title}
-    </p>
+    <div className={styles.loading} role="status">
+      <p>{title}</p>
+      <span aria-hidden="true" />
+      <span aria-hidden="true" />
+      <span aria-hidden="true" />
+    </div>
   );
 }
 export function ErrorState({

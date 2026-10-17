@@ -3,14 +3,14 @@
   gap: 12px;
   padding: 12px;
   border: 1px solid var(--ui-border);
-  border-radius: 12px;
+  border-radius: var(--ui-radius);
 }
 .panel[data-estado="desactualizado"] {
   border-color: var(--ui-warning);
 }
 .estado {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--ui-text-body);
 }
 .panel[data-estado="hecho"] .estado {
   color: var(--ui-success, inherit);
@@ -35,7 +35,7 @@
   width: 100%;
   max-height: 75vh;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: var(--ui-radius-sm);
 }
 .acciones {
   display: flex;
@@ -49,7 +49,7 @@
 .motivo {
   margin: 0;
   color: var(--ui-muted);
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
 }
 .generar {
   min-height: 48px;
@@ -65,7 +65,7 @@
 .logos legend {
   width: 100%;
   margin-bottom: 4px;
-  font-size: 0.8rem;
+  font-size: var(--ui-text-sm);
   font-weight: 700;
   color: var(--ui-muted);
 }

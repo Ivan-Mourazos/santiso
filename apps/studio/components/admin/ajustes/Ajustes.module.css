@@ -4,17 +4,17 @@
   background: var(--ui-panel-face, var(--ui-surface, #171717));
   box-shadow: var(--ui-panel-shadow, none);
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius-lg, 1.125rem);
+  border-radius: var(--ui-radius-lg);
   padding: 1.25rem 1.5rem;
 }
 .cabecera h3 {
   margin: 0;
-  font: 800 1.35rem var(--ui-font-title, sans-serif);
+  font: 800 var(--ui-text-xl) var(--ui-font-title, sans-serif);
 }
 .cabecera p {
   margin: 0.25rem 0 var(--ui-space-5, 1.5rem);
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .bloque + .bloque {
   margin-top: var(--ui-space-6, 2rem);
@@ -23,11 +23,11 @@
 }
 .titulo {
   margin: 0 0 var(--ui-space-3, 0.75rem);
-  font-size: 0.7rem;
+  font-size: var(--ui-text-xs);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--ui-accent, #facc15);
+  color: var(--ui-accent);
 }
 .pareja {
   display: grid;
@@ -42,7 +42,7 @@
   gap: var(--ui-space-4, 1rem);
   padding: var(--ui-space-4, 1rem);
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   background: var(--ui-raised, #242424);
 }
 .miniatura {
@@ -52,10 +52,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   background: rgb(0 0 0 / 35%);
   color: var(--ui-muted, #aaa);
-  font-size: 0.7rem;
+  font-size: var(--ui-text-xs);
   text-align: center;
 }
 .miniatura img {
@@ -75,7 +75,7 @@
 .imagenTexto > p {
   margin: 0.2rem 0 var(--ui-space-3, 0.75rem);
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .acciones {
   display: flex;
@@ -87,7 +87,7 @@
   flex-basis: 100%;
   margin: 0;
   color: var(--ui-warning, #f59e0b);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
   font-weight: 700;
 }
 
@@ -98,7 +98,7 @@
 .etiqueta {
   display: block;
   margin-bottom: 0.35rem;
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
   font-weight: 700;
 }
 .interruptores {
@@ -111,10 +111,10 @@
 .nota {
   margin: 0 0 var(--ui-space-3, 0.75rem);
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .nota a {
-  color: var(--ui-accent, #facc15);
+  color: var(--ui-accent);
   font-weight: 700;
 }
 .barra {
@@ -133,14 +133,14 @@
   gap: var(--ui-space-2, 0.5rem);
   padding: 0.4rem 0.75rem 0.4rem 0.5rem;
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   background: var(--ui-raised, #242424);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .barra li::before {
   content: counter(puesto);
   font-weight: 900;
-  color: var(--ui-accent, #facc15);
+  color: var(--ui-accent);
 }
 .barra img {
   width: 3rem;
@@ -150,11 +150,11 @@
 .aviso {
   margin: var(--ui-space-3, 0.75rem) 0 0;
   padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   border: 1px solid rgb(245 158 11 / 35%);
   background: rgb(245 158 11 / 8%);
   color: var(--ui-warning, #f59e0b);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 
 @media (max-width: 640px) {

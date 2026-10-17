@@ -6,7 +6,7 @@
 }
 .layout h2 {
   margin: 0 0 0.5rem;
-  font: 800 1.35rem var(--ui-font-title);
+  font: 800 var(--ui-text-xl) var(--ui-font-title);
 }
 .detalle {
   margin: 0 0 1.25rem;
@@ -41,11 +41,11 @@
   overflow-wrap: anywhere;
 }
 .quien strong {
-  font: 800 1.05rem var(--ui-font-title);
+  font: 800 var(--ui-text-lg) var(--ui-font-title);
 }
 .quien span {
   color: var(--ui-muted);
-  font-size: 0.9rem;
+  font-size: var(--ui-text-body);
 }
 .acciones {
   display: flex;
@@ -93,6 +93,6 @@
   .formulario input,
   .formulario select {
     min-height: 44px;
-    font-size: 16px;
+    font-size: var(--ui-text-base);
   }
 }

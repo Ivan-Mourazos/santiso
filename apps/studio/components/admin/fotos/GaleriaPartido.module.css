@@ -18,8 +18,8 @@
   align-items: center;
   min-height: 38px;
   padding: 0.4rem 0.9rem;
-  border-radius: var(--ui-radius, 0.75rem);
-  background: var(--ui-accent, #facc15);
+  border-radius: var(--ui-radius);
+  background: var(--ui-accent);
   color: var(--ui-on-accent, #000);
   font-weight: 800;
   cursor: pointer;
@@ -38,7 +38,7 @@
 }
 
 .subir:focus-within {
-  outline: 3px solid var(--ui-accent, #facc15);
+  outline: 3px solid var(--ui-accent);
   outline-offset: 3px;
 }
 
@@ -46,7 +46,7 @@
   flex: 1 1 18rem;
   margin: 0;
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 
 .rejilla {
@@ -68,7 +68,7 @@
 .marco {
   position: relative;
   line-height: 0;
-  border-radius: 0.5rem;
+  border-radius: var(--ui-radius-sm);
   overflow: hidden;
   background: var(--ui-raised, #242424);
 }
@@ -79,7 +79,7 @@
 }
 
 .foto[data-enfocando="true"] .marco {
-  outline: 3px solid var(--ui-accent, #facc15);
+  outline: 3px solid var(--ui-accent);
 }
 
 .foto[data-enfocando="true"] img {
@@ -92,8 +92,8 @@
   width: 18px;
   height: 18px;
   margin: -9px 0 0 -9px;
-  border: 3px solid var(--ui-accent, #facc15);
-  border-radius: 999px;
+  border: 3px solid var(--ui-accent);
+  border-radius: var(--ui-radius-pill);
   box-shadow: 0 0 0 2px rgb(0 0 0 / 60%);
   pointer-events: none;
 }
@@ -120,7 +120,7 @@
   touch-action: manipulation;
 }
 .marcar:focus-visible {
-  outline: 3px solid var(--ui-accent, #facc15);
+  outline: 3px solid var(--ui-accent);
   outline-offset: -3px;
 }
 

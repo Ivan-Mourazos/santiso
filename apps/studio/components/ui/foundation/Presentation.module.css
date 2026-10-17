@@ -9,14 +9,14 @@
   min-width: 0;
 }
 .title {
-  font: 800 1.35rem/1.15 var(--ui-font-title);
+  font: 800 var(--ui-text-xl)/1.15 var(--ui-font-title);
   margin: 0;
   overflow-wrap: anywhere;
 }
 .eyebrow {
   color: var(--ui-accent);
   margin: 0 0 0.25rem;
-  font-size: 0.72rem;
+  font-size: var(--ui-text-xs);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -24,7 +24,7 @@
 .detail {
   color: var(--ui-muted);
   margin: 0.25rem 0 0;
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
   overflow-wrap: anywhere;
   max-width: 65ch;
 }
@@ -41,7 +41,7 @@
   background: var(--ui-surface);
 }
 .state h2 {
-  font: 700 1.125rem var(--ui-font-title);
+  font: 700 var(--ui-text-lg) var(--ui-font-title);
   margin: 0;
 }
 .state button {
@@ -49,4 +49,37 @@
 }
 .error {
   border-color: var(--ui-danger);
+}
+.loading {
+  display: grid;
+  gap: var(--ui-space-2);
+  margin: 0;
+}
+.loading p {
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.loading span {
+  height: var(--ui-row);
+  border-radius: var(--ui-radius);
+  background: linear-gradient(90deg, var(--ui-surface) 30%, var(--ui-raised) 50%, var(--ui-surface) 70%)
+    0 0 / 300% 100%;
+  animation: brillo 1.4s linear infinite;
+}
+.loading span:nth-of-type(2) {
+  opacity: 0.7;
+}
+.loading span:nth-of-type(3) {
+  opacity: 0.4;
+}
+@keyframes brillo {
+  to {
+    background-position: -150% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading span {
+    animation: none;
+  }
 }

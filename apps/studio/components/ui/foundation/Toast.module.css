@@ -1,37 +1,66 @@
 .root {
   display: flex;
   align-items: center;
-  gap: var(--ui-space-3);
+  gap: var(--ui-space-2);
   border-radius: var(--ui-radius);
   font-family: var(--ui-font-body);
   color: var(--ui-text);
 }
+/* Vacío no ocupa ni tapa nada; solo el aviso visible recibe toques. */
 .root:has(.close) {
-  padding: var(--ui-space-3) var(--ui-space-4);
-  background: var(--ui-surface);
-  border: 1px solid var(--ui-success);
+  pointer-events: auto;
+  padding: var(--ui-space-1) var(--ui-space-1) var(--ui-space-1) var(--ui-space-4);
+  background: var(--ui-control);
+  border-left: 4px solid var(--ui-success);
+  box-shadow: var(--ui-shadow);
+  animation: entrar var(--ui-duration-lg) var(--ui-ease-enter);
+}
+.root:has(.close) .message {
+  padding-block: var(--ui-space-2);
 }
 .root[data-kind="error"]:has(.close) {
-  border-color: var(--ui-danger);
+  border-left-color: var(--ui-danger);
 }
 .message {
   min-width: 0;
   flex: 1;
+  font-size: var(--ui-text-body);
   overflow-wrap: anywhere;
-  line-height: 1.5;
+  line-height: 1.4;
 }
+.action,
 .close {
   flex-shrink: 0;
   min-width: 44px;
   min-height: 44px;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
-  background: var(--ui-raised);
-  color: var(--ui-text);
+  border: 0;
+  border-radius: var(--ui-radius-sm);
+  background: transparent;
   font: inherit;
   cursor: pointer;
 }
+.action {
+  padding: 0 var(--ui-space-3);
+  color: var(--ui-accent);
+  font-weight: 800;
+}
+.close {
+  color: var(--ui-muted);
+  font-size: var(--ui-text-lg);
+}
+.action:focus-visible,
 .close:focus-visible {
   outline: 2px solid var(--ui-accent);
-  outline-offset: 3px;
+  outline-offset: 2px;
+}
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .root:has(.close) {
+    animation: none;
+  }
 }

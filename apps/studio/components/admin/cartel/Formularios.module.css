@@ -2,11 +2,11 @@
 
 .seccion {
   margin: var(--ui-space-5, 1.5rem) 0 var(--ui-space-3, 0.75rem);
-  font-size: 0.7rem;
+  font-size: var(--ui-text-xs);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--ui-accent, #facc15);
+  color: var(--ui-accent);
 }
 
 .campo {
@@ -17,9 +17,9 @@
 .desdeLiga {
   margin-bottom: 0.75rem;
   padding: 0.75rem;
-  border: 1px dashed rgb(250 204 21 / 40%);
-  border-radius: var(--ui-radius, 0.75rem);
-  background: rgb(250 204 21 / 5%);
+  border: 1px dashed rgb(245 197 24 / 40%);
+  border-radius: var(--ui-radius);
+  background: rgb(245 197 24 / 5%);
 }
 
 .desdeLiga > button {
@@ -34,7 +34,7 @@
   min-width: 0;
   margin-bottom: 0.75rem;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
 }
 .manual > summary {
   display: flex;
@@ -44,7 +44,7 @@
   min-height: 44px;
   padding: 0.35rem 0.75rem;
   cursor: pointer;
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
   font-weight: 800;
   list-style: none;
 }
@@ -77,7 +77,7 @@
 .etiqueta {
   display: block;
   margin-bottom: 0.35rem;
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
   font-weight: 700;
 }
 .escudo {
@@ -92,7 +92,7 @@
   width: 36px;
   height: 36px;
   object-fit: contain;
-  border-radius: var(--ui-radius-sm, 0.5rem);
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-raised, #242424);
   border: 1px solid rgb(255 255 255 / 12%);
 }
@@ -106,7 +106,7 @@
 .aviso {
   margin: var(--ui-space-2, 0.5rem) 0 0;
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
   font-weight: 700;
 }
 
@@ -114,7 +114,7 @@
   margin-top: var(--ui-space-4, 1rem);
   padding: var(--ui-space-4, 1rem);
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   background: var(--ui-raised, #242424);
 }
 .casilla {
@@ -131,7 +131,7 @@
   flex: none;
   margin: 0;
   padding: 0;
-  accent-color: var(--ui-accent, #facc15);
+  accent-color: var(--ui-accent);
 }
 
 .parejaAncha {
@@ -144,7 +144,7 @@
 .tarjetaPartido {
   padding: var(--ui-space-4, 1rem);
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   background: var(--ui-raised, #242424);
 }
 .tarjetaPartido h5 {
@@ -164,7 +164,7 @@
 .deslizador label {
   display: block;
   margin-bottom: 0.3rem;
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
   font-weight: 700;
 }
 .deslizadorFila {
@@ -174,14 +174,14 @@
 }
 .deslizadorFila span {
   color: var(--ui-muted, #aaa);
-  font-size: 0.7rem;
+  font-size: var(--ui-text-xs);
   white-space: nowrap;
 }
 .deslizadorFila input[type="range"] {
   flex: 1;
   width: auto;
   padding: 0;
-  accent-color: var(--ui-accent, #facc15);
+  accent-color: var(--ui-accent);
 }
 .deslizadorValor {
   min-width: 2.5rem;
@@ -192,22 +192,22 @@
   margin-bottom: var(--ui-space-4, 1rem);
   padding: var(--ui-space-4, 1rem);
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   background: var(--ui-raised, #242424);
 }
 .encuadre h5 {
   margin: 0 0 var(--ui-space-3, 0.75rem);
-  font-size: 0.7rem;
+  font-size: var(--ui-text-xs);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--ui-accent, #facc15);
+  color: var(--ui-accent);
 }
 
 .nota {
   margin: var(--ui-space-2, 0.5rem) 0 0;
   color: var(--ui-muted, #94a3b8);
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
 }
 
 .filaClasificacion > label {
@@ -302,7 +302,7 @@
   }
   .etiquetaMovil {
     display: block;
-    font-size: 0.875rem;
+    font-size: var(--ui-text-sm);
     font-weight: 700;
   }
 }

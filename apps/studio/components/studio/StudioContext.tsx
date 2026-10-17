@@ -23,7 +23,12 @@ type StudioValue = {
   params: URLSearchParams;
   navigate: (href: string) => boolean;
   setParams: (patch: Record<string, string | null>, replace?: boolean) => boolean;
-  showToast: (message: string, type?: "success" | "error") => void;
+  /** Los avisos buenos se van solos a los 4 s (6 s si traen acción); los errores se quedan. */
+  showToast: (
+    message: string,
+    type?: "success" | "error",
+    action?: { label: string; onClick: () => void },
+  ) => void;
   showConfirm: (message: string, onConfirm: () => void | Promise<void>) => void;
   register: (id: string, dirty: boolean) => void;
 };
@@ -62,16 +67,29 @@ export function StudioProvider({
     if (dirty) drafts.current.add(id);
     else drafts.current.delete(id);
   }, []);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+    action?: { label: string; onClick: () => void };
+  } | null>(null);
   const [confirmation, setConfirmation] = useState<{
     message: string;
     action: () => void | Promise<void>;
   } | null>(null);
   const [pending, setPending] = useState(false);
   const showToast = useCallback(
-    (message: string, type: "success" | "error" = "success") => setToast({ message, type }),
+    (
+      message: string,
+      type: "success" | "error" = "success",
+      action?: { label: string; onClick: () => void },
+    ) => setToast({ message, type, action }),
     [],
   );
+  useEffect(() => {
+    if (!toast || toast.type === "error") return;
+    const reloj = setTimeout(() => setToast(null), toast.action ? 6000 : 4000);
+    return () => clearTimeout(reloj);
+  }, [toast]);
   const showConfirm = useCallback(
     (message: string, action: () => void | Promise<void>) => setConfirmation({ message, action }),
     [],
@@ -193,6 +211,7 @@ export function StudioProvider({
         <Toast
           message={toast?.message ?? null}
           kind={toast?.type}
+          action={toast?.action}
           onDismiss={() => setToast(null)}
         />
       </div>

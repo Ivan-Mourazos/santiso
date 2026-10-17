@@ -1,71 +1,90 @@
+/*
+ * Tres niveles: principal (amarillo, uno por pantalla), secundario (gris) y de texto. Planos; al
+ * pulsar se encogen un 3 %. En pantallas táctiles, 48 px de alto; los pequeños, 44 px.
+ */
 .button {
-  min-height: 38px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-2);
+  min-height: 40px;
   max-width: 100%;
-  padding: 0.4rem 0.9rem;
+  padding: 0 var(--ui-space-4);
   border: 1px solid transparent;
   border-radius: var(--ui-radius);
-  font: 800 0.95rem var(--ui-font-body);
-  line-height: 1.35;
+  font: 800 var(--ui-text-body) / 1.2 var(--ui-font-body);
   cursor: pointer;
   overflow-wrap: anywhere;
-  box-shadow: var(--ui-control-shadow);
+  -webkit-tap-highlight-color: transparent;
   transition:
     transform var(--ui-duration) var(--ui-ease),
-    box-shadow var(--ui-duration) var(--ui-ease),
-    filter var(--ui-duration) var(--ui-ease);
+    background-color var(--ui-duration) var(--ui-ease),
+    opacity var(--ui-duration) var(--ui-ease);
 }
 /* Acciones de fila: más bajas para que quepan más filas por pantalla. */
 .sm {
   min-height: 32px;
-  padding: 0.25rem 0.65rem;
-  font-size: 0.85rem;
+  padding: 0 var(--ui-space-3);
+  font-size: var(--ui-text-sm);
 }
 .primary {
-  background: var(--ui-primary-face);
-  box-shadow: var(--ui-primary-shadow);
+  background: var(--ui-accent);
   color: var(--ui-on-accent);
 }
 .secondary {
-  background: var(--ui-control-face);
+  background: var(--ui-control);
   color: var(--ui-text);
-  border-color: var(--ui-border);
+}
+.ghost {
+  background: transparent;
+  color: var(--ui-accent);
 }
 .danger {
-  background: linear-gradient(180deg, #ffaaaa, var(--ui-danger));
-  color: #000;
+  background: transparent;
+  border-color: color-mix(in srgb, var(--ui-danger) 55%, transparent);
+  color: var(--ui-danger);
 }
 .button:disabled {
   cursor: not-allowed;
-  opacity: 0.65;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
-  border-style: dashed;
+  opacity: 0.45;
 }
-.button:not(:disabled):hover {
-  filter: brightness(1.08);
+@media (hover: hover) {
+  .primary:not(:disabled):hover {
+    background: color-mix(in srgb, var(--ui-accent) 88%, white);
+  }
+  .secondary:not(:disabled):hover {
+    background: color-mix(in srgb, var(--ui-control) 85%, white);
+  }
+  .ghost:not(:disabled):hover,
+  .danger:not(:disabled):hover {
+    background: rgb(255 255 255 / 6%);
+  }
 }
 .button:focus-visible {
   outline: 3px solid var(--ui-accent);
   outline-offset: 3px;
 }
 .button:not(:disabled):active {
-  transform: translateY(2px);
-  box-shadow: var(--ui-control-pressed);
+  transform: scale(0.97);
 }
-/* Botones de selección (Senior/Veteranos, Diagonal/Enfrentados…): el elegido se queda hundido. */
+/* Botones de selección (Senior/Veteranos, Diagonal/Enfrentados…): el elegido, en amarillo suave. */
 .button[aria-pressed="true"]:not(:disabled) {
-  transform: translateY(1px);
-  box-shadow: var(--ui-control-pressed);
+  background: var(--ui-accent-soft);
+  border-color: var(--ui-accent);
+  color: var(--ui-accent);
 }
 .primary[aria-pressed="true"]:not(:disabled) {
-  background: linear-gradient(180deg, #d4a90f, var(--ui-accent));
-  box-shadow:
-    inset 0 2px 4px rgb(0 0 0 / 35%),
-    0 1px 0 #b8900f;
+  background: var(--ui-accent);
+  color: var(--ui-on-accent);
 }
 @media (pointer: coarse) {
   .button {
-    min-height: 44px;
+    min-height: var(--ui-control-h);
     min-width: 44px;
+  }
+  .sm {
+    min-height: 44px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

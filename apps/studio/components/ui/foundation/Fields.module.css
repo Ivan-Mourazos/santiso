@@ -6,15 +6,15 @@
 }
 .label {
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: var(--ui-text-sm);
 }
 .control {
   width: 100%;
   min-width: 0;
-  min-height: 38px;
-  padding: 0.4rem 0.7rem;
+  min-height: 40px;
+  padding: 0 var(--ui-space-3);
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-field-face);
   box-shadow: var(--ui-field-shadow);
   transition:
@@ -22,7 +22,7 @@
     box-shadow var(--ui-duration) var(--ui-ease);
   color: var(--ui-text);
   font: inherit;
-  font-size: 0.95rem;
+  font-size: var(--ui-text-body);
 }
 .control:focus-visible {
   outline: 3px solid var(--ui-accent);
@@ -32,9 +32,8 @@
   border-color: var(--ui-danger);
 }
 .control:disabled {
-  opacity: 0.65;
+  opacity: 0.45;
   cursor: not-allowed;
-  border-style: dashed;
 }
 /* En el iPhone un campo de fecha u hora tiene ancho propio y se sale de su columna, pisando al
    campo de al lado: sin apariencia nativa ocupa lo que le toca. */
@@ -70,8 +69,8 @@ select.control:not([multiple]) {
 }
 @media (pointer: coarse) {
   .control {
-    min-height: 44px;
-    font-size: 16px;
+    min-height: var(--ui-control-h);
+    font-size: var(--ui-text-base);
   }
 }
 @media (prefers-reduced-motion: reduce) {

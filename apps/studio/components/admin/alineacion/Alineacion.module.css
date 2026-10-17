@@ -18,27 +18,27 @@
   gap: 0.35rem;
   padding: 1rem;
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius-lg, 1.125rem);
+  border-radius: var(--ui-radius-lg);
   background: var(--ui-panel-face, var(--ui-surface, #171717));
   box-shadow: var(--ui-panel-shadow, none);
 }
 
 .cruce {
   margin: 0.25rem 0 0;
-  font: 800 1.15rem/1.2 var(--ui-font-title, sans-serif);
+  font: 800 var(--ui-text-lg)/1.2 var(--ui-font-title, sans-serif);
   overflow-wrap: anywhere;
 }
 
 .detalle {
   margin: 0;
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 
 .aviso {
   margin: 0.25rem 0 0;
   color: var(--ui-warning, #f59e0b);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
   font-weight: 700;
 }
 
@@ -54,7 +54,7 @@
 
 .contador strong {
   color: var(--ui-text, #fff);
-  font-size: 1.05rem;
+  font-size: var(--ui-text-base);
 }
 
 .contador strong[data-completo="true"] {
@@ -86,7 +86,7 @@
   min-height: 3.25rem;
   padding: 0.35rem 0.75rem;
   border: 1px solid var(--ui-border, #444);
-  border-radius: 0.75rem;
+  border-radius: var(--ui-radius);
   background: var(--ui-control-face, #242424);
   color: var(--ui-text, #fff);
   font: inherit;
@@ -100,7 +100,7 @@
 }
 
 .dorsal {
-  font: 900 1.25rem var(--ui-font-title, sans-serif);
+  font: 900 var(--ui-text-xl) var(--ui-font-title, sans-serif);
   color: var(--ui-accent, #f5c518);
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -109,7 +109,7 @@
 .foto {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 0.5rem;
+  border-radius: var(--ui-radius-sm);
   object-fit: cover;
   object-position: top;
   background: rgb(255 255 255 / 6%);
@@ -123,9 +123,9 @@
 .papel {
   min-width: 4.75rem;
   padding: 0.2rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   color: var(--ui-muted, #aaa);
-  font-size: 0.8rem;
+  font-size: var(--ui-text-sm);
   font-weight: 800;
   text-align: center;
 }
@@ -155,10 +155,10 @@ li[data-papel="suplente"] .papel {
   flex: none;
   width: 3.25rem;
   border: 1px solid var(--ui-border, #444);
-  border-radius: 0.75rem;
+  border-radius: var(--ui-radius);
   background: var(--ui-control-face, #242424);
   color: var(--ui-muted, #aaa);
-  font: 900 1.05rem var(--ui-font-title, sans-serif);
+  font: 900 var(--ui-text-lg) var(--ui-font-title, sans-serif);
   cursor: pointer;
 }
 
@@ -226,7 +226,7 @@ li[data-papel="suplente"] .papel {
 .historia img {
   width: min(100%, 22rem);
   height: auto;
-  border-radius: 0.75rem;
+  border-radius: var(--ui-radius);
   box-shadow: 0 10px 30px rgb(0 0 0 / 50%);
 }
 

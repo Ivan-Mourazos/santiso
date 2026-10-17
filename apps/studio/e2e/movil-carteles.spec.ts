@@ -84,8 +84,9 @@ for (const ancho of [360, 390]) {
         )
         .evaluateAll((campos) =>
           campos.map((el) => ({
-            alto: el.getBoundingClientRect().height,
-            ancho: el.getBoundingClientRect().width,
+            // Medida de maqueta: el botón recién tocado aún puede estar encogido al pulsarlo.
+            alto: (el as HTMLElement).offsetHeight,
+            ancho: (el as HTMLElement).offsetWidth,
           })),
         );
       expect(Math.round(Math.min(...controlesDatos.map((x) => x.alto)))).toBeGreaterThanOrEqual(44);
@@ -238,5 +239,7 @@ test("carteles: exportación fallida permite reintentar", async ({ page }) => {
   await page.waitForTimeout(2500);
   expect(peticiones).toBe(1);
   await preparar.tap();
-  await expect(page.getByRole("button", { name: "Guardar o compartir", exact: true })).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Guardar o compartir", exact: true }),
+  ).toBeEnabled();
 });

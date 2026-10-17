@@ -12,7 +12,7 @@
   min-height: 44px;
   padding: 0.35rem 0.6rem;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
   font-weight: 800;
   list-style: none;
 }

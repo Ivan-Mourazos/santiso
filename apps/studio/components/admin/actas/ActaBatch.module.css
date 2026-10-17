@@ -5,7 +5,7 @@
   background: var(--ui-panel-face, var(--ui-surface, #171717));
   box-shadow: var(--ui-panel-shadow, none);
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius-lg, 1.125rem);
+  border-radius: var(--ui-radius-lg);
   min-width: 0;
   color: var(--ui-text);
   font-family: var(--ui-font-body);
@@ -192,7 +192,7 @@
   margin-right: var(--ui-space-3, 0.75rem);
   padding: 0.5rem 1rem;
   border: 1px solid rgb(255 255 255 / 15%);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   background: var(--ui-raised, #242424);
   color: var(--ui-text, #fff);
   font: inherit;
@@ -200,6 +200,6 @@
   cursor: pointer;
 }
 .upload input[type="file"]::file-selector-button:hover {
-  border-color: var(--ui-accent, #facc15);
-  color: var(--ui-accent, #facc15);
+  border-color: var(--ui-accent);
+  color: var(--ui-accent);
 }

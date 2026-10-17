@@ -1,51 +1,71 @@
 /* Inventario de marca existente. Solo se aplica al contenedor explícito. */
 .theme {
-  --ui-bg: #000;
-  --ui-surface: #171717;
-  --ui-raised: #242424;
-  --ui-text: #fff;
-  --ui-muted: #aaa;
-  --ui-border: #666;
+  /* Colores: fondo casi negro y tres capas, más claras cuanto más arriba. Un solo amarillo. */
+  --ui-bg: #0b0b0c;
+  --ui-surface: #141416;
+  --ui-raised: #1c1c1f;
+  --ui-control: #26262a;
+  --ui-text: #f2f2f0;
+  --ui-muted: #a8a8a3;
+  --ui-border: #66666c;
+  --ui-line: rgb(255 255 255 / 8%);
   --ui-accent: #f5c518;
-  --ui-on-accent: #000;
+  --ui-accent-soft: rgb(245 197 24 / 12%);
+  --ui-on-accent: #0b0b0c;
   --ui-danger: #f87171;
   --ui-success: #4ade80;
   --ui-warning: #f59e0b;
-  --ui-radius: 0.75rem;
-  --ui-radius-lg: 1.125rem;
-  --ui-space-1: 0.25rem;
-  --ui-space-2: 0.5rem;
-  --ui-space-3: 0.75rem;
-  --ui-space-4: 1rem;
-  --ui-space-5: 1.5rem;
-  --ui-space-6: 2rem;
+  /* Esquinas: 8 en campos y chips, 12 en tarjetas y botones, píldora en selectores. */
+  --ui-radius-sm: 8px;
+  --ui-radius: 12px;
+  --ui-radius-lg: 12px;
+  --ui-radius-pill: 999px;
+  /* Espaciado de 4 en 4. */
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+  --ui-space-5: 24px;
+  --ui-space-6: 32px;
+  /* Alturas: fila de lista, fila de tabla, control y control pequeño. */
+  --ui-row: 56px;
+  --ui-row-table: 44px;
+  --ui-control-h: 48px;
+  /* Letra: Barlow Condensed (la de los carteles) para títulos y números; Nunito para leer. */
   --ui-font-body: var(--font-nunito), sans-serif;
-  --ui-font-title: var(--font-outfit), sans-serif;
-  --ui-shadow: 0 14px 40px rgb(0 0 0 / 45%);
-  --ui-duration: 140ms;
-  --ui-control-face: linear-gradient(180deg, #343434, #242424);
-  --ui-control-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 14%), 0 2px 0 #101010, 0 3px 5px rgb(0 0 0 / 25%);
-  --ui-control-pressed:
-    inset 0 2px 4px rgb(0 0 0 / 45%), inset 0 -1px 0 rgb(255 255 255 / 6%),
-    0 1px 1px rgb(0 0 0 / 20%);
-  --ui-primary-face: linear-gradient(180deg, #ffda49, var(--ui-accent));
-  --ui-primary-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 45%), 0 3px 0 #b8900f, 0 4px 6px rgb(0 0 0 / 30%);
-  --ui-field-face: linear-gradient(180deg, #101010, #191919);
-  --ui-field-shadow: inset 0 2px 4px rgb(0 0 0 / 65%), inset 0 -1px 0 rgb(255 255 255 / 5%);
-  --ui-panel-face: linear-gradient(180deg, #202020, var(--ui-surface) 90px);
-  --ui-panel-shadow: inset 0 1px 0 rgb(255 255 255 / 8%), 0 3px 8px rgb(0 0 0 / 30%);
-  --ui-ease: cubic-bezier(0.32, 0.72, 0, 1);
-  --ui-text-sm: 0.875rem;
-  --ui-text-base: 1rem;
-  --ui-text-title: clamp(1.75rem, 4vw, 2.5rem);
+  --ui-font-title: var(--font-barlow), "Arial Narrow", sans-serif;
+  /* Siete tamaños y ninguno más. */
+  --ui-text-xs: 12px;
+  --ui-text-sm: 13px;
+  --ui-text-body: 15px;
+  --ui-text-base: 17px;
+  --ui-text-lg: 20px;
+  --ui-text-xl: 24px;
+  --ui-text-2xl: 32px;
+  --ui-text-title: var(--ui-text-xl);
+  --ui-shadow: 0 12px 32px rgb(0 0 0 / 50%);
+  /* Movimiento: pulsar 120 ms, desplegar 200 ms, pantalla u hoja nueva 300 ms. */
+  --ui-duration: 120ms;
+  --ui-duration-md: 200ms;
+  --ui-duration-lg: 300ms;
+  --ui-ease: cubic-bezier(0.2, 0, 0, 1);
+  --ui-ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  /* Superficies planas. Como degradado de un color, para que valgan también en `background-image`. */
+  --ui-control-face: linear-gradient(var(--ui-control), var(--ui-control));
+  --ui-control-shadow: none;
+  --ui-control-pressed: none;
+  --ui-primary-face: linear-gradient(var(--ui-accent), var(--ui-accent));
+  --ui-primary-shadow: none;
+  --ui-field-face: linear-gradient(var(--ui-raised), var(--ui-raised));
+  --ui-field-shadow: none;
+  --ui-panel-face: linear-gradient(var(--ui-surface), var(--ui-surface));
+  --ui-panel-shadow: none;
   color-scheme: dark;
   color: var(--ui-text);
   background: var(--ui-bg);
   font-family: var(--ui-font-body);
-  font-size: var(--ui-text-base);
-  line-height: 1.5;
+  font-size: var(--ui-text-body);
+  line-height: 1.45;
 }
 .theme *,
 .theme *::before,
@@ -86,26 +106,25 @@
     100% 100%;
 }
 :where(.theme) :where(input, select, textarea):disabled {
-  border-style: dashed;
+  opacity: 0.45;
 }
+/* Botones planos: al pulsar se encogen un 3 %. Sin relieve ni bordes discontinuos. */
 :where(.theme) :where(button, .file-input-label) {
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 8%), rgb(0 0 0 / 8%));
-  box-shadow: var(--ui-control-shadow);
+  -webkit-tap-highlight-color: transparent;
   transition:
     transform var(--ui-duration) var(--ui-ease),
-    box-shadow var(--ui-duration) var(--ui-ease),
-    filter var(--ui-duration) var(--ui-ease);
+    background-color var(--ui-duration) var(--ui-ease),
+    opacity var(--ui-duration) var(--ui-ease);
 }
 :where(.theme) :where(button, .file-input-label):not(:disabled):active {
-  transform: translateY(2px);
-  box-shadow: var(--ui-control-pressed);
+  transform: scale(0.97);
 }
 :where(.theme) :where(button):disabled {
-  border-style: dashed;
-  box-shadow: none;
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 /*
- * Casillas: una pieza con relieve que se enciende en amarillo al marcarla. Con `.theme` delante
+ * Casillas: se encienden en amarillo al marcarlas. Con `.theme` delante
  * para ganar a las reglas de cada pantalla (`.check` les pone ancho automático).
  */
 .theme input[type="checkbox"] {
@@ -117,7 +136,7 @@
   margin: 0;
   padding: 0;
   border: 1px solid var(--ui-border);
-  border-radius: 0.3rem;
+  border-radius: 6px;
   background: var(--ui-field-face);
   box-shadow: var(--ui-field-shadow);
   cursor: pointer;
@@ -126,14 +145,11 @@
     box-shadow var(--ui-duration) var(--ui-ease);
 }
 .theme input[type="checkbox"]:checked {
-  border-color: #b8900f;
+  border-color: var(--ui-accent);
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3.5 8.5 3 3 6-7' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
       center / 80% no-repeat,
     var(--ui-primary-face);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 45%),
-    0 2px 0 #b8900f;
 }
 .theme input[type="checkbox"]:disabled {
   opacity: 0.6;
@@ -142,5 +158,7 @@
 @media (prefers-reduced-motion: reduce) {
   .theme {
     --ui-duration: 0ms;
+    --ui-duration-md: 0ms;
+    --ui-duration-lg: 0ms;
   }
 }

@@ -4,17 +4,17 @@
   background: var(--ui-panel-face, var(--ui-surface, #171717));
   box-shadow: var(--ui-panel-shadow, none);
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius-lg, 1.125rem);
+  border-radius: var(--ui-radius-lg);
   padding: 1.25rem 1.5rem;
 }
 .cabecera h3 {
   margin: 0;
-  font: 800 1.35rem var(--ui-font-title, sans-serif);
+  font: 800 var(--ui-text-xl) var(--ui-font-title, sans-serif);
 }
 .cabecera p {
   margin: 0.25rem 0 var(--ui-space-5, 1.5rem);
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .herramientas {
   display: grid;
@@ -35,24 +35,24 @@
   min-width: 7rem;
   padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   background: var(--ui-raised, #242424);
 }
 .dato strong {
   display: block;
-  font: 900 1.5rem var(--ui-font-title, sans-serif);
-  color: var(--ui-accent, #facc15);
+  font: 900 var(--ui-text-xl) var(--ui-font-title, sans-serif);
+  color: var(--ui-accent);
   font-variant-numeric: tabular-nums;
 }
 .dato span {
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 
 .contador {
   margin: 0 0 var(--ui-space-3, 0.75rem);
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 
 .tablaEnvoltorio {
@@ -64,7 +64,7 @@
 }
 .tabla th {
   text-align: right;
-  font-size: 0.7rem;
+  font-size: var(--ui-text-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--ui-muted, #aaa);
@@ -87,10 +87,10 @@
   cursor: pointer;
 }
 .ordenar:hover {
-  color: var(--ui-accent, #facc15);
+  color: var(--ui-accent);
 }
 .tabla th[aria-sort] .ordenar {
-  color: var(--ui-accent, #facc15);
+  color: var(--ui-accent);
 }
 .tabla td {
   padding: 0.35rem 0.6rem;
@@ -104,7 +104,7 @@
 }
 .dorsal {
   font-weight: 800;
-  color: var(--ui-accent, #facc15);
+  color: var(--ui-accent);
 }
 .jugador strong {
   display: block;
@@ -115,16 +115,16 @@
 .aviso {
   margin: var(--ui-space-4, 1rem) 0 0;
   padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   border: 1px solid rgb(245 158 11 / 35%);
   background: rgb(245 158 11 / 8%);
   color: var(--ui-warning, #f59e0b);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .nota {
   margin: var(--ui-space-4, 1rem) 0 0;
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .ordenMovil {
   display: none;
@@ -182,7 +182,7 @@
   }
   .ordenMovil select {
     min-height: 44px;
-    font-size: 16px;
+    font-size: var(--ui-text-base);
   }
   .resumen {
     display: grid;
@@ -199,10 +199,10 @@
     min-width: 0;
   }
   .dato strong {
-    font-size: 1.05rem;
+    font-size: var(--ui-text-base);
   }
   .dato span {
-    font-size: 0.7rem;
+    font-size: var(--ui-text-xs);
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -252,7 +252,7 @@
     width: 100%;
     min-height: 44px;
     padding: 0;
-    font-size: 0.66rem;
+    font-size: var(--ui-text-xs);
     text-align: inherit;
   }
   .tabla .jugador {
@@ -277,7 +277,7 @@
   .aviso,
   .nota {
     margin-top: 0.5rem;
-    font-size: 0.75rem;
+    font-size: var(--ui-text-xs);
   }
 }
 
@@ -319,13 +319,13 @@
 }
 .fichaCabecera span {
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .fichaFoto {
   flex: none;
   width: 4rem;
   height: 4rem;
-  border-radius: 0.75rem;
+  border-radius: var(--ui-radius);
   object-fit: cover;
   object-position: top;
   background: var(--ui-raised, #242424);
@@ -338,12 +338,12 @@
 }
 .fichaTotales > div {
   padding: 0.5rem 0.6rem;
-  border-radius: 0.6rem;
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-raised, #242424);
 }
 .fichaTotales dt {
   color: var(--ui-muted, #aaa);
-  font-size: 0.72rem;
+  font-size: var(--ui-text-xs);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   /* Una palabra no se parte («CONVOCAD/O»): si no cabe, se corta con puntos. */
@@ -353,7 +353,7 @@
 }
 .fichaTotales dd {
   margin: 0;
-  font: 900 1.35rem var(--ui-font-title, sans-serif);
+  font: 900 var(--ui-text-xl) var(--ui-font-title, sans-serif);
   color: var(--ui-accent, #f5c518);
   font-variant-numeric: tabular-nums;
 }
@@ -370,7 +370,7 @@
   gap: 0.25rem 0.75rem;
   align-items: center;
   padding: 0.5rem 0.65rem;
-  border-radius: 0.6rem;
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-raised, #242424);
 }
 .fichaPartidos li[data-jugo="false"] {
@@ -386,7 +386,7 @@
 }
 .fichaPartido span {
   color: var(--ui-muted, #aaa);
-  font-size: 0.8rem;
+  font-size: var(--ui-text-sm);
 }
 .fichaResultado {
   font-weight: 900;
@@ -404,7 +404,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 0.75rem;
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .amarilla,
 .roja {
@@ -441,7 +441,7 @@
   margin: 0.25rem 0 0;
   padding: 0;
   list-style: none;
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .fichaHistorial li {
   display: grid;
@@ -449,7 +449,7 @@
   gap: 0.5rem;
 }
 .fichaHistorial strong {
-  color: var(--ui-accent, #facc15);
+  color: var(--ui-accent);
 }
 .fichaHistorial span {
   overflow-wrap: anywhere;
@@ -462,7 +462,7 @@
   padding: 0.5rem 0.75rem;
   border-left: 4px solid var(--ui-border, #333);
   background: rgb(255 255 255 / 4%);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
   overflow-wrap: anywhere;
 }
 .fichaOficial p {
@@ -487,13 +487,13 @@
   margin: 0.25rem 0 0;
   padding: 0;
   list-style: none;
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .fichaAnteriores li {
   display: grid;
   gap: 0.1rem;
   padding: 0.4rem 0.6rem;
-  border-left: 3px solid var(--ui-accent, #facc15);
+  border-left: 3px solid var(--ui-accent);
   background: rgb(255 255 255 / 4%);
   overflow-wrap: anywhere;
 }

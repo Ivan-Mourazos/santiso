@@ -12,7 +12,7 @@
 .estado {
   margin: 0;
   color: var(--ui-muted);
-  font-size: 0.9rem;
+  font-size: var(--ui-text-body);
 }
 .traer button {
   min-height: 44px;
@@ -60,7 +60,7 @@
 }
 .quien small {
   color: var(--ui-muted);
-  font-size: 0.85rem;
+  font-size: var(--ui-text-sm);
 }
 .quien .motivo {
   margin-top: 0.15rem;
@@ -74,7 +74,7 @@
   color: var(--ui-warning);
 }
 .cifra {
-  font: 800 1.25rem var(--ui-font-title);
+  font: 800 var(--ui-text-xl) var(--ui-font-title);
   font-variant-numeric: tabular-nums;
 }
 .tarjetas {
@@ -128,7 +128,7 @@
   .selectores select,
   .ciclo input {
     min-height: 44px;
-    font-size: 16px;
+    font-size: var(--ui-text-base);
   }
   .ciclo button {
     min-height: 44px;

@@ -4,7 +4,7 @@
   background: var(--ui-panel-face, var(--ui-surface, #171717));
   box-shadow: var(--ui-panel-shadow, none);
   border: 1px solid var(--ui-border, #666);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
 }
 .cabecera,
 .contexto,
@@ -74,7 +74,7 @@
   display: block;
   margin: 0.15rem 0;
   color: var(--ui-muted, #aaa);
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
   overflow-wrap: anywhere;
 }
 .contador {
@@ -89,7 +89,7 @@
 .tabla th {
   text-align: left;
   color: var(--ui-muted, #aaa);
-  font-size: 0.8rem;
+  font-size: var(--ui-text-sm);
 }
 .tabla th,
 .tabla td {
@@ -132,7 +132,7 @@
   height: 30px;
   object-fit: contain;
   background: var(--ui-raised, #242424);
-  border-radius: 0.5rem;
+  border-radius: var(--ui-radius-sm);
 }
 .nombre {
   font-weight: 800;
@@ -201,7 +201,7 @@
   .cabecera .acciones button {
     flex: 1;
     padding-inline: 0.5rem;
-    font-size: 0.85rem;
+    font-size: var(--ui-text-sm);
   }
   .tabla,
   .tabla tbody {
@@ -243,7 +243,7 @@
     width: auto;
     text-align: left;
     color: var(--ui-muted, #aaa);
-    font-size: 0.75rem;
+    font-size: var(--ui-text-xs);
   }
   .tabla td:nth-child(3)::before {
     content: "Partidos: ";
@@ -267,7 +267,7 @@
   }
   .tabla .acciones button::before {
     content: "✕";
-    font-size: 1.05rem;
+    font-size: var(--ui-text-base);
   }
   .tabla .acciones button:first-child::before {
     content: "✎";
@@ -300,7 +300,7 @@
   height: 2rem;
   padding: 0;
   border: 1px solid var(--ui-border, #666);
-  border-radius: 0.4rem;
+  border-radius: var(--ui-radius-sm);
   background: none;
   cursor: pointer;
 }
@@ -325,7 +325,7 @@
   }
   .herramientas .contador {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: var(--ui-text-xs);
   }
   .casilla,
   .muestra,
@@ -337,7 +337,7 @@
     min-width: 44px;
   }
   .muestra {
-    font-size: 16px;
+    font-size: var(--ui-text-base);
   }
 }
 

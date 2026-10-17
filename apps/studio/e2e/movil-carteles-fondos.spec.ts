@@ -95,7 +95,10 @@ for (const ancho of [360, 390]) {
     await expect(hora).toHaveValue("16:00");
     await expect(lugar).toHaveValue("Entrada do campo");
     expect(Math.round((await hora.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
-    expect(await hora.evaluate((n) => getComputedStyle(n).fontSize)).toBe("16px");
+    // Desde 16 px el iPhone no amplía la página al escribir.
+    expect(
+      parseFloat(await hora.evaluate((n) => getComputedStyle(n).fontSize)),
+    ).toBeGreaterThanOrEqual(16);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       ancho,
     );

@@ -1,7 +1,8 @@
 import type { ComponentPropsWithRef } from "react";
 import styles from "./Button.module.css";
 export type ButtonProps = ComponentPropsWithRef<"button"> & {
-  variant?: "primary" | "secondary" | "danger";
+  /** `primary`: la acción principal, una por pantalla. `ghost`: acción de texto, sin fondo. */
+  variant?: "primary" | "secondary" | "ghost" | "danger";
   /** `sm`: para acciones dentro de filas de tabla y controles secundarios. */
   size?: "md" | "sm";
   pending?: boolean;

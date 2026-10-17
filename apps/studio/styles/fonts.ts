@@ -1,8 +1,11 @@
 import localFont from "next/font/local";
-export const outfit = localFont({
-  src: "../app/fonts/Outfit-latin.woff2",
-  variable: "--font-outfit",
-  weight: "100 900",
+/* Títulos y números: la misma Barlow Condensed de los carteles. */
+export const barlowUi = localFont({
+  src: [
+    { path: "../app/fonts/BarlowCondensed-600-latin.woff2", weight: "600", style: "normal" },
+    { path: "../app/fonts/BarlowCondensed-800-latin.woff2", weight: "800", style: "normal" },
+  ],
+  variable: "--font-barlow",
   display: "swap",
 });
 export const nunito = localFont({

@@ -12,7 +12,7 @@
 .etiqueta {
   margin: 0;
   color: var(--ui-muted);
-  font-size: 0.75rem;
+  font-size: var(--ui-text-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -26,17 +26,17 @@
   min-height: 44px;
   padding: 8px 12px;
   border: 1px solid var(--ui-border);
-  border-radius: 8px;
+  border-radius: var(--ui-radius-sm);
   background: transparent;
   color: var(--ui-text);
   font: inherit;
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
   cursor: pointer;
 }
 .equipos button[aria-pressed="true"] {
   border-color: var(--ui-accent);
   color: var(--ui-accent);
-  background: rgb(250 204 21 / 6%);
+  background: rgb(245 197 24 / 6%);
 }
 .categoria,
 .resumenes {
@@ -53,7 +53,7 @@
   padding: 20px;
   background: #191b1c;
   border: 1px solid var(--ui-border);
-  border-radius: 12px;
+  border-radius: var(--ui-radius);
   overflow: hidden;
 }
 .tarjeta::before {
@@ -77,11 +77,11 @@
 .competicion {
   margin: 0;
   color: var(--ui-muted);
-  font-size: 0.8125rem;
+  font-size: var(--ui-text-sm);
 }
 .localia {
   color: var(--ui-text);
-  font-size: 0.75rem;
+  font-size: var(--ui-text-xs);
   white-space: nowrap;
 }
 .rival {
@@ -100,14 +100,14 @@
 }
 .propio {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: var(--ui-text-sm);
   color: var(--ui-muted);
 }
 .rival img {
   width: 56px;
   height: 64px;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   background: #f0ede4;
   object-fit: contain;
   flex: none;
@@ -122,16 +122,16 @@
 }
 .cuando time {
   font-weight: 600;
-  font-size: 1rem;
+  font-size: var(--ui-text-base);
   text-transform: capitalize;
 }
 .cuando strong {
-  font: 700 1.75rem var(--ui-font-title);
+  font: 700 var(--ui-text-2xl) var(--ui-font-title);
   font-variant-numeric: tabular-nums;
 }
 .campo {
   margin: 8px 0 4px;
-  font-size: 0.9375rem;
+  font-size: var(--ui-text-body);
   overflow-wrap: anywhere;
 }
 .competicion {
@@ -150,7 +150,7 @@
   min-height: 48px;
   margin: 8px 0 12px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-accent);
   color: #171717;
   text-decoration: none;
@@ -169,11 +169,11 @@
   gap: 8px;
   min-height: 44px;
   border-bottom: 1px solid rgb(255 255 255 / 6%);
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
 }
 .numero {
   color: var(--ui-muted);
-  font-size: 0.75rem;
+  font-size: var(--ui-text-xs);
 }
 .paso[data-tono="hecho"] .numero {
   color: var(--ui-success);
@@ -189,7 +189,7 @@
 .estado {
   max-width: 145px;
   text-align: right;
-  font-size: 0.75rem;
+  font-size: var(--ui-text-xs);
   color: var(--ui-muted);
 }
 .paso[data-tono="hecho"] .estado {
@@ -198,7 +198,7 @@
 .nota {
   margin: 10px 0 0;
   color: var(--ui-muted);
-  font-size: 0.75rem;
+  font-size: var(--ui-text-xs);
   line-height: 1.45;
 }
 .masTareas {
@@ -212,12 +212,12 @@
   min-height: 44px;
   color: var(--ui-muted);
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
 }
 .masTareas summary::after,
 .archivo summary::after {
   content: "+";
-  font-size: 1.25rem;
+  font-size: var(--ui-text-lg);
 }
 .masTareas[open] summary::after,
 .archivo[open] summary::after {
@@ -237,7 +237,7 @@
   color: var(--ui-text);
   text-decoration: none;
   font: inherit;
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
   text-align: left;
 }
 button.acceso {
@@ -257,17 +257,17 @@ button.acceso {
   gap: 8px;
   min-height: 44px;
   color: var(--ui-muted);
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
 }
 .noDisponible small {
-  font-size: 0.75rem;
+  font-size: var(--ui-text-xs);
 }
 .clasificacion {
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--ui-border);
   color: var(--ui-muted);
-  font-size: 0.8125rem;
+  font-size: var(--ui-text-sm);
 }
 .resumenes {
   display: grid;
@@ -283,17 +283,17 @@ button.acceso {
   align-items: baseline;
   gap: 12px;
   margin: 8px 0 4px;
-  font: 600 1.125rem var(--ui-font-title);
+  font: 600 var(--ui-text-lg) var(--ui-font-title);
   overflow-wrap: anywhere;
 }
 .resumen p:not(.etiqueta) {
   margin: 4px 0;
   color: var(--ui-muted);
-  font-size: 0.8125rem;
+  font-size: var(--ui-text-sm);
   line-height: 1.5;
 }
 .resultado {
-  font-size: 1.375rem;
+  font-size: var(--ui-text-lg);
   white-space: nowrap;
 }
 .archivo {
@@ -302,7 +302,7 @@ button.acceso {
 .archivo h3,
 .archivoCabecera h3 {
   margin: 8px 0;
-  font-size: 1rem;
+  font-size: var(--ui-text-base);
   font-weight: 600;
 }
 .botones {
@@ -317,18 +317,18 @@ button.acceso {
 .archivoCabecera label {
   display: grid;
   gap: 4px;
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
 }
 .archivoCabecera select {
   width: 100%;
   min-height: 44px;
   padding: 8px;
   border: 1px solid var(--ui-border);
-  border-radius: 8px;
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-surface);
   color: var(--ui-text);
   font: inherit;
-  font-size: 16px;
+  font-size: var(--ui-text-base);
 }
 .pantalla :is(a, button, summary, select):focus-visible {
   outline: 2px solid var(--ui-accent);
@@ -392,7 +392,7 @@ button.acceso {
   gap: var(--ui-space-2, 0.5rem);
   padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
   border: 1px solid rgb(245 158 11 / 45%);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   background: rgb(245 158 11 / 8%);
 }
 .rfgfAviso ul {
@@ -413,12 +413,12 @@ button.acceso {
 .rfgfNota {
   margin: 0;
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .rfgfDetalle {
   min-width: 0;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   padding: 0 var(--ui-space-4, 1rem);
 }
 .rfgfDetalle summary {
@@ -427,7 +427,7 @@ button.acceso {
   min-height: 44px;
   cursor: pointer;
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
   font-weight: 700;
 }
 .rfgfDetalle summary span {
@@ -483,7 +483,7 @@ button.acceso {
   flex: 1 1 16rem;
   margin: 0;
   color: var(--ui-muted);
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
 }
 .rfgfAhora button {
   min-height: 44px;
@@ -500,7 +500,7 @@ button.acceso {
   padding: 0.6rem 0.75rem;
   border-left: 4px solid var(--ui-warning);
   background: rgb(245 158 11 / 12%);
-  font-size: 0.9rem;
+  font-size: var(--ui-text-body);
   overflow-wrap: anywhere;
 }
 .sanciones {
@@ -520,7 +520,7 @@ button.acceso {
   gap: 0.1rem;
   padding-left: 0.6rem;
   border-left: 3px solid var(--ui-warning);
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
   overflow-wrap: anywhere;
 }
 .sanciones li[data-situacion="sancionado"],
@@ -538,7 +538,7 @@ button.acceso {
   margin-top: 0.15rem;
   color: var(--ui-muted);
   font-style: normal;
-  font-size: 0.85rem;
+  font-size: var(--ui-text-sm);
 }
 .rfgfAcciones {
   display: flex;

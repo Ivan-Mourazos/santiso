@@ -14,13 +14,13 @@
 }
 .partido h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--ui-text-base);
   overflow-wrap: anywhere;
 }
 .partido p,
 .contador {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
   color: var(--ui-muted, #aaa);
 }
 .contador {
@@ -46,7 +46,7 @@
   min-height: 52px;
   padding: 6px 8px;
   border: 1px solid var(--ui-border, #444);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-control-face, #242424);
   color: var(--ui-text, #fff);
   font: inherit;
@@ -61,7 +61,7 @@
 }
 .jugadores span {
   font-weight: 700;
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
   line-height: 1.15;
   overflow-wrap: anywhere;
 }
@@ -76,7 +76,7 @@
 }
 .detalles {
   border: 1px solid var(--ui-border, #444);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-sm);
   padding: 0 10px;
   min-width: 0;
 }
@@ -112,7 +112,7 @@
   min-height: 44px;
   min-width: 0;
   width: 100%;
-  font-size: 16px;
+  font-size: var(--ui-text-base);
 }
 .acciones {
   display: flex;
@@ -148,7 +148,7 @@
 .png img {
   width: min(100%, 26rem);
   height: auto;
-  border-radius: 10px;
+  border-radius: var(--ui-radius-sm);
 }
 @media (max-width: 900px) {
   .panel {

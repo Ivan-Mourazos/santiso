@@ -8,24 +8,24 @@
   background: var(--ui-panel-face, var(--ui-surface, #171717));
   box-shadow: var(--ui-panel-shadow, none);
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius-lg, 1.125rem);
+  border-radius: var(--ui-radius-lg);
   padding: 1rem 1.25rem;
 }
 .titulo {
   margin: 0 0 var(--ui-space-3, 0.75rem);
-  font-size: 0.7rem;
+  font-size: var(--ui-text-xs);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--ui-accent, #facc15);
+  color: var(--ui-accent);
 }
 .nota {
   margin: 0;
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .nota a {
-  color: var(--ui-accent, #facc15);
+  color: var(--ui-accent);
   font-weight: 700;
 }
 
@@ -78,7 +78,7 @@
   gap: var(--ui-space-2, 0.5rem);
   padding: 0.3rem 0.3rem 0.3rem 0.75rem;
   border: 1px solid rgb(255 255 255 / 10%);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   background: var(--ui-raised, #242424);
   font-weight: 700;
 }
@@ -106,7 +106,7 @@
 .partidoCabecera {
   padding: 0 0.6rem;
   color: var(--ui-muted, #aaa);
-  font-size: 0.68rem;
+  font-size: var(--ui-text-xs);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -114,7 +114,7 @@
 .partido {
   padding: 0.35rem 0.6rem;
   border: 1px solid rgb(255 255 255 / 6%);
-  border-radius: 0.6rem;
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-raised, #242424);
 }
 .partido[data-cambios="true"] {
@@ -133,7 +133,7 @@
   gap: 0.4rem;
   min-width: 0;
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: var(--ui-text-sm);
   line-height: 1.15;
 }
 .equipo span {
@@ -177,7 +177,7 @@
 .partido select {
   min-height: 2rem;
   padding: 0.2rem 0.45rem;
-  font-size: 0.85rem;
+  font-size: var(--ui-text-sm);
 }
 .accionesFila {
   display: flex;
@@ -236,7 +236,7 @@
   }
   .pasoJornada button {
     padding: 0;
-    font-size: 1.4rem;
+    font-size: var(--ui-text-lg);
     line-height: 1;
   }
   .vistas {
@@ -246,7 +246,7 @@
   .vistas > button {
     flex: 1;
     padding-inline: 0.4rem;
-    font-size: 0.82rem;
+    font-size: var(--ui-text-sm);
   }
   .vistas > .masGestion {
     display: block;
@@ -255,7 +255,7 @@
     border-radius: var(--ui-radius);
     background: none;
     color: var(--ui-text);
-    font-size: 1.2rem;
+    font-size: var(--ui-text-base);
     cursor: pointer;
   }
   .acciones {
@@ -313,7 +313,7 @@
     grid-area: visitante;
     justify-content: flex-start;
     text-align: left;
-    font-size: 0.95rem;
+    font-size: var(--ui-text-body);
   }
   .equipo.local {
     grid-area: local;
@@ -362,7 +362,7 @@
     grid-area: resumen;
     margin: 0;
     color: var(--ui-muted, #aaa);
-    font-size: 0.78rem;
+    font-size: var(--ui-text-xs);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -399,7 +399,7 @@
     min-width: 0;
     max-width: 100%;
     min-height: 44px;
-    font-size: 16px;
+    font-size: var(--ui-text-base);
   }
   .partido button,
   .selectores button,
@@ -452,16 +452,16 @@
     text-overflow: ellipsis;
   }
   .textoPropio strong {
-    font-size: 0.875rem;
+    font-size: var(--ui-text-sm);
   }
   .textoPropio > span {
-    font-size: 0.75rem;
+    font-size: var(--ui-text-xs);
     color: var(--ui-muted);
   }
   .marcadorPropio {
     flex-shrink: 0;
     color: var(--ui-accent);
-    font-size: 1rem;
+    font-size: var(--ui-text-base);
   }
   .partido.detallePropio .desplegar {
     display: none;
@@ -470,9 +470,9 @@
 
 .contextoFila {
   margin: 0;
-  font-size: 0.66rem;
+  font-size: var(--ui-text-xs);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--ui-accent, #facc15);
+  color: var(--ui-accent);
 }

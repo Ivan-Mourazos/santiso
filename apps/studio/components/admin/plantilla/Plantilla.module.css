@@ -5,7 +5,7 @@
   background: var(--ui-panel-face, var(--ui-surface, #171717));
   box-shadow: var(--ui-panel-shadow, none);
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: var(--ui-radius-lg, 1.125rem);
+  border-radius: var(--ui-radius-lg);
   padding: 1.25rem 1.5rem;
 }
 @media (max-width: 640px) {
@@ -38,12 +38,12 @@
 .cabecera h2,
 .cabecera h3 {
   margin: 0;
-  font: 800 1.35rem var(--ui-font-title, sans-serif);
+  font: 800 var(--ui-text-xl) var(--ui-font-title, sans-serif);
 }
 .cabecera p {
   margin: 0.25rem 0 0;
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .acciones {
   display: flex;
@@ -72,7 +72,7 @@
   justify-self: end;
   grid-column: -2;
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 
 /* ─── Lista: tabla en escritorio, tarjetas en móvil. Un solo DOM. ─── */
@@ -82,7 +82,7 @@
 }
 .tabla th {
   text-align: left;
-  font-size: 0.75rem;
+  font-size: var(--ui-text-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--ui-muted, #aaa);
@@ -100,14 +100,14 @@
 .foto {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--ui-radius-sm);
   object-fit: cover;
   display: block;
   background: var(--ui-raised, #242424);
 }
 .dorsal {
-  font: 900 1.1rem var(--ui-font-title, sans-serif);
-  color: var(--ui-accent, #facc15);
+  font: 900 var(--ui-text-lg) var(--ui-font-title, sans-serif);
+  color: var(--ui-accent);
   font-variant-numeric: tabular-nums;
 }
 .repetido {
@@ -116,7 +116,7 @@
 /* Apodo en la misma línea que el nombre: una fila por jugador, siempre de la misma altura. */
 .nombre span {
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .nombre span::before {
   content: " · ";
@@ -193,7 +193,7 @@
   }
   .celdaNombre .soloMovil {
     display: block;
-    font-size: 0.75rem;
+    font-size: var(--ui-text-xs);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -220,7 +220,7 @@
   }
   .filaAcciones button::before {
     content: "✎";
-    font-size: 1.05rem;
+    font-size: var(--ui-text-base);
   }
   .filaAcciones button:last-child::before {
     content: "✕";
@@ -234,7 +234,7 @@
 }
 .grupo {
   border: 1px solid rgb(255 255 255 / 10%);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   padding: var(--ui-space-4, 1rem);
   margin: 0;
   display: grid;
@@ -247,7 +247,7 @@
 .alcance {
   margin: 0;
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .dosColumnas {
   display: grid;
@@ -262,7 +262,7 @@
 .aviso {
   margin: 0;
   padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   border: 1px solid rgb(245 158 11 / 35%);
   background: rgb(245 158 11 / 8%);
   color: var(--ui-warning, #f59e0b);
@@ -270,7 +270,7 @@
 .error {
   margin: 0;
   padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   border: 1px solid rgb(248 113 113 / 35%);
   background: rgb(248 113 113 / 8%);
   color: var(--ui-danger, #f87171);
@@ -285,7 +285,7 @@
 .fotoGrande {
   width: 96px;
   height: 96px;
-  border-radius: 12px;
+  border-radius: var(--ui-radius);
   object-fit: cover;
   background: var(--ui-raised, #242424);
   flex-shrink: 0;
@@ -330,7 +330,7 @@
     width: 100%;
     min-width: 0;
     min-height: 44px;
-    font-size: 16px;
+    font-size: var(--ui-text-base);
   }
   .fotoControles button {
     min-width: 44px;
@@ -389,7 +389,7 @@
   }
   .contador {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: var(--ui-text-xs);
   }
   .masFiltros {
     display: block;
@@ -418,12 +418,12 @@
 .historialTitulo {
   margin: 0;
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: var(--ui-text-sm);
 }
 .historialVacio {
   margin: 0;
   color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm, 0.875rem);
+  font-size: var(--ui-text-sm);
 }
 .historialFilas {
   display: grid;
@@ -446,7 +446,7 @@
   min-height: 38px;
   padding: 0.3rem 0.5rem;
   border: 1px solid var(--ui-border, #333);
-  border-radius: var(--ui-radius, 0.75rem);
+  border-radius: var(--ui-radius);
   background: var(--ui-field-face, #111);
   color: var(--ui-text, #fff);
   font: inherit;
@@ -456,6 +456,6 @@
   .historialEquipo {
     min-height: 44px;
     /* Con menos de 16 px el iPhone hace zoom al enfocar. */
-    font-size: 16px;
+    font-size: var(--ui-text-base);
   }
 }

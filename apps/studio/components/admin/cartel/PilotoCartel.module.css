@@ -10,9 +10,9 @@
   gap: var(--ui-space-3, 0.75rem);
   margin-bottom: var(--ui-space-4, 1rem);
   padding: var(--ui-space-4, 1rem);
-  border: 1px solid rgb(250 204 21 / 40%);
-  border-radius: var(--ui-radius, 0.75rem);
-  background: rgb(250 204 21 / 4%);
+  border: 1px solid rgb(245 197 24 / 40%);
+  border-radius: var(--ui-radius);
+  background: rgb(245 197 24 / 4%);
 }
 
 .cabecera {
@@ -30,7 +30,7 @@
 .cabecera p {
   margin: 0.25rem 0 0;
   color: var(--ui-muted);
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
 }
 
 .opciones {
@@ -87,14 +87,14 @@
   min-height: 36px;
   padding: 0 0.9rem;
   border: 1px solid rgb(255 255 255 / 22%);
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   font-weight: 700;
-  font-size: 0.875rem;
+  font-size: var(--ui-text-sm);
   cursor: pointer;
 }
 
 .botonFoto:focus-within {
-  outline: 2px solid var(--ui-accent, #facc15);
+  outline: 2px solid var(--ui-accent);
   outline-offset: 2px;
 }
 
