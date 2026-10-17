@@ -7,6 +7,21 @@ import { grupoDeEnlace, urlActaPdf } from "@/lib/rfgf/enlace";
 import { obtenerDb } from "@/lib/server/db";
 import { crearDescargador } from "@/lib/server/rfgf/descargador";
 import { sincronizarTodo } from "@/lib/server/rfgf/sincronizar";
+import { estadoFederacion, type EstadoFederacion } from "@/lib/server/rfgf/estado";
+import {
+  actualizarClasificacion,
+  traerActa,
+  traerCifrasJugadores,
+  traerHorarios,
+  traerJornada,
+  type ResumenPeticionRfgf,
+  type ResultadoClasificacionRfgf,
+} from "@/lib/server/rfgf/demanda";
+import {
+  estadoHistorico,
+  traerTemporadaHistorica,
+  type ResumenHistoricoRfgf,
+} from "@/lib/server/rfgf/historico";
 import { soloAdmin } from "@/lib/server/acceso/permisos";
 
 export interface ActaPorRevisar {
@@ -61,8 +76,12 @@ export async function cargarEstadoRfgf(): Promise<Resultado<CompeticionRfgf[]>> 
         motivo: schema.rfgfActas.detalle,
         aviso: schema.rfgfActas.aviso,
         estado: schema.rfgfActas.estado,
-        local: sql<string | null>`(select e.nombre from ${schema.partidos} p join ${schema.equipos} e on e.id = p.equipo_local_id where p.id = ${schema.rfgfActas.partidoId})`,
-        visitante: sql<string | null>`(select e.nombre from ${schema.partidos} p join ${schema.equipos} e on e.id = p.equipo_visitante_id where p.id = ${schema.rfgfActas.partidoId})`,
+        local: sql<
+          string | null
+        >`(select e.nombre from ${schema.partidos} p join ${schema.equipos} e on e.id = p.equipo_local_id where p.id = ${schema.rfgfActas.partidoId})`,
+        visitante: sql<
+          string | null
+        >`(select e.nombre from ${schema.partidos} p join ${schema.equipos} e on e.id = p.equipo_visitante_id where p.id = ${schema.rfgfActas.partidoId})`,
       })
       .from(schema.rfgfActas)
       .where(
@@ -98,8 +117,7 @@ export async function cargarEstadoRfgf(): Promise<Resultado<CompeticionRfgf[]>> 
                 : cruce && resto.length
                   ? cruce
                   : "Partido sin identificar",
-            motivo:
-              p.estado === "error" ? resto.join(": ") || p.motivo : p.aviso || p.motivo,
+            motivo: p.estado === "error" ? resto.join(": ") || p.motivo : p.aviso || p.motivo,
             tipo:
               p.estado === "error"
                 ? ("red" as const)
@@ -139,17 +157,23 @@ export async function guardarEnlaceRfgf(
     await db
       .insert(schema.rfgfCompeticiones)
       .values({ competicionId, enlace: texto })
-      .onConflictDoUpdate({ target: schema.rfgfCompeticiones.competicionId, set: { enlace: texto } });
+      .onConflictDoUpdate({
+        target: schema.rfgfCompeticiones.competicionId,
+        set: { enlace: texto },
+      });
     return null;
   });
 }
 
 /** Mira ahora mismo la federación, sin esperar a la siguiente comprobación periódica. */
 export async function comprobarRfgfAhora(): Promise<Resultado<string>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
   return capturar("No se pudo consultar la federación.", async () => {
     // A mano se trae todo: resultados, horarios y dos jornadas atrasadas de goles y tarjetas.
     const resumenes = await sincronizarTodo(crearDescargador(), new Date(), false, true);
-    if (resumenes.length === 0) return "No hay competiciones enlazadas, o ya hay una comprobación en marcha.";
+    if (resumenes.length === 0)
+      return "No hay competiciones enlazadas, o ya hay una comprobación en marcha.";
     const actas = resumenes.reduce((n, r) => n + r.actas, 0);
     const resultados = resumenes.reduce((n, r) => n + r.resultados, 0);
     const horarios = resumenes.reduce((n, r) => n + r.horarios.length, 0);
@@ -172,6 +196,8 @@ export async function comprobarRfgfAhora(): Promise<Resultado<string>> {
 
 /** Tras arreglar lo que impedía guardar un acta (dar de alta a un jugador), se vuelve a intentar. */
 export async function reintentarActaRfgf(codActa: string): Promise<Resultado<null>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
   return capturar("No se pudo preparar el reintento.", async () => {
     const { db } = await obtenerDb();
     await db
@@ -189,4 +215,85 @@ export async function reintentarActaRfgf(codActa: string): Promise<Resultado<nul
       );
     return null;
   });
+}
+
+/** Lectura local: obtenerDb comprueba la sesión, sin exigir rol de administrador. */
+export async function cargarEstadoFederacion(
+  competicionId: string,
+): Promise<Resultado<EstadoFederacion | null>> {
+  return capturar("No se pudo cargar el estado de la federación.", () =>
+    estadoFederacion(competicionId),
+  );
+}
+
+export async function traerJornadaRfgf(
+  competicionId: string,
+  numero: number,
+): Promise<Resultado<ResumenPeticionRfgf>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudo traer la jornada de la federación.", () =>
+    traerJornada(competicionId, numero, crearDescargador()),
+  );
+}
+
+export async function traerActaRfgf(
+  competicionId: string,
+  partidoId: string,
+): Promise<Resultado<ResumenPeticionRfgf>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudo traer el acta de la federación.", () =>
+    traerActa(competicionId, partidoId, crearDescargador()),
+  );
+}
+
+export async function traerHorariosRfgf(
+  competicionId: string,
+): Promise<Resultado<ResumenPeticionRfgf>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudieron traer los horarios de la federación.", () =>
+    traerHorarios(competicionId, crearDescargador()),
+  );
+}
+
+export async function traerCifrasJugadoresRfgf(
+  competicionId: string,
+): Promise<Resultado<ResumenPeticionRfgf>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudieron traer las cifras de los jugadores.", () =>
+    traerCifrasJugadores(competicionId, crearDescargador()),
+  );
+}
+
+export async function actualizarClasificacionRfgf(
+  competicionId: string,
+): Promise<Resultado<ResultadoClasificacionRfgf>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudo actualizar la clasificación oficial.", () =>
+    actualizarClasificacion(competicionId, crearDescargador()),
+  );
+}
+
+export async function cargarEstadoHistoricoRfgf(): Promise<
+  Resultado<Awaited<ReturnType<typeof estadoHistorico>>>
+> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudo cargar el estado de las temporadas pasadas.", () =>
+    estadoHistorico(),
+  );
+}
+
+export async function traerTemporadaHistoricaRfgf(
+  codGrupo: string,
+): Promise<Resultado<ResumenHistoricoRfgf>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudo avanzar en esa temporada pasada.", () =>
+    traerTemporadaHistorica(codGrupo, crearDescargador()),
+  );
 }

@@ -5,7 +5,7 @@ import {
   partidosConCodigos,
 } from "@santiso/actas";
 import { schema } from "@santiso/db";
-import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull, notInArray, sql } from "drizzle-orm";
 
 import {
   grupoDeEnlace,
@@ -16,6 +16,7 @@ import {
 import { filasDeHistorial, normalizarTemporada, textoDeHistorial } from "@/lib/plantilla/historial";
 import { obtenerDb } from "@/lib/server/db";
 import type { DescargadorRfgf } from "@/lib/server/rfgf/descargador";
+import { AVISO_RFGF_OCUPADA, conCandadoRfgf } from "./candado";
 
 /** Cuántas temporadas atrás se traen (decisión del usuario, 13/10/2026). */
 export const TEMPORADAS_ATRAS = 5;
@@ -130,15 +131,33 @@ async function descubrirGrupos(descargador: DescargadorRfgf): Promise<number> {
 }
 
 /** Busca un partido del club en el grupo y, con él, apunta a qué jugadores hay que mirar. */
-async function prepararGrupo(descargador: DescargadorRfgf, ahora: Date): Promise<number> {
+async function prepararGrupo(
+  descargador: DescargadorRfgf,
+  ahora: Date,
+  opciones: OpcionesPaso,
+): Promise<number> {
   const { db } = await obtenerDb();
   const [grupo] = await db
     .select()
     .from(schema.rfgfGruposHistoricos)
-    .where(eq(schema.rfgfGruposHistoricos.estado, "pendiente"))
-    .orderBy(sql`${schema.rfgfGruposHistoricos.temporada} desc`)
+    .where(
+      and(
+        eq(schema.rfgfGruposHistoricos.estado, "pendiente"),
+        opciones.codGrupo ? eq(schema.rfgfGruposHistoricos.codGrupo, opciones.codGrupo) : undefined,
+        opciones.gruposVistos.length
+          ? notInArray(schema.rfgfGruposHistoricos.codGrupo, opciones.gruposVistos)
+          : undefined,
+        // Una categoría sin jugadores identificados no bloquea las demás.
+        sql`exists (select 1 from ${schema.rfgfJugadores} r join ${schema.competiciones} c on c.id = r.competicion_id where r.jugador_id is not null and c.categoria = ${schema.rfgfGruposHistoricos.categoria})`,
+      ),
+    )
+    .orderBy(
+      asc(schema.rfgfGruposHistoricos.actualizadoEn),
+      sql`${schema.rfgfGruposHistoricos.temporada} desc`,
+    )
     .limit(1);
   if (!grupo) return 0;
+  opciones.gruposVistos.push(grupo.codGrupo);
   // Solo los jugadores de hoy que la federación ya tiene identificados, y de esa categoría.
   const jugadores = await db
     .selectDistinct({
@@ -161,21 +180,33 @@ async function prepararGrupo(descargador: DescargadorRfgf, ahora: Date): Promise
   if (jugadores.length === 0) return 0;
   const codTemporada = codigoDeTemporada(grupo.temporada);
   const jornada = grupo.intentos + 1;
-  const partidos = codTemporada
-    ? partidosConCodigos(
-        await descargador.html(
-          urlJornada(
-            {
-              codPrimaria: "1000120",
-              codTemporada,
-              codCompeticion: grupo.codCompeticion,
-              codGrupo: grupo.codGrupo,
-            },
-            jornada,
+  let partidos: ReturnType<typeof partidosConCodigos>;
+  try {
+    partidos = codTemporada
+      ? partidosConCodigos(
+          await descargador.html(
+            urlJornada(
+              {
+                codPrimaria: "1000120",
+                codTemporada,
+                codCompeticion: grupo.codCompeticion,
+                codGrupo: grupo.codGrupo,
+              },
+              jornada,
+            ),
           ),
-        ),
-      )
-    : [];
+        )
+      : [];
+  } catch (error) {
+    opciones.errores.push(
+      `${grupo.temporada} ${grupo.competicion}: ${error instanceof Error ? error.message : "fallo desconocido"}`,
+    );
+    await db
+      .update(schema.rfgfGruposHistoricos)
+      .set({ actualizadoEn: ahora.toISOString() })
+      .where(eq(schema.rfgfGruposHistoricos.codGrupo, grupo.codGrupo));
+    return 1;
+  }
   const partido = partidos.find(
     (p) => p.codLocal === grupo.codEquipo || p.codVisitante === grupo.codEquipo,
   );
@@ -198,7 +229,12 @@ async function prepararGrupo(descargador: DescargadorRfgf, ahora: Date): Promise
   }
   await db
     .update(schema.rfgfGruposHistoricos)
-    .set({ codActa: partido.codActa, estado: "listo", actualizadoEn: ahora.toISOString() })
+    .set({
+      codActa: partido.codActa,
+      estado: "listo",
+      intentos: jornada,
+      actualizadoEn: ahora.toISOString(),
+    })
     .where(eq(schema.rfgfGruposHistoricos.codGrupo, grupo.codGrupo));
   return 1;
 }
@@ -233,7 +269,11 @@ async function anotarEnHistorial(jugadorId: string, temporada: string, club: str
 }
 
 /** Lee la página de un jugador en un grupo pasado. */
-async function leerUno(descargador: DescargadorRfgf, ahora: Date): Promise<number> {
+async function leerUno(
+  descargador: DescargadorRfgf,
+  ahora: Date,
+  opciones: OpcionesPaso,
+): Promise<number> {
   const { db } = await obtenerDb();
   const [pendiente] = await db
     .select({
@@ -249,13 +289,48 @@ async function leerUno(descargador: DescargadorRfgf, ahora: Date): Promise<numbe
       schema.rfgfGruposHistoricos,
       eq(schema.rfgfGruposHistoricos.codGrupo, schema.rfgfHistorico.codGrupo),
     )
-    .where(and(isNull(schema.rfgfHistorico.leidoEn), isNotNull(schema.rfgfGruposHistoricos.codActa)))
-    .orderBy(sql`${schema.rfgfGruposHistoricos.temporada} desc`, asc(schema.rfgfHistorico.codigo))
+    .where(
+      and(
+        isNull(schema.rfgfHistorico.leidoEn),
+        isNotNull(schema.rfgfGruposHistoricos.codActa),
+        opciones.codGrupo ? eq(schema.rfgfHistorico.codGrupo, opciones.codGrupo) : undefined,
+        opciones.jugadoresVistos.length
+          ? notInArray(
+              sql<string>`${schema.rfgfHistorico.codGrupo} || ':' || ${schema.rfgfHistorico.jugadorId}`,
+              opciones.jugadoresVistos,
+            )
+          : undefined,
+      ),
+    )
+    .orderBy(
+      asc(schema.rfgfHistorico.actualizadoEn),
+      sql`${schema.rfgfGruposHistoricos.temporada} desc`,
+      asc(schema.rfgfHistorico.codigo),
+    )
     .limit(1);
   if (!pendiente?.codActa) return 0;
-  const cifras = parsearEstadisticasJugador(
-    await descargador.html(urlEstadisticasJugador(pendiente.codigo, pendiente.codActa)),
-  );
+  opciones.jugadoresVistos.push(`${pendiente.codGrupo}:${pendiente.jugadorId}`);
+  let cifras: ReturnType<typeof parsearEstadisticasJugador>;
+  try {
+    cifras = parsearEstadisticasJugador(
+      await descargador.html(urlEstadisticasJugador(pendiente.codigo, pendiente.codActa)),
+    );
+  } catch (error) {
+    // No se inventan cifras ni se da por leído. Pasa detrás de los demás en la próxima tanda.
+    opciones.errores.push(
+      `${pendiente.temporada}, jugador ${pendiente.codigo}: ${error instanceof Error ? error.message : "fallo desconocido"}`,
+    );
+    await db
+      .update(schema.rfgfHistorico)
+      .set({ actualizadoEn: ahora.toISOString() })
+      .where(
+        and(
+          eq(schema.rfgfHistorico.codGrupo, pendiente.codGrupo),
+          eq(schema.rfgfHistorico.jugadorId, pendiente.jugadorId),
+        ),
+      );
+    return 1;
+  }
   await db
     .update(schema.rfgfHistorico)
     .set({
@@ -304,14 +379,112 @@ export async function avanzarHistorico(
   ahora = new Date(),
   maximo = 2,
 ): Promise<number> {
-  let pedidas = 0;
+  return (
+    (await conCandadoRfgf(async () => {
+      const opciones: OpcionesPaso = { gruposVistos: [], jugadoresVistos: [], errores: [] };
+      const paginas = await avanzarSinCandado(descargador, ahora, maximo, opciones);
+      for (const error of opciones.errores) console.warn(`[rfgf] Histórico: ${error}`);
+      return paginas;
+    })) ?? 0
+  );
+}
+
+interface OpcionesPaso {
+  codGrupo?: string;
+  gruposVistos: string[];
+  jugadoresVistos: string[];
+  errores: string[];
+}
+
+async function avanzarSinCandado(
+  descargador: DescargadorRfgf,
+  ahora: Date,
+  maximo: number,
+  opciones: OpcionesPaso,
+): Promise<number> {
+  // El descubrimiento tampoco espera a que todas las páginas de jugadores se puedan leer.
+  // Se reserva su coste completo: nunca se empieza con solo una página de presupuesto.
+  let pedidas = !opciones.codGrupo && maximo >= 2 ? await descubrirGrupos(descargador) : 0;
   while (pedidas < maximo) {
+    // Preparar antes de leer: una página de jugador rota no deja esperando todos los grupos.
     const paso =
-      (await leerUno(descargador, ahora)) ||
-      (await prepararGrupo(descargador, ahora)) ||
-      (await descubrirGrupos(descargador));
+      (await prepararGrupo(descargador, ahora, opciones)) ||
+      (await leerUno(descargador, ahora, opciones));
     if (!paso) break;
     pedidas += paso;
   }
   return pedidas;
+}
+
+/** Estado local, también de los grupos sin jugadores o que no tienen acta de referencia. */
+export async function estadoHistorico() {
+  const { db } = await obtenerDb();
+  const grupos = await db
+    .select()
+    .from(schema.rfgfGruposHistoricos)
+    .orderBy(
+      sql`${schema.rfgfGruposHistoricos.temporada} desc`,
+      asc(schema.rfgfGruposHistoricos.categoria),
+      asc(schema.rfgfGruposHistoricos.codGrupo),
+    );
+  const jugadores = await db
+    .select({ codGrupo: schema.rfgfHistorico.codGrupo, cifras: schema.rfgfHistorico.cifras })
+    .from(schema.rfgfHistorico);
+  return grupos.map((grupo) => ({
+    ...grupo,
+    jugadores: jugadores.filter((j) => j.codGrupo === grupo.codGrupo).length,
+    conCifras: jugadores.filter((j) => j.codGrupo === grupo.codGrupo && j.cifras !== null).length,
+  }));
+}
+
+export interface ResumenHistoricoRfgf {
+  codGrupo: string;
+  paginas: number;
+  jugadores: number;
+  avisos: string[];
+  errores: string[];
+}
+
+/** Avanza exclusivamente este grupo. Dos páginas como máximo, incluidos los intentos fallidos. */
+export async function traerTemporadaHistorica(
+  codGrupo: string,
+  descargador: DescargadorRfgf,
+  ahora = new Date(),
+): Promise<ResumenHistoricoRfgf> {
+  const vacio: ResumenHistoricoRfgf = {
+    codGrupo,
+    paginas: 0,
+    jugadores: 0,
+    avisos: [],
+    errores: [],
+  };
+  return (
+    (await conCandadoRfgf(async () => {
+      const antes = (await estadoHistorico()).find((g) => g.codGrupo === codGrupo);
+      if (!antes) throw new Error("Ese grupo histórico no está guardado.");
+      if (antes.estado === "sin_acta")
+        return { ...vacio, avisos: ["No se encontró un acta de referencia para este grupo."] };
+      const opciones: OpcionesPaso = {
+        codGrupo,
+        gruposVistos: [],
+        jugadoresVistos: [],
+        errores: [],
+      };
+      const paginas = await avanzarSinCandado(descargador, ahora, 2, opciones);
+      const despues = (await estadoHistorico()).find((g) => g.codGrupo === codGrupo)!;
+      return {
+        codGrupo,
+        paginas,
+        jugadores: despues.conCifras - antes.conCifras,
+        avisos: paginas
+          ? []
+          : [
+              antes.estado === "pendiente"
+                ? "Faltan jugadores identificados de esta categoría para avanzar."
+                : "Este grupo ya tiene todas sus cifras leídas.",
+            ],
+        errores: opciones.errores,
+      };
+    })) ?? { ...vacio, avisos: [AVISO_RFGF_OCUPADA] }
+  );
 }
