@@ -151,6 +151,63 @@ describe("convocatorias previas", () => {
   });
 });
 
+describe("archivo de partidos históricos", () => {
+  it("vive sin calendario activo, valida estados y borra eventos en cascada", async () => {
+    const { db } = conexion;
+    await db.insert(s.rfgfGruposHistoricos).values({
+      codGrupo: "antiguo",
+      categoria: "Senior",
+      temporada: "2025-2026",
+      competicion: "Liga",
+      grupo: "1",
+      codCompeticion: "30",
+      codEquipo: "12",
+    });
+    const base = {
+      codGrupo: "antiguo",
+      jornada: 1,
+      fechaNominal: "2025-09-14",
+      local: "Santiso",
+      visitante: "Rival",
+      santisoLocal: true,
+    };
+    const [p] = await db.insert(s.rfgfHistoricoPartidos).values(base).returning();
+    expect(p).toMatchObject({ estado: "pendiente", intentos: 0, golesLocal: null });
+    await rechaza(db.insert(s.rfgfHistoricoPartidos).values(base));
+    await rechaza(
+      db.insert(s.rfgfHistoricoPartidos).values({ ...base, jornada: 2, codGrupo: "ausente" }),
+    );
+    await rechaza(
+      db
+        .insert(s.rfgfHistoricoPartidos)
+        .values({ ...base, jornada: 2, estado: "inventado" as "error" }),
+    );
+    await rechaza(
+      db.insert(s.rfgfHistoricoPartidos).values({ ...base, jornada: 2, golesLocal: 2 }),
+    );
+    const evento = {
+      partidoId: p!.id,
+      lado: "local" as const,
+      persona: "Jugador",
+      personaClave: "jugador",
+      tipo: "gol" as const,
+      minuto: "45+2",
+    };
+    await db.insert(s.rfgfHistoricoEventos).values(evento);
+    await rechaza(
+      db.insert(s.rfgfHistoricoEventos).values({ ...evento, tipo: "penalti" as "gol" }),
+    );
+    await rechaza(db.insert(s.rfgfHistoricoEventos).values({ ...evento, lado: "otro" as "local" }));
+    await rechaza(db.update(s.rfgfGruposHistoricos).set({ partidosEstado: "otro" as "en_cola" }));
+    await db.delete(s.rfgfGruposHistoricos).where(eq(s.rfgfGruposHistoricos.codGrupo, "antiguo"));
+    expect(await db.select().from(s.rfgfHistoricoPartidos)).toEqual([]);
+    expect(await db.select().from(s.rfgfHistoricoEventos)).toEqual([]);
+    expect(await db.select().from(s.partidos)).toEqual([]);
+    expect(await db.select().from(s.jornadas)).toEqual([]);
+    expect(await db.select().from(s.competiciones)).toEqual([]);
+  });
+});
+
 describe("acceso", () => {
   it("usuario único, rol conocido y sesiones que se van con su usuario", async () => {
     const { db } = conexion;

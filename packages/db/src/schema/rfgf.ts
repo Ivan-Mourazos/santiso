@@ -125,6 +125,13 @@ export const rfgfJugadores = sqliteTable(
 
 /** En qué punto está un grupo de una temporada pasada. */
 export const ESTADOS_GRUPO_HISTORICO = ["pendiente", "listo", "sin_acta"] as const;
+export const ESTADOS_ARCHIVO_HISTORICO = [
+  "no_pedido",
+  "en_cola",
+  "en_curso",
+  "terminado",
+  "no_compatible",
+] as const;
 
 /**
  * Un grupo en el que jugó un equipo del club en una temporada pasada, sacado de la página
@@ -148,9 +155,26 @@ export const rfgfGruposHistoricos = sqliteTable(
     estado: text("estado", { enum: ESTADOS_GRUPO_HISTORICO }).notNull().default("pendiente"),
     /** Jornadas ya miradas buscando ese partido. */
     intentos: integer("intentos").notNull().default(0),
+    /** Solicitud explícita; sin ella no se descargan partidos de este grupo. */
+    partidosPedidosEn: text("partidos_pedidos_en"),
+    partidosEstado: text("partidos_estado", { enum: ESTADOS_ARCHIVO_HISTORICO })
+      .notNull()
+      .default("no_pedido"),
+    partidosAviso: text("partidos_aviso").notNull().default(""),
+    /** Calendario ya leído; el resto del avance vive en cada partido. */
+    partidosCalendarioEn: text("partidos_calendario_en"),
+    partidosIntentos: integer("partidos_intentos").notNull().default(0),
+    partidosActualizadoEn: text("partidos_actualizado_en"),
     ...marcasTiempo(),
   },
-  () => [checkEnum("rfgf_grupos_historicos_estado_ck", "estado", ESTADOS_GRUPO_HISTORICO)],
+  () => [
+    checkEnum("rfgf_grupos_historicos_estado_ck", "estado", ESTADOS_GRUPO_HISTORICO),
+    checkEnum(
+      "rfgf_grupos_historicos_partidos_estado_ck",
+      "partidos_estado",
+      ESTADOS_ARCHIVO_HISTORICO,
+    ),
+  ],
 );
 
 /** Las cifras oficiales de un jugador del club en un grupo de una temporada pasada. */

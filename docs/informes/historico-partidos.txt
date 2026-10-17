@@ -1,0 +1,189 @@
+ARCHIVO DE PARTIDOS HISTÓRICOS DEL SANTISO
+17/10/2026
+
+Resultado
+---------
+Archivo del servidor separado del calendario y las estadísticas, solicitado por
+grupo histórico. Incluye resultado, fecha efectiva cuando consta, goles y tarjetas
+de ambos equipos y enlace al PDF oficial si hay codActa. No se han modificado
+componentes de pantalla. No se ha accedido a futgal.es ni a ninguna otra red;
+descargadores simulados, bases de juguete en memoria y carpetas temporales.
+No se ha abierto ni migrado data/santiso.db, ni siquiera para consultar datos.
+
+Contrato para la pantalla
+------------------------
+apps/studio/lib/server/rfgf/historico-partidos.ts:
+
+  pedirPartidosHistoricos(codGrupo, ahora = new Date()): Promise<void>
+    Solo escribe solicitud en grupo existente: partidosPedidosEn y estado en_cola.
+    No crea descargador ni descarga. Repetir conserva solicitud y progreso;
+    no reinicia archivos terminados ni formatos ya declarados incompatibles.
+    Grupo desconocido lanza error para que la acción lo capture.
+
+  partidosHistoricos(codGrupo)
+    Promise<{ codGrupo, resumen, partidos[] }>. Solo lectura local.
+    Grupo desconocido lanza error. Orden: jornada, fecha nominal e identificador.
+    Partido: id, codGrupo, jornada, fechaNominal, fecha, local, visitante,
+      santisoLocal, golesLocal, golesVisitante, codActa, codigosEn, actaLeidaEn,
+      resultadoEn, estado, intentos, aviso, creadoEn, actualizadoEn,
+      enlaceActa (string | null), eventos[].
+    fechaNominal es el día de jornada del calendario; fecha es efectiva, con hora
+      si la fuente la publica. Hasta leer acta o jornada, fecha queda null.
+    Marcador desconocido: ambos goles null, nunca 0-0 inventado.
+    Eventos: id, partidoId, lado (local | visitante), persona, personaClave, tipo,
+      minuto, tecnico, creadoEn, actualizadoEn. Tipos iguales a liga_eventos:
+      gol, gol_propia, amarilla, doble_amarilla, roja. Minuto textual, como 45+2.
+    Reutiliza eventosDeFicha de lib/liga/eventos.ts: nombres de persona,
+      autor de goles en propia y exclusión de tarjetas de color desconocido.
+      Se conservan avisos del parser. No identifica ni crea personas de plantilla.
+    enlaceActa apunta al PDF oficial; no se guarda copia binaria del acta. Lectura
+      devuelve solo la dirección y no accede a ella. Abrirla requiere red aparte.
+
+  resumenPartidosHistoricos(grupo, partidos)
+    estado: no_pedido | en_cola | en_curso | terminado | no_compatible.
+    total, listos, sinActa, pendientes, errores, pedidoEn, aviso y texto.
+    listos: actas leídas. sinActa: encuentros cerrados sin acta utilizable.
+    pendientes: trabajo restante; incluye errores reintentables y sin_acta cuyo
+      PDF de jornada todavía falta. errores es subconjunto de pendientes.
+    terminado: todos tratados, aunque haya sinActa o marcador desconocido;
+      consultar avisos por partido para distinguir ausencia y formato incompatible.
+    Texto: No pedido / En cola / X de Y listos / Terminado / Formato no compatible.
+
+apps/studio/lib/server/rfgf/historico.ts:
+
+  estadoHistorico()
+    Conserva campos anteriores y añade archivoPartidos con el resumen anterior
+    por grupo. La consulta no solicita temporadas ni provoca descargas.
+
+  avanzarHistorico(descargador, ahora?, maximo = 2)
+    Conserva firma y devuelve número de páginas intentadas. Ahora comparte
+    presupuesto con archivo: entero entre 0 y 2. Misma reserva conCandadoRfgf
+    durante operación completa. Ocupado devuelve 0 y no descarga.
+    Alterna prioridad cada franja UTC de diez minutos: archivo primero en franjas
+    pares, cifras primero en impares. Presupuesto restante pasa a la otra cola.
+    Sin solicitudes, archivo consume cero y repaso previo mantiene su presupuesto.
+    Cada grupo y partido conserva sus marcas para continuar tras reiniciar servidor.
+
+  traerTemporadaHistorica(codGrupo, descargador, ahora?)
+    Sigue avanzando exclusivamente cifras de jugadores, máximo dos páginas y
+    mismo candado. No se añade avance manual separado de partidos.
+
+apps/studio/lib/server/acciones/rfgf.ts:
+
+  pedirPartidosHistoricosRfgf(codGrupo): Promise<Resultado<null>>
+  cargarPartidosHistoricosRfgf(codGrupo):
+    Promise<Resultado<Awaited<ReturnType<typeof partidosHistoricos>>>>
+    Ambas llaman soloAdmin antes de acceder al archivo y usan capturar.
+    Pedir devuelve datos:null si ok; cargar devuelve archivo y resumen locales.
+    No requieren exponer descargadores al cliente.
+
+Avance y descargas
+-----------------
+Programador existente llama avanzarHistorico cada diez minutos. No se añade
+temporizador ni pasada de dos páginas extra. Cadencia, creación del descargador,
+pausas y sincronización diaria quedan intactas.
+
+1. Calendario PDF del grupo: una descarga para descubrir cruces propios.
+   Se comprueba temporada. Código federativo del catálogo PDF NO equivale al
+   codequipo del HTML: se reconoce Santiso por nombre y alias propios de categoría.
+2. HTML de cada jornada propia: solo códigos de acta y equipos. Se comprueban
+   ambos nombres y codequipo del club. NUNCA se leen marcadores de este HTML.
+3. PDF de cada acta identificada: resultado, fecha y eventos de ambos equipos.
+   Antes de guardar se comprueban jornada, temporada y ambos nombres.
+4. Solo sin código de acta o con acta incompatible: PDF de jornada para resultado
+   y fecha. Si tampoco se lee, aviso claro, marcador null y sin eventos inventados.
+
+Cada paso intenta una página. Intentos fallidos también consumen presupuesto.
+Por partido se hace como máximo un paso en una llamada: no reintenta una página
+fallida dentro del mismo tic. actualizadoEn rota errores; pendientes sin fallo
+van primero y después se reintentan errores. Fallos de calendario tampoco impiden
+avanzar otros grupos solicitados. Un acta incompatible queda marcada como leída
+para no repetirla si después falla temporalmente el PDF de jornada.
+
+Errores de transporte continúan reintentándose en otros tics y no se convierten
+en ausencias definitivas. Mientras no llegue un acta con fallo de transporte, ese
+partido conserva estado error y no inventa resultado. Formatos de calendario no
+compatibles dejan grupo no_compatible con aviso y el resto de grupos sigue.
+No se descubren partidos de grupos no pedidos ni se solicita otra temporada.
+
+Presupuesto mide documentos solicitados a DescargadorRfgf, igual que antes; no
+cuenta hojas internas de PDF. Reintentos de sesión y redirecciones internos del
+descargador real conservan comportamiento y pausa anteriores.
+
+Estimación por temporada/grupo
+-----------------------------
+Con N partidos propios y actas compatibles: 1 + 2*N documentos (calendario,
+N HTML de jornada y N actas). Doce documentos/hora si solo queda archivo.
+Con cifras pendientes de forma sostenida, prioridad alterna: aproximadamente
+seis documentos/hora para archivo, más huecos que deje libre la otra cola.
+
+  26 partidos: 53 documentos; unas 4 h 30 min, o 9 h compartiendo ambos tics.
+  30 partidos: 61 documentos; unas 5 h 10 min, o 10 h 20 min compartiendo.
+
+Son estimaciones redondeadas por tics, desde comienzo del avance; no plazos
+garantizados. Varias temporadas o fases suman sus costes. Cada acta incompatible
+añade un PDF de jornada. Si todas lo fueran: 79/91 documentos, aproximadamente
+6 h 40 min / 7 h 40 min sin cifras, el doble con ambas colas ocupadas.
+Sin codActa se sustituye acta por jornada: no se añade esa descarga extra.
+Fallos, otras categorías y reservas ocupadas alargan espera; errores persistentes
+no tienen plazo finito. Se acepta que tarde horas y se prioriza carga baja.
+
+Esquema y migración
+------------------
+0021_historico-partidos.sql, generada mediante:
+  pnpm db:generate --name historico-partidos
+
+Tablas rfgf_historico_partidos y rfgf_historico_eventos. Primera depende solo de
+rfgf_grupos_historicos.cod_grupo; eventos dependen solo del partido archivado.
+Cascada de grupo a partidos y eventos. Estados y tipos limitados con CHECK;
+marcador completo o ambos null, goles no negativos, jornada positiva e intentos
+no negativos. Cruce único por grupo, jornada, local y visitante.
+
+Grupos añaden solicitud, estado, aviso, calendario leído, intentos de calendario
+y fecha de actualización de cola. Su histórico de jugadores queda independiente.
+
+Drizzle generó reconstrucción de grupos con SELECT de columnas nuevas todavía
+inexistentes. Se corrigió SQL generado a ALTER TABLE aditivos, con CHECK de estado
+en columna nueva: evita reconstrucción, pérdida de referencias y esa consulta
+inválida. Snapshot conserva modelo final, incluido actaLeidaEn. Nueva ejecución
+de db:generate confirma: No schema changes, nothing to migrate.
+Prueba migra base anterior con grupo y cifras existentes: filas intactas,
+foreign_key_check vacío y foreign_keys=1. No se aplicó sobre base real.
+
+Formatos y temporadas
+--------------------
+Fixtures de calendarios: muestras sintéticas de 2026-2027, ligas de 14 equipos
+(26 jornadas) y 16 (30), geometría real anonimizada. Fixtures senior-1.pdf y
+senior-18.pdf aportan actas 2025-2026 de TERCERA FUTGAL; se leen sus PDFs reales
+de prueba sin sustituir parser de actas. No acreditan temporadas más antiguas.
+
+Calendario actual: catálogo numerado y liga a doble vuelta, 2-40 equipos pares,
+sin descansos, texto extraíble, 2-20 hojas y máximo 15 MiB. No lee eliminatorias,
+grupos impares, imágenes escaneadas ni plantillas antiguas distintas.
+Actas: ficha de una hoja sin girar, cabecera TERCERA FUTGAL o VETERANOS,
+secciones reconocibles; PDF multipágina, girado o sin texto queda con aviso.
+AFICIONADOS - ELIMINATORIAS no tiene soporte acreditado por estas fixtures;
+puede fallar ya en calendario y quedará no_compatible. No se cambia ningún parser
+para adivinar datos. No se afirma qué temporadas concretas siguen publicadas.
+
+Verificación
+------------
+Pruebas nuevas: cola sin red y sin solicitud, idempotencia, códigos y marcadores
+oficiales, eventos exactos de ambos equipos, transición de estados, acta fallida
+y reintento, reparto con cifras fallidas, candado ocupado, calendario incompatible,
+ausencia de acta, fallo de jornada tras acta incompatible, fixture completa de
+26 jornadas, rotación de calendarios y grupo no solicitado, barreras soloAdmin,
+esquema, cascadas y migración con datos previos.
+No se escribe en partidos, jornadas, competiciones ni liga_eventos por archivo;
+pruebas lo comprueban. Cifras anteriores mantienen su flujo propio sin cambios.
+32 pruebas dirigidas en cuatro ficheros: correctas.
+
+pnpm check completo: typecheck, lint, formato y Vitest; código de salida 0.
+Final real de salida:
+
+ Test Files  126 passed (126)
+      Tests  937 passed | 1 skipped (938)
+   Start at  17:59:48
+   Duration  21.04s (transform 4.75s, setup 0ms, import 30.33s, tests 77.82s, environment 18ms)
+
+Sin e2e: encargo solo de servidor y sin cambios de pantalla. Sin merge ni push.
