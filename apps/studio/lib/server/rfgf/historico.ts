@@ -17,6 +17,10 @@ import { filasDeHistorial, normalizarTemporada, textoDeHistorial } from "@/lib/p
 import { obtenerDb } from "@/lib/server/db";
 import type { DescargadorRfgf } from "@/lib/server/rfgf/descargador";
 import { AVISO_RFGF_OCUPADA, conCandadoRfgf } from "./candado";
+import {
+  avanzarPartidosHistoricosSinCandado,
+  resumenPartidosHistoricos,
+} from "./historico-partidos";
 
 /** Cuántas temporadas atrás se traen (decisión del usuario, 13/10/2026). */
 export const TEMPORADAS_ATRAS = 5;
@@ -382,7 +386,17 @@ export async function avanzarHistorico(
   return (
     (await conCandadoRfgf(async () => {
       const opciones: OpcionesPaso = { gruposVistos: [], jugadoresVistos: [], errores: [] };
-      const paginas = await avanzarSinCandado(descargador, ahora, maximo, opciones);
+      const limite = Number.isFinite(maximo) ? Math.max(0, Math.min(2, Math.floor(maximo))) : 2;
+      // Alterna prioridad por tic para que ninguna cola espere a que se agote la otra.
+      // El presupuesto sigue siendo dos páginas en total, bajo la misma reserva.
+      const archivoPrimero = Math.floor(ahora.getTime() / 600_000) % 2 === 0;
+      let paginas = archivoPrimero
+        ? await avanzarPartidosHistoricosSinCandado(descargador, ahora, limite)
+        : await avanzarSinCandado(descargador, ahora, limite, opciones);
+      if (paginas < limite)
+        paginas += archivoPrimero
+          ? await avanzarSinCandado(descargador, ahora, limite - paginas, opciones)
+          : await avanzarPartidosHistoricosSinCandado(descargador, ahora, limite - paginas);
       for (const error of opciones.errores) console.warn(`[rfgf] Histórico: ${error}`);
       return paginas;
     })) ?? 0
@@ -430,10 +444,15 @@ export async function estadoHistorico() {
   const jugadores = await db
     .select({ codGrupo: schema.rfgfHistorico.codGrupo, cifras: schema.rfgfHistorico.cifras })
     .from(schema.rfgfHistorico);
+  const partidos = await db.select().from(schema.rfgfHistoricoPartidos);
   return grupos.map((grupo) => ({
     ...grupo,
     jugadores: jugadores.filter((j) => j.codGrupo === grupo.codGrupo).length,
     conCifras: jugadores.filter((j) => j.codGrupo === grupo.codGrupo && j.cifras !== null).length,
+    archivoPartidos: resumenPartidosHistoricos(
+      grupo,
+      partidos.filter((p) => p.codGrupo === grupo.codGrupo),
+    ),
   }));
 }
 

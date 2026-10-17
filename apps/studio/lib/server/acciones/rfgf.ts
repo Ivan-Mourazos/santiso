@@ -23,6 +23,7 @@ import {
   type ResumenHistoricoRfgf,
 } from "@/lib/server/rfgf/historico";
 import { soloAdmin } from "@/lib/server/acceso/permisos";
+import { pedirPartidosHistoricos, partidosHistoricos } from "@/lib/server/rfgf/historico-partidos";
 
 export interface ActaPorRevisar {
   codActa: string;
@@ -295,5 +296,24 @@ export async function traerTemporadaHistoricaRfgf(
   if (sinPermiso) return sinPermiso;
   return capturar("No se pudo avanzar en esa temporada pasada.", () =>
     traerTemporadaHistorica(codGrupo, crearDescargador()),
+  );
+}
+
+export async function pedirPartidosHistoricosRfgf(codGrupo: string): Promise<Resultado<null>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudieron encolar los partidos de esa temporada.", async () => {
+    await pedirPartidosHistoricos(codGrupo);
+    return null;
+  });
+}
+
+export async function cargarPartidosHistoricosRfgf(
+  codGrupo: string,
+): Promise<Resultado<Awaited<ReturnType<typeof partidosHistoricos>>>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudieron cargar los partidos de esa temporada.", () =>
+    partidosHistoricos(codGrupo),
   );
 }
