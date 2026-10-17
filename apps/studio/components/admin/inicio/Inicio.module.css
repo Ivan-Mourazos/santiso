@@ -104,8 +104,9 @@
   display: grid;
   gap: var(--ui-space-2);
 }
+/* Mismo alto que la tarjeta: al llegar los datos, la lista de abajo no salta. */
 .esqueleto {
-  height: 148px;
+  height: 171px;
   border-radius: var(--ui-radius);
   background: var(--ui-surface);
 }

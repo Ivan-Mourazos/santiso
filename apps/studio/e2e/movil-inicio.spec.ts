@@ -50,6 +50,7 @@ test("inicio: la pestaña de abajo vuelve a la portada", async ({ page }) => {
   await page.goto("/admin/multas");
   await page.getByRole("link", { name: "Inicio", exact: true }).last().tap();
   await expect(page).toHaveURL(/\/admin\/inicio/);
+  await expect(page.locator("[data-partido-inicio]").first()).toBeVisible();
   await page
     .getByRole("link", { name: /^Multas/ })
     .first()

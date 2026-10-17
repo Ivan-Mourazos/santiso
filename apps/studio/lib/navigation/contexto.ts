@@ -1,6 +1,6 @@
 export const SECCIONES = [
   { id: "inicio", label: "Inicio", grupo: "Inicio" },
-  { id: "jornada", label: "Jornada", grupo: "Competición" },
+  { id: "partidos", label: "Partidos", grupo: "Competición" },
   { id: "calendario", label: "Calendario", grupo: "Competición" },
   { id: "clasificacion", label: "Clasificación", grupo: "Competición" },
   { id: "estadisticas", label: "Estadísticas", grupo: "Competición" },
@@ -17,6 +17,8 @@ export const SECCIONES = [
   // Siguen teniendo dirección propia (enlaces desde Jornada, lote, calendario PDF), pero se
   // entra por «Importar»: no salen en el menú.
   { id: "actas", label: "Actas", grupo: "Producción", oculta: true },
+  // La mesa del partido vive ahora en Liga → Partidos; la dirección sigue para enlaces viejos.
+  { id: "jornada", label: "Jornada", grupo: "Competición", oculta: true },
   { id: "importar-jornada", label: "Importar jornada", grupo: "Producción", oculta: true },
   { id: "equipos", label: "Equipos", grupo: "Catálogos" },
   { id: "patrocinadores", label: "Patrocinadores y logos", grupo: "Catálogos" },

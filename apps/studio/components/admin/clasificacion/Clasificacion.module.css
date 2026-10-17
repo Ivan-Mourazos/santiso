@@ -121,9 +121,32 @@
   color: var(--ui-danger, #ef4444);
   font-weight: 800;
 }
-.verDetalle,
-.detalleFila {
-  display: none;
+/* El nombre abre la ficha del equipo (escritorio y móvil). */
+.verDetalle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ui-space-1);
+  width: 100%;
+  min-width: 44px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.verDetalle span {
+  flex: none;
+  color: var(--ui-muted);
+}
+@media (hover: hover) {
+  .verDetalle:hover {
+    color: var(--ui-accent);
+  }
 }
 
 @media (max-width: 640px) {
@@ -155,7 +178,7 @@
   }
   .tabla th,
   .tabla td {
-    padding: 0.4rem 0.25rem;
+    padding: 0 0.25rem;
   }
   .tabla th:first-child,
   .posicion {
@@ -166,52 +189,12 @@
     width: 2.35rem;
   }
   .tabla .escudo,
-  .tabla [data-prioridad="false"],
-  .nombreEscritorio {
+  .tabla [data-prioridad="false"] {
     display: none;
   }
   .verDetalle {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.25rem;
-    width: 100%;
-    min-width: 44px;
     min-height: 44px;
-    padding: 0.25rem;
-    border: 0;
-    background: none;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    overflow-wrap: anywhere;
-    cursor: pointer;
   }
-  .verDetalle span {
-    flex: none;
-  }
-  .detalleFila {
-    display: table-row;
-  }
-  .detalleDatos {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0.5rem;
-    text-align: left;
-    background: var(--ui-raised, #242424);
-    border-radius: var(--ui-radius);
-  }
-  .detalleDatos dt {
-    color: var(--ui-muted, #aaa);
-    font-size: var(--ui-text-sm);
-  }
-  .detalleDatos dd {
-    margin: 0;
-    font-weight: 800;
-  }
-}
 
 /* Solo para lector de pantalla. */
 .oculto {
@@ -366,4 +349,134 @@
 .oficial ul {
   margin: 0.4rem 0 0;
   padding-left: 1.1rem;
+}
+
+/* ── Ficha del equipo (hoja) ─────────────────────────────────────── */
+.ficha {
+  display: grid;
+  gap: var(--ui-space-4);
+}
+.fichaCabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+}
+.fichaCabecera img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+.fichaCabecera p {
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-body);
+}
+.fichaCabecera strong {
+  color: var(--ui-text);
+  font: 800 var(--ui-text-xl) / 1 var(--ui-font-title);
+}
+.fichaDatos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-2) var(--ui-space-4);
+  margin: 0;
+}
+.fichaDatos div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+  padding-bottom: var(--ui-space-1);
+  border-bottom: 1px solid var(--ui-line);
+}
+.fichaDatos dt {
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.fichaDatos dd {
+  margin: 0;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.fichaBloque {
+  display: grid;
+  gap: var(--ui-space-2);
+}
+.fichaBloque h3 {
+  margin: 0;
+  color: var(--ui-muted);
+  font: 800 var(--ui-text-xs) / 1.2 var(--ui-font-body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.forma {
+  display: flex;
+  gap: var(--ui-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.forma li {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-control);
+  color: var(--ui-text);
+  font-weight: 800;
+  font-size: var(--ui-text-sm);
+}
+.forma li[data-r="G"] {
+  background: var(--ui-success);
+  color: var(--ui-on-accent);
+}
+.forma li[data-r="P"] {
+  background: var(--ui-danger);
+  color: var(--ui-on-accent);
+}
+.fichaPartidos {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fichaPartidos li {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  min-height: var(--ui-row-table);
+  border-bottom: 1px solid var(--ui-line);
+  font-size: var(--ui-text-body);
+}
+.fichaPartidos li > :first-child {
+  flex: none;
+  color: var(--ui-muted);
+  font-variant-numeric: tabular-nums;
+}
+.fichaPartidos li > :nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fichaPartidos li > :last-child:not(:nth-child(2)) {
+  flex: none;
+  margin-left: auto;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.fichaPartidos strong {
+  color: var(--ui-text) !important;
+  font: 800 var(--ui-text-base) / 1 var(--ui-font-title) !important;
+  font-variant-numeric: tabular-nums;
+}
+.fichaNota {
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.fichaPartidos li > strong {
+  flex: none;
+  margin-left: auto;
 }

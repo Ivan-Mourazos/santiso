@@ -149,12 +149,16 @@ for (const ancho of [360, 390]) {
     await expect(tabla).toBeVisible();
     await expect(tabla.getByRole("columnheader")).toHaveText(["#", "Equipo", "PTS", "PJ", "DG"]);
     const detalle = tabla.getByRole("button", { name: /^Ver estadísticas de / }).first();
+    // Tocar un equipo abre su ficha en una hoja: números, forma, lo que le queda y goleadores.
     await detalle.click();
-    await expect(detalle).toHaveAttribute("aria-expanded", "true");
-    await expect(tabla.getByRole("region")).toContainText("Goles a favor");
+    const ficha = page.getByRole("dialog");
+    await expect(ficha.getByRole("region", { name: /^Estadísticas de / })).toContainText(
+      "Goles a favor",
+    );
+    await expect(ficha.getByRole("region", { name: "Últimos resultados" })).toBeVisible();
     await comprobarAncho(page);
-    await detalle.click();
-    await expect(detalle).toHaveAttribute("aria-expanded", "false");
+    await ficha.getByRole("button", { name: "Cerrar ficha" }).click();
+    await expect(ficha).toBeHidden();
     await page.getByRole("button", { name: "Zonas de la clasificación", exact: true }).click();
     const dialogo = page.getByRole("dialog", { name: "Zonas de la clasificación", exact: true });
     // Solo borrador local: no se pulsa Guardar zonas contra datos reales.

@@ -43,7 +43,7 @@ const CATEGORIAS: Categoria[] = [
     para: "Resultado y acta",
     icono: "M5 4h14v16H5ZM8 9h8M8 13h8M8 17h5",
     destinos: [
-      { texto: "Resultado y acta de la jornada", href: "/admin/jornada" },
+      { texto: "Resultado y acta de la jornada", href: "/admin/partidos" },
       { texto: "Importar acta o resultados", href: "/admin/importar" },
       { texto: "Calendario completo", href: "/admin/importar-jornada?origen=calendario" },
     ],
@@ -83,6 +83,7 @@ const CATEGORIAS: Categoria[] = [
     para: "Tabla, goles y tarjetas",
     icono: "M5 20V10M12 20V4M19 20v-7",
     destinos: [
+      { texto: "Partidos", href: "/admin/partidos" },
       { texto: "Clasificación", href: "/admin/clasificacion" },
       { texto: "Goleadores y tarjetas", href: "/admin/liga" },
       { texto: "Estadísticas", href: "/admin/estadisticas" },

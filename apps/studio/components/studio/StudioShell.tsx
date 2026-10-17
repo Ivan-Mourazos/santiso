@@ -25,7 +25,7 @@ const INICIO = {
 } as const;
 /** Todo lo de la competición vive bajo «Liga»: partidos, tabla, goleadores y estadísticas. */
 const LIGA = {
-  id: "clasificacion",
+  id: "partidos",
   label: "Liga",
   icono: "M8 4h8v5a4 4 0 0 1-8 0V4ZM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8",
 } as const;
@@ -57,6 +57,7 @@ const PESTANAS_TECNICO = [
 const ICONO_MAS = "M5 12h.01M12 12h.01M19 12h.01";
 /** Las pantallas de la competición: con ellas encendida la pestaña «Liga» y su subnavegación. */
 const SECCIONES_LIGA: readonly string[] = [
+  "partidos",
   "jornada",
   "calendario",
   "clasificacion",
@@ -65,7 +66,7 @@ const SECCIONES_LIGA: readonly string[] = [
   "federacion",
 ];
 const SUBNAV_LIGA = [
-  { id: "calendario", label: "Partidos" },
+  { id: "partidos", label: "Partidos" },
   { id: "clasificacion", label: "Clasificación" },
   { id: "liga", label: "Goleadores" },
   { id: "estadisticas", label: "Estadísticas" },
@@ -137,6 +138,7 @@ export function StudioShell({
   const category = categoriaDe(params);
   const categories = ["Senior", "Veteranos"];
   const showCategory = [
+    "partidos",
     "calendario",
     "clasificacion",
     "liga",

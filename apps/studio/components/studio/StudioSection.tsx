@@ -11,6 +11,7 @@ import styles from "./StudioShell.module.css";
 const loading = () => <LoadingState title="Cargando sección…" />;
 const Home = dynamic(() => import("@/components/admin/inicio/AdminInicio"), { loading });
 const Week = dynamic(() => import("@/components/admin/jornada/AdminJornada"), { loading });
+const Matches = dynamic(() => import("@/components/admin/liga/AdminPartidos"), { loading });
 const Calendar = dynamic(() => import("@/components/admin/calendario/AdminCalendario"), {
   loading,
 });
@@ -60,7 +61,10 @@ export function StudioSection({ section }: { section: Seccion }) {
   // Remontarla al cambiar de competición no aporta nada y abre una carrera: un diálogo abierto
   // justo después de cambiar se montaba en la instancia vieja y desaparecía con ella.
   const contextual =
-    section === "calendario" || section === "clasificacion" || section === "liga";
+    section === "calendario" ||
+    section === "clasificacion" ||
+    section === "liga" ||
+    section === "partidos";
   // Plantilla y staff son por temporada: cambiar de temporada tiene que volver a montarlos.
   const squad = section === "jugadores" || section === "tecnicos" || section === "directiva";
   const key = contextual
@@ -74,6 +78,7 @@ export function StudioSection({ section }: { section: Seccion }) {
     <div key={key} className={styles.panel}>
       {section === "inicio" && <Home />}
       {section === "jornada" && <Week />}
+      {section === "partidos" && <Matches categoria={category} />}
       {section === "calendario" && <Calendar {...feedback} categoria={category} />}
       {section === "clasificacion" && <League categoria={category} />}
       {section === "liga" && <LeagueTables showToast={showToast} categoria={category} />}

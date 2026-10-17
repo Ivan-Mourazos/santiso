@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -19,6 +18,7 @@ import { useStudio } from "@/components/studio/StudioContext";
 import { actualizarClasificacionRfgf } from "@/lib/server/acciones/rfgf";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import DialogoZonas from "./DialogoZonas";
+import FichaEquipo from "./FichaEquipo";
 import styles from "./Clasificacion.module.css";
 
 interface Props {
@@ -67,7 +67,8 @@ export default function AdminClasificacion({ categoria }: Props) {
   const [oficial, setOficial] = useState<PantallaClasificacion["oficial"]>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
+  // El equipo cuya ficha está abierta.
+  const [enFicha, setEnFicha] = useState<string | null>(null);
   const [competicionCargada, setCompeticionCargada] = useState<string | null>(null);
   const generacion = useRef(0);
 
@@ -75,7 +76,7 @@ export default function AdminClasificacion({ categoria }: Props) {
   const cargar = useCallback(async (competicionId: string) => {
     const esta = ++generacion.current;
     setCargando(true);
-    setExpandidos(new Set());
+    setEnFicha(null);
     try {
       const pantalla = await cargarPantallaClasificacion(competicionId);
       if (esta !== generacion.current) return;
@@ -202,8 +203,8 @@ export default function AdminClasificacion({ categoria }: Props) {
                 const puesto = indice + 1;
                 const regla = reglaDe(puesto);
                 return (
-                  <Fragment key={fila.equipoId}>
-                    <tr
+                  <tr
+                      key={fila.equipoId}
                       className={regla ? styles.enZona : undefined}
                       style={regla ? conColor(regla.color) : undefined}
                     >
@@ -218,31 +219,16 @@ export default function AdminClasificacion({ categoria }: Props) {
                         className={styles.equipo}
                         aria-label={regla ? `${fila.nombre} · ${regla.nombre}` : fila.nombre}
                       >
-                        <span className={styles.nombreEscritorio}>{fila.nombre}</span>
                         <button
                           type="button"
                           className={styles.verDetalle}
                           aria-label={`Ver estadísticas de ${fila.nombre}`}
-                          aria-expanded={expandidos.has(fila.equipoId)}
-                          aria-controls={
-                            expandidos.has(fila.equipoId)
-                              ? `clasificacion-${fila.equipoId}`
-                              : undefined
-                          }
+                          aria-haspopup="dialog"
                           disabled={cargando || competicionCargada !== selectedCompetitionId}
-                          onClick={() =>
-                            setExpandidos((actuales) => {
-                              const siguientes = new Set(actuales);
-                              if (siguientes.has(fila.equipoId)) siguientes.delete(fila.equipoId);
-                              else siguientes.add(fila.equipoId);
-                              return siguientes;
-                            })
-                          }
+                          onClick={() => setEnFicha(fila.equipoId)}
                         >
                           {fila.nombre}
-                          <span aria-hidden="true">
-                            {expandidos.has(fila.equipoId) ? "▴" : "▾"}
-                          </span>
+                          <span aria-hidden="true">›</span>
                         </button>
                         {regla && <span className={styles.oculto}> · {regla.nombre}</span>}
                       </td>
@@ -267,27 +253,7 @@ export default function AdminClasificacion({ categoria }: Props) {
                         {fila.diferencia > 0 ? `+${fila.diferencia}` : fila.diferencia}
                       </td>
                     </tr>
-                    {expandidos.has(fila.equipoId) && (
-                      <tr className={styles.detalleFila}>
-                        <td colSpan={5}>
-                          <div
-                            id={`clasificacion-${fila.equipoId}`}
-                            role="region"
-                            aria-label={`Estadísticas de ${fila.nombre}`}
-                          >
-                            <dl className={styles.detalleDatos}>
-                              {COLUMNAS.filter((c) => !esPrioritaria(c.clave)).map((c) => (
-                                <div key={c.clave}>
-                                  <dt>{c.nombre}</dt>
-                                  <dd>{fila[c.clave]}</dd>
-                                </div>
-                              ))}
-                            </dl>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
+
                 );
               })}
             </tbody>
@@ -417,6 +383,15 @@ export default function AdminClasificacion({ categoria }: Props) {
       </div>
 
       {contenido}
+
+      {competicion && (
+        <FichaEquipo
+          competicionId={competicion.id}
+          fila={filas.find((f) => f.equipoId === enFicha) ?? null}
+          puesto={filas.findIndex((f) => f.equipoId === enFicha) + 1}
+          onClose={() => setEnFicha(null)}
+        />
+      )}
 
       {editandoZonas && competicion && (
         <DialogoZonas

@@ -5,6 +5,12 @@ import { eq } from "drizzle-orm";
 import { capturar, fallo, type Resultado } from "@/lib/resultado";
 import { soloAdmin } from "@/lib/server/acceso/permisos";
 import { pantallaLiga, type PantallaLiga } from "@/lib/server/consultas/liga";
+import {
+  fichaEquipo,
+  partidosDeLiga,
+  type FichaEquipo,
+  type PartidosDeLiga,
+} from "@/lib/server/consultas/partidos-liga";
 import { obtenerDb } from "@/lib/server/db";
 
 export async function cargarLiga(competicionId: string): Promise<Resultado<PantallaLiga>> {
@@ -31,4 +37,24 @@ export async function guardarCicloAmarillas(
       .where(eq(schema.competiciones.id, competicionId));
     return null;
   });
+}
+
+/** Los partidos de una jornada de la competición; sin número, la que toca ahora. Solo lee. */
+export async function cargarPartidosLiga(
+  competicionId: string,
+  numero: number | null,
+): Promise<Resultado<PartidosDeLiga | null>> {
+  return capturar("No se pudieron cargar los partidos.", () =>
+    partidosDeLiga(competicionId, numero),
+  );
+}
+
+/** Resultados, lo que le queda y goleadores de un equipo en la competición. Solo lee. */
+export async function cargarFichaEquipo(
+  competicionId: string,
+  equipoId: string,
+): Promise<Resultado<FichaEquipo | null>> {
+  return capturar("No se pudo cargar la ficha del equipo.", () =>
+    fichaEquipo(competicionId, equipoId),
+  );
 }

@@ -94,12 +94,12 @@ test("guardado pendiente no redirige tras abandonar convocatoria", async ({ page
   await page.getByRole("button", { name: "Guardar y pasar al once inicial", exact: true }).click();
   await recibida;
   page.once("dialog", (d) => d.accept());
-  await page.getByRole("link", { name: "Jornada", exact: true }).first().click();
-  await expect(page).toHaveURL(/\/admin\/jornada/);
+  await page.getByRole("link", { name: "Partidos", exact: true }).first().click();
+  await expect(page).toHaveURL(/\/admin\/partidos/);
   liberar();
   await entregada;
   await page.waitForLoadState("networkidle");
-  await expect(page).toHaveURL(/\/admin\/jornada/);
+  await expect(page).toHaveURL(/\/admin\/partidos/);
 });
 
 test("avisa de expulsados y apercibidos al convocar y al alinear", async ({ page }) => {

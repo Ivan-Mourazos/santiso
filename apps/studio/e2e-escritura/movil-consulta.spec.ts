@@ -107,13 +107,13 @@ test("clasificación móvil prioriza columnas, despliega detalle y guarda varias
   await expect(tabla.getByRole("columnheader")).toHaveText(["#", "Equipo", "PTS", "PJ", "DG"]);
   const detalle = tabla.getByRole("button", { name: `Ver estadísticas de ${LOCAL}`, exact: true });
   await detalle.click();
-  await expect(detalle).toHaveAttribute("aria-expanded", "true");
+  const ficha = page.getByRole("dialog", { name: LOCAL, exact: true });
   await expect(
-    tabla.getByRole("region", { name: `Estadísticas de ${LOCAL}`, exact: true }),
+    ficha.getByRole("region", { name: `Estadísticas de ${LOCAL}`, exact: true }),
   ).toContainText("Goles a favor");
   await comprobarControles(page, tabla);
-  await detalle.click();
-  await expect(detalle).toHaveAttribute("aria-expanded", "false");
+  await ficha.getByRole("button", { name: "Cerrar ficha" }).click();
+  await expect(ficha).toBeHidden();
   await page.getByRole("button", { name: "Zonas de la clasificación", exact: true }).click();
   const dialogo = page.getByRole("dialog", { name: "Zonas de la clasificación", exact: true });
   for (let i = 1; i <= 2; i++) {

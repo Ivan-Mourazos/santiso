@@ -1,0 +1,225 @@
+.pantalla {
+  display: grid;
+  gap: var(--ui-space-3);
+  max-width: 640px;
+}
+/* ‹ Jornada 6 › con flechas grandes: se cambia de jornada con el pulgar. */
+.jornada {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+.jornada > button {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-raised);
+  color: var(--ui-text);
+  font-size: var(--ui-text-xl);
+  line-height: 1;
+  cursor: pointer;
+}
+.jornada > div {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+.jornada strong {
+  font: 800 var(--ui-text-xl) / 1.1 var(--ui-font-title);
+  text-transform: uppercase;
+}
+.jornada span {
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.volver {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ui-accent);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.volver::after {
+  content: "";
+  position: absolute;
+  inset: -12px -4px;
+}
+.volver {
+  position: relative;
+}
+.lista {
+  display: grid;
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+  overflow: hidden;
+}
+/* Fila de 56 px: hora · local / visitante · marcador. */
+.fila {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ui-space-3);
+  width: 100%;
+  min-height: var(--ui-row);
+  padding: var(--ui-space-2) var(--ui-space-4) var(--ui-space-2) var(--ui-space-3);
+  border: 0;
+  border-bottom: 1px solid var(--ui-line);
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fila:last-child {
+  border-bottom: 0;
+}
+.fila[data-propio] {
+  background: var(--ui-accent-soft);
+}
+.fila:active {
+  background: var(--ui-raised);
+}
+@media (hover: hover) {
+  .fila:hover {
+    background: var(--ui-raised);
+  }
+}
+.fila:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: -3px;
+}
+.hora {
+  color: var(--ui-muted);
+  font-weight: 700;
+  font-size: var(--ui-text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.equipos {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.equipos > span {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--ui-text-body);
+}
+.equipos > span[data-propio] {
+  font-weight: 800;
+}
+.escudo {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.goles {
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+  font: 800 var(--ui-text-base) / 22px var(--ui-font-title);
+  font-variant-numeric: tabular-nums;
+}
+.goles span {
+  min-height: 22px;
+}
+
+/* ── Detalle en hoja ─────────────────────────────────────────────── */
+.detalle {
+  display: grid;
+  gap: var(--ui-space-4);
+}
+.marcador {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ui-space-3);
+  text-align: center;
+}
+.marcador > span {
+  display: grid;
+  justify-items: center;
+  gap: var(--ui-space-1);
+  font-weight: 800;
+  font-size: var(--ui-text-sm);
+  overflow-wrap: anywhere;
+}
+.marcador .escudo {
+  width: 40px;
+  height: 40px;
+}
+.marcador strong {
+  font: 800 var(--ui-text-2xl) / 1 var(--ui-font-title);
+  font-variant-numeric: tabular-nums;
+}
+.datos {
+  display: grid;
+  gap: var(--ui-space-2);
+  margin: 0;
+}
+.datos div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  font-size: var(--ui-text-body);
+}
+.datos dt {
+  color: var(--ui-muted);
+}
+.datos dd {
+  margin: 0;
+  text-align: right;
+}
+.datos dd::first-letter {
+  text-transform: uppercase;
+}
+.eventos {
+  display: grid;
+  gap: var(--ui-space-1);
+  margin: 0;
+  padding: var(--ui-space-3) 0 0;
+  border-top: 1px solid var(--ui-line);
+  list-style: none;
+}
+/* Lo del local a la izquierda y lo del visitante a la derecha, como en un acta. */
+.eventos li {
+  display: flex;
+  gap: var(--ui-space-2);
+  font-size: var(--ui-text-body);
+}
+.eventos li[data-lado="visitante"] {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.minuto {
+  flex: none;
+  width: 2.5rem;
+  color: var(--ui-muted);
+  font-variant-numeric: tabular-nums;
+}
+.nota {
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.enlace {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ui-control-h);
+  border-radius: var(--ui-radius);
+  background: var(--ui-control);
+  color: var(--ui-text);
+  font-weight: 800;
+}

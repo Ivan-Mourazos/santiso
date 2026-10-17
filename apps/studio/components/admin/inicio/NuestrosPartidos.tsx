@@ -33,7 +33,7 @@ function datosDe(pantalla: PantallaJornada): Omit<Datos, "carteles"> {
 
 /**
  * Lo primero de la portada: el partido que toca de cada equipo, con su siguiente paso a un toque.
- * Es solo un resumen; el partido entero, con todos sus pasos, está en la mesa de la jornada.
+ * Es solo un resumen; el partido entero, con todos sus pasos, está en Liga → Partidos.
  */
 export default function NuestrosPartidos() {
   const [datos, setDatos] = useState<Datos | null>(null);
@@ -84,7 +84,7 @@ export default function NuestrosPartidos() {
             <div className={styles.partidoRival}>
               <h3>
                 <Link
-                  href={`/admin/jornada?categoria=${encodeURIComponent(categoria)}`}
+                  href={`/admin/partidos?categoria=${encodeURIComponent(categoria)}`}
                   transitionTypes={["nav-forward"]}
                 >
                   {p.rival.nombre}
