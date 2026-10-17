@@ -47,6 +47,38 @@ async function sembrar() {
   };
 }
 
+describe("carteles guardados por partido", () => {
+  it("limita pasos y formatos, conserva JSON y borra en cascada", async () => {
+    const { db } = conexion;
+    const { jornada, local, visitante } = await sembrar();
+    const [p] = await db
+      .insert(s.partidos)
+      .values({ jornadaId: jornada.id, equipoLocalId: local.id, equipoVisitanteId: visitante.id })
+      .returning();
+    const fila = {
+      partidoId: p!.id,
+      paso: "partido" as const,
+      formato: "publicacion" as const,
+      clave: "carteles/prueba.png",
+      huella: "abc",
+      peticion: { plantilla: "partido" },
+      generadoEn: new Date().toISOString(),
+    };
+    await db.insert(s.cartelesPartido).values(fila);
+    expect((await db.select().from(s.cartelesPartido))[0]?.peticion).toEqual(fila.peticion);
+    await rechaza(db.insert(s.cartelesPartido).values(fila));
+    await rechaza(db.insert(s.cartelesPartido).values({ ...fila, paso: "inventado" as "partido" }));
+    await rechaza(
+      db.insert(s.cartelesPartido).values({ ...fila, formato: "inventado" as "historia" }),
+    );
+    await rechaza(db.insert(s.cartelesPartido).values({ ...fila, partidoId: "no-existe" }));
+    await db.insert(s.cartelesPartido).values({ ...fila, formato: "historia" });
+    expect(await db.select().from(s.cartelesPartido)).toHaveLength(2);
+    await db.delete(s.partidos).where(eq(s.partidos.id, p!.id));
+    expect(await db.select().from(s.cartelesPartido)).toEqual([]);
+  });
+});
+
 describe("sincronización con la federación", () => {
   it("un enlace por competición, un acta por código y estados conocidos", async () => {
     const { db } = conexion;
