@@ -7,6 +7,7 @@
  */
 
 import React, { useId } from "react";
+import { useOptionalStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Select } from "@/components/ui/foundation/Fields";
 import { porJugarDeCategoria } from "@/lib/jornada/proximos";
@@ -214,10 +215,8 @@ export const ConPartidoElegido: React.FC<{
   onSelect: (m: SelectorMatch) => void;
   /** Cartel de antes del partido: se eligen los que quedan por jugar. */
   porJugar?: boolean;
-  /** Categoría con la que abre la lista (`?categoria=`); sin ella, la del partido que toca. */
-  categoriaInicial?: string | null;
   children: React.ReactNode;
-}> = ({ partidoId, dbMatches, categoria, onSelect, porJugar, categoriaInicial, children }) => {
+}> = ({ partidoId, dbMatches, categoria, onSelect, porJugar, children }) => {
   const m = partidoId ? dbMatches.find((x) => x.id === partidoId) : undefined;
   if (m)
     return (
@@ -239,7 +238,6 @@ export const ConPartidoElegido: React.FC<{
       dbMatches={dbMatches}
       onSelect={onSelect}
       porJugar={porJugar}
-      categoriaInicial={categoriaInicial}
     >
       {children}
     </ElegirPartido>
@@ -261,9 +259,11 @@ const ElegirPartido: React.FC<{
   dbMatches: SelectorMatch[];
   onSelect: (m: SelectorMatch) => void;
   porJugar?: boolean;
-  categoriaInicial?: string | null;
   children: React.ReactNode;
-}> = ({ dbMatches, onSelect, porJugar, categoriaInicial, children }) => {
+}> = ({ dbMatches, onSelect, porJugar, children }) => {
+  // Abierto con `?categoria=` (desde el catálogo o Inicio), empieza por esa.
+  const pedida = useOptionalStudio()?.params.get("categoria");
+  const categoriaUrl = CATEGORIAS_CARTEL.find((c) => c === pedida);
   // Un solo «hoy» por montaje: la lista no cambia mientras se mira.
   const [hoy] = React.useState(() => new Date());
   const lista = porJugar
@@ -276,7 +276,7 @@ const ElegirPartido: React.FC<{
     ? [...lista].sort((a, b) => (a.fecha ?? "￿").localeCompare(b.fecha ?? "￿"))[0]
     : lista[0];
   const [elegida, setElegida] = React.useState<string | null>(null);
-  const categoria = elegida ?? categoriaInicial ?? queToca?.categoria ?? "Senior";
+  const categoria = elegida ?? categoriaUrl ?? queToca?.categoria ?? "Senior";
   const deLaCategoria = lista.filter((x) => x.categoria === categoria);
   if (lista.length === 0) return <>{children}</>;
   return (

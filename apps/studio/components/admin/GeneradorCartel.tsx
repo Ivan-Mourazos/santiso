@@ -12,6 +12,7 @@ import {
   type TemplateId,
 } from "./cartel/types";
 import { useCartelForm } from "./cartel/useCartelForm";
+import { useOptionalStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import AvisoError from "./AvisoError";
 import styles from "./cartel/Cartel.module.css";
@@ -83,7 +84,11 @@ export default function GeneradorCartel({
     resetForm,
     competicionesCatalog,
     errorDatos,
-  } = useCartelForm(partidoInicial, { proximo: (templateId || "partido") === "partido" });
+  } = useCartelForm(partidoInicial, {
+    // Desde el catálogo o Inicio el enlace trae la categoría: el formulario empieza por ella.
+    categoria: useOptionalStudio()?.params.get("categoria"),
+    proximo: (templateId || "partido") === "partido",
+  });
 
   const tipo = templateId || "partido";
   // Fichajes, comunicados y celebraciones son el anuncio con su tema ya puesto.

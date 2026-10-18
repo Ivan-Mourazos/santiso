@@ -111,7 +111,7 @@ export const RivalSelector = ({
   );
 };
 
-export const FormPartido: React.FC<Props & { tipo: string; categoriaInicial?: string | null }> = ({
+export const FormPartido: React.FC<Props & { tipo: string }> = ({
   form,
   set,
   equipos,
@@ -122,7 +122,6 @@ export const FormPartido: React.FC<Props & { tipo: string; categoriaInicial?: st
   campos,
   competiciones,
   tipo,
-  categoriaInicial,
 }) => {
   // Un solo «hoy» por montaje: la lista no cambia mientras se mira.
   const [hoy] = useState(() => new Date());
@@ -246,7 +245,6 @@ export const FormPartido: React.FC<Props & { tipo: string; categoriaInicial?: st
       categoria={form.categoria}
       onSelect={loadMatchFromDb}
       porJugar
-      categoriaInicial={categoriaInicial}
     >
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
       {pendientes.length > 0 && (

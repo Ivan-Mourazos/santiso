@@ -262,10 +262,11 @@ export function useCartelForm(
 
   function resetForm() {
     const cat = catalogRef.current;
-    const id = pickDefaultCompetitionId(cat, "Senior");
+    const id = pickDefaultCompetitionId(cat, categoriaInicialRef.current);
     const row = cat.find((c) => c.id === id);
     setForm({
       ...DEFAULT_FORM,
+      categoria: categoriaInicialRef.current,
       competicion_id: id,
       competicion: row?.nombre ?? "",
     });

@@ -153,3 +153,18 @@ test("las siete plantillas tienen su cartel en el Estudio", async ({ page }) => 
     });
   }
 });
+
+test("la categoría del enlace manda al abrir el cartel", async ({ page }) => {
+  await page.goto("/admin/carteles?plantilla=partido&categoria=Veteranos");
+  await expect(page.getByLabel("Categoría", { exact: true })).toHaveValue("Veteranos", {
+    timeout: 20000,
+  });
+  await page.goto("/admin/carteles?plantilla=resumo&categoria=Veteranos");
+  // Sin partido en el enlace, la lista de jugados empieza por esa categoría.
+  const lista = page.getByRole("group", { name: "Categoría" });
+  await expect(lista.getByRole("button", { name: "Veteranos" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+    { timeout: 20000 },
+  );
+});
