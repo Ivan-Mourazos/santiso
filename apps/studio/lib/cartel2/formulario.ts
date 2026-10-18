@@ -299,9 +299,17 @@ export function peticionDeFormulario(
           campo: form.estadio || form.lugar,
           titulares: jugadores(form.titulares),
           suplentes: jugadores(form.suplentes),
-          // Una foto elegida de la galería del partido manda sobre la del jugador; se encuadra
+          // Una foto subida a mano (`data:`) manda sobre todo: es la elección más deliberada.
+          // Si no, la de la galería del partido manda sobre la guardada del jugador; se encuadra
           // por su foco y conserva el zoom del formulario.
-          foto: opciones.foto
+          foto: form.jugadorFotoUrl?.startsWith("data:")
+            ? {
+                url: form.jugadorFotoUrl,
+                x: form.jugadorXOffset,
+                y: form.jugadorYOffset,
+                zoom: form.jugadorZoom,
+              }
+            : opciones.foto
             ? {
                 url: opciones.foto.url,
                 x: opciones.foto.x,

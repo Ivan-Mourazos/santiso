@@ -14,7 +14,8 @@ import s from "./CartelOnce.module.css";
 /** Ancho de un nombre: media lista (952 − 24 de calle) menos dorsal y separación. */
 const ANCHO_NOMBRE = (952 - 24) / 2 - 62 - 14;
 /** Con retrato la lista mide 620 y va en una columna. */
-const ANCHO_NOMBRE_RETRATO = 620 - 62 - 14;
+// La lista con retrato mide 1080 − 480 − 48 = 552 px (ver `.conRetrato .lista`).
+const ANCHO_NOMBRE_RETRATO = 552 - 62 - 14;
 /** Ancho medio de una letra del nombre (Barlow Condensed 800 en mayúsculas), en em. */
 const EM_NOMBRE = 0.47;
 

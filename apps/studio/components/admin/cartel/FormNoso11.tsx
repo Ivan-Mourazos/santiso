@@ -95,6 +95,35 @@ export const FormNoso11: React.FC<Props> = ({
         />
       </div>
 
+      {/* A la vista y no dentro de «Foto y encuadre»: cualquier foto, no solo la guardada del
+          jugador. La subida manda sobre la de la galería del partido. */}
+      <div className={styles.campo}>
+        <span className={styles.etiqueta}>Foto del cartel</span>
+        <label className="file-input-label">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+          </svg>
+          {jugFileName ? `Cambiar foto (${jugFileName})` : "Subir la foto que quieras"}
+          <input
+            type="file"
+            className="hidden-input"
+            accept="image/*"
+            onChange={(e) => {
+              const fichero = e.target.files?.[0];
+              e.target.value = "";
+              if (fichero) handleJugadorFile(fichero);
+            }}
+          />
+        </label>
+      </div>
+
       <PlegableMovil titulo="Foto y encuadre">
         <Select
           label="Uso de la foto"
@@ -143,34 +172,6 @@ export const FormNoso11: React.FC<Props> = ({
             )}
           </Select>
         )}
-
-        <div className={styles.campo}>
-          <span className={styles.etiqueta}>
-            {modoFoto === "fondo" ? "Foto del campo" : "O sube otra foto del jugador"}
-          </span>
-          <label className="file-input-label">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-            </svg>
-            {jugFileName ||
-              (modoFoto === "fondo" ? "Subir foto del campo" : "Subir foto del jugador")}
-            <input
-              type="file"
-              className="hidden-input"
-              accept="image/*"
-              onChange={(e) => {
-                if (e.target.files?.[0]) handleJugadorFile(e.target.files[0]);
-              }}
-            />
-          </label>
-        </div>
 
         <div className={styles.encuadre}>
           <h5>Encuadre de la foto</h5>
