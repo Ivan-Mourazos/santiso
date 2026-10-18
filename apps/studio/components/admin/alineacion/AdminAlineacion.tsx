@@ -25,7 +25,10 @@ import { aHex, COLOR_RIVAL_RESERVA } from "@/lib/cartel2/color";
 import { fechaCorta, type FotoCartel } from "@/lib/cartel2/modelo";
 import type { CartelGuardado } from "@/lib/cartel2/pasos";
 import { cargarPantallaAlineacion, guardarAlineacion } from "@/lib/server/acciones/alineacion";
-import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados";
+import {
+  cargarCartelesPartido,
+  cargarFotoGuardada,
+} from "@/lib/server/acciones/carteles-guardados";
 import styles from "./Alineacion.module.css";
 
 interface Props {
@@ -49,6 +52,8 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
   const [guardada, setGuardada] = useState<Alineacion>(ALINEACION_VACIA);
   const [ocupada, setOcupada] = useState(false);
   const [fotoFondo, setFotoFondo] = useState<FotoCartel | null>(null);
+  // La foto con la que se generó el cartel guardado: si la de pantalla es otra, hay que actualizarlo.
+  const [fotoGenerada, setFotoGenerada] = useState<FotoCartel | null>(null);
   const [carteles, setCarteles] = useState<CartelGuardado[] | null>(null);
   const generacion = useRef(0);
   const recursos = useCartelAssets("noso11");
@@ -67,9 +72,18 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
       setAlineacion(r.datos.alineacion);
       setGuardada(r.datos.alineacion);
       setCarteles(null);
+      setFotoFondo(null);
+      setFotoGenerada(null);
       if (!r.datos.partidoId) return;
-      const guardados = await cargarCartelesPartido([r.datos.partidoId]);
+      const [guardados, foto] = await Promise.all([
+        cargarCartelesPartido([r.datos.partidoId]),
+        cargarFotoGuardada(r.datos.partidoId, "once"),
+      ]);
       if (esta !== generacion.current) return;
+      // La foto de fondo con la que se guardó vuelve a salir, para no perderla al regenerar.
+      const conFoto = foto.ok ? foto.datos : null;
+      setFotoFondo(conFoto);
+      setFotoGenerada(conFoto);
       setCarteles(guardados.ok ? (guardados.datos[r.datos.partidoId]?.once ?? []) : []);
     },
     [categoria],
@@ -265,6 +279,12 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
               paso="once"
               guardados={carteles}
               preparar={prepararCartel}
+              cambios={
+                JSON.stringify(fotoFondo) !== JSON.stringify(fotoGenerada)
+                  ? "Has cambiado la foto de fondo: actualiza el cartel para que la lleve."
+                  : null
+              }
+              onCambio={() => setFotoGenerada(fotoFondo)}
               motivo={alineacion.titulares.length === 0 ? "Elige al menos un titular." : null}
               showToast={showToast}
             />

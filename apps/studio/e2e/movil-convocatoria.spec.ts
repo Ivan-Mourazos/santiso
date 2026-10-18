@@ -115,3 +115,46 @@ for (const cantidad of [11, 22]) {
     await cartel.screenshot({ path: testInfo.outputPath(`convocatoria-${cantidad}.png`) });
   });
 }
+
+test("once inicial con nombres largos y doce suplentes: se genera y se lee entero", async ({
+  page,
+}) => {
+  const equipo = {
+    nombre: "U.D. Santiso F.C.",
+    escudo: null,
+    propio: true,
+    color: "#f5c518",
+    relieve: false,
+  };
+  const peticion: PeticionCartel = {
+    plantilla: "alineacion",
+    formato: "historia",
+    datos: {
+      institucionales: [],
+      patrocinadores: [],
+      categoria: "Senior",
+      competicion: "Segunda Futgal - Grupo 2",
+      jornada: "3",
+      club: equipo,
+      rival: { ...equipo, nombre: "Sociedad Deportiva Cultural Recesende de Teo", propio: false },
+      local: true,
+      fecha: "2026-10-18",
+      hora: "17:00",
+      campo: "Municipal de Santiso",
+      foto: null,
+      titulares: Array.from({ length: 11 }, (_, i) => ({
+        dorsal: String(10 + i),
+        nombre: `Sergio Vázquez Lorenzo ${i}`,
+        capitan: i === 0,
+      })),
+      suplentes: Array.from({ length: 12 }, (_, i) => ({
+        dorsal: String(30 + i),
+        nombre: `Manu Mejuto Castro ${i}`,
+        capitan: false,
+      })),
+    },
+  };
+  // El servidor comprueba que todo se lea (dentro de su sitio y sin pisarse); si no, da 422.
+  const respuesta = await page.request.post("/api/carteles/png", { data: peticion });
+  expect(respuesta.status()).toBe(200);
+});

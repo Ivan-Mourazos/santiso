@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   categoriaCartel,
   fechaCorta,
@@ -32,6 +33,10 @@ function Equipo({ equipo }: { equipo: EquipoCartel }) {
 export function CartelAlineacion({ datos }: { datos: DatosAlineacion }) {
   const titulares = datos.titulares.slice(0, 11);
   const suplentes = datos.suplentes.slice(0, 12);
+  // Nombres largos, letra más pequeña: así caben en una línea y el cruce de arriba no les quita
+  // sitio. Con nombres cortos (apodos), la grande.
+  const largo = Math.max(0, ...titulares.map((j) => j.nombre.length));
+  const letraNombre = largo <= 14 ? 42 : largo <= 18 ? 36 : 30;
   const [local, visitante] = datos.local ? [datos.club, datos.rival] : [datos.rival, datos.club];
   const cuando = [fechaCorta(datos.fecha), datos.hora, datos.campo.toUpperCase()]
     .filter(Boolean)
@@ -72,7 +77,11 @@ export function CartelAlineacion({ datos }: { datos: DatosAlineacion }) {
           </div>
         )}
 
-        <ol className={s.titulares} data-lectura-bloque>
+        <ol
+          className={s.titulares}
+          style={{ "--letra-nombre": `${letraNombre}px` } as CSSProperties}
+          data-lectura-bloque
+        >
           {titulares.map((j, i) => (
             <li key={`${j.dorsal}-${i}`} data-lectura-fila>
               <span className={`${b.display} ${s.dorsal}`}>{j.dorsal}</span>

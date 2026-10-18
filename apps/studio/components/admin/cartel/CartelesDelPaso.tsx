@@ -37,6 +37,7 @@ export function CartelesDelPaso({
   motivo,
   showToast,
   onCambio,
+  cambios = null,
 }: {
   partidoId: string;
   paso: PasoCartel;
@@ -47,6 +48,11 @@ export function CartelesDelPaso({
   motivo?: string | null;
   showToast: (msg: string, type?: "success" | "error") => void;
   onCambio?: (guardados: CartelGuardado[]) => void;
+  /**
+   * Algo que cambia el cartel y que la huella del servidor no ve (la foto de fondo): el guardado
+   * ya no vale aunque los datos del partido sigan iguales. Vacío si no hay cambios.
+   */
+  cambios?: string | null;
 }) {
   const [guardados, setGuardados] = useState(iniciales);
   const [generando, setGenerando] = useState(false);
@@ -56,7 +62,8 @@ export function CartelesDelPaso({
   // sin esperar a la red, así que se bajan antes.
   const [ficheros, setFicheros] = useState<Record<string, File>>({});
   const compartiendo = useRef(false);
-  const estado = estadoPaso(guardados);
+  const estado =
+    cambios && estadoPaso(guardados) === "hecho" ? "desactualizado" : estadoPaso(guardados);
   const { nombre } = PASOS[paso];
 
   useEffect(() => {
@@ -140,7 +147,9 @@ export function CartelesDelPaso({
         {estado === "pendiente" && "Todavía sin generar."}
         {estado === "hecho" && `✓ Generado ${cuando(guardados[0]!.generadoEn)}.`}
         {estado === "desactualizado" &&
-          "⚠ Han cambiado los datos desde que se generó. Sigue guardado el anterior hasta que lo actualices."}
+          (cambios
+            ? `⚠ ${cambios} Sigue guardado el anterior hasta que lo actualices.`
+            : "⚠ Han cambiado los datos desde que se generó. Sigue guardado el anterior hasta que lo actualices.")}
       </p>
       {/* Sin miniaturas: la vista previa ya enseña el cartel. «Ver» lo abre en grande. */}
       {guardados.length > 0 && (

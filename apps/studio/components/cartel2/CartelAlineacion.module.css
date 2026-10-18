@@ -4,7 +4,7 @@
   inset: 326px 64px 370px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 18px;
 }
 .contenido[data-sin-patrocinadores="true"] {
   bottom: 270px;
@@ -20,30 +20,34 @@
 }
 .titulo {
   margin-top: 2px;
-  font-size: 48px;
-  line-height: 1.6;
+  font-size: 64px;
+  line-height: 1.5;
   color: var(--amarillo);
 }
+/* Cada escudo grande con su nombre debajo y el VS entre los dos, con aire alrededor. */
 .cruce {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 24px;
+  padding-block: 8px;
   flex: none;
 }
 .equipo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
   min-width: 0;
+  text-align: center;
 }
 .escudo,
 .sinEscudo {
-  width: 88px;
-  height: 88px;
+  width: 132px;
+  height: 132px;
   flex: none;
 }
 .nombreEquipo {
+  max-width: 100%;
   min-width: 0;
   font-size: 32px;
   font-weight: 800;
@@ -55,7 +59,7 @@
   color: var(--amarillo);
 }
 .vs {
-  font-size: 28px;
+  font-size: 40px;
   line-height: 1.6;
   opacity: 0.6;
 }
@@ -98,19 +102,23 @@
 }
 .nombre {
   min-width: 0;
-  font-size: 42px;
+  font-size: var(--letra-nombre, 42px);
   font-weight: 800;
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
 .capitan {
   flex: none;
-  width: 24px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
-  font-size: 24px;
-  color: var(--amarillo);
+  border-radius: 50%;
+  background: var(--amarillo);
+  color: #0b0b0c;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
 }
 .suplentes {
   display: grid;

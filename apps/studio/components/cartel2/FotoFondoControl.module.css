@@ -1,14 +1,36 @@
 .control {
   margin-block: 16px;
-  border-top: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+  padding: 0 var(--ui-space-4);
 }
-.control summary,
-.control button {
-  min-height: 44px;
+.control summary {
+  min-height: var(--ui-row);
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
   cursor: pointer;
   font: inherit;
+  font-weight: 800;
+  font-size: var(--ui-text-base);
+  list-style: none;
+}
+.control summary::-webkit-details-marker {
+  display: none;
+}
+/* Flecha que gira al abrir, como el resto de plegables. */
+.control summary::after {
+  content: "›";
+  color: var(--ui-muted);
+  font-size: var(--ui-text-lg);
+  transition: transform var(--ui-duration) var(--ui-ease);
+}
+.control[open] summary::after {
+  transform: rotate(90deg);
+}
+.control[open] {
+  padding-bottom: var(--ui-space-4);
 }
 .control label {
   display: grid;
@@ -22,19 +44,52 @@
   font: inherit;
   font-size: 16px;
 }
+/* Subir: un botón de la app, no el selector de ficheros del navegador. */
+.control .subir {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ui-control-h);
+  padding: 0 var(--ui-space-4);
+  border-radius: var(--ui-radius);
+  background: var(--ui-accent);
+  color: #0b0b0c;
+  font-weight: 800;
+  cursor: pointer;
+}
+.control .subir input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.control .subir:focus-within {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
 .control img {
   display: block;
   width: 100%;
   max-width: 400px;
   max-height: 200px;
+  border-radius: var(--ui-radius-sm);
   object-fit: cover;
 }
 .control button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
   padding: 8px 12px;
   background: transparent;
   color: var(--ui-text);
-  border: 1px solid var(--ui-border);
-  border-radius: 8px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius-sm);
+  cursor: pointer;
+  font: inherit;
 }
 .control :is(input, button, summary):focus-visible {
   outline: 2px solid var(--ui-accent);

@@ -32,7 +32,7 @@
 .cruce {
   display: grid;
   grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
-  gap: 24px;
+  gap: 32px;
   flex: none;
 }
 .cruce:has(.equipo:first-child[data-propio="false"]) {
@@ -41,7 +41,7 @@
 .equipo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 18px;
   min-width: 0;
 }
 .equipo strong {

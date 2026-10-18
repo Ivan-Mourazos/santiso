@@ -16,7 +16,7 @@ export function FotoFondoControl({
   return (
     <details className={s.control}>
       <summary>Foto de campo · fondo del cartel</summary>
-      <label>
+      <label className={s.subir}>
         Subir foto del campo
         <input
           type="file"

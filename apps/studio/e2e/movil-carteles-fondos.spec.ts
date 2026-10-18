@@ -68,6 +68,12 @@ for (const ancho of [360, 390]) {
     await expect(
       control.getByRole("img", { name: "Foto de campo para el fondo completo" }),
     ).toBeVisible();
+    // Con un cartel ya guardado, la foto nueva lo deja por actualizar: no se comparte el viejo.
+    const guardado = page.getByRole("region", { name: /Once inicial: carteles guardados/ });
+    if ((await guardado.getByRole("list", { name: "Carteles guardados" }).count()) > 0) {
+      await expect(guardado.getByText(/Has cambiado la foto de fondo/)).toBeVisible();
+      await expect(guardado.getByRole("button", { name: "Actualizar cartel" })).toBeVisible();
+    }
     await page.getByLabel("Encuadre horizontal", { exact: true }).fill("0.3");
     await page.getByLabel("Encuadre vertical", { exact: true }).fill("0.7");
     for (const campo of ["Subir foto del campo", "Encuadre horizontal", "Encuadre vertical"]) {
