@@ -45,10 +45,13 @@ input[type="datetime-local"].control {
   max-width: 100%;
   text-align: left;
 }
+/* Safari pinta el valor arriba y con margen propio: se centra en alto como el resto de campos. */
 input.control::-webkit-date-and-time-value {
   text-align: left;
   min-height: 1.35em;
+  margin: 0;
 }
+
 select.control:not([multiple]) {
   appearance: none;
   padding-right: 2rem;
@@ -71,6 +74,10 @@ select.control:not([multiple]) {
   .control {
     min-height: var(--ui-control-h);
     font-size: var(--ui-text-base);
+  }
+  input[type="date"].control,
+  input[type="time"].control {
+    line-height: calc(var(--ui-control-h) - 2px);
   }
 }
 @media (prefers-reduced-motion: reduce) {

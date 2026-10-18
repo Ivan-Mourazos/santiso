@@ -14,12 +14,13 @@
 }
 
 /* Autocompletar desde el calendario ya guardado. */
+/* Atajo destacado sin recuadro de borde discontinuo: una raya amarilla a la izquierda. */
 .desdeLiga {
   margin-bottom: 0.75rem;
   padding: 0.75rem;
-  border: 1px dashed rgb(245 197 24 / 40%);
-  border-radius: var(--ui-radius);
-  background: rgb(245 197 24 / 5%);
+  border-left: 3px solid var(--ui-accent);
+  border-radius: var(--ui-radius-sm);
+  background: rgb(245 197 24 / 6%);
 }
 
 .desdeLiga > button {

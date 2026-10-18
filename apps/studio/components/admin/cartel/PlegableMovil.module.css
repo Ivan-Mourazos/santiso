@@ -1,16 +1,19 @@
+/* Con la cara de un campo: mismo fondo, borde y radio que los desplegables de al lado. */
 .bloque {
   min-width: 0;
   margin: 0.5rem 0;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-field-face);
+  box-shadow: var(--ui-field-shadow);
 }
 .bloque > summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  min-height: 44px;
-  padding: 0.35rem 0.6rem;
+  min-height: var(--ui-control-h, 44px);
+  padding: 0.35rem 0.7rem 0.35rem var(--ui-space-3);
   cursor: pointer;
   font-size: var(--ui-text-sm);
   font-weight: 800;
@@ -25,10 +28,11 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.bloque > summary > span:last-child {
+.bloque > summary > svg {
   flex: none;
+  transition: transform var(--ui-duration) var(--ui-ease);
 }
-.bloque[open] > summary > span:last-child {
+.bloque[open] > summary > svg {
   transform: rotate(180deg);
 }
 .bloque > summary:focus-visible {

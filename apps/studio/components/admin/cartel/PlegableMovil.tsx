@@ -20,7 +20,16 @@ export function PlegableMovil({
     <details className={s.bloque} name={grupo} data-partido-plegado={partido || undefined}>
       <summary title={titulo}>
         <span>{titulo}</span>
-        <span aria-hidden="true">⌄</span>
+        {/* La misma flecha amarilla que los desplegables del formulario. */}
+        <svg aria-hidden="true" width="12" height="8" viewBox="0 0 12 8">
+          <path
+            d="m1 1 5 5 5-5"
+            fill="none"
+            stroke="var(--ui-accent)"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
       </summary>
       <div className={s.contenido}>{children}</div>
     </details>
