@@ -31,10 +31,12 @@ for (const ancho of [360, 390]) {
     try {
       // Desde Carteles, sin partido: se elige de un toque entre los últimos jugados.
       await page.goto("/admin/carteles?plantilla=resumo");
-      const partido = page
-        .getByRole("region", { name: "Elige el partido" })
-        .getByRole("button", { name: /Ficticio/i })
-        .first();
+      const elegir = page.getByRole("region", { name: "Elige el partido" });
+      await elegir
+        .getByRole("group", { name: "Categoría" })
+        .getByRole("button", { name: "Senior" })
+        .tap();
+      const partido = elegir.getByRole("button", { name: /Ficticio/i }).first();
       await expect(partido).toBeVisible();
       const id = await partido.getAttribute("data-partido");
       await partido.tap();
@@ -102,7 +104,9 @@ for (const ancho of [360, 390]) {
       expect(coordenadas.y).toBeCloseTo(20, 0);
       await galeria.getByRole("button", { name: "Usar en el cartel", exact: true }).first().tap();
       await expect(galeria).toBeHidden();
-      await expect(page.getByRole("button", { name: "Fotos del partido", exact: true })).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Fotos del partido", exact: true }),
+      ).toBeVisible();
       await expect(page.locator('[data-vista-cartel] img[src*="/media/partidos/"]')).toBeVisible();
       if (process.env.STUDIO_CAPTURAS_DIR)
         await page.screenshot({
