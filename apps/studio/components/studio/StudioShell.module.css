@@ -1,7 +1,7 @@
 .shell {
   display: flex;
   min-height: 100dvh;
-  background: var(--ui-bg);
+  background: var(--ui-halo) no-repeat, var(--ui-bg);
   color: var(--ui-text);
 }
 /* En escritorio (≥ 1280 × 720) el menú entero cabe sin desplazarse. */
@@ -9,8 +9,8 @@
   width: 216px;
   flex-shrink: 0;
   padding: 1rem 0.75rem;
-  border-right: 1px solid var(--ui-border);
-  background: var(--ui-surface);
+  border-right: 1px solid var(--ui-line);
+  background: rgb(24 24 27 / 70%);
   position: sticky;
   top: 0;
   height: 100dvh;
@@ -66,7 +66,7 @@
   background: var(--ui-raised);
 }
 .link[aria-current="page"] {
-  background: var(--ui-raised);
+  background: var(--ui-accent-soft);
   border-left-color: var(--ui-accent);
   color: var(--ui-accent);
 }
@@ -84,8 +84,10 @@
   gap: 1rem;
   min-height: 64px;
   padding: 0.6rem 1.5rem;
-  border-bottom: 1px solid var(--ui-border);
-  background: var(--ui-surface);
+  border-bottom: 1px solid var(--ui-line);
+  background: rgb(16 16 18 / 82%);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 .heading {
   display: flex;
@@ -99,7 +101,9 @@
 }
 .heading h1 {
   margin: 0;
-  font: 800 var(--ui-text-xl)/1.15 var(--ui-font-title);
+  font: 900 var(--ui-text-2xl)/1.05 var(--ui-font-title);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   overflow-wrap: anywhere;
 }
 .eyebrow {
@@ -121,7 +125,9 @@
   border-radius: var(--ui-radius-pill);
   color: var(--ui-muted);
 }
-.categories button[aria-pressed="true"] {
+.categories button[aria-pressed="true"],
+.categories button[aria-pressed="true"]:not(:disabled) {
+  border-color: transparent;
   background: var(--ui-accent);
   color: var(--ui-on-accent);
 }
@@ -154,15 +160,7 @@
   outline: 2px solid var(--ui-accent);
   outline-offset: -2px;
 }
-/* El menú completo, en la hoja de «Más». */
-.menuMas .nav {
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--ui-space-4);
-}
-.menuMas .link {
-  min-height: 48px;
-}
-.menuMas .cuenta {
+.cuentaHoja {
   margin-top: var(--ui-space-4);
 }
 .template {
@@ -249,48 +247,44 @@
   .sidebar {
     display: none;
   }
-  /* Barra de pestañas opaca de lado a lado: lo que pasa por debajo no se ve a través. */
+  /* Barra flotante de cristal: separada de los bordes, con la pestaña encendida en píldora. */
   .tabs {
     display: grid;
-    grid-template-columns: repeat(var(--pestanas, 4), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--pestanas, 5), minmax(0, 1fr));
+    gap: 2px;
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    left: max(0.75rem, env(safe-area-inset-left));
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
     z-index: 50;
-    padding: 0.25rem max(0.25rem, env(safe-area-inset-right)) calc(0.25rem + env(safe-area-inset-bottom))
-      max(0.25rem, env(safe-area-inset-left));
-    border-top: 1px solid var(--ui-border);
-    background: var(--ui-surface);
+    padding: 6px;
+    border: 1px solid var(--ui-line);
+    border-radius: var(--ui-radius-pill);
+    background: rgb(28 28 31 / 88%);
+    box-shadow: var(--ui-shadow);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
   }
   .tab {
     display: grid;
     justify-items: center;
     align-content: center;
-    gap: 0.1rem;
-    min-height: 48px;
-    padding: 0.2rem 0.25rem;
+    gap: 2px;
+    min-height: 52px;
+    padding: 4px 2px;
     border: 0;
-    border-radius: var(--ui-radius);
+    border-radius: var(--ui-radius-pill);
     background: none;
     box-shadow: none;
     color: var(--ui-muted);
     font: 700 var(--ui-text-xs)/1.1 var(--ui-font-body);
     cursor: pointer;
-    transition: color var(--ui-duration) var(--ui-ease);
-  }
-  /* Indicador de la pestaña encendida: píldora suave tras el icono (Material 3). */
-  .tab svg {
-    width: 56px;
-    height: 26px;
-    padding: 2px 0;
-    border-radius: var(--ui-radius-pill);
-    transition: background-color var(--ui-duration-md) var(--ui-ease);
-  }
-  .tab[data-activa="true"] svg {
-    background: var(--ui-accent-soft);
+    transition:
+      color var(--ui-duration) var(--ui-ease),
+      background-color var(--ui-duration-md) var(--ui-ease);
   }
   .tab[data-activa="true"] {
+    background: var(--ui-accent-soft);
     color: var(--ui-accent);
   }
   .tab:focus-visible {
@@ -353,7 +347,7 @@
     outline-offset: -2px;
   }
   .heading h1 {
-    font-size: var(--ui-text-base);
+    font-size: var(--ui-text-xl);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -366,7 +360,7 @@
   }
   .content {
     padding: 0.75rem max(0.75rem, env(safe-area-inset-right))
-      calc(4.5rem + env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+      calc(6.5rem + env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
   }
   .categories {
     flex-shrink: 0;
@@ -405,7 +399,7 @@
     padding-left: 0.5rem;
   }
   .toast {
-    bottom: calc(4.75rem + env(safe-area-inset-bottom));
+    bottom: calc(6.25rem + env(safe-area-inset-bottom));
     right: max(0.75rem, env(safe-area-inset-right));
     left: max(0.75rem, env(safe-area-inset-left));
     max-width: none;

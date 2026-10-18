@@ -5,7 +5,7 @@ import { accesoActivo } from "@/lib/acceso/config";
 import { usuarioActual } from "@/lib/server/acceso/sesion";
 import { hayUsuarios } from "@/lib/server/acceso/usuarios";
 import { obtenerDbSinControl } from "@/lib/server/db";
-import { barlowUi, nunito } from "@/styles/fonts";
+import { manrope, marcador } from "@/styles/fonts";
 import theme from "@/styles/tokens.module.css";
 
 export const metadata: Metadata = { title: "Entrar · UD Santiso Studio" };
@@ -17,7 +17,7 @@ export default async function PaginaEntrar() {
   const { db } = await obtenerDbSinControl();
   const primerUso = !(await hayUsuarios(db));
   return (
-    <div className={`${theme.theme} ${barlowUi.variable} ${nunito.variable}`}>
+    <div className={`${theme.theme} ${marcador.variable} ${manrope.variable}`}>
       <Entrar primerUso={primerUso} />
     </div>
   );

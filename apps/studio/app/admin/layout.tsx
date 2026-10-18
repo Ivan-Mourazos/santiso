@@ -6,7 +6,7 @@ import { LoadingState } from "@/components/ui/foundation/States";
 import { accesoActivo } from "@/lib/acceso/config";
 import type { AccesoPanel } from "@/lib/navigation/contexto";
 import { usuarioActual } from "@/lib/server/acceso/sesion";
-import { barlowUi, nunito } from "@/styles/fonts";
+import { manrope, marcador } from "@/styles/fonts";
 import theme from "@/styles/tokens.module.css";
 
 /** Quién entra al panel. Con el acceso apagado, nadie en concreto. */
@@ -21,7 +21,7 @@ async function accesoDelPanel(): Promise<AccesoPanel> {
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const acceso = await accesoDelPanel();
   return (
-    <div className={`${theme.theme} ${barlowUi.variable} ${nunito.variable}`}>
+    <div className={`${theme.theme} ${marcador.variable} ${manrope.variable}`}>
       <Suspense fallback={<LoadingState title="Abriendo Studio…" />}>
         <StudioProvider acceso={acceso}>
           <StudioShell acceso={acceso}>{children}</StudioShell>

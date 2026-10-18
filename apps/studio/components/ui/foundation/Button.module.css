@@ -1,6 +1,6 @@
 /*
- * Tres niveles: principal (amarillo, uno por pantalla), secundario (gris) y de texto. Planos; al
- * pulsar se encogen un 3 %. En pantallas táctiles, 48 px de alto; los pequeños, 44 px.
+ * Tres niveles: principal (amarillo con brillo, uno por pantalla), secundario (gris) y de texto.
+ * En píldora; al pulsar se encogen un 3 %. En pantallas táctiles, 48 px de alto; los pequeños, 44 px.
  */
 .button {
   position: relative;
@@ -12,7 +12,7 @@
   max-width: 100%;
   padding: 0 var(--ui-space-4);
   border: 1px solid transparent;
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-pill);
   font: 800 var(--ui-text-body) / 1.2 var(--ui-font-body);
   cursor: pointer;
   overflow-wrap: anywhere;
@@ -31,9 +31,11 @@
 .primary {
   background: var(--ui-accent);
   color: var(--ui-on-accent);
+  box-shadow: var(--ui-primary-shadow);
 }
 .secondary {
   background: var(--ui-control);
+  border-color: var(--ui-line);
   color: var(--ui-text);
 }
 .ghost {

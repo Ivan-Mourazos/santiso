@@ -4,55 +4,28 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import {
   SECCIONES,
+  cambiarParametros,
   categoriaDe,
   reservada,
   rutaSeccion,
   seccionesDelMenu,
   type AccesoPanel,
+  type Seccion,
 } from "@/lib/navigation/contexto";
+import {
+  gruposVisibles,
+  pestanaDe,
+  pestanasVisibles,
+  type EntradaMenu,
+  type IdPestana,
+} from "@/lib/navigation/menu";
 import { cerrarSesionYSalir } from "@/components/acceso/salir";
 import { TEMPLATES } from "@/components/admin/cartel/types";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { useStudio } from "./StudioContext";
+import { TarjetasMenu } from "./TarjetasMenu";
 import styles from "./StudioShell.module.css";
-/** Lo del día de partido, a un toque en el móvil; el resto del menú queda en «Más». */
-const INICIO = {
-  id: "inicio",
-  label: "Inicio",
-  icono: "M4 11l8-7 8 7M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9",
-} as const;
-/** Todo lo de la competición vive bajo «Liga»: partidos, tabla, goleadores y estadísticas. */
-const LIGA = {
-  id: "partidos",
-  label: "Liga",
-  icono: "M8 4h8v5a4 4 0 0 1-8 0V4ZM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8",
-} as const;
-const CARTELES = {
-  id: "carteles",
-  label: "Carteles",
-  icono: "M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1ZM4 16l4.5-4.5 3.5 3.5 3-3 5 5M9 9h.01",
-} as const;
-const MULTAS = {
-  id: "multas",
-  label: "Multas",
-  icono: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM15 9.5a3.5 3.5 0 1 0 0 5M8 11h5M8 13.5h5",
-} as const;
-const PESTANAS = [INICIO, LIGA, CARTELES, MULTAS] as const;
-/**
- * Las del cuerpo técnico: su día a día es el once y las multas (la convocatoria se abre desde el
- * partido, en Inicio). Los carteles los lleva el delegado; a ellos les quedan en «Más».
- */
-const PESTANAS_TECNICO = [
-  INICIO,
-  LIGA,
-  {
-    id: "alineacion",
-    label: "Once",
-    icono: "M4 5h16v14H4ZM12 5v14M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5ZM4 9h2.5v6H4M20 9h-2.5v6H20",
-  },
-  MULTAS,
-] as const;
 const TITULO_TEMA: Record<string, string> = {
   fichaje: "Fichaje",
   formal: "Comunicado",
@@ -60,17 +33,7 @@ const TITULO_TEMA: Record<string, string> = {
   celebracion: "Celebración",
   despedida: "Despedida",
 };
-const ICONO_MAS = "M5 12h.01M12 12h.01M19 12h.01";
-/** Las pantallas de la competición: con ellas encendida la pestaña «Liga» y su subnavegación. */
-const SECCIONES_LIGA: readonly string[] = [
-  "partidos",
-  "jornada",
-  "calendario",
-  "clasificacion",
-  "liga",
-  "estadisticas",
-  "federacion",
-];
+/** Las pantallas de la competición con la subnavegación de «Liga» encima. */
 const SUBNAV_LIGA = [
   { id: "partidos", label: "Partidos" },
   { id: "clasificacion", label: "Clasificación" },
@@ -130,17 +93,14 @@ export function StudioShell({
     // Solo al montar: después, ir a Jornada es una decisión de quien usa la app.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const secciones = seccionesDelMenu(acceso);
+  const visibles = new Set<Seccion>(seccionesDelMenu(acceso).map((item) => item.id));
+  const tecnico = acceso?.rol === "tecnico";
+  const pestanas = pestanasVisibles(visibles, tecnico);
   const sinPermiso = !!section && reservada(section.id, acceso);
-  const pestanas = acceso?.rol === "tecnico" ? PESTANAS_TECNICO : PESTANAS;
-  const [mas, setMas] = useState(false);
-  // La pestaña encendida: la propia sección o, en la competición, «Liga».
-  const pestanaActiva = SECCIONES_LIGA.includes(section?.id ?? "")
-    ? LIGA.id
-    : pestanas.some((p) => p.id === section?.id)
-      ? section?.id
-      : "mas";
-  const subnavLiga = SUBNAV_LIGA.some((item) => item.id === section?.id);
+  // La hoja abierta: la de la pestaña tocada, o ninguna.
+  const [hoja, setHoja] = useState<IdPestana | null>(null);
+  const pestanaActiva = pestanaDe(section?.id);
+  const subnavLiga = pestanaActiva === "liga";
   const plantilla =
     section?.id === "carteles"
       ? (TEMPLATES.find((t) => t.id === params.get("plantilla")) ?? null)
@@ -163,32 +123,67 @@ export function StudioShell({
     "equipos",
     "federacion",
   ].some((id) => id === section?.id);
-  function navigation(alElegir?: () => void) {
+  /** Dirección de una entrada: conserva la categoría y cambia solo lo suyo (la plantilla). */
+  function rutaEntrada(entrada: EntradaMenu) {
+    return rutaSeccion(
+      entrada.seccion,
+      cambiarParametros(params, {
+        plantilla: entrada.extra?.plantilla ?? null,
+        tema: entrada.extra?.tema ?? null,
+        partido: null,
+      }),
+    );
+  }
+  function esActual(entrada: EntradaMenu) {
+    if (entrada.seccion !== section?.id) return false;
+    return !entrada.extra?.plantilla || entrada.extra.plantilla === params.get("plantilla");
+  }
+  function ir(entrada: EntradaMenu, alElegir?: () => void) {
+    alElegir?.();
+    if (!esActual(entrada)) navigate(rutaEntrada(entrada), "nav-tab");
+  }
+  /** Lateral de escritorio: las mismas pestañas y entradas que la barra del móvil. */
+  function navigation() {
     return (
       <nav aria-label="Navegación principal" className={styles.nav}>
-        {[...new Set(secciones.map((item) => item.grupo))].map((group) => (
-          <section key={group}>
-            <h2 className={styles.group}>{group}</h2>
-            {secciones.filter((item) => item.grupo === group).map((item) => (
-              <Link
-                key={item.id}
-                href={rutaSeccion(item.id, params)}
-                aria-current={item.id === section?.id ? "page" : undefined}
-                className={styles.link}
-                onNavigate={(event) => {
-                  event.preventDefault();
-                  alElegir?.();
-                  if (item.id !== section?.id) navigate(rutaSeccion(item.id, params));
-                }}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </section>
-        ))}
+        <Link
+          href={rutaSeccion("inicio", params)}
+          aria-current={section?.id === "inicio" ? "page" : undefined}
+          className={styles.link}
+          onNavigate={(event) => {
+            event.preventDefault();
+            if (section?.id !== "inicio") navigate(rutaSeccion("inicio", params));
+          }}
+        >
+          Inicio
+        </Link>
+        {pestanas
+          .filter((p) => p.grupos)
+          .map((pestana) => (
+            <section key={pestana.id}>
+              <h2 className={styles.group}>{pestana.label}</h2>
+              {gruposVisibles(pestana, visibles, tecnico).flatMap((g) =>
+                g.entradas.map((entrada) => (
+                  <Link
+                    key={`${entrada.seccion}-${entrada.label}`}
+                    href={rutaEntrada(entrada)}
+                    aria-current={esActual(entrada) ? "page" : undefined}
+                    className={styles.link}
+                    onNavigate={(event) => {
+                      event.preventDefault();
+                      ir(entrada);
+                    }}
+                  >
+                    {entrada.label}
+                  </Link>
+                )),
+              )}
+            </section>
+          ))}
       </nav>
     );
   }
+  const abierta = pestanas.find((p) => p.id === hoja);
   return (
     <div className={styles.shell}>
       <a className={styles.skip} href="#contenido">
@@ -288,55 +283,62 @@ export function StudioShell({
         <nav
           aria-label="Accesos rápidos"
           className={styles.tabs}
-          style={{ "--pestanas": pestanas.length + 1 } as CSSProperties}
+          style={{ "--pestanas": pestanas.length } as CSSProperties}
         >
-          {pestanas.map((pestana) => (
-            <Link
-              key={pestana.id}
-              href={rutaSeccion(pestana.id, params)}
-              aria-current={pestana.id === section?.id ? "page" : undefined}
-              data-activa={pestana.id === pestanaActiva}
-              className={styles.tab}
-              onNavigate={(event) => {
-                event.preventDefault();
-                if (pestana.id !== section?.id) navigate(rutaSeccion(pestana.id, params), "nav-tab");
-              }}
-            >
-              <Icono trazo={pestana.icono} />
-              {pestana.label}
-            </Link>
-          ))}
-          <button
-            type="button"
-            className={styles.tab}
-            data-activa={pestanaActiva === "mas"}
-            aria-haspopup="dialog"
-            onClick={() => setMas(true)}
-          >
-            <Icono trazo={ICONO_MAS} />
-            Más
-          </button>
+          {pestanas.map((pestana) =>
+            pestana.grupos ? (
+              <button
+                key={pestana.id}
+                type="button"
+                className={styles.tab}
+                data-activa={pestana.id === pestanaActiva}
+                aria-haspopup="dialog"
+                onClick={() => setHoja(pestana.id)}
+              >
+                <Icono trazo={pestana.icono} />
+                {pestana.label}
+              </button>
+            ) : (
+              <Link
+                key={pestana.id}
+                href={rutaSeccion("inicio", params)}
+                aria-current={section?.id === "inicio" ? "page" : undefined}
+                data-activa={pestana.id === pestanaActiva}
+                className={styles.tab}
+                onNavigate={(event) => {
+                  event.preventDefault();
+                  if (section?.id !== "inicio") navigate(rutaSeccion("inicio", params), "nav-tab");
+                }}
+              >
+                <Icono trazo={pestana.icono} />
+                {pestana.label}
+              </Link>
+            ),
+          )}
         </nav>
         <Dialog
-          open={mas}
-          onClose={() => setMas(false)}
-          title="Todo el Studio"
+          open={!!abierta}
+          onClose={() => setHoja(null)}
+          title={abierta?.label ?? ""}
           closeLabel="Cerrar menú"
           mobilePresentation="sheet"
         >
-          {/* Solo montado mientras está abierta: si no, el menú y el nombre salen dos veces. */}
-          {mas && (
-          <div className={styles.menuMas}>
-            {navigation(() => setMas(false))}
-            {acceso && (
-              <div className={styles.cuenta}>
-                <span>{acceso.nombre}</span>
-                <button type="button" onClick={() => void cerrarSesionYSalir()}>
-                  Salir
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Solo montada mientras está abierta: si no, las entradas salen dos veces. */}
+          {abierta && (
+            <>
+              <TarjetasMenu
+                grupos={gruposVisibles(abierta, visibles, tecnico)}
+                alElegir={() => setHoja(null)}
+              />
+              {abierta.id === "mas" && acceso && (
+                <div className={`${styles.cuenta} ${styles.cuentaHoja}`}>
+                  <span>{acceso.nombre}</span>
+                  <button type="button" onClick={() => void cerrarSesionYSalir()}>
+                    Salir
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </Dialog>
       </div>

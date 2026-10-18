@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
-import { barlowUi, nunito } from "../../../../styles/fonts";
+import { manrope, marcador } from "../../../../styles/fonts";
 import theme from "../../../../styles/tokens.module.css";
 import "./fixture.css";
 export const metadata = { title: "Santiso Studio · Componentes" };
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="es">
-      <body className={`${barlowUi.variable} ${nunito.variable} ${theme.theme}`}>{children}</body>
+      <body className={`${marcador.variable} ${manrope.variable} ${theme.theme}`}>{children}</body>
     </html>
   );
 }

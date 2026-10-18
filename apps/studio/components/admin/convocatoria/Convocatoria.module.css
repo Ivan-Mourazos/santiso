@@ -152,10 +152,17 @@
 }
 @media (max-width: 900px) {
   .panel {
-    padding-bottom: 140px;
+    padding-bottom: 10rem;
   }
+  /* La acción flota justo encima de la barra de pestañas, sin franja propia. */
   .barra {
     left: 0;
-    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    bottom: var(--studio-barra-abajo);
+    border-top: 0;
+    background: none;
+    backdrop-filter: none;
+  }
+  .barra button {
+    box-shadow: var(--ui-shadow);
   }
 }

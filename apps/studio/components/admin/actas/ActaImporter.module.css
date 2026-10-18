@@ -77,9 +77,9 @@
   gap: var(--ui-space-3);
   min-width: 0;
   padding: var(--ui-space-5);
-  border: 2px dashed var(--ui-border);
+  border: 1px solid var(--ui-line);
   border-radius: var(--ui-radius);
-  background: var(--ui-bg);
+  background: var(--ui-raised);
 }
 .dropzone[data-selected="true"],
 .dropzone:focus-within {
@@ -206,19 +206,3 @@
   }
 }
 
-/* El botón nativo de «elegir archivo» con los colores del panel, en vez del gris del sistema. */
-.dropzone input[type="file"]::file-selector-button {
-  margin-right: var(--ui-space-3, 0.75rem);
-  padding: 0.5rem 1rem;
-  border: 1px solid rgb(255 255 255 / 15%);
-  border-radius: var(--ui-radius);
-  background: var(--ui-raised, #242424);
-  color: var(--ui-text, #fff);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-.dropzone input[type="file"]::file-selector-button:hover {
-  border-color: var(--ui-accent);
-  color: var(--ui-accent);
-}

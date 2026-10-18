@@ -415,7 +415,7 @@
   position: fixed;
   left: max(0.75rem, env(safe-area-inset-left));
   right: max(0.75rem, env(safe-area-inset-right));
-  bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  bottom: var(--studio-barra-abajo);
   z-index: 30;
   display: grid;
 }

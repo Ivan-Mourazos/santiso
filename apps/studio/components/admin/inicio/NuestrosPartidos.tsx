@@ -61,9 +61,18 @@ export default function NuestrosPartidos() {
         <span className={styles.esqueleto} />
       </div>
     );
-  if (datos.partidos.length === 0) return null;
+  if (datos.partidos.length === 0)
+    return (
+      <p className={styles.vacio}>
+        Sin partidos esta semana. El calendario entero está en{" "}
+        <Link href="/admin/partidos" transitionTypes={["nav-forward"]}>
+          Liga → Partidos
+        </Link>
+        .
+      </p>
+    );
   return (
-    <section className={styles.partidos} aria-label="Nuestros partidos">
+    <div className={styles.partidos}>
       {datos.partidos.map(({ categoria, partido: p }) => {
         const { despues, pasos, principal } = progresoPartido(
           p,
@@ -72,47 +81,127 @@ export default function NuestrosPartidos() {
           datos.carteles[p.id] ?? {},
         );
         const cuando = fechaPartido(p.fecha);
-        const resultado = marcador(p);
         const hechos = pasos.filter((paso) => paso.tono === "hecho").length;
+        const cat = encodeURIComponent(categoria);
+        // Local arriba, como en el acta; el Santiso siempre en amarillo.
+        const equipos = [
+          {
+            nombre: p.santiso,
+            escudo: p.santisoEscudoUrl,
+            goles: p.golesSantiso,
+            propio: true,
+          },
+          { nombre: p.rival.nombre, escudo: p.rival.escudoUrl, goles: p.golesRival, propio: false },
+        ];
+        if (!p.santisoLocal) equipos.reverse();
+        const jugado = p.golesSantiso !== null && p.golesRival !== null;
         return (
-          <article key={p.id} className={styles.partido} data-partido-inicio>
-            <p className={styles.partidoContexto}>
-              <span className={styles.categoria}>{categoria}</span>
-              {despues ? "Último partido" : "Próximo"} · J{p.jornadaNumero} ·{" "}
-              {p.santisoLocal ? "Casa" : "Fuera"}
-            </p>
-            <div className={styles.partidoRival}>
-              <h3>
-                <Link
-                  href={`/admin/partidos?categoria=${encodeURIComponent(categoria)}`}
-                  transitionTypes={["nav-forward"]}
-                >
-                  {p.rival.nombre}
+          <section
+            key={p.id}
+            className={styles.tablero}
+            aria-label={`${categoria}: ${despues ? "último partido" : "próximo partido"}`}
+          >
+            <article className={styles.partido} data-partido-inicio>
+              <p className={styles.partidoContexto}>
+                <span className={styles.categoria}>{categoria}</span>
+                <span>
+                  Xornada {p.jornadaNumero} ·{" "}
+                  {despues ? "Final" : p.santisoLocal ? "Casa" : "Fuera"}
+                </span>
+              </p>
+              <div className={styles.cruce}>
+                <ul>
+                  {equipos.map((e) => (
+                    <li key={e.nombre} data-propio={e.propio || undefined}>
+                      {e.escudo ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- escudo de la media local
+                        <img src={e.escudo} alt="" width={32} height={32} />
+                      ) : (
+                        <span className={styles.sinEscudo} aria-hidden="true" />
+                      )}
+                      <span>{e.nombre}</span>
+                    </li>
+                  ))}
+                </ul>
+                {jugado ? (
+                  <p className={styles.goles} aria-label={`Resultado ${marcador(p)?.cifras ?? ""}`}>
+                    {equipos.map((e) => (
+                      <span key={e.nombre} data-propio={e.propio || undefined}>
+                        {e.goles}
+                      </span>
+                    ))}
+                  </p>
+                ) : (
+                  <p className={styles.hora}>{cuando.hora || "—"}</p>
+                )}
+              </div>
+              <p className={styles.partidoCuando}>
+                <Link href={`/admin/partidos?categoria=${cat}`} transitionTypes={["nav-forward"]}>
+                  {cuando.dia}
+                  {p.campo ? ` · ${p.campo}` : ""}
                 </Link>
-              </h3>
-              <strong>{resultado?.cifras ?? (cuando.hora || "—")}</strong>
-            </div>
-            <p className={styles.partidoCuando}>
-              {cuando.dia}
-              {p.campo ? ` · ${p.campo}` : ""}
-            </p>
+              </p>
+            </article>
             <Link
               href={principal.href}
               className={styles.siguiente}
               transitionTypes={["nav-forward"]}
               data-accion-principal
             >
-              <span>
-                <small>
-                  Siguiente paso · {hechos}/{pasos.length}
-                </small>
+              <span className={styles.siguienteCifra}>
+                {hechos}/{pasos.length}
+              </span>
+              <span className={styles.siguienteTexto}>
+                <small>Siguiente paso</small>
                 {principal.titulo}
               </span>
-              <span aria-hidden="true">→</span>
+              <span className={styles.siguienteFlecha} aria-hidden="true">
+                →
+              </span>
             </Link>
-          </article>
+            <div className={styles.cuadros}>
+              <Link
+                href={`/admin/partidos?categoria=${cat}`}
+                className={styles.cuadro}
+                transitionTypes={["nav-forward"]}
+              >
+                <small>Pasos del partido</small>
+                <span className={styles.barras} aria-hidden="true">
+                  {pasos.map((paso) => (
+                    <span key={paso.titulo} data-hecho={paso.tono === "hecho" || undefined} />
+                  ))}
+                </span>
+                <span>
+                  {hechos} de {pasos.length} hechos
+                </span>
+              </Link>
+              {p.clasificacion ? (
+                <Link
+                  href={`/admin/clasificacion?categoria=${cat}`}
+                  className={styles.cuadro}
+                  transitionTypes={["nav-forward"]}
+                >
+                  <small>Clasificación</small>
+                  <strong>{p.clasificacion.posicion}º</strong>
+                  <span>
+                    {p.clasificacion.puntos} pts · {p.clasificacion.jugados} PJ
+                  </span>
+                </Link>
+              ) : (
+                <Link
+                  href={`/admin/liga?categoria=${cat}`}
+                  className={styles.cuadro}
+                  transitionTypes={["nav-forward"]}
+                >
+                  <small>Goleadores</small>
+                  <strong>Ver</strong>
+                  <span>Y tarjetas</span>
+                </Link>
+              )}
+            </div>
+          </section>
         );
       })}
-    </section>
+    </div>
   );
 }

@@ -1,16 +1,15 @@
 import localFont from "next/font/local";
-/* Títulos y números: la misma Barlow Condensed de los carteles. */
-export const barlowUi = localFont({
-  src: [
-    { path: "../app/fonts/BarlowCondensed-600-latin.woff2", weight: "600", style: "normal" },
-    { path: "../app/fonts/BarlowCondensed-800-latin.woff2", weight: "800", style: "normal" },
-  ],
-  variable: "--font-barlow",
+/* Títulos y números: Big Shoulders Display, la letra de marcador de estadio. */
+export const marcador = localFont({
+  src: "../app/fonts/BigShouldersDisplay-latin.woff2",
+  variable: "--font-marcador",
+  weight: "100 900",
   display: "swap",
 });
-export const nunito = localFont({
-  src: "../app/fonts/Nunito-latin.woff2",
-  variable: "--font-nunito",
-  weight: "200 1000",
+/* Para leer: Manrope, redonda y clara en el móvil. */
+export const manrope = localFont({
+  src: "../app/fonts/Manrope-latin.woff2",
+  variable: "--font-manrope",
+  weight: "200 800",
   display: "swap",
 });

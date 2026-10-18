@@ -1,209 +1,251 @@
 /*
- * Portada: arriba el partido que toca de cada equipo; debajo, la lista de categorías en filas
- * de 56 px (icono, título, para qué sirve y flecha).
+ * Portada en tablero: por cada equipo, la tarjeta de cristal del partido, la píldora amarilla del
+ * siguiente paso y dos cuadros (pasos y clasificación). Números en letra de marcador.
  */
 .inicio {
   display: grid;
   gap: var(--ui-space-3);
   max-width: 640px;
 }
-.cabecera {
-  display: flex;
-  align-items: center;
-  gap: var(--ui-space-3);
-  min-width: 0;
-}
-.titulo {
-  margin: var(--ui-space-2) 0 0;
-  color: var(--ui-muted);
-  font: 800 var(--ui-text-xs) / 1.2 var(--ui-font-body);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-.cabecera .titulo {
+.vacio {
   margin: 0;
-}
-.volver {
-  flex: none;
-  min-height: 44px;
-  padding: 0 var(--ui-space-3);
-  border: 0;
+  padding: var(--ui-space-4);
   border-radius: var(--ui-radius);
-  background: var(--ui-control);
-  color: var(--ui-text);
-  font: 800 var(--ui-text-body) var(--ui-font-body);
-  cursor: pointer;
-}
-.lista {
-  display: grid;
-  border-radius: var(--ui-radius);
-  background: var(--ui-surface);
-  overflow: hidden;
-}
-.fila {
-  display: flex;
-  align-items: center;
-  gap: var(--ui-space-3);
-  width: 100%;
-  min-height: var(--ui-row);
-  padding: var(--ui-space-2) var(--ui-space-4);
-  border: 0;
-  border-bottom: 1px solid var(--ui-line);
-  background: transparent;
-  color: var(--ui-text);
-  font: inherit;
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background-color var(--ui-duration) var(--ui-ease);
-}
-.fila:last-child {
-  border-bottom: 0;
-}
-.fila svg {
-  flex: none;
-  color: var(--ui-accent);
-}
-.fila strong {
-  font-weight: 800;
-  font-size: var(--ui-text-base);
-}
-.filaTexto {
-  display: grid;
-  flex: 1;
-  min-width: 0;
-}
-.filaTexto span {
+  background: var(--ui-panel-face);
   color: var(--ui-muted);
-  font-size: var(--ui-text-sm);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
-.flecha {
-  margin-left: auto;
-  color: var(--ui-muted);
-  font-size: var(--ui-text-lg);
-}
-.fila:active {
-  background: var(--ui-raised);
-}
-@media (hover: hover) {
-  .fila:hover {
-    background: var(--ui-raised);
-  }
-}
-.fila:focus-visible,
-.volver:focus-visible {
-  outline: 3px solid var(--ui-accent);
-  outline-offset: -3px;
-}
-
-/* ── Nuestros partidos ───────────────────────────────────────────── */
 .partidos {
   display: grid;
+  gap: var(--ui-space-5);
+}
+/* Mismo alto que el tablero: al llegar los datos, nada salta. */
+.esqueleto {
+  height: 330px;
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+}
+.tablero {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--ui-space-2);
 }
-/* Mismo alto que la tarjeta: al llegar los datos, la lista de abajo no salta. */
-.esqueleto {
-  height: 171px;
-  border-radius: var(--ui-radius);
-  background: var(--ui-surface);
-}
 .partido {
+  grid-column: 1 / -1;
   position: relative;
   display: grid;
-  gap: var(--ui-space-1);
-  padding: var(--ui-space-3) var(--ui-space-4) var(--ui-space-4);
-  border-radius: var(--ui-radius);
-  background: var(--ui-surface);
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-4);
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-panel-face);
+  box-shadow: var(--ui-panel-shadow), var(--ui-shadow);
+  overflow: hidden;
+}
+/* Halo amarillo tras el marcador, como los focos de un estadio. */
+.partido::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(closest-side, rgb(245 197 24 / 20%), transparent);
+  pointer-events: none;
 }
 .partidoContexto {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--ui-space-2);
   margin: 0;
   color: var(--ui-muted);
   font-size: var(--ui-text-sm);
+  font-weight: 700;
 }
 .categoria {
-  padding: 2px var(--ui-space-2);
+  padding: 2px var(--ui-space-3);
   border-radius: var(--ui-radius-pill);
-  background: var(--ui-raised);
-  color: var(--ui-text);
+  background: var(--ui-accent);
+  color: var(--ui-on-accent);
   font-weight: 800;
   font-size: var(--ui-text-xs);
 }
-.partidoRival {
+.cruce {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ui-space-3);
+}
+.cruce ul {
+  display: grid;
+  gap: var(--ui-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cruce li {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
   gap: var(--ui-space-3);
   min-width: 0;
+  color: var(--ui-muted);
+  font-weight: 800;
+  font-size: var(--ui-text-base);
 }
-.partidoRival h3 {
+.cruce li[data-propio] {
+  color: var(--ui-text);
+}
+.cruce li > span:last-child {
   min-width: 0;
-  margin: 0;
-  font: 800 var(--ui-text-xl) / 1.15 var(--ui-font-title);
   overflow-wrap: anywhere;
 }
-/* Toda la tarjeta lleva al partido; el botón del siguiente paso queda por encima. */
-.partidoRival h3 a::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-}
-.partidoRival h3 a:focus-visible {
-  outline: none;
-}
-.partidoRival h3 a:focus-visible::after {
-  outline: 3px solid var(--ui-accent);
-  outline-offset: -3px;
-}
-.partidoRival strong {
+.cruce img,
+.sinEscudo {
   flex: none;
-  font: 800 var(--ui-text-xl) / 1 var(--ui-font-title);
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+.sinEscudo {
+  border-radius: 10px;
+  background: var(--ui-control);
+}
+.goles {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font: 900 52px / 0.9 var(--ui-font-title);
+  text-align: right;
   font-variant-numeric: tabular-nums;
 }
+.goles span {
+  color: var(--ui-muted);
+}
+.goles span[data-propio] {
+  color: var(--ui-accent);
+  text-shadow: 0 0 28px rgb(245 197 24 / 45%);
+}
+.hora {
+  margin: 0;
+  font: 900 var(--ui-text-2xl) / 1 var(--ui-font-title);
+  color: var(--ui-accent);
+}
 .partidoCuando {
+  position: relative;
   margin: 0;
   color: var(--ui-muted);
   font-size: var(--ui-text-sm);
 }
-.partidoCuando::first-letter {
+.partidoCuando a {
+  color: inherit;
+  text-decoration: none;
+}
+.partidoCuando a::first-letter {
   text-transform: uppercase;
 }
+/* Toda la tarjeta lleva al partido. */
+.partidoCuando a::after {
+  content: "";
+  position: absolute;
+  inset: -400px -20px -20px;
+}
+.partidoCuando a:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
 .siguiente {
-  position: relative;
-  z-index: 1;
-  display: flex;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: var(--ui-space-3);
-  min-height: var(--ui-control-h);
-  margin-top: var(--ui-space-2);
-  padding: var(--ui-space-2) var(--ui-space-4);
-  border-radius: var(--ui-radius);
-  background: var(--ui-accent-soft);
-  color: var(--ui-accent);
-  font-weight: 800;
-  font-size: var(--ui-text-body);
+  min-height: 64px;
+  padding: var(--ui-space-2) var(--ui-space-2) var(--ui-space-2) var(--ui-space-5);
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-accent);
+  box-shadow: var(--ui-glow);
+  color: var(--ui-on-accent);
   text-decoration: none;
   transition: transform var(--ui-duration) var(--ui-ease);
 }
-.siguiente > span:first-child {
-  display: grid;
+.siguienteCifra {
+  font: 900 32px / 1 var(--ui-font-title);
 }
-.siguiente small {
-  color: var(--ui-muted);
+.siguienteTexto {
+  display: grid;
+  min-width: 0;
+  font-weight: 800;
+  font-size: var(--ui-text-base);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.siguienteTexto small {
   font-weight: 700;
   font-size: var(--ui-text-xs);
+  opacity: 0.75;
 }
-.siguiente:active {
+.siguienteFlecha {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--ui-on-accent);
+  color: var(--ui-accent);
+  font-size: var(--ui-text-lg);
+}
+.siguiente:active,
+.cuadro:active {
   transform: scale(0.98);
 }
-.siguiente:focus-visible {
+.siguiente:focus-visible,
+.cuadro:focus-visible {
   outline: 3px solid var(--ui-accent);
-  outline-offset: 2px;
+  outline-offset: 3px;
+}
+.cuadros {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-2);
+}
+.cuadro {
+  display: grid;
+  align-content: start;
+  gap: var(--ui-space-1);
+  min-height: 112px;
+  padding: var(--ui-space-4);
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  text-decoration: none;
+  transition: transform var(--ui-duration) var(--ui-ease);
+}
+.cuadro small {
+  color: var(--ui-muted);
+  font-weight: 700;
+  font-size: var(--ui-text-sm);
+}
+.cuadro strong {
+  font: 900 34px / 1 var(--ui-font-title);
+}
+.cuadro > span:last-child {
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.barras {
+  display: flex;
+  gap: 4px;
+  margin-block: var(--ui-space-2);
+}
+.barras span {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--ui-control);
+}
+.barras span[data-hecho] {
+  background: var(--ui-accent);
 }

@@ -98,23 +98,13 @@
   display: grid;
   gap: var(--ui-space-2, 0.5rem);
   padding: var(--ui-space-4, 1rem);
-  border: 1px dashed rgb(255 255 255 / 20%);
+  border: 1px solid var(--ui-line);
   border-radius: var(--ui-radius);
+  background: var(--ui-raised);
 }
 .dropzone:focus-within,
 .dropzone[data-con-archivo="true"] {
   border-color: var(--ui-accent);
-}
-.dropzone input[type="file"]::file-selector-button {
-  margin-right: var(--ui-space-3, 0.75rem);
-  padding: 0.5rem 1rem;
-  border: 1px solid rgb(255 255 255 / 15%);
-  border-radius: var(--ui-radius);
-  background: var(--ui-raised, #242424);
-  color: var(--ui-text, #fff);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
 }
 .vistaPrevia {
   max-height: 26rem;

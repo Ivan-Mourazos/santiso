@@ -44,8 +44,11 @@
 .title {
   margin: 0;
   font-family: var(--ui-font-title);
-  font-size: var(--ui-text-xl);
-  line-height: 1.25;
+  font-weight: 900;
+  font-size: var(--ui-text-2xl);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 .description {
   color: var(--ui-muted);
@@ -79,9 +82,10 @@
 }
 .button:focus-visible,
 .danger:focus-visible,
+/* El foco llega al título al abrir, para el lector de pantalla; a la vista no hace falta marco. */
+.title:focus,
 .title:focus-visible {
-  outline: 2px solid var(--ui-accent);
-  outline-offset: 3px;
+  outline: none;
 }
 .button:disabled,
 .danger:disabled {
@@ -117,7 +121,7 @@
     flex-shrink: 0;
   }
   .title {
-    font-size: var(--ui-text-lg);
+    font-size: var(--ui-text-xl);
   }
   .content {
     flex: 1;
