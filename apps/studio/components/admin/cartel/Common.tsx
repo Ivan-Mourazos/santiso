@@ -9,6 +9,7 @@
 import React, { useId } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Select } from "@/components/ui/foundation/Fields";
+import { porJugarDeCategoria } from "@/lib/jornada/proximos";
 import { formatLiteralMatchDate } from "@/lib/match-date-time";
 import styles from "./Formularios.module.css";
 import { Flecha } from "./PlegableMovil";
@@ -179,19 +180,24 @@ const CrucePartido: React.FC<{ m: SelectorMatch; categoria: string }> = ({ m, ca
 };
 
 /**
- * Cartel de después del partido: lo primero es el partido.
+ * Lo primero del cartel es el partido.
  * - Ya elegido (desde Inicio, Partidos o la lista): su tarjeta arriba y los campos plegados
  *   para cambiar de partido o retocar.
- * - Sin elegir (desde Carteles): la categoría y, debajo, sus jornadas jugadas para tocar una;
- *   los campos a mano quedan plegados para un amistoso.
+ * - Sin elegir (desde Carteles): la categoría y, debajo, sus partidos para tocar uno —los jugados,
+ *   de los carteles de después; con `porJugar`, los que quedan—; los campos a mano quedan
+ *   plegados para un amistoso.
  */
 export const ConPartidoElegido: React.FC<{
   partidoId: string;
   dbMatches: SelectorMatch[];
   categoria: string;
   onSelect: (m: SelectorMatch) => void;
+  /** Cartel de antes del partido: se eligen los que quedan por jugar. */
+  porJugar?: boolean;
+  /** Categoría con la que abre la lista (`?categoria=`); sin ella, la del partido que toca. */
+  categoriaInicial?: string | null;
   children: React.ReactNode;
-}> = ({ partidoId, dbMatches, categoria, onSelect, children }) => {
+}> = ({ partidoId, dbMatches, categoria, onSelect, porJugar, categoriaInicial, children }) => {
   const m = partidoId ? dbMatches.find((x) => x.id === partidoId) : undefined;
   if (m)
     return (
@@ -209,7 +215,12 @@ export const ConPartidoElegido: React.FC<{
       </>
     );
   return (
-    <ElegirPartido dbMatches={dbMatches} onSelect={onSelect}>
+    <ElegirPartido
+      dbMatches={dbMatches}
+      onSelect={onSelect}
+      porJugar={porJugar}
+      categoriaInicial={categoriaInicial}
+    >
       {children}
     </ElegirPartido>
   );
@@ -217,26 +228,37 @@ export const ConPartidoElegido: React.FC<{
 
 const CATEGORIAS_CARTEL = ["Senior", "Veteranos"] as const;
 
-/** Las dos categorías arriba y las jornadas que ya jugó la elegida, de la última a la primera. */
+const esDelSantiso = (x: SelectorMatch) =>
+  `${x.equipo_local?.nombre ?? ""} ${x.equipo_visitante?.nombre ?? ""}`
+    .toLowerCase()
+    .includes("santiso");
+
+/**
+ * Las dos categorías arriba y los partidos de la elegida: los jugados, del último al primero, o
+ * con `porJugar` los que quedan, del más cercano al más lejano.
+ */
 const ElegirPartido: React.FC<{
   dbMatches: SelectorMatch[];
   onSelect: (m: SelectorMatch) => void;
+  porJugar?: boolean;
+  categoriaInicial?: string | null;
   children: React.ReactNode;
-}> = ({ dbMatches, onSelect, children }) => {
-  const jugados = dbMatches
-    .filter(
-      (x) =>
-        x.estado === "finalizado" &&
-        `${x.equipo_local?.nombre ?? ""} ${x.equipo_visitante?.nombre ?? ""}`
-          .toLowerCase()
-          .includes("santiso"),
-    )
-    .sort((a, b) => (b.fecha ?? "").localeCompare(a.fecha ?? ""));
-  // Abre en la categoría del último partido jugado: la de los carteles que tocan ahora.
+}> = ({ dbMatches, onSelect, porJugar, categoriaInicial, children }) => {
+  // Un solo «hoy» por montaje: la lista no cambia mientras se mira.
+  const [hoy] = React.useState(() => new Date());
+  const lista = porJugar
+    ? CATEGORIAS_CARTEL.flatMap((c) => porJugarDeCategoria(dbMatches, c, hoy))
+    : dbMatches
+        .filter((x) => x.estado === "finalizado" && esDelSantiso(x))
+        .sort((a, b) => (b.fecha ?? "").localeCompare(a.fecha ?? ""));
+  // Sin categoría pedida, abre en la del partido que toca: el último jugado o el próximo.
+  const queToca = porJugar
+    ? [...lista].sort((a, b) => (a.fecha ?? "￿").localeCompare(b.fecha ?? "￿"))[0]
+    : lista[0];
   const [elegida, setElegida] = React.useState<string | null>(null);
-  const categoria = elegida ?? jugados[0]?.categoria ?? "Senior";
-  const deLaCategoria = jugados.filter((x) => x.categoria === categoria);
-  if (jugados.length === 0) return <>{children}</>;
+  const categoria = elegida ?? categoriaInicial ?? queToca?.categoria ?? "Senior";
+  const deLaCategoria = lista.filter((x) => x.categoria === categoria);
+  if (lista.length === 0) return <>{children}</>;
   return (
     <>
       <section className={styles.elegirPartido} aria-label="Elige el partido">
@@ -254,7 +276,9 @@ const ElegirPartido: React.FC<{
           ))}
         </div>
         {deLaCategoria.length === 0 ? (
-          <p className={styles.partidoElegidoContexto}>Sin partidos jugados en {categoria}.</p>
+          <p className={styles.partidoElegidoContexto}>
+            Sin partidos {porJugar ? "por jugar" : "jugados"} en {categoria}.
+          </p>
         ) : (
           <ul>
             {deLaCategoria.map((x) => (

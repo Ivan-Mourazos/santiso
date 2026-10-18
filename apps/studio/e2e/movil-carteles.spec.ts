@@ -9,8 +9,14 @@ async function abrir(page: Page) {
   await page.goto("/admin/carteles?plantilla=partido");
   await expect(page.getByRole("heading", { level: 1, name: "Cartel de partido" })).toBeVisible();
   await page.waitForLoadState("networkidle");
-  // El cartel de partido se rellena eligiendo partido; los campos sueltos van plegados.
-  await page.locator("summary").filter({ hasText: "Editar datos a mano" }).tap();
+  // El cartel de partido abre con el próximo cargado. Estas pruebas son del cartel a mano (sin
+  // partido, sin guardar): se limpia y se abren los campos sueltos, que van plegados.
+  await expect(page.getByRole("region", { name: "Partido del cartel" })).toBeVisible({
+    timeout: 20000,
+  });
+  await page.locator("summary").filter({ hasText: "Más opciones" }).tap();
+  await page.getByRole("button", { name: "Limpiar datos", exact: true }).tap();
+  await page.locator("summary").filter({ hasText: "Otro partido o un amistoso, a mano" }).tap();
 }
 
 /** Sin pestañas: datos y vista previa van en la misma pantalla, uno debajo del otro. */

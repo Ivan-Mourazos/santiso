@@ -83,3 +83,35 @@ export function elegirProximos(partidos: SelectorMatch[], hoy: Date): NextMatch[
   });
   return elegidos.sort((a, b) => a.orden - b.orden).map((e) => e.partido);
 }
+
+/**
+ * Partidos del Santiso de una categoría que quedan por jugar, del más cercano al más lejano; los
+ * que no tienen fecha, al final. Desde el principio de `hoy`.
+ */
+export function porJugarDeCategoria(
+  partidos: SelectorMatch[],
+  categoria: string,
+  hoy: Date,
+): SelectorMatch[] {
+  const desde = new Date(hoy);
+  desde.setHours(0, 0, 0, 0);
+  const orden = (m: SelectorMatch) => (Number.isNaN(instante(m)) ? Infinity : instante(m));
+  return partidos
+    .filter(
+      (m) =>
+        pendiente(m) &&
+        clave3(m.categoria) === clave3(categoria) &&
+        (esSantiso(m.equipo_local) || esSantiso(m.equipo_visitante)) &&
+        !(instante(m) < desde.getTime()),
+    )
+    .sort((a, b) => orden(a) - orden(b));
+}
+
+/** El siguiente partido con fecha del Santiso en una categoría, o `null` si no queda ninguno. */
+export function proximoDeCategoria(
+  partidos: SelectorMatch[],
+  categoria: string,
+  hoy: Date,
+): SelectorMatch | null {
+  return porJugarDeCategoria(partidos, categoria, hoy).find((m) => m.fecha) ?? null;
+}

@@ -84,7 +84,7 @@ export default function GeneradorCartel({
     resetForm,
     competicionesCatalog,
     errorDatos,
-  } = useCartelForm(partidoInicial);
+  } = useCartelForm(partidoInicial, { proximo: (templateId || "partido") === "partido" });
 
   const tipo = templateId || "partido";
   // Fichajes, comunicados y celebraciones son el anuncio con su tema ya puesto.

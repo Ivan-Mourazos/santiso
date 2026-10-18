@@ -4,11 +4,7 @@ const PNG = Buffer.from(
   "base64",
 );
 test("Partido: recupera la previa después de un fallo de transporte", async ({ page }) => {
-  await page.goto("/admin/carteles?plantilla=partido");
-  const cargar = page.getByRole("button", { name: "Cargar próximo partido", exact: true });
-  await expect(cargar).toBeVisible();
-  await expect(page.getByLabel("Competición", { exact: true })).not.toHaveValue("");
-  await page.waitForLoadState("networkidle");
+  // El próximo partido se carga solo al abrir: la primera previa que pide falla.
   let fallar = true;
   await page.route("**/admin/carteles*", async (ruta) => {
     if (
@@ -20,7 +16,10 @@ test("Partido: recupera la previa después de un fallo de transporte", async ({ 
       await ruta.abort("failed");
     } else await ruta.continue();
   });
-  await cargar.tap();
+  await page.goto("/admin/carteles?plantilla=partido");
+  await expect(page.getByRole("region", { name: "Partido del cartel" })).toBeVisible({
+    timeout: 20000,
+  });
   await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
   await expect(
     page.getByRole("alert").filter({ hasText: "No se pudo cargar la previa" }),

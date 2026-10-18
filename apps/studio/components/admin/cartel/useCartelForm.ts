@@ -18,7 +18,7 @@ import type { Player, CronEvent, NextMatch } from "@/lib/cartel/types";
 import { fetchCompeticiones, type CompetenciaRow } from "@/lib/lecturas-cliente";
 import { pickDefaultCompetitionId } from "@/lib/competition";
 import { matchDateInput, matchTimeInput } from "./matchDateTime";
-import { CATEGORIAS_PROXIMOS, huecoProximo } from "@/lib/jornada/proximos";
+import { CATEGORIAS_PROXIMOS, huecoProximo, proximoDeCategoria } from "@/lib/jornada/proximos";
 interface CartelPlayer {
   id: string;
   nombre: string;
@@ -147,13 +147,28 @@ const DEFAULT_FORM: FormState = {
   showAssets: true,
 };
 
+/** Marca de `partidoInicialRef`: cargar el próximo partido de la categoría. */
+const PROXIMO = Symbol("proximo");
+
 /**
  * @param partidoInicial Partido que cargar al abrir (enlace desde «Jornada»). Solo se usa al
  * montar: cambiarlo después no vuelve a cargar nada.
+ * @param opciones `categoria`: con la que abre y a la que vuelve «Limpiar datos» (`?categoria=`).
+ * `proximo`: sin partido en el enlace, cargar el próximo de esa categoría (cartel de partido).
  */
-export function useCartelForm(partidoInicial?: string | null) {
-  const [form, setForm] = useState<FormState>(DEFAULT_FORM);
-  const partidoInicialRef = useRef(partidoInicial);
+export function useCartelForm(
+  partidoInicial?: string | null,
+  opciones: { categoria?: string | null; proximo?: boolean } = {},
+) {
+  const categoriaInicial = CATEGORIAS_PROXIMOS.find((c) => c === opciones.categoria) ?? "Senior";
+  const categoriaInicialRef = useRef(categoriaInicial);
+  const [form, setForm] = useState<FormState>(() => ({
+    ...DEFAULT_FORM,
+    categoria: categoriaInicial,
+  }));
+  const partidoInicialRef = useRef<string | typeof PROXIMO | null>(
+    partidoInicial || (opciones.proximo ? PROXIMO : null),
+  );
   const [equipos, setEquipos] = useState<CartelTeam[]>([]);
   const [jugadores, setJugadores] = useState<CartelPlayer[]>([]);
   const [dbMatches, setDbMatches] = useState<SelectorMatch[]>([]);
@@ -431,11 +446,14 @@ export function useCartelForm(partidoInicial?: string | null) {
   }
 
   // Abierto desde «Jornada» con un partido: se carga como si se hubiera elegido a mano, en
-  // cuanto llega la lista y una sola vez.
+  // cuanto llega la lista y una sola vez. Sin él, el cartel de partido carga el próximo.
   useEffect(() => {
     const id = partidoInicialRef.current;
     if (!id) return;
-    const partido = dbMatches.find((m) => m.id === id);
+    const partido =
+      id === PROXIMO
+        ? proximoDeCategoria(dbMatches, categoriaInicialRef.current, new Date())
+        : dbMatches.find((m) => m.id === id);
     if (!partido) return;
     // La ref se vacía al cargar, no antes: en desarrollo React ejecuta el efecto dos veces y
     // la primera pasada se cancela.
