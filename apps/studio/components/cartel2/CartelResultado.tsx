@@ -64,7 +64,7 @@ export function CartelResultado({ datos }: { datos: DatosResultado }) {
                   <Balon tamano={28} />
                   <span className={s.nombre} data-lectura-columna>
                     {g.nombre}
-                    {g.goles > 1 && <span className={s.veces}> ×{g.goles}</span>}
+                    {g.goles > 1 && <span className={s.veces}>×{g.goles}</span>}
                   </span>
                 </li>
               ))}
