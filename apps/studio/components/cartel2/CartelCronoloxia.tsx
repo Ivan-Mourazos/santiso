@@ -72,27 +72,36 @@ function Texto({ evento }: { evento: EventoCartel }) {
 }
 
 /** Alto que suman las dos columnas de la línea de tiempo, en px (2 × 742). */
-const ALTO_DOS_COLUMNAS = 1484;
+/** Alto útil de cada columna (una por equipo). */
+const ALTO_COLUMNA = 742;
 
 /**
- * Cronoloxía del partido: marcador arriba y línea de tiempo en el centro, con los minutos
- * sobre la línea y los hechos de cada equipo a su lado. Las filas se aprietan si hay muchos.
+ * Cronoloxía del partido: marcador arriba y, debajo, una columna por equipo (la de casa a la
+ * izquierda, como en el marcador), cada una por orden de minuto. Las filas se aprietan si hay
+ * muchas.
  */
 export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
   const eventos = [...datos.eventos].sort((a, c) => orden(a.minuto) - orden(c.minuto));
-  // Con pocas incidencias la letra crece para llenar el cartel; con muchas se queda en 34 px.
-  // Cada incidencia cuenta por las líneas que ocupa: un cambio o un nombre largo, dos.
-  const lineas = eventos.reduce(
-    (total, e) => total + (e.tipo === "cambio" || (e.jugador ?? "").length > 22 ? 2 : 1),
-    0,
+  const columnas = (["local", "visitante"] as const).map((lado) =>
+    eventos.filter((e) => e.lado === lado),
   );
+  // Con pocas incidencias la letra crece para llenar el cartel; con muchas se queda en 34 px.
+  // Cada incidencia cuenta por las líneas que ocupa: un cambio o un nombre largo, dos. Manda la
+  // columna más llena: las dos van con la misma letra.
+  const lineasDe = (lista: typeof eventos) =>
+    lista.reduce(
+      (total, e) => total + (e.tipo === "cambio" || (e.jugador ?? "").length > 22 ? 2 : 1),
+      0,
+    );
+  const lineas = Math.max(...columnas.map(lineasDe));
+  const filas = Math.max(...columnas.map((c) => c.length));
   const cuerpoLinea = Math.max(
     34,
-    Math.min(44, Math.floor(((ALTO_DOS_COLUMNAS / Math.max(lineas, 1) - 10) / 1.3) * 0.85)),
+    Math.min(44, Math.floor(((ALTO_COLUMNA / Math.max(lineas, 1) - 10) / 1.3) * 0.85)),
   );
   // Lo que aun así sobre se reparte entre las filas, para que no quede todo el hueco abajo.
-  const sobra = ALTO_DOS_COLUMNAS - lineas * (cuerpoLinea * 1.3 + 10);
-  const aire = Math.max(2, Math.min(18, Math.floor((sobra * 0.8) / Math.max(eventos.length, 1))));
+  const sobra = ALTO_COLUMNA - lineas * (cuerpoLinea * 1.3 + 10);
+  const aire = Math.max(2, Math.min(18, Math.floor((sobra * 0.8) / Math.max(filas, 1))));
   const pie = [fechaCorta(datos.fecha), datos.campo.toUpperCase()].filter(Boolean).join("  ·  ");
 
   return (
@@ -142,26 +151,41 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
       </div>
 
       {eventos.length === 0 && <div className={s.vacia}>SEN INCIDENCIAS REXISTRADAS</div>}
-      <ol
+      <div
         className={s.linea}
-        data-lectura-bloque
         style={{ "--cuerpo": `${cuerpoLinea}px`, "--aire": `${aire}px` } as CSSProperties}
       >
-        {eventos.map((e, i) => (
-          <li
-            key={`${e.minuto}-${i}`}
-            className={e.lado === "local" ? s.izquierda : s.derecha}
-            data-lectura-fila
-            data-propio={e.lado === "local" ? datos.local.propio : datos.visitante.propio}
-          >
-            <span className={s.hecho} data-lectura-columna>
-              <Icono tipo={e.tipo} />
-              <Texto evento={e} />
-            </span>
-            <span className={`${b.display} ${s.minuto}`}>{e.minuto ? `${e.minuto}'` : "–"}</span>
-          </li>
-        ))}
-      </ol>
+        {columnas.map((lista, i) => {
+          const lado = i === 0 ? "local" : "visitante";
+          const equipo = i === 0 ? datos.local : datos.visitante;
+          return (
+            <ol
+              key={lado}
+              className={s.columna}
+              aria-label={equipo.nombre}
+              data-lectura-bloque
+              data-lado={lado}
+            >
+              {lista.map((e, j) => (
+                <li
+                  key={`${e.minuto}-${j}`}
+                  className={i === 0 ? s.izquierda : s.derecha}
+                  data-lectura-fila
+                  data-propio={equipo.propio}
+                >
+                  <span className={s.hecho} data-lectura-columna>
+                    <Icono tipo={e.tipo} />
+                    <Texto evento={e} />
+                  </span>
+                  <span className={`${b.display} ${s.minuto}`}>
+                    {e.minuto ? `${e.minuto}'` : "–"}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          );
+        })}
+      </div>
 
       {pie && (
         <div className={`${b.dato} ${s.pie}`} data-lectura-bloque>
