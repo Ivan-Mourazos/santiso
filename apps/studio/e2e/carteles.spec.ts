@@ -7,15 +7,25 @@ import { vigilarSalidasAInternet } from "./red";
  */
 /** El cartel de la previsualización (motor HTML/CSS). */
 const lienzo = (page: Page) => page.locator("[data-vista-cartel] [data-cartel]");
-const plantilla = (page: Page) => page.getByLabel("Plantilla de cartel", { exact: true });
+/** Desde el catálogo de Carteles, se toca el cartel por su nombre. */
+async function elegir(page: Page, nombre: string, id: string) {
+  await page.goto("/admin/carteles");
+  await page.getByRole("link", { name: new RegExp(`^${nombre}`) }).click();
+  await expect(page).toHaveURL(new RegExp(`plantilla=${id}`));
+}
 
 test("la pantalla monta el cartel y las acciones de cada plantilla", async ({ page }) => {
   const errores: string[] = [];
   const externas = vigilarSalidasAInternet(page);
   page.on("pageerror", (error) => errores.push(error.message));
 
+  // Sin plantilla, el catálogo por grupos; tocando un cartel se abre su generador.
   await page.goto("/admin/carteles");
-  await expect(plantilla(page)).toBeVisible({ timeout: 20000 });
+  await expect(page.getByRole("heading", { name: "Antes del partido" })).toBeVisible({
+    timeout: 20000,
+  });
+  await elegir(page, "Cartel de partido", "partido");
+  await expect(page.getByRole("heading", { level: 1, name: "Cartel de partido" })).toBeVisible();
   await expect(lienzo(page)).toBeVisible({ timeout: 20000 });
 
   await expect(page.getByRole("button", { name: "Descargar PNG" })).toBeVisible();
@@ -26,8 +36,7 @@ test("la pantalla monta el cartel y las acciones de cada plantilla", async ({ pa
 });
 
 test("cambiar de plantilla cambia el formulario y el cartel", async ({ page }) => {
-  await page.goto("/admin/carteles");
-  await expect(plantilla(page)).toBeVisible({ timeout: 20000 });
+  await elegir(page, "Cartel de partido", "partido");
 
   // Partido: se elige categoría y partido; los campos sueltos están plegados para retocar.
   await expect(page.getByRole("button", { name: "Cargar próximo partido" })).toBeVisible();
@@ -36,15 +45,13 @@ test("cambiar de plantilla cambia el formulario y el cartel", async ({ page }) =
   await expect(page.getByLabel("Rival", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Fecha", { exact: true })).toBeVisible();
 
-  await plantilla(page).selectOption("clasificacion");
-  await expect(page).toHaveURL(/plantilla=clasificacion/);
+  await elegir(page, "Clasificación", "clasificacion");
   // Clasificación trae además el texto listo para Instagram, sin depender de los datos.
   await expect(page.getByText("Texto para Instagram")).toBeVisible({ timeout: 20000 });
   await expect(page.getByRole("button", { name: /Copiar/ })).toBeVisible();
   await expect(lienzo(page)).toBeVisible();
 
-  await plantilla(page).selectOption("proximos");
-  await expect(page).toHaveURL(/plantilla=proximos/);
+  await elegir(page, "Próximos partidos", "proximos");
   await expect(lienzo(page)).toBeVisible();
 });
 
@@ -52,7 +59,7 @@ test("cambiar de plantilla cambia el formulario y el cartel", async ({ page }) =
 for (const ancho of [1280, 1920]) {
   test(`la pantalla de carteles cabe a ${ancho}px`, async ({ page }) => {
     await page.setViewportSize({ width: ancho, height: 900 });
-    await page.goto("/admin/carteles");
+    await page.goto("/admin/carteles?plantilla=partido");
     await expect(lienzo(page)).toBeVisible({ timeout: 20000 });
     const desborda = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,

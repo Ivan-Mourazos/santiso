@@ -5,7 +5,12 @@ import Link from "next/link";
 import { LIMITE_INSTAGRAM, textoInstagram } from "@/lib/cartel/instagram";
 
 // UI Components & Hooks
-import { TEMPLATES, type TemplateId } from "./cartel/types";
+import {
+  TEMAS_MULTIUSOS,
+  TEMPLATES,
+  type MultiusosTema,
+  type TemplateId,
+} from "./cartel/types";
 import { useCartelForm } from "./cartel/useCartelForm";
 import { Button } from "@/components/ui/foundation/Button";
 import AvisoError from "./AvisoError";
@@ -42,6 +47,8 @@ interface Props {
   partidoInicial?: string | null;
   /** «Próximos encuentros» abierto desde «Jornada»: se rellena solo. */
   rellenarProximos?: boolean;
+  /** Tema del anuncio con el que abrir (`?tema=`), desde el catálogo de carteles. */
+  temaInicial?: string | null;
   showToast: (msg: string, type?: "success" | "error") => void;
 }
 
@@ -49,6 +56,7 @@ export default function GeneradorCartel({
   templateId,
   partidoInicial,
   rellenarProximos = false,
+  temaInicial = null,
   showToast,
 }: Props) {
   const {
@@ -77,6 +85,13 @@ export default function GeneradorCartel({
   } = useCartelForm(partidoInicial);
 
   const tipo = templateId || "partido";
+  // Fichajes, comunicados y celebraciones son el anuncio con su tema ya puesto.
+  useEffect(() => {
+    if (tipo === "multiusos" && temaInicial && TEMAS_MULTIUSOS.includes(temaInicial))
+      set("multiusosTema", temaInicial as MultiusosTema);
+    // Solo al abrir: después el tema lo cambia quien hace el cartel.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [copied, setCopied] = useState(false);
   const [formato, setFormato] = useState<FormatoCartel>("publicacion");
 

@@ -6,8 +6,8 @@ const PNG = Buffer.from(
 );
 
 async function abrir(page: Page) {
-  await page.goto("/admin/carteles");
-  await expect(page.getByLabel("Plantilla de cartel", { exact: true })).toBeVisible();
+  await page.goto("/admin/carteles?plantilla=partido");
+  await expect(page.getByRole("heading", { level: 1, name: "Cartel de partido" })).toBeVisible();
   await page.waitForLoadState("networkidle");
   // El cartel de partido se rellena eligiendo partido; los campos sueltos van plegados.
   await page.locator("summary").filter({ hasText: "Editar datos a mano" }).tap();
@@ -32,21 +32,20 @@ for (const ancho of [360, 390]) {
     // Ya no hay pestañas: los datos siguen ahí mientras se ve el cartel.
     await expect(page.getByRole("tab")).toHaveCount(0);
     await expect(page.getByLabel("Rival", { exact: true })).toHaveValue("Rival móvil de prueba");
-    const selector = page.getByLabel("Plantilla de cartel", { exact: true });
-    expect(Math.round((await selector.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
-    expect(
-      await selector.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
-    ).toBeGreaterThanOrEqual(16);
-    for (const plantilla of [
-      "partido",
-      "resumo",
-      "cronoloxia",
-      "proximos",
-      "noso11",
-      "multiusos",
-      "clasificacion",
+    // Cada cartel se abre desde el catálogo, con filas de toque cómodo.
+    for (const [plantilla, nombre] of [
+      ["partido", "Cartel de partido"],
+      ["resumo", "Resultado"],
+      ["cronoloxia", "Cronoloxía"],
+      ["proximos", "Próximos partidos"],
+      ["noso11", "O Noso 11"],
+      ["multiusos", "Comunicados y avisos"],
+      ["clasificacion", "Clasificación"],
     ]) {
-      await selector.selectOption(plantilla);
+      await page.goto("/admin/carteles");
+      const fila = page.getByRole("link", { name: new RegExp(`^${nombre}`) });
+      expect(Math.round((await fila.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
+      await fila.tap();
       await expect(page).toHaveURL(new RegExp(`plantilla=${plantilla}`));
       await page.waitForLoadState("networkidle");
       await vista(page);

@@ -6,18 +6,25 @@
 import type { CronEvent, DatosClasificacion, NextMatch, Player } from "@/lib/cartel/types";
 
 export const TEMPLATES = [
-  { id: "partido", label: "Cartel de Partido", emoji: "⚽" },
-  { id: "resumo", label: "Resumo da Xornada", emoji: "📊" },
+  { id: "partido", label: "Cartel de partido", emoji: "⚽" },
+  { id: "resumo", label: "Resultado", emoji: "📊" },
   { id: "cronoloxia", label: "Cronoloxía", emoji: "📋" },
-  { id: "proximos", label: "Próximos Encontros", emoji: "📅" },
-  { id: "noso11", label: "O Noso 11 · tras el partido", emoji: "👕" },
-  { id: "multiusos", label: "Multiusos / Anuncio", emoji: "📢" },
-  { id: "clasificacion", label: "Clasificación / Copa", emoji: "📈" },
+  { id: "proximos", label: "Próximos partidos", emoji: "📅" },
+  { id: "noso11", label: "O Noso 11", emoji: "👕" },
+  { id: "multiusos", label: "Anuncio", emoji: "📢" },
+  { id: "clasificacion", label: "Clasificación", emoji: "📈" },
 ] as const;
 
 export type TemplateId = (typeof TEMPLATES)[number]["id"];
 
 export type MultiusosTema = "celebracion" | "medico" | "fichaje" | "despedida" | "formal";
+export const TEMAS_MULTIUSOS: readonly string[] = [
+  "celebracion",
+  "medico",
+  "fichaje",
+  "despedida",
+  "formal",
+] satisfies readonly MultiusosTema[];
 
 export interface FormState {
   // Shared

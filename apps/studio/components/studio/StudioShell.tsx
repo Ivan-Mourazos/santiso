@@ -14,7 +14,6 @@ import { cerrarSesionYSalir } from "@/components/acceso/salir";
 import { TEMPLATES } from "@/components/admin/cartel/types";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
-import { Select } from "@/components/ui/foundation/Fields";
 import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
 /** Lo del día de partido, a un toque en el móvil; el resto del menú queda en «Más». */
@@ -54,6 +53,13 @@ const PESTANAS_TECNICO = [
   },
   MULTAS,
 ] as const;
+const TITULO_TEMA: Record<string, string> = {
+  fichaje: "Fichaje",
+  formal: "Comunicado",
+  medico: "Parte médico",
+  celebracion: "Celebración",
+  despedida: "Despedida",
+};
 const ICONO_MAS = "M5 12h.01M12 12h.01M19 12h.01";
 /** Las pantallas de la competición: con ellas encendida la pestaña «Liga» y su subnavegación. */
 const SECCIONES_LIGA: readonly string[] = [
@@ -135,6 +141,15 @@ export function StudioShell({
       ? section?.id
       : "mas";
   const subnavLiga = SUBNAV_LIGA.some((item) => item.id === section?.id);
+  const plantilla =
+    section?.id === "carteles"
+      ? (TEMPLATES.find((t) => t.id === params.get("plantilla")) ?? null)
+      : null;
+  // El anuncio abierto desde el catálogo se titula por lo que es, no «Anuncio».
+  const tituloCartel =
+    plantilla?.id === "multiusos"
+      ? (TITULO_TEMA[params.get("tema") ?? ""] ?? plantilla.label)
+      : plantilla?.label;
   const category = categoriaDe(params);
   const categories = ["Senior", "Veteranos"];
   const showCategory = [
@@ -221,7 +236,8 @@ export function StudioShell({
             )}
             <div>
               <p className={styles.eyebrow}>{section?.grupo ?? "Studio"}</p>
-              <h1>{section?.label ?? "Panel"}</h1>
+              {/* En Carteles, el nombre del cartel abierto; el catálogo es «Carteles». */}
+              <h1>{tituloCartel ?? section?.label ?? "Panel"}</h1>
             </div>
           </div>
           {showCategory && (
@@ -237,25 +253,6 @@ export function StudioShell({
                   {value}
                 </Button>
               ))}
-            </div>
-          )}
-          {section?.id === "carteles" && (
-            <div className={styles.template}>
-              <Select
-                label="Plantilla de cartel"
-                value={
-                  TEMPLATES.some((t) => t.id === params.get("plantilla"))
-                    ? (params.get("plantilla") ?? "partido")
-                    : "partido"
-                }
-                onChange={(e) => setParams({ plantilla: e.target.value })}
-              >
-                {TEMPLATES.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </Select>
             </div>
           )}
         </header>

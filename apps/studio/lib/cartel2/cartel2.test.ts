@@ -288,6 +288,23 @@ describe("peticionDeFormulario", () => {
     expect(p.datos).toMatchObject({ tema: "fichaje", imagenes: ["/media/a.webp"] });
   });
 
+  it("anuncio: fichajes y comunicados sin logos; celebraciones con ellos", () => {
+    for (const tema of ["fichaje", "formal", "medico"] as const) {
+      const p = peticionDeFormulario("multiusos", formulario({ multiusosTema: tema }), recursos, opciones);
+      if (p.plantilla !== "anuncio") throw new Error("plantilla");
+      expect(p.datos.institucionales, tema).toEqual([]);
+      expect(p.datos.patrocinadores, tema).toEqual([]);
+    }
+    const fiesta = peticionDeFormulario(
+      "multiusos",
+      formulario({ multiusosTema: "celebracion" }),
+      recursos,
+      opciones,
+    );
+    if (fiesta.plantilla !== "anuncio") throw new Error("plantilla");
+    expect(fiesta.datos.institucionales).toEqual(recursos.institucionales);
+  });
+
   it("clasificación: marca la fila del Santiso", () => {
     const p = peticionDeFormulario("clasificacion", formulario(), recursos, opciones);
     if (p.plantilla !== "clasificacion" || p.datos.tipo !== "liga") throw new Error("plantilla");

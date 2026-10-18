@@ -34,6 +34,9 @@ const Federation = dynamic(() => import("@/components/admin/federacion/AdminFede
   loading,
 });
 const Posters = dynamic(() => import("@/components/admin/GeneradorCartel"), { loading });
+const PosterCatalog = dynamic(() => import("@/components/admin/cartel/CatalogoCarteles"), {
+  loading,
+});
 const Acta = dynamic(() => import("@/components/admin/AdminActaImporter"), { loading });
 const Batch = dynamic(() => import("@/components/admin/AdminActaBatch"), { loading });
 const Import = dynamic(() => import("@/components/admin/importar/Importar"), { loading });
@@ -73,7 +76,8 @@ export function StudioSection({ section }: { section: Seccion }) {
     : squad
       ? `${section}:${category}:${params.get("temporada") ?? ""}`
       : `${section}:${category}`;
-  const template = TEMPLATES.find((t) => t.id === params.get("plantilla"))?.id ?? "partido";
+  // Sin plantilla elegida, Carteles enseña el catálogo.
+  const template = TEMPLATES.find((t) => t.id === params.get("plantilla"))?.id ?? null;
   if (!hydrated) return <LoadingState title="Preparando sección…" />;
   return (
     <div key={key} className={styles.panel}>
@@ -99,9 +103,11 @@ export function StudioSection({ section }: { section: Seccion }) {
       )}
       {section === "multas" && <Fines {...feedback} />}
       {section === "federacion" && <Federation showToast={showToast} categoria={category} />}
-      {section === "carteles" && (
+      {section === "carteles" && !template && <PosterCatalog />}
+      {section === "carteles" && template && (
         <Posters
           templateId={template}
+          temaInicial={params.get("tema")}
           partidoInicial={params.get("partido")}
           rellenarProximos={params.get("rellenar") === "1"}
           showToast={showToast}

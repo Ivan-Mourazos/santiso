@@ -332,7 +332,11 @@ export function peticionDeFormulario(
       return {
         plantilla: "anuncio",
         datos: {
-          ...logos,
+          // Comunicados, partes médicos y fichajes van serios, sin logos de patrocinadores ni
+          // de instituciones (decisión del club, 18/10/2026). Las celebraciones sí los llevan.
+          ...(["formal", "medico", "fichaje"].includes(form.multiusosTema)
+            ? { institucionales: [], patrocinadores: [] }
+            : logos),
           tema: (form.multiusosTema in TEMAS_ANUNCIO
             ? form.multiusosTema
             : "formal") as TemaAnuncio,

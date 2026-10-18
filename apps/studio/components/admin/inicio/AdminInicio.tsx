@@ -60,15 +60,8 @@ const CATEGORIAS: Categoria[] = [
     titulo: "Carteles",
     para: "Para Instagram",
     icono: "M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1ZM4 16l4.5-4.5 3.5 3.5 3-3 5 5M9 9h.01",
-    destinos: [
-      { texto: "Partido", href: "/admin/carteles?plantilla=partido", admin: true },
-      { texto: "Próximos", href: "/admin/carteles?plantilla=proximos", admin: true },
-      { texto: "Resumo", href: "/admin/carteles?plantilla=resumo", admin: true },
-      { texto: "Cronoloxía", href: "/admin/carteles?plantilla=cronoloxia", admin: true },
-      { texto: "O noso 11", href: "/admin/carteles?plantilla=noso11", admin: true },
-      { texto: "Clasificación", href: "/admin/carteles?plantilla=clasificacion", admin: true },
-      { texto: "Anuncio", href: "/admin/carteles?plantilla=multiusos", admin: true },
-    ],
+    // Su propio catálogo ya los ordena por momentos de la semana.
+    destinos: [{ texto: "Carteles", href: "/admin/carteles", admin: true }],
   },
   {
     id: "multas",

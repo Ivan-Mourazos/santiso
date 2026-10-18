@@ -18,7 +18,7 @@ for (const [ancho, alto] of [
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/admin\/inicio/);
     await expect(page.getByRole("heading", { name: "¿Qué quieres hacer?" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /^Carteles/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Carteles/ })).toBeVisible();
     // El partido que toca, con su siguiente paso, antes que el menú.
     const partido = page.locator("[data-partido-inicio]").first();
     await expect(partido).toBeVisible();
@@ -27,13 +27,14 @@ for (const [ancho, alto] of [
     expect(paso.y + paso.height).toBeLessThanOrEqual(alto);
     await sinDeslizar(page);
 
-    await page.getByRole("button", { name: /^Carteles/ }).tap();
-    await expect(page.getByRole("heading", { name: "Carteles", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Cronoloxía" })).toBeVisible();
+    // Carteles entra directa a su catálogo, ordenado por momentos de la semana.
+    await page.getByRole("link", { name: /^Carteles/ }).tap();
+    await expect(page).toHaveURL(/\/admin\/carteles/);
+    await expect(page.getByRole("link", { name: /^Cronoloxía/ })).toBeVisible();
     await sinDeslizar(page);
 
-    // Se vuelve a la portada y una categoría de un solo destino entra directa.
-    await page.getByRole("button", { name: "‹ Inicio" }).tap();
+    // Se vuelve a la portada y una categoría con varios destinos abre su lista.
+    await page.goto("/admin/inicio");
     await expect(page.getByRole("heading", { name: "¿Qué quieres hacer?" })).toBeVisible();
     await page.getByRole("button", { name: /^La liga/ }).tap();
     await page.getByRole("link", { name: "Goleadores y tarjetas" }).tap();
