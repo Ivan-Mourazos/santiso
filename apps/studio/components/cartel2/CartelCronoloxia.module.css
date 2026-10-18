@@ -1,23 +1,55 @@
+/* Cronoloxía. Zonas: cabecera 150–290 · marcador 300–480 · línea de tiempo 516–1120 · pie
+   1140–1182 · patrocinadores 1200–1310. */
+.cabecera {
+  top: 150px;
+}
+.cabecera > div:first-child {
+  font-size: 56px;
+  line-height: 1.5;
+}
+
+/* Cada escudo, con su nombre, encima de la columna de su equipo; el marcador entre los dos. */
 .marcador {
   position: absolute;
   z-index: 5;
-  top: 278px;
+  top: 300px;
   left: 64px;
   right: 64px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 36px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 16px;
+}
+.equipo {
+  grid-row: 1;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  min-width: 0;
+  text-align: center;
 }
 .escudo {
-  width: 150px;
-  height: 150px;
+  width: 128px;
+  height: 128px;
+}
+.nombre {
+  max-width: 100%;
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 1.3;
+  color: rgb(255 255 255 / 88%);
+  overflow-wrap: anywhere;
+}
+.nombre[data-propio="true"] {
+  color: var(--amarillo);
 }
 .goles {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 110px;
+  font-size: 100px;
   line-height: 1.5;
 }
 .propio {
@@ -25,59 +57,71 @@
 }
 .guion {
   color: rgb(255 255 255 / 55%);
-  font-size: 0.6em;
+  font-size: 0.5em;
 }
+
+/* Una columna por equipo, como el marcador: la de casa a la izquierda. Cada una reparte su
+   altura por su cuenta, así los cambios de dos líneas no agrandan filas de la otra. */
 .linea {
   position: absolute;
   z-index: 5;
-  top: 455px;
+  top: 516px;
+  bottom: 230px;
   left: 64px;
   right: 64px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 32px;
+  align-items: start;
+  border-top: 2px solid rgb(255 255 255 / 18%);
+  padding-top: 12px;
+}
+.columna {
+  min-width: 0;
   margin: 0;
   padding: 0;
   list-style: none;
-  display: grid;
-  grid-auto-flow: column;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 32px;
-  align-items: start;
 }
 .linea li {
   display: grid;
-  grid-template-columns: 62px minmax(0, 1fr);
+  grid-template-columns: calc(var(--cuerpo, 34px) * var(--ancho-minuto, 1.42)) minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  border-bottom: 1px solid rgb(255 255 255 / 12%);
-  padding-bottom: 8px;
+  gap: 8px;
+  padding: calc(var(--aire, 4px) / 2) 0;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+.linea li:last-child {
+  border-bottom: 0;
 }
 .minuto {
   grid-column: 1;
   grid-row: 1;
-  font: 30px/1.5 var(--display);
-  color: var(--amarillo);
+  font-size: calc(var(--cuerpo, 34px) * 0.8);
+  line-height: 1.5;
+  color: rgb(255 255 255 / 70%);
   text-align: center;
+}
+.linea li[data-propio="true"] .minuto {
+  color: var(--amarillo);
 }
 .hecho {
   grid-column: 2;
   grid-row: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: var(--cuerpo, 34px);
   line-height: 1.3;
   min-width: 0;
+  color: #fff;
+}
+.linea li[data-propio="true"] .hecho {
+  color: var(--amarillo);
 }
 .hecho svg,
 .hecho > .tarjeta,
 .hecho > .doble {
   flex: none;
-}
-.izquierda .hecho {
-  color: rgb(255 255 255 / 95%);
-}
-.derecha .hecho {
-  color: var(--amarillo);
 }
 .jugador {
   min-width: 0;
@@ -86,8 +130,8 @@
 }
 .tarjeta {
   display: inline-block;
-  width: 20px;
-  height: 28px;
+  width: calc(var(--cuerpo, 34px) * 0.5);
+  height: calc(var(--cuerpo, 34px) * 0.7);
   border-radius: 3px;
 }
 .doble {
@@ -125,76 +169,10 @@
 }
 .vacia {
   position: absolute;
-  top: 640px;
+  top: 700px;
   z-index: 6;
   left: 64px;
   right: 64px;
   text-align: center;
   font-size: 34px;
-}
-
-.cabecera > div:first-child {
-  font-size: 44px;
-  line-height: 1.6;
-}
-.equipos {
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-}
-.marcador {
-  top: 252px;
-}
-.goles {
-  font-size: 80px;
-  line-height: 1.6;
-}
-.escudo {
-  width: 120px;
-  height: 120px;
-}
-.linea {
-  top: 430px;
-  gap: 2px 24px;
-}
-.linea li {
-  grid-template-columns: calc(var(--cuerpo, 34px) * 1.42) minmax(0, 1fr);
-  gap: 8px;
-  padding-bottom: 2px;
-}
-.minuto {
-  font-size: calc(var(--cuerpo, 34px) * 0.77);
-  line-height: 1.6;
-}
-.hecho {
-  gap: 6px;
-}
-.derecha .hecho {
-  color: #fff;
-}
-.linea li[data-propio="true"] .hecho {
-  color: var(--amarillo);
-}
-
-/* Una columna por equipo, como el marcador: la de casa a la izquierda. Cada una reparte su
-   altura por su cuenta, así los cambios de dos líneas no agrandan filas de la otra. */
-.linea {
-  top: 384px;
-  bottom: 224px;
-  display: grid;
-  grid-auto-flow: row;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 24px;
-  align-items: start;
-}
-.columna {
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.linea li {
-  break-inside: avoid;
-  margin-bottom: var(--aire, 2px);
 }

@@ -5,7 +5,15 @@ import { aHex, colorDominante, oscurecer } from "./color";
 import { dataLonga, textoInstagram } from "@/lib/cartel/instagram";
 import { leerPeticion } from "./esquema";
 import { peticionDeFormulario } from "./formulario";
-import { categoriaCartel, fechaCartel, goleadores, PLANTILLAS, urlFoto } from "./modelo";
+import {
+  categoriaCartel,
+  fechaCartel,
+  goleadores,
+  nombreDeCartel,
+  PLANTILLAS,
+  urlFoto,
+} from "./modelo";
+import { medidasLinea } from "./cronoloxia";
 
 /** Píxeles RGBA de una imagen hecha con franjas de colores, como un escudo simplificado. */
 async function pixeles(franjas: { color: string; alto: number }[], ancho = 40) {
@@ -196,6 +204,26 @@ describe("modelo", () => {
       { nombre: "Bareto", goles: 2 },
       { nombre: "Rival (p.p.)", goles: 1 },
     ]);
+  });
+
+  it("acorta los nombres del acta a nombre y primer apellido", () => {
+    expect(nombreDeCartel("MENDEZ CASTRO, FRANCISCO")).toBe("FRANCISCO MENDEZ");
+    expect(nombreDeCartel("VIEITES PENA, CESAR")).toBe("CESAR VIEITES");
+    expect(nombreDeCartel("RODRIGUEZ MELLA, JOSE MANUEL")).toBe("JOSE RODRIGUEZ");
+    expect(nombreDeCartel(" Bareto ")).toBe("Bareto");
+    expect(
+      goleadores([{ minuto: "36", jugador: "VIEITES PENA, CESAR", lado: "local", tipo: "gol" }], "local"),
+    ).toEqual([{ nombre: "CESAR VIEITES", goles: 1 }]);
+  });
+
+  it("cronoloxía: con pocas incidencias la letra crece sin partir nombres; con muchas, encoge", () => {
+    const tarjeta = (jugador: string) =>
+      ({ minuto: "10", tipo: "amarilla", lado: "local", jugador, entra: "" }) as const;
+    const pocas = medidasLinea([[tarjeta("MENDEZ CASTRO, FRANCISCO")], []]);
+    expect(pocas.cuerpo).toBeGreaterThanOrEqual(40);
+    const muchas = medidasLinea([Array.from({ length: 14 }, () => tarjeta("Iago Castro")), []]);
+    expect(muchas.cuerpo).toBeLessThan(pocas.cuerpo);
+    expect(muchas.cuerpo).toBeGreaterThanOrEqual(30);
   });
 });
 

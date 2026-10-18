@@ -379,11 +379,24 @@ export function cuerpo(texto: string, ancho: number, maximo: number, minimo: num
  * Goles de un lado agrupados por jugador: «Bareto ×2». Sin minutos: el minuto a minuto es de la
  * Cronoloxía; el Resultado es el vistazo rápido. En propia lleva «(p.p.)».
  */
+/**
+ * Nombre de un jugador como sale en el cartel. Las actas de la federación los dan como
+ * «APELLIDOS, NOMBRE»: se deja nombre y primer apellido («FRANCISCO MENDEZ»), que cabe en una
+ * línea. Los del Santiso ya llegan cortos (apodo o nombre y apellido).
+ */
+export function nombreDeCartel(nombre: string) {
+  const m = /^([^,]+),\s*(.+)$/.exec(nombre.trim());
+  if (!m) return nombre.trim();
+  const [apellido] = m[1]!.trim().split(/\s+/);
+  const [pila] = m[2]!.trim().split(/\s+/);
+  return `${pila} ${apellido}`;
+}
+
 export function goleadores(goles: GolCartel[], lado: "local" | "visitante") {
   const porJugador = new Map<string, number>();
   for (const g of goles) {
     if (g.lado !== lado) continue;
-    const nombre = (g.jugador.trim() || "Gol") + (g.tipo === "propia" ? " (p.p.)" : "");
+    const nombre = (nombreDeCartel(g.jugador) || "Gol") + (g.tipo === "propia" ? " (p.p.)" : "");
     porJugador.set(nombre, (porJugador.get(nombre) ?? 0) + 1);
   }
   return [...porJugador.entries()].map(([nombre, goles]) => ({ nombre, goles }));

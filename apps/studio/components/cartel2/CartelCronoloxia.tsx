@@ -2,9 +2,11 @@ import type { CSSProperties } from "react";
 import {
   categoriaCartel,
   fechaCorta,
+  nombreDeCartel,
   type DatosCronoloxia,
   type EventoCartel,
 } from "@/lib/cartel2/modelo";
+import { medidasLinea } from "@/lib/cartel2/cronoloxia";
 import { Balon } from "./Balon";
 import { Base } from "./Base";
 import { Escudo } from "./Escudo";
@@ -53,11 +55,11 @@ function Texto({ evento }: { evento: EventoCartel }) {
       <span className={s.cambio}>
         <span>
           <Flecha sube />
-          {evento.entra.toUpperCase()}
+          {nombreDeCartel(evento.entra).toUpperCase()}
         </span>
         <span className={s.sale}>
           <Flecha sube={false} />
-          {evento.jugador.toUpperCase()}
+          {nombreDeCartel(evento.jugador).toUpperCase()}
         </span>
       </span>
     );
@@ -65,43 +67,22 @@ function Texto({ evento }: { evento: EventoCartel }) {
   const extra = evento.tipo === "penalti" ? " (PEN.)" : evento.tipo === "propia" ? " (P.P.)" : "";
   return (
     <span className={s.jugador}>
-      {(evento.jugador || "GOL").toUpperCase()}
+      {(nombreDeCartel(evento.jugador) || "GOL").toUpperCase()}
       {extra}
     </span>
   );
 }
 
-/** Alto que suman las dos columnas de la línea de tiempo, en px (2 × 742). */
-/** Alto útil de cada columna (una por equipo). */
-const ALTO_COLUMNA = 742;
-
 /**
- * Cronoloxía del partido: marcador arriba y, debajo, una columna por equipo (la de casa a la
- * izquierda, como en el marcador), cada una por orden de minuto. Las filas se aprietan si hay
- * muchas.
+ * Cronoloxía del partido: marcador arriba, con cada escudo y su nombre encima de su columna, y
+ * debajo una columna por equipo (la de casa a la izquierda), cada una por orden de minuto.
  */
 export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
   const eventos = [...datos.eventos].sort((a, c) => orden(a.minuto) - orden(c.minuto));
   const columnas = (["local", "visitante"] as const).map((lado) =>
     eventos.filter((e) => e.lado === lado),
   );
-  // Con pocas incidencias la letra crece para llenar el cartel; con muchas se queda en 34 px.
-  // Cada incidencia cuenta por las líneas que ocupa: un cambio o un nombre largo, dos. Manda la
-  // columna más llena: las dos van con la misma letra.
-  const lineasDe = (lista: typeof eventos) =>
-    lista.reduce(
-      (total, e) => total + (e.tipo === "cambio" || (e.jugador ?? "").length > 22 ? 2 : 1),
-      0,
-    );
-  const lineas = Math.max(...columnas.map(lineasDe));
-  const filas = Math.max(...columnas.map((c) => c.length));
-  const cuerpoLinea = Math.max(
-    34,
-    Math.min(44, Math.floor(((ALTO_COLUMNA / Math.max(lineas, 1) - 10) / 1.3) * 0.85)),
-  );
-  // Lo que aun así sobre se reparte entre las filas, para que no quede todo el hueco abajo.
-  const sobra = ALTO_COLUMNA - lineas * (cuerpoLinea * 1.3 + 10);
-  const aire = Math.max(2, Math.min(18, Math.floor((sobra * 0.8) / Math.max(filas, 1))));
+  const { cuerpo: cuerpoLinea, aire, minuto } = medidasLinea(columnas);
   const pie = [fechaCorta(datos.fecha), datos.campo.toUpperCase()].filter(Boolean).join("  ·  ");
 
   return (
@@ -114,24 +95,28 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
       institucionales={datos.institucionales}
       patrocinadores={datos.patrocinadores}
     >
-      <header className={`${b.cabecera} ${s.cabecera}`} style={{ top: 100 }} data-lectura-bloque>
+      <header className={`${b.cabecera} ${s.cabecera}`} data-lectura-bloque>
         <div className={b.xornada}>CRONOLOXÍA</div>
         <div className={b.competicion}>
           {categoriaCartel(datos.categoria)}
           {datos.jornada ? ` · XORNADA ${datos.jornada}` : ""}
           {datos.competicion ? ` · ${datos.competicion.toUpperCase()}` : ""}
         </div>
-        <div className={s.equipos}>
-          {datos.local.nombre} · {datos.visitante.nombre}
-        </div>
       </header>
 
       <div className={s.marcador} data-lectura-bloque>
-        {datos.local.escudo ? (
-          <Escudo className={s.escudo} src={datos.local.escudo} relieve={datos.local.relieve} />
-        ) : (
-          <span className={s.escudo} />
-        )}
+        {([datos.local, datos.visitante] as const).map((equipo, i) => (
+          <div key={i} className={s.equipo} style={{ gridColumn: i === 0 ? 1 : 3 }}>
+            {equipo.escudo ? (
+              <Escudo className={s.escudo} src={equipo.escudo} relieve={equipo.relieve} />
+            ) : (
+              <span className={s.escudo} />
+            )}
+            <span className={s.nombre} data-propio={equipo.propio}>
+              {equipo.nombre}
+            </span>
+          </div>
+        ))}
         <div className={`${b.display} ${s.goles}`}>
           <span className={datos.local.propio ? s.propio : undefined}>{datos.golesLocal}</span>
           <span className={s.guion}>–</span>
@@ -139,21 +124,18 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
             {datos.golesVisitante}
           </span>
         </div>
-        {datos.visitante.escudo ? (
-          <Escudo
-            className={s.escudo}
-            src={datos.visitante.escudo}
-            relieve={datos.visitante.relieve}
-          />
-        ) : (
-          <span className={s.escudo} />
-        )}
       </div>
 
       {eventos.length === 0 && <div className={s.vacia}>SEN INCIDENCIAS REXISTRADAS</div>}
       <div
         className={s.linea}
-        style={{ "--cuerpo": `${cuerpoLinea}px`, "--aire": `${aire}px` } as CSSProperties}
+        style={
+          {
+            "--cuerpo": `${cuerpoLinea}px`,
+            "--aire": `${aire}px`,
+            "--ancho-minuto": minuto,
+          } as CSSProperties
+        }
       >
         {columnas.map((lista, i) => {
           const lado = i === 0 ? "local" : "visitante";
