@@ -6,7 +6,7 @@ import { schema } from "@santiso/db";
 import { aliasedTable, and, asc, eq, inArray } from "drizzle-orm";
 import sharp from "sharp";
 import { leerPeticion } from "@/lib/cartel2/esquema";
-import type { FormatoCartel, PeticionCartel } from "@/lib/cartel2/modelo";
+import type { FormatoCartel, FotoCartel, PeticionCartel } from "@/lib/cartel2/modelo";
 import { PASOS, type CartelGuardado } from "@/lib/cartel2/pasos";
 import { renderizarCartel } from "@/lib/server/cartel2/render";
 import { exigirSesion, obtenerDb } from "@/lib/server/db";
@@ -453,4 +453,29 @@ export async function peticionGuardada(
     if (!peticion) throw new ErrorDatosCartel();
     return [peticion];
   });
+}
+
+/**
+ * La foto elegida a mano con la que se guardó el cartel de un paso: una subida en el momento
+ * (guardada en `carteles/<partido>/fotos/`) o una de la galería del partido. Al reabrir el
+ * cartel vuelve a salir la misma. La del jugador no cuenta: sale sola del formulario.
+ */
+export async function fotoGuardada(
+  partidoId: string,
+  paso: PasoCartelPartido,
+): Promise<FotoCartel | null> {
+  const [peticion] = await peticionGuardada(partidoId, paso);
+  const foto: unknown = peticion && "foto" in peticion.datos ? peticion.datos.foto : null;
+  if (!foto || typeof foto !== "object") return null;
+  const { url, x, y, zoom, estilo } = foto as Partial<FotoCartel>;
+  if (typeof url !== "string" || typeof x !== "number" || typeof y !== "number") return null;
+  if (!url.startsWith(`/media/carteles/${partidoId}/fotos/`) && !url.startsWith("/media/partidos/"))
+    return null;
+  return {
+    url,
+    x,
+    y,
+    ...(typeof zoom === "number" ? { zoom } : {}),
+    estilo: estilo ?? "color",
+  };
 }

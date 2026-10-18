@@ -1,6 +1,7 @@
 "use client";
 
 import { prepararFotoSubida } from "@/lib/cartel2/subida";
+import { cargarFotoGuardada } from "@/lib/server/acciones/carteles-guardados";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useEsMovil } from "@/components/ui/foundation/FiltrosMovil";
 import { Cartel } from "@/components/cartel2/Cartel";
@@ -147,6 +148,22 @@ export default function PilotoCartel({
     };
   }, [clavePendientes]);
 
+  // Al reabrir el cartel guardado de un partido vuelve la foto elegida a mano con la que se hizo
+  // (subida en el momento o de la galería), si no se ha elegido ya otra.
+  const partidoGuardado = guardado?.partidoId ?? null;
+  const pasoGuardado = guardado?.paso ?? null;
+  useEffect(() => {
+    if (!partidoGuardado || !pasoGuardado) return;
+    let vigente = true;
+    void cargarFotoGuardada(partidoGuardado, pasoGuardado).then((r) => {
+      const guardada = r.ok ? r.datos : null;
+      if (vigente && guardada) setFoto((actual) => actual ?? guardada);
+    });
+    return () => {
+      vigente = false;
+    };
+  }, [partidoGuardado, pasoGuardado]);
+
   // Una foto subida a mano (`blob:`) se libera al cambiarla o al salir.
   const urlSubida = foto?.url.startsWith("blob:") ? foto.url : null;
   useEffect(() => {
@@ -277,7 +294,9 @@ export default function PilotoCartel({
   useEffect(() => {
     prepararSolo.current = generar;
   });
-  const previaLista = !previas.cargando && !previas.error;
+  // Tampoco mientras se leen los colores de los escudos: al llegar cambiarían el cartel y el PNG
+  // ya preparado no valdría.
+  const previaLista = !previas.cargando && !previas.error && !clavePendientes;
   // Datos y vista previa van en la misma pantalla: el PNG solo se prepara solo cuando el cartel
   // está de verdad a la vista, no mientras se rellenan los datos más arriba.
   const aLaVista = hueco.ancho > 0 && enPantalla;

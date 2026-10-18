@@ -136,6 +136,12 @@ export function StudioProvider({
   // Historial del shell: cada entrada conserva un índice junto al estado interno de Next.
   const historyPosition = useRef(0);
   const restoring = useRef(false);
+  // Fin de la transición de un recorrido del historial: se llama al pintarse la pantalla nueva.
+  const finRecorrido = useRef<(() => void) | null>(null);
+  useLayoutEffect(() => {
+    finRecorrido.current?.();
+    finRecorrido.current = null;
+  }, [pathname, query]);
   useEffect(() => {
     const history = window.history;
     historyPosition.current =
@@ -180,6 +186,8 @@ export function StudioProvider({
       }
     }
     function traverse(event: PopStateEvent) {
+      // El aviso que reemite este mismo oyente (ver abajo) ya está revisado: pasa al router tal cual.
+      if (!event.isTrusted) return;
       if (restoring.current) {
         restoring.current = false;
         event.stopImmediatePropagation();
@@ -193,7 +201,35 @@ export function StudioProvider({
         return;
       }
       drafts.current.clear();
+      // Atrás (botón, gesto o tecla del sistema) también anima. React pinta los recorridos del
+      // historial de golpe, sin transición de vista; así que se hace aquí a mano: el router recibe
+      // el aviso, reemitido, dentro de una transición propia que desliza la página entera (cabecera
+      // y pestañas quedan quietas, tienen nombre propio). Si el navegador ya animó (gesto de
+      // Safari), o se pidió menos movimiento, pasa tal cual.
+      const tipo =
+        typeof target === "number" && target > historyPosition.current
+          ? "recorrido-adelante"
+          : "recorrido-atras";
       if (typeof target === "number") historyPosition.current = target;
+      if (
+        typeof ViewTransition === "undefined" ||
+        !("types" in ViewTransition.prototype) ||
+        event.hasUAVisualTransition ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      )
+        return;
+      event.stopImmediatePropagation();
+      const estado: unknown = event.state;
+      document.startViewTransition({
+        update: () =>
+          new Promise<void>((resolve) => {
+            finRecorrido.current = resolve;
+            // Por si la pantalla no cambia (misma dirección): la transición no se queda colgada.
+            setTimeout(resolve, 800);
+            window.dispatchEvent(new PopStateEvent("popstate", { state: estado }));
+          }),
+        types: [tipo],
+      });
     }
     window.addEventListener("beforeunload", unload);
     window.addEventListener("popstate", traverse, true);

@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, ViewTransition, type ReactNode } from "react";
 import type { Seccion } from "@/lib/navigation/contexto";
 import { categoriaDe } from "@/lib/navigation/contexto";
 import { TEMPLATES } from "@/components/admin/cartel/types";
@@ -103,15 +103,21 @@ export function StudioSection({ section }: { section: Seccion }) {
       )}
       {section === "multas" && <Fines {...feedback} />}
       {section === "federacion" && <Federation showToast={showToast} categoria={category} />}
-      {section === "carteles" && !template && <PosterCatalog />}
+      {section === "carteles" && !template && (
+        <PantallaDentro>
+          <PosterCatalog />
+        </PantallaDentro>
+      )}
       {section === "carteles" && template && (
-        <Posters
-          templateId={template}
-          temaInicial={params.get("tema")}
-          partidoInicial={params.get("partido")}
-          rellenarProximos={params.get("rellenar") === "1"}
-          showToast={showToast}
-        />
+        <PantallaDentro>
+          <Posters
+            templateId={template}
+            temaInicial={params.get("tema")}
+            partidoInicial={params.get("partido")}
+            rellenarProximos={params.get("rellenar") === "1"}
+            showToast={showToast}
+          />
+        </PantallaDentro>
       )}
       {section === "importar" && (
         <Import
@@ -175,5 +181,24 @@ export function StudioSection({ section }: { section: Seccion }) {
       {section === "usuarios" && <Users {...feedback} />}
       {section === "cuenta" && <Account showToast={showToast} />}
     </div>
+  );
+}
+
+const TIPOS_PANTALLA = {
+  "nav-forward": "nav-forward",
+  "nav-back": "nav-back",
+  "nav-tab": "nav-tab",
+  default: "none",
+};
+
+/**
+ * Pantalla que cambia sin cambiar de ruta (del catálogo de carteles a un cartel): se desliza
+ * como las demás al entrar y al volver.
+ */
+function PantallaDentro({ children }: { children: ReactNode }) {
+  return (
+    <ViewTransition enter={TIPOS_PANTALLA} exit={TIPOS_PANTALLA} default="none">
+      {children}
+    </ViewTransition>
   );
 }

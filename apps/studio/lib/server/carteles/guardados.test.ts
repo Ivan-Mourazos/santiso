@@ -242,6 +242,30 @@ describe("PNG persistidos", () => {
     expect(await readFile(path.join(raiz, url.slice(1)), "utf8")).toBe("imagen");
   });
 
+  it("devuelve la foto subida del cartel guardado para reabrirlo, y no la del jugador", async () => {
+    expect(await api.fotoGuardada(partidoId, "resultado")).toBeNull();
+    await api.guardarCartelesPaso({
+      partidoId,
+      paso: "resultado",
+      peticiones: [resultado],
+      origen: "http://127.0.0.1:3000",
+    });
+    const foto = await api.fotoGuardada(partidoId, "resultado");
+    expect(foto).toMatchObject({ x: 0.5, y: 0.5, estilo: "color" });
+    expect(foto!.url).toMatch(new RegExp(`^/media/carteles/${partidoId}/fotos/`));
+    const delJugador = {
+      ...resultado,
+      datos: { ...resultado.datos, foto: { ...resultado.datos.foto!, url: "/media/jugadores/a.webp" } },
+    } as PeticionCartel;
+    await api.guardarCartelesPaso({
+      partidoId,
+      paso: "resultado",
+      peticiones: [delJugador],
+      origen: "http://127.0.0.1:3000",
+    });
+    expect(await api.fotoGuardada(partidoId, "resultado")).toBeNull();
+  });
+
   it("marca desactualizado tras cambiar fecha y carga varios partidos sin N+1", async () => {
     await guardar();
     const [original] = await conexion.db
