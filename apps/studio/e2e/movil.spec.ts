@@ -101,21 +101,21 @@ for (const ancho of [360, 390]) {
     const menuBox = (await menuButton.boundingBox())!;
     expect(menuBox.height).toBeGreaterThanOrEqual(44);
     expect(menuBox.y).toBeGreaterThan(650);
-    // El botón va en una barra opaca de lado a lado: lo que pasa por debajo no se ve a través.
+    // La barra flota separada de los bordes, entera dentro de la pantalla y con fondo propio.
     const barra = await menuButton.evaluate((boton) => {
       const caja = boton.parentElement!;
       const rect = caja.getBoundingClientRect();
       return {
         izquierda: rect.left,
-        ancho: rect.width,
+        derecha: rect.right,
         fondo: rect.bottom,
         color: getComputedStyle(caja).backgroundColor,
       };
     });
-    expect(barra.izquierda).toBe(0);
-    expect(barra.ancho).toBe(ancho);
-    expect(barra.fondo).toBe(844);
-    expect(barra.color).toMatch(/^rgb\(/);
+    expect(barra.izquierda).toBeGreaterThan(0);
+    expect(barra.derecha).toBeLessThan(ancho);
+    expect(barra.fondo).toBeLessThan(844);
+    expect(barra.color).toMatch(/^rgba?\(/);
     const categories = page.getByRole("group", { name: "Categoría deportiva" });
     for (const category of ["Senior", "Veteranos"]) {
       expect(
@@ -127,9 +127,9 @@ for (const ancho of [360, 390]) {
     expect(
       await campo.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
     ).toBeGreaterThanOrEqual(16);
-    // «Más» abre el menú entero en una hoja desde abajo; elegir lleva a la pantalla y la cierra.
-    await page.getByRole("button", { name: "Más", exact: true }).click();
-    const hoja = page.getByRole("dialog", { name: "Todo el Studio" });
+    // Cada pestaña abre su hoja desde abajo; elegir lleva a la pantalla y la cierra.
+    await page.getByRole("button", { name: "Equipo", exact: true }).click();
+    const hoja = page.getByRole("dialog", { name: "Equipo" });
     await expect(hoja.getByRole("link", { name: "Jugadores", exact: true })).toBeInViewport();
     await hoja.getByRole("link", { name: "Jugadores", exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/jugadores/);
@@ -263,7 +263,9 @@ for (const ancho of [360, 390]) {
   });
 }
 
-test("importar-jornada: el calendario completo también se importa desde el móvil", async ({ page }) => {
+test("importar-jornada: el calendario completo también se importa desde el móvil", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await abrir(page, "importar-jornada?origen=calendario");
   await expect(page.locator("#cal-competicion")).toBeVisible();
@@ -379,7 +381,9 @@ for (const ancho of [360, 390]) {
         buffer: PIXEL,
       })),
     );
-    await expect(page.getByRole("list", { name: "Capturas elegidas" }).getByRole("listitem")).toHaveCount(3);
+    await expect(
+      page.getByRole("list", { name: "Capturas elegidas" }).getByRole("listitem"),
+    ).toHaveCount(3);
 
     await page.getByRole("button", { name: "Analizar con Gemini" }).click();
     await expect(page.getByRole("button", { name: /^Pasar a suplente/ })).toBeVisible();
@@ -388,7 +392,9 @@ for (const ancho of [360, 390]) {
     for (const boton of await page.locator("main button:visible").all()) {
       expect((await boton.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     }
-    for (const campo of await page.locator("main select:visible, main input:visible:not([type=file])").all()) {
+    for (const campo of await page
+      .locator("main select:visible, main input:visible:not([type=file])")
+      .all()) {
       expect((await campo.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     }
     await comprobarAncho(page);

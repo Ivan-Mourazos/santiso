@@ -118,23 +118,27 @@ test("el míster entra, usa el día a día y no ve lo del administrador", async 
 test("en el móvil cada uno tiene sus pestañas", async ({ browser }) => {
   const movil = { viewport: { width: 360, height: 780 }, hasTouch: true };
   for (const [quien, esperadas, ausente] of [
-    [MISTER, ["Inicio", "Liga", "Once", "Multas"], "Carteles"],
-    [ADMIN, ["Inicio", "Liga", "Carteles", "Multas"], "Once"],
+    [MISTER, ["Liga", "Equipo", "Más"], "Carteles"],
+    [ADMIN, ["Liga", "Equipo", "Carteles", "Más"], "Multas"],
   ] as const) {
     const contexto = await browser.newContext(movil);
     const page = await contexto.newPage();
     await entrar(page, quien.usuario, quien.clave);
     await expect(page).toHaveURL(/\/admin\/inicio/);
     const pestanas = page.getByRole("navigation", { name: "Accesos rápidos" });
+    await expect(pestanas.getByRole("link", { name: "Inicio", exact: true })).toHaveCount(1);
+    // Cada pestaña abre su hoja; los carteles son del administrador y Multas va en «Más».
     for (const nombre of esperadas) {
-      const caja = (await pestanas.getByRole("link", { name: nombre, exact: true }).boundingBox())!;
+      const caja = (await pestanas
+        .getByRole("button", { name: nombre, exact: true })
+        .boundingBox())!;
       expect(Math.round(caja.height)).toBeGreaterThanOrEqual(44);
     }
-    await expect(pestanas.getByRole("link", { name: ausente, exact: true })).toHaveCount(0);
-    // El resto del menú, en la hoja de «Más».
-    await expect(pestanas.getByRole("button", { name: "Más" })).toHaveCount(1);
+    await expect(pestanas.getByRole("button", { name: ausente, exact: true })).toHaveCount(0);
     // Ninguna etiqueta se sale de su pestaña ni ensancha la pantalla.
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      360,
+    );
     const desbordadas = await pestanas
       .locator("a, button")
       .evaluateAll((items) => items.filter((i) => i.scrollWidth > i.clientWidth + 1).length);

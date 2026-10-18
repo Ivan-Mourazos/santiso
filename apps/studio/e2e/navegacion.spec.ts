@@ -51,22 +51,23 @@ test("borrador bloquea sección, categoría y atrás sin perder texto", async ({
   await expect(marcador).toHaveValue(nuevo);
 });
 for (const width of [360, 390])
-  test(`navegación móvil por la portada a ${width}px`, async ({ page }) => {
+  test(`navegación móvil por la hoja de «Más» a ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto("/admin/temporadas");
     await page
       .getByRole("navigation", { name: "Accesos rápidos" })
-      .getByRole("link", { name: "Inicio", exact: true })
+      .getByRole("button", { name: "Más", exact: true })
       .click();
-    await page.getByRole("button", { name: /^Ajustes/ }).click();
-    await page.getByRole("link", { name: "Ajustes gráficos", exact: true }).click();
+    const hoja = page.getByRole("dialog", { name: "Más" });
+    await hoja.getByRole("link", { name: "Ajustes gráficos", exact: true }).click();
     await expect(page).toHaveURL(/ajustes-graficos/);
+    await expect(hoja).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
     // Instalada en el móvil no hay botón del navegador: la flecha de la cabecera vuelve atrás.
     await page.getByRole("button", { name: "Atrás", exact: true }).click();
-    await expect(page).toHaveURL(/\/admin\/inicio\?menu=ajustes/);
+    await expect(page).toHaveURL(/\/admin\/temporadas/);
   });
 test("rutas desconocidas no muestran un panel incorrecto", async ({ request }) => {
   const response = await request.get("/admin/no-existe");
