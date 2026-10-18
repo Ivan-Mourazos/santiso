@@ -10,7 +10,10 @@ const lienzo = (page: Page) => page.locator("[data-vista-cartel] [data-cartel]")
 /** Desde el catálogo de Carteles, se toca el cartel por su nombre. */
 async function elegir(page: Page, nombre: string, id: string) {
   await page.goto("/admin/carteles");
-  await page.getByRole("link", { name: new RegExp(`^${nombre}`) }).click();
+  await page
+    .getByRole("main")
+    .getByRole("link", { name: new RegExp(`^${nombre}`) })
+    .click();
   await expect(page).toHaveURL(new RegExp(`plantilla=${id}`));
 }
 

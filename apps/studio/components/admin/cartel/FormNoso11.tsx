@@ -79,21 +79,24 @@ export const FormNoso11: React.FC<Props> = ({
         tipo={tipo}
         santisoOnly
       />
-      <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
-      <div className={styles.pareja}>
-        <Field
-          label="Fecha"
-          type="date"
-          value={form.fecha}
-          onChange={(e) => set("fecha", e.target.value)}
-        />
-        <Field
-          label="Estadio"
-          placeholder="Estadio Municipal de Santiso"
-          value={form.estadio}
-          onChange={(e) => set("estadio", e.target.value)}
-        />
-      </div>
+      {/* Fecha y estadio llegan con el partido elegido: a mano, solo si hace falta. */}
+      <PlegableMovil titulo="Editar datos a mano">
+        <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
+        <div className={styles.pareja}>
+          <Field
+            label="Fecha"
+            type="date"
+            value={form.fecha}
+            onChange={(e) => set("fecha", e.target.value)}
+          />
+          <Field
+            label="Estadio"
+            placeholder="Estadio Municipal de Santiso"
+            value={form.estadio}
+            onChange={(e) => set("estadio", e.target.value)}
+          />
+        </div>
+      </PlegableMovil>
 
       {/* A la vista y no dentro de «Foto y encuadre»: cualquier foto, no solo la guardada del
           jugador. La subida manda sobre la de la galería del partido. */}

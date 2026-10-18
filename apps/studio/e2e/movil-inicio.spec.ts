@@ -18,7 +18,7 @@ for (const [ancho, alto] of [
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/admin\/inicio/);
     await expect(page.getByRole("heading", { name: "¿Qué quieres hacer?" })).toBeVisible();
-    await expect(page.getByRole("link", { name: /^Carteles/ })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("link", { name: /^Carteles/ })).toBeVisible();
     // El partido que toca, con su siguiente paso, antes que el menú.
     const partido = page.locator("[data-partido-inicio]").first();
     await expect(partido).toBeVisible();
@@ -28,7 +28,7 @@ for (const [ancho, alto] of [
     await sinDeslizar(page);
 
     // Carteles entra directa a su catálogo, ordenado por momentos de la semana.
-    await page.getByRole("link", { name: /^Carteles/ }).tap();
+    await page.getByRole("main").getByRole("link", { name: /^Carteles/ }).tap();
     await expect(page).toHaveURL(/\/admin\/carteles/);
     await expect(page.getByRole("link", { name: /^Cronoloxía/ })).toBeVisible();
     await sinDeslizar(page);

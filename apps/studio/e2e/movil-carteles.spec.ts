@@ -20,10 +20,10 @@ async function vista(page: Page) {
 }
 
 for (const ancho of [360, 390]) {
-  test(`carteles: datos y vista previa juntos, siete plantillas caben a ${ancho}px`, async ({
+  test(`carteles: datos y vista previa juntos, las plantillas caben a ${ancho}px`, async ({
     page,
   }) => {
-    test.setTimeout(120000);
+    test.setTimeout(200000);
     await page.setViewportSize({ width: ancho, height: 844 });
     await abrir(page);
     await expect(page.getByLabel("Rival", { exact: true })).toBeVisible();
@@ -39,11 +39,13 @@ for (const ancho of [360, 390]) {
       ["cronoloxia", "Cronoloxía"],
       ["proximos", "Próximos partidos"],
       ["noso11", "O Noso 11"],
-      ["multiusos", "Comunicados y avisos"],
+      ["multiusos", "Celebraciones y despedidas"],
       ["clasificacion", "Clasificación"],
+      ["fichaxe", "Fichajes y renovaciones"],
+      ["comunicado", "Comunicados y avisos"],
     ]) {
       await page.goto("/admin/carteles");
-      const fila = page.getByRole("link", { name: new RegExp(`^${nombre}`) });
+      const fila = page.getByRole("main").getByRole("link", { name: new RegExp(`^${nombre}`) });
       expect(Math.round((await fila.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
       await fila.tap();
       await expect(page).toHaveURL(new RegExp(`plantilla=${plantilla}`));

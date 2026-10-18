@@ -62,7 +62,7 @@ test("carteles: foto propia de jugador en O noso 11", async ({ page }) => {
   await page.locator("summary", { hasText: "Foto y encuadre" }).tap();
   await page.getByLabel("Uso de la foto").selectOption("retrato");
   await page
-    .locator("label", { hasText: "Subir foto del jugador" })
+    .locator("label", { hasText: "Subir la foto que quieras" })
     .locator("input")
     .setInputFiles({ name: "jugador.jpg", mimeType: "image/jpeg", buffer: await fotoGrande() });
   await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
