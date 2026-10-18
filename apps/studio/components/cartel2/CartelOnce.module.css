@@ -144,6 +144,17 @@
   right: auto;
   left: 64px;
 }
+/* Con retrato, la lista va en la mitad libre, al lado contrario de la foto: si no, con la foto
+   a la izquierda los nombres empezaban en el centro, encima de ella. */
+.conRetrato .lista {
+  left: 480px;
+  right: 48px;
+  width: auto;
+}
+.conRetrato.invertido .lista {
+  left: 48px;
+  right: 480px;
+}
 .listaAmplia .lista {
   left: 64px;
   width: auto;

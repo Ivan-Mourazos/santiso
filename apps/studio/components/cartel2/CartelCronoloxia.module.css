@@ -177,15 +177,22 @@
   color: var(--amarillo);
 }
 
-/* Cada columna reparte su altura de forma independiente: los cambios de dos líneas no
-   agrandan una fila vacía de la otra mitad. Orden: arriba abajo, luego segunda columna. */
+/* Una columna por equipo, como el marcador: la de casa a la izquierda. Cada una reparte su
+   altura por su cuenta, así los cambios de dos líneas no agrandan filas de la otra. */
 .linea {
   top: 384px;
   bottom: 224px;
-  display: block;
-  columns: 2;
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 24px;
-  column-fill: balance;
+  align-items: start;
+}
+.columna {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .linea li {
   break-inside: avoid;
