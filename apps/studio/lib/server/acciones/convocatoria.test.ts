@@ -82,6 +82,26 @@ it("selección por defecto, sustitución, reapertura y paso a alineación sin pi
   expect(await acciones.guardarConvocatoria(p!.id, reducido)).toEqual({ ok: true, datos: null });
   const recarga = await acciones.cargarPantallaConvocatoria("Senior", p!.id);
   expect(recarga.ok && recarga.datos.convocatoria).toEqual(reducido);
+  // El partido siguiente, aún sin convocatoria, hereda la quedada y la equipación; la nota no.
+  const { db: escribir } = await (await import("@/lib/server/db")).obtenerDb();
+  const [siguiente] = await escribir
+    .insert(s.partidos)
+    .values({
+      jornadaId: jornada!.id,
+      equipoLocalId: rival!.id,
+      equipoVisitanteId: club!.id,
+      fecha: "2026-10-25T17:00",
+    })
+    .returning();
+  const heredada = await acciones.cargarPantallaConvocatoria("Senior", siguiente!.id);
+  expect(heredada.ok && heredada.datos.convocatoria).toEqual({
+    jugadores: ids,
+    horaQuedada: "16:00",
+    lugarQuedada: "Campo",
+    equipacion: "Amarela",
+    nota: "",
+  });
+  expect(heredada.ok && heredada.datos.guardada).toBe(false);
   const ali = await import("./alineacion");
   const antes = await ali.cargarPantallaAlineacion("Senior", p!.id);
   expect(antes.ok && antes.datos.jugadores.map((j) => j.id)).toEqual([ids[1]]);

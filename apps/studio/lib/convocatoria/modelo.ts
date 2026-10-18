@@ -35,6 +35,29 @@ export function convocatoriaInicial(ids: string[]): Convocatoria {
     nota: "",
   };
 }
+/** Situaciones de la liga que dejan al jugador fuera del próximo partido. */
+const NO_PUEDEN_JUGAR = new Set(["sancionado", "expulsado"]);
+
+/**
+ * Convocatoria que se propone cuando el partido aún no tiene una guardada: los 16 primeros de la
+ * plantilla sin los sancionados ni los expulsados, y la quedada y la equipación de la anterior de
+ * la categoría (la nota es de cada partido: empieza en blanco).
+ */
+export function convocatoriaPropuesta(
+  ids: string[],
+  avisos: readonly Pick<AvisoJugador, "jugadorId" | "situacion">[],
+  anterior: Convocatoria | null,
+): Convocatoria {
+  const fuera = new Set(
+    avisos.flatMap((a) => (a.jugadorId && NO_PUEDEN_JUGAR.has(a.situacion) ? [a.jugadorId] : [])),
+  );
+  return {
+    ...convocatoriaInicial(ids.filter((id) => !fuera.has(id))),
+    horaQuedada: anterior?.horaQuedada ?? "",
+    lugarQuedada: anterior?.lugarQuedada ?? "",
+    equipacion: anterior?.equipacion ?? "",
+  };
+}
 export function errorDeConvocatoria(c: Convocatoria): string | null {
   if (!c || !Array.isArray(c.jugadores) || c.jugadores.some((id) => typeof id !== "string" || !id))
     return "Selección de jugadores inválida.";

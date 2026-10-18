@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   convocatoriaInicial,
+  convocatoriaPropuesta,
   errorDeConvocatoria,
   peticionDeConvocatoria,
   textoWhatsApp,
@@ -17,6 +18,35 @@ describe("convocatoria", () => {
     expect(errorDeConvocatoria({ ...c, jugadores: [] })).toContain("al menos");
     expect(errorDeConvocatoria({ ...c, jugadores: ["a", "a"] })).toContain("repetido");
     expect(errorDeConvocatoria({ ...c, horaQuedada: "25:00" })).toContain("hora");
+  });
+
+  it("propone sin sancionados ni expulsados y hereda la quedada de la anterior", () => {
+    const ids = Array.from({ length: 18 }, (_, i) => String(i));
+    const anterior = {
+      jugadores: ["0"],
+      horaQuedada: "16:00",
+      lugarQuedada: "Campo de Santiso",
+      equipacion: "Amarela",
+      nota: "Traer DNI",
+    };
+    const c = convocatoriaPropuesta(
+      ids,
+      [
+        { jugadorId: "0", situacion: "sancionado" },
+        { jugadorId: "1", situacion: "expulsado" },
+        { jugadorId: "2", situacion: "apercibido" },
+        { jugadorId: null, situacion: "sancionado" },
+      ],
+      anterior,
+    );
+    expect(c.jugadores).toEqual(ids.slice(2, 18));
+    expect(c).toMatchObject({
+      horaQuedada: "16:00",
+      lugarQuedada: "Campo de Santiso",
+      equipacion: "Amarela",
+      nota: "",
+    });
+    expect(convocatoriaPropuesta(["a"], [], null)).toEqual(convocatoriaInicial(["a"]));
   });
 
   const partido: PartidoAlineacion = {
