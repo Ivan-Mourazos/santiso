@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/foundation/Button";
 import { Select } from "@/components/ui/foundation/Fields";
 import { porJugarDeCategoria } from "@/lib/jornada/proximos";
 import { formatLiteralMatchDate } from "@/lib/match-date-time";
+import cartel from "./Cartel.module.css";
 import styles from "./Formularios.module.css";
 import { Flecha } from "./PlegableMovil";
 
@@ -39,6 +40,25 @@ export const Toggle: React.FC<{ label: string; active: boolean; onClick: () => v
     {label}
   </Button>
 );
+
+/**
+ * Dónde juega el Santiso, para el cartel hecho a mano. Con un partido del calendario la localía
+ * ya se sabe: no se pregunta.
+ */
+export const LadoSantiso: React.FC<{
+  partidoId: string;
+  value: "left" | "right";
+  onChange: (v: "left" | "right") => void;
+}> = ({ partidoId, value, onChange }) =>
+  partidoId ? null : (
+    <div className={cartel.lado} role="group" aria-label="Dónde juega el Santiso">
+      <span>El Santiso juega</span>
+      <div className={cartel.ladoBotones}>
+        <Toggle label="En casa" active={value === "left"} onClick={() => onChange("left")} />
+        <Toggle label="Fuera" active={value === "right"} onClick={() => onChange("right")} />
+      </div>
+    </div>
+  );
 
 /** Deslizador con su etiqueta asociada y los extremos dichos en texto. */
 export const Deslizador: React.FC<{
@@ -289,7 +309,8 @@ const ElegirPartido: React.FC<{
                   data-partido={x.id}
                   onClick={() => onSelect(x)}
                 >
-                  <CrucePartido m={x} categoria={x.categoria ?? ""} />
+                  {/* La categoría ya está elegida arriba: la tarjeta no la repite. */}
+                  <CrucePartido m={x} categoria="" />
                 </button>
               </li>
             ))}

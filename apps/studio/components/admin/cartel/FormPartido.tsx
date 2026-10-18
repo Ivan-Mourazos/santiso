@@ -8,7 +8,7 @@ import { Field, Select } from "@/components/ui/foundation/Fields";
 import { formatLiteralMatchDate } from "@/lib/match-date-time";
 import { competitionsForCategory, type CompetenciaRow } from "@/lib/competition";
 import { porJugarDeCategoria } from "@/lib/jornada/proximos";
-import { CategorySelector, ConPartidoElegido, type SelectorMatch } from "./Common";
+import { CategorySelector, ConPartidoElegido, LadoSantiso, type SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
 import { PlegableMovil } from "./PlegableMovil";
 import type { FormState } from "./types";
@@ -269,6 +269,11 @@ export const FormPartido: React.FC<Props & { tipo: string; categoriaInicial?: st
         </div>
       )}
       {campos_}
+      <LadoSantiso
+        partidoId={form.partido_id}
+        value={form.santisoSide}
+        onChange={(v) => set("santisoSide", v)}
+      />
     </ConPartidoElegido>
   );
 };

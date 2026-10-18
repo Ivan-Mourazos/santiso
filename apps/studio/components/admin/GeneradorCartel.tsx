@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/foundation/Button";
 import AvisoError from "./AvisoError";
 import styles from "./cartel/Cartel.module.css";
 import { useCartelAssets } from "./cartel/useCartelAssets";
-import { Toggle } from "./cartel/Common";
 import { FormPartido } from "./cartel/FormPartido";
 import { FormResumo } from "./cartel/FormResumo";
 import { FormCronoloxia } from "./cartel/FormCronoloxia";
@@ -249,25 +248,6 @@ export default function GeneradorCartel({
             />
           )}
           {tipo === "comunicado" && <FormComunicado form={form} set={set} />}
-
-          {/* Con un partido del calendario la localía ya se sabe: solo se pregunta a mano. */}
-          {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && !form.partido_id && (
-            <div className={styles.lado} role="group" aria-label="Dónde juega el Santiso">
-              <span>El Santiso juega</span>
-              <div className={styles.ladoBotones}>
-                <Toggle
-                  label="En casa"
-                  active={form.santisoSide === "left"}
-                  onClick={() => set("santisoSide", "left")}
-                />
-                <Toggle
-                  label="Fuera"
-                  active={form.santisoSide === "right"}
-                  onClick={() => set("santisoSide", "right")}
-                />
-              </div>
-            </div>
-          )}
 
           <PlegableMovil titulo="Más opciones">
             {/* Casi todo se publica en 4:5: la historia queda aquí, para la rara vez que haga falta. */}
