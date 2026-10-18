@@ -77,6 +77,37 @@ async function entorno() {
     .insert(s.partidoParticipaciones)
     .values({ partidoId: partidos["2025/26"]!, jugadorId: apoio.id, titular: false, jugo: true });
 
+  // Brais fue capitán en el once guardado del partido de 2026/27, que ya tiene acta.
+  await db.insert(s.partidoAlineaciones).values({
+    partidoId: partidos["2026/27"]!,
+    jugadorId: brais.id,
+    titular: true,
+    capitan: true,
+  });
+
+  // Un partido de 2026/27 aún sin acta: once con Brais de capitán y Apoio convocado.
+  const [jornadaActual] = await db
+    .select({ id: s.partidos.jornadaId })
+    .from(s.partidos)
+    .where(eq(s.partidos.id, partidos["2026/27"]!));
+  const [sinActa] = await db
+    .insert(s.partidos)
+    .values({
+      jornadaId: jornadaActual!.id,
+      equipoLocalId: visitante.id,
+      equipoVisitanteId: local.id,
+    })
+    .returning({ id: s.partidos.id });
+  partidos.sinActa = sinActa!.id;
+  await db
+    .insert(s.partidoAlineaciones)
+    .values({ partidoId: sinActa!.id, jugadorId: brais.id, titular: true, capitan: true });
+  await db.insert(s.partidoConvocatorias).values({ partidoId: sinActa!.id });
+  await db.insert(s.partidoConvocados).values([
+    { partidoId: sinActa!.id, jugadorId: brais.id },
+    { partidoId: sinActa!.id, jugadorId: apoio.id },
+  ]);
+
   cerrar();
   return { consultas: await import("./actas"), partidos };
 }
@@ -101,5 +132,31 @@ describe("participacionesDePartido", () => {
     expect(filas.find((f) => f.nombre === "Apoio")).toMatchObject({ dorsal: 33, titular: false });
     // Titulares primero.
     expect(filas.map((f) => f.nombre)).toEqual(["Brais", "Apoio"]);
+  });
+
+  it("toma el capitán del once guardado", async () => {
+    const { consultas, partidos } = await entorno();
+    const deAhora = await consultas.participacionesDePartido(partidos["2026/27"]!);
+    const deAntes = await consultas.participacionesDePartido(partidos["2025/26"]!);
+    expect(deAhora.find((f) => f.nombre === "Brais")?.capitan).toBe(true);
+    expect(deAntes.every((f) => f.capitan === false)).toBe(true);
+  });
+});
+
+describe("jugadoresDePartido", () => {
+  it("sin acta, propone el once guardado y de suplentes los convocados", async () => {
+    const { consultas, partidos } = await entorno();
+    const filas = await consultas.jugadoresDePartido(partidos.sinActa!);
+    expect(filas).toEqual([
+      expect.objectContaining({ nombre: "Brais", titular: true, capitan: true, dorsal: 10 }),
+      // Apoio no tiene inscripción en 2026/27: sale sin dorsal.
+      expect.objectContaining({ nombre: "Apoio", titular: false, capitan: false, dorsal: null }),
+    ]);
+  });
+
+  it("con acta, manda el acta", async () => {
+    const { consultas, partidos } = await entorno();
+    const filas = await consultas.jugadoresDePartido(partidos["2026/27"]!);
+    expect(filas.map((f) => f.nombre)).toEqual(["Brais"]);
   });
 });

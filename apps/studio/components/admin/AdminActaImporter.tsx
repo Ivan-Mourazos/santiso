@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DeteccionCapturas } from "@/lib/importar/tipo";
-import { cargarActaGuardada, cargarPantallaActa, guardarActa } from "@/lib/server/acciones/actas";
+import {
+  cargarActaGuardada,
+  cargarActaPrevista,
+  cargarPantallaActa,
+  guardarActa,
+} from "@/lib/server/acciones/actas";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
 import { PageHeader } from "@/components/ui/foundation/PageHeader";
@@ -667,6 +672,24 @@ export default function AdminActaImporter({
     }
   }
 
+  /** Acta a mano: parte del once y la convocatoria guardados, si los hay; si no, en blanco. */
+  async function rellenarAMano() {
+    if (!selectedMatchId) return;
+    setBusy(true);
+    setBusyText("Buscando el once guardado...");
+    let prevista: ParsedActa | null = null;
+    try {
+      const resultado = await cargarActaPrevista(selectedMatchId);
+      if (resultado.ok) prevista = resultado.datos;
+      else showToast(resultado.error, "error");
+    } catch {
+      // Sin conexión con el servidor se sigue en blanco: el acta a mano no depende del once.
+    } finally {
+      setActa({ ...(prevista ?? emptyActa()), rawText: "__manual__" });
+      setBusy(false);
+    }
+  }
+
   async function saveActa() {
     if (!selectedMatchId || !canSave) return;
 
@@ -829,10 +852,7 @@ export default function AdminActaImporter({
         </Button>
         <Button
           variant="secondary"
-          onClick={() => {
-            if (!selectedMatchId) return;
-            setActa({ ...emptyActa(), rawText: "__manual__" });
-          }}
+          onClick={() => void rellenarAMano()}
           disabled={busy || !selectedMatchId}
         >
           ✏️ Rellenar manualmente (sin acta)

@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 import {
   cargarEventosDePartido,
   cargarPantallaActa,
-  cargarParticipacionesDePartido,
+  cargarJugadoresDePartido,
 } from "@/lib/server/acciones/actas";
 import { cargarEquiposDeCategoria } from "@/lib/server/acciones/equipos";
 import type { FormState } from "./types";
@@ -25,6 +25,7 @@ interface CartelPlayer {
   apodo?: string | null;
   dorsal?: number | null;
   categoria?: string | null;
+  capitan?: boolean;
 }
 
 export interface CartelTeam {
@@ -92,7 +93,7 @@ function toCartelPlayer(player: CartelPlayer): Player {
     id: uuidv4(),
     dorsal: player.dorsal?.toString() || "",
     nome: getPlayerDisplayName(player),
-    eCapitan: false,
+    eCapitan: Boolean(player.capitan),
   };
 }
 
@@ -401,8 +402,8 @@ export function useCartelForm(partidoInicial?: string | null) {
       setForm((p) => ({ ...p, events }));
     });
 
-    // La consulta ya devuelve titulares primero y luego por dorsal.
-    cargarParticipacionesDePartido(match.id).then((filas) => {
+    // Los del acta y, mientras no llega, el once y la convocatoria guardados. Titulares primero.
+    cargarJugadoresDePartido(match.id).then((filas) => {
       if (filas.length === 0) return;
 
       const aJugador = (fila: (typeof filas)[number]) =>
@@ -412,6 +413,7 @@ export function useCartelForm(partidoInicial?: string | null) {
           apodo: fila.apodo,
           dorsal: fila.dorsal,
           categoria: fila.categoria,
+          capitan: fila.capitan,
         });
 
       const titulares = filas
