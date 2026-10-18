@@ -156,6 +156,15 @@
   text-decoration: none;
   font-weight: 700;
 }
+/* «Esperando a la federación · Traer ahora» es un botón con la misma cara que el enlace. */
+button.principal {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
 .pasos {
   display: grid;
   margin: 0;

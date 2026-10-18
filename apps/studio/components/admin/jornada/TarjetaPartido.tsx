@@ -88,6 +88,23 @@ export default function TarjetaPartido({
     carteles?.id === p.id ? carteles.deEste : {},
   );
   const e = enlacesPartido(p, categoria);
+  const puedeTraer = acceso?.rol !== "tecnico";
+  function traerActa() {
+    setTrayendo(true);
+    void traerActaRfgf(p.competicionId, p.id)
+      .then((r) => {
+        if (!r.ok) return showToast(r.error, "error");
+        const avisos = r.datos.avisos.join(" · ");
+        showToast(
+          r.datos.actas || r.datos.resultados
+            ? "Acta traída de la federación"
+            : avisos || "La federación no tiene nada nuevo de este partido.",
+        );
+        onNovedades?.();
+      })
+      .catch(() => showToast("No se pudo hablar con la federación.", "error"))
+      .finally(() => setTrayendo(false));
+  }
   const marcado = tieneResultado(p);
   return (
     <article
@@ -142,10 +159,24 @@ export default function TarjetaPartido({
 
       <div className={styles.trabajo}>
         <p className={styles.etiqueta}>Siguiente tarea</p>
-        <Link href={principal.href} className={styles.principal} data-accion-principal>
-          {principal.titulo}
-          <span aria-hidden="true">→</span>
-        </Link>
+        {/* Si el marcador lo trae la federación, la tarea es pedírselo ya, no teclearlo. */}
+        {principal.traerActa && puedeTraer ? (
+          <button
+            type="button"
+            className={styles.principal}
+            data-accion-principal
+            disabled={trayendo}
+            onClick={traerActa}
+          >
+            {trayendo ? "Trayendo el acta…" : `${principal.titulo} · Traer ahora`}
+            <span aria-hidden="true">→</span>
+          </button>
+        ) : (
+          <Link href={principal.href} className={styles.principal} data-accion-principal>
+            {principal.titulo}
+            <span aria-hidden="true">→</span>
+          </Link>
+        )}
         <ol
           className={styles.pasos}
           aria-label={despues ? "Cierre del partido" : "Preparación del partido"}
@@ -204,27 +235,12 @@ export default function TarjetaPartido({
           <Acceso href={e.cartel("partido")}>Cartel de partido</Acceso>
           <Acceso href={e.calendario}>Cambiar fecha, hora o campo</Acceso>
           {/* El acta llega sola cada noche; esto la pide ya, solo la de este partido. */}
-          {despues && acceso?.rol !== "tecnico" && (
+          {despues && puedeTraer && (
             <Button
               variant="secondary"
               pending={trayendo}
               pendingLabel="Trayendo el acta…"
-              onClick={() => {
-                setTrayendo(true);
-                void traerActaRfgf(p.competicionId, p.id)
-                  .then((r) => {
-                    if (!r.ok) return showToast(r.error, "error");
-                    const avisos = r.datos.avisos.join(" · ");
-                    showToast(
-                      r.datos.actas || r.datos.resultados
-                        ? "Acta traída de la federación"
-                        : avisos || "La federación no tiene nada nuevo de este partido.",
-                    );
-                    onNovedades?.();
-                  })
-                  .catch(() => showToast("No se pudo hablar con la federación.", "error"))
-                  .finally(() => setTrayendo(false));
-              }}
+              onClick={traerActa}
             >
               Traer acta de la federación
             </Button>
@@ -233,7 +249,7 @@ export default function TarjetaPartido({
             {p.acta ? "Corregir acta" : "Meter acta a mano"}
           </Acceso>
           <Acceso href={e.cartel("resumo")} disponible={marcado} motivo="Necesita resultado">
-            Resultado
+            Cartel de resultado
           </Acceso>
           {/* Veteranos no alinea antes del partido: el once se publica después, con el resumen. */}
           {!preparaConvocatoria(categoria) && (
