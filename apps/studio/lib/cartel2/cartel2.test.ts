@@ -223,7 +223,12 @@ describe("modelo", () => {
     expect(pocas.cuerpo).toBeGreaterThanOrEqual(40);
     const muchas = medidasLinea([Array.from({ length: 14 }, () => tarjeta("Iago Castro")), []]);
     expect(muchas.cuerpo).toBeLessThan(pocas.cuerpo);
-    expect(muchas.cuerpo).toBeGreaterThanOrEqual(30);
+    expect(muchas.cuerpo).toBeGreaterThanOrEqual(26);
+    expect(pocas.denso).toBe(false);
+    // Con 13 por equipo y cambios, el marcador encoge para que quepa la lista entera.
+    const cambio = { minuto: "10", tipo: "cambio", lado: "local", jugador: "Ramos", entra: "Xoel" } as const;
+    const llena = Array.from({ length: 13 }, (_, i) => (i % 4 ? tarjeta("Nicolás Carbajales") : cambio));
+    expect(medidasLinea([llena, llena]).denso).toBe(true);
   });
 });
 

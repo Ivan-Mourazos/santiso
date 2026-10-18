@@ -82,7 +82,7 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
   const columnas = (["local", "visitante"] as const).map((lado) =>
     eventos.filter((e) => e.lado === lado),
   );
-  const { cuerpo: cuerpoLinea, aire, minuto } = medidasLinea(columnas);
+  const { cuerpo: cuerpoLinea, aire, minuto, denso } = medidasLinea(columnas);
   const pie = [fechaCorta(datos.fecha), datos.campo.toUpperCase()].filter(Boolean).join("  ·  ");
 
   return (
@@ -104,7 +104,7 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
         </div>
       </header>
 
-      <div className={s.marcador} data-lectura-bloque>
+      <div className={s.marcador} data-denso={denso || undefined} data-lectura-bloque>
         {([datos.local, datos.visitante] as const).map((equipo, i) => (
           <div key={i} className={s.equipo} style={{ gridColumn: i === 0 ? 1 : 3 }}>
             {equipo.escudo ? (
@@ -112,9 +112,11 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
             ) : (
               <span className={s.escudo} />
             )}
-            <span className={s.nombre} data-propio={equipo.propio}>
-              {equipo.nombre}
-            </span>
+            {!denso && (
+              <span className={s.nombre} data-propio={equipo.propio}>
+                {equipo.nombre}
+              </span>
+            )}
           </div>
         ))}
         <div className={`${b.display} ${s.goles}`}>
@@ -129,6 +131,7 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
       {eventos.length === 0 && <div className={s.vacia}>SEN INCIDENCIAS REXISTRADAS</div>}
       <div
         className={s.linea}
+        data-denso={denso || undefined}
         style={
           {
             "--cuerpo": `${cuerpoLinea}px`,

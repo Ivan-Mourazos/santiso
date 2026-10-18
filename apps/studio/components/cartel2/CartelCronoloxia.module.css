@@ -176,3 +176,15 @@
   text-align: center;
   font-size: 34px;
 }
+
+/* Modo denso (muchas incidencias): escudos pequeños sin nombre y la lista empieza antes. */
+.marcador[data-denso] .escudo {
+  width: 88px;
+  height: 88px;
+}
+.marcador[data-denso] .goles {
+  font-size: 72px;
+}
+.linea[data-denso] {
+  top: 400px;
+}
