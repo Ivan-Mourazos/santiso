@@ -30,6 +30,8 @@ interface Props {
   dorsalesOcupados: Map<number, string>;
   onCerrar: () => void;
   onGuardado: (jugador: JugadorDto, alta: boolean) => void;
+  /** Quitarlo de la plantilla de esta temporada: va aquí y no en cada fila de la lista. */
+  onQuitar?: () => void;
 }
 
 type Errores = Partial<Record<keyof BorradorJugador, string>>;
@@ -44,6 +46,7 @@ export default function EditorJugador({
   dorsalesOcupados,
   onCerrar,
   onGuardado,
+  onQuitar,
 }: Props) {
   const alta = jugador === null;
   const [inicial] = useState(() => borradorDeJugador(jugador));
@@ -138,6 +141,16 @@ export default function EditorJugador({
       }
       footer={
         <>
+          {!alta && onQuitar && (
+            <Button
+              variant="danger"
+              onClick={onQuitar}
+              disabled={pendiente}
+              aria-label={`Quitar a ${inicial.nombre} de ${destino.temporadaNombre}`}
+            >
+              Quitar
+            </Button>
+          )}
           <Button variant="secondary" onClick={cerrar} disabled={pendiente}>
             Cancelar
           </Button>

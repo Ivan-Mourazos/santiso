@@ -133,6 +133,28 @@
 .soloMovil {
   display: none;
 }
+.abrirFicha {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+@media (pointer: coarse) {
+  .abrirFicha {
+    min-height: 44px;
+  }
+}
+@media (hover: hover) {
+  .abrirFicha:hover strong {
+    color: var(--ui-accent);
+  }
+}
 
 @media (max-width: 640px) {
   .soloMovil {
@@ -221,9 +243,6 @@
   .filaAcciones button::before {
     content: "✎";
     font-size: var(--ui-text-base);
-  }
-  .filaAcciones button:last-child::before {
-    content: "✕";
   }
 }
 

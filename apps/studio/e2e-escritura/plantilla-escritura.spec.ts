@@ -75,8 +75,12 @@ test("alta, aviso de duplicado, edición y baja de un jugador", async ({ page })
   await expect(editor).toBeHidden();
   await expect(fila(page, "Xan Novo Ficticio")).toContainText("8");
 
-  // Baja de la temporada.
-  await page.getByRole("button", { name: "Quitar a Xan Novo Ficticio de 2026/27" }).click();
+  // Baja de la temporada: desde el editor, no desde la fila.
+  await page.getByRole("button", { name: "Editar a Xan Novo Ficticio" }).click();
+  await page
+    .getByRole("dialog", { name: "Editar a Xan Novo Ficticio" })
+    .getByRole("button", { name: "Quitar a Xan Novo Ficticio de 2026/27" })
+    .click();
   await page
     .getByRole("dialog", { name: "Confirmar acción" })
     .getByRole("button", { name: "Confirmar" })

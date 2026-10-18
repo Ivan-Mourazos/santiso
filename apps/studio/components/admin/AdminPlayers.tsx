@@ -321,21 +321,22 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
                     )}
                   </td>
                   <td className={`${styles.nombre} ${styles.celdaNombre}`}>
-                    <strong>{j.nombre}</strong>
-                    {j.apodo && <span>{j.apodo}</span>}
-                    <span className={styles.soloMovil}>{nombrePosicion(j.posicion)}</span>
+                    {/* Tocar el nombre abre la ficha: no hace falta otro botón en la fila. */}
+                    <button
+                      type="button"
+                      className={styles.abrirFicha}
+                      aria-haspopup="dialog"
+                      aria-label={`Ver ficha de ${j.nombre}`}
+                      onClick={() => setFicha(j)}
+                    >
+                      <strong>{j.nombre}</strong>
+                      {j.apodo && <span>{j.apodo}</span>}
+                      <span className={styles.soloMovil}>{nombrePosicion(j.posicion)}</span>
+                    </button>
                   </td>
                   <td className={styles.celdaPosicion}>{nombrePosicion(j.posicion)}</td>
                   <td className={styles.celdaAcciones}>
                     <div className={styles.filaAcciones}>
-                      <Button
-                        variant="secondary"
-                        onClick={() => setFicha(j)}
-                        size="sm"
-                        aria-label={`Ver ficha de ${j.nombre}`}
-                      >
-                        Ficha
-                      </Button>
                       <Button
                         variant="secondary"
                         onClick={() => abrirEditor(j)}
@@ -343,14 +344,6 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
                         aria-label={`Editar a ${j.nombre}`}
                       >
                         Editar
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        onClick={() => handleQuitar(j)}
-                        size="sm"
-                        aria-label={`Quitar a ${j.nombre} de ${temporadaNombre}`}
-                      >
-                        Quitar
                       </Button>
                     </div>
                   </td>
@@ -436,6 +429,15 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
           destino={{ temporadaId, temporadaNombre, categoria }}
           dorsalesOcupados={dorsalesOcupados}
           onCerrar={() => setEditor(null)}
+          onQuitar={
+            editor.jugador
+              ? () => {
+                  const j = editor.jugador!;
+                  setEditor(null);
+                  handleQuitar(j);
+                }
+              : undefined
+          }
           onGuardado={(guardado, alta) => {
             setEditor(null);
             showToast(

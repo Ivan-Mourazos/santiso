@@ -17,9 +17,10 @@
   font-size: var(--ui-text-sm);
 }
 /* La competición lleva nombres largos («Terceira Galicia - Santiago - Fase Copa - Grupo 4»). */
+/* Temporada y competición se reparten la fila; «⋯» se queda al lado de la última. */
 .selectores {
-  display: grid;
-  grid-template-columns: minmax(10rem, 14rem) minmax(0, 32rem) auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: end;
   gap: var(--ui-space-3, 0.75rem);
   margin-bottom: var(--ui-space-4, 1rem);
@@ -165,9 +166,6 @@
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-  }
-  .selectores {
-    grid-template-columns: minmax(0, 1fr);
   }
   .selectores > * {
     min-width: 0;
@@ -479,4 +477,15 @@
 .fichaPartidos li > strong {
   flex: none;
   margin-left: auto;
+}
+.selectores > :not(.accionZonas) {
+  flex: 1 1 12rem;
+  max-width: 32rem;
+}
+.accionZonas {
+  flex: none;
+}
+.opciones {
+  display: grid;
+  gap: var(--ui-space-2);
 }

@@ -159,6 +159,7 @@ for (const ancho of [360, 390]) {
     await comprobarAncho(page);
     await ficha.getByRole("button", { name: "Cerrar ficha" }).click();
     await expect(ficha).toBeHidden();
+    await page.getByRole("button", { name: "Más opciones de la clasificación" }).click();
     await page.getByRole("button", { name: "Zonas de la clasificación", exact: true }).click();
     const dialogo = page.getByRole("dialog", { name: "Zonas de la clasificación", exact: true });
     // Solo borrador local: no se pulsa Guardar zonas contra datos reales.

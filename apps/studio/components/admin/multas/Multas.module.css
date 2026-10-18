@@ -110,11 +110,21 @@
   opacity: 0.8;
 }
 
+/* Tocar quién y por qué abre la multa (para quitarla); el cobro va a un toque en la fila. */
 .quien {
   grid-area: quien;
   display: grid;
   gap: 0.15rem;
   min-width: 0;
+  min-height: 44px;
+  align-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .quien span {
@@ -370,4 +380,82 @@
     min-height: 44px;
     font-size: var(--ui-text-base);
   }
+}
+
+/* Pendientes / Todas: selector de píldora, no dos botones amarillos. */
+.segmento {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-raised);
+}
+.segmento button {
+  min-height: 40px;
+  padding: 0 var(--ui-space-4);
+  border: 0;
+  border-radius: var(--ui-radius-pill);
+  background: transparent;
+  color: var(--ui-muted);
+  font: 800 var(--ui-text-sm) var(--ui-font-body);
+  cursor: pointer;
+}
+.segmento button[aria-pressed="true"] {
+  background: var(--ui-control);
+  color: var(--ui-text);
+}
+@media (pointer: coarse) {
+  .segmento button {
+    min-height: 44px;
+  }
+}
+/* «Nueva multa», la acción principal, abajo y al alcance del pulgar: fija sobre la barra de
+   pestañas (no `sticky`: el panel tiene su propio desplazamiento horizontal y lo anularía). */
+.nueva {
+  position: fixed;
+  left: max(0.75rem, env(safe-area-inset-left));
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  z-index: 30;
+  display: grid;
+}
+.nueva button {
+  box-shadow: 0 6px 20px rgb(0 0 0 / 55%);
+}
+/* Hueco al final para que el botón fijo no tape la última multa. */
+.seccion:has(.nueva) {
+  padding-bottom: 4rem;
+}
+.detalle {
+  display: grid;
+  gap: var(--ui-space-4);
+}
+.detalleImporte {
+  margin: 0;
+  font: 800 var(--ui-text-2xl) / 1 var(--ui-font-title);
+  font-variant-numeric: tabular-nums;
+}
+.detalle dl {
+  display: grid;
+  gap: var(--ui-space-2);
+  margin: 0;
+}
+.detalle dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  padding-bottom: var(--ui-space-2);
+  border-bottom: 1px solid var(--ui-line);
+}
+.detalle dt {
+  color: var(--ui-muted);
+}
+.detalle dd {
+  margin: 0;
+  text-align: right;
+}
+.detalleAcciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ui-space-2);
 }

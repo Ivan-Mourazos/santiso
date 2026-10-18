@@ -32,7 +32,11 @@ import {
 import styles from "./Multas.module.css";
 
 interface Props {
-  showToast: (msg: string, type?: "success" | "error") => void;
+  showToast: (
+    msg: string,
+    type?: "success" | "error",
+    action?: { label: string; onClick: () => void },
+  ) => void;
   showConfirm: (msg: string, onConfirm: () => void) => void;
 }
 
@@ -145,6 +149,9 @@ function Registro({
   const [alta, setAlta] = useState(false);
   const [soloPendientes, setSoloPendientes] = useState(true);
   const [filtroPersona, setFiltroPersona] = useState("");
+  // La multa abierta en la hoja de detalle (para quitarla o deshacer el cobro).
+  const [abiertaId, setAbiertaId] = useState<string | null>(null);
+  const abierta = pantalla.multas.find((m) => m.id === abiertaId) ?? null;
 
   const persona = pantalla.personas.find((p) => p.clave === personaClave);
   const concepto = pantalla.conceptos.find((c) => c.id === conceptoId);
@@ -203,16 +210,32 @@ function Registro({
     }
   }
 
+  /** Cobrar avisa con «Deshacer»: un toque de más no obliga a buscar la multa en «Todas». */
   async function cobrar(multa: Multa) {
-    const r = await cambiarPagoMulta(multa.id, !multa.pagadaEn);
+    const pagar = !multa.pagadaEn;
+    const r = await cambiarPagoMulta(multa.id, pagar);
     if (!r.ok) return showToast(r.error, "error");
     await recargar();
+    showToast(
+      pagar
+        ? `Cobrada: ${multa.persona}, ${euros(multa.importeCentimos)}`
+        : "Multa otra vez pendiente",
+      "success",
+      {
+        label: "Deshacer",
+        onClick: () =>
+          void cambiarPagoMulta(multa.id, !pagar).then((x) =>
+            x.ok ? recargar() : showToast(x.error, "error"),
+          ),
+      },
+    );
   }
 
   function quitar(multa: Multa) {
     showConfirm(`¿Quitar la multa de ${multa.persona} (${multa.concepto})?`, async () => {
       const r = await quitarMulta(multa.id);
       if (!r.ok) return showToast(r.error, "error");
+      setAbiertaId(null);
       await recargar();
       showToast("Multa quitada");
     });
@@ -348,41 +371,40 @@ function Registro({
     </form>
   );
 
+  const nueva = movil ? (
+    <>
+      <div className={styles.nueva}>
+        <Button onClick={() => setAlta(true)}>Nueva multa</Button>
+      </div>
+      <Dialog open={alta} onClose={() => setAlta(false)} title="Nueva multa" mobilePresentation="sheet">
+        {formulario}
+      </Dialog>
+    </>
+  ) : (
+    formulario
+  );
+
   return (
     <div className={styles.seccion}>
-      {movil ? (
-        <>
-          <Button onClick={() => setAlta(true)}>Nueva multa</Button>
-          <Dialog
-            open={alta}
-            onClose={() => setAlta(false)}
-            title="Nueva multa"
-            mobilePresentation="sheet"
-          >
-            {formulario}
-          </Dialog>
-        </>
-      ) : (
-        formulario
-      )}
+      {!movil && nueva}
 
-      <div className={styles.filtros} role="group" aria-label="Qué multas se ven">
-        <Button
-          size="sm"
-          variant={soloPendientes ? "primary" : "secondary"}
-          aria-pressed={soloPendientes}
-          onClick={() => setSoloPendientes(true)}
-        >
-          Pendientes
-        </Button>
-        <Button
-          size="sm"
-          variant={soloPendientes ? "secondary" : "primary"}
-          aria-pressed={!soloPendientes}
-          onClick={() => setSoloPendientes(false)}
-        >
-          Todas
-        </Button>
+      <div className={styles.filtros}>
+        <div className={styles.segmento} role="group" aria-label="Qué multas se ven">
+          <button
+            type="button"
+            aria-pressed={soloPendientes}
+            onClick={() => setSoloPendientes(true)}
+          >
+            Pendientes
+          </button>
+          <button
+            type="button"
+            aria-pressed={!soloPendientes}
+            onClick={() => setSoloPendientes(false)}
+          >
+            Todas
+          </button>
+        </div>
         {multados.length > 1 && (
           <select
             className={styles.filtroPersona}
@@ -410,18 +432,24 @@ function Registro({
         <ul className={styles.lista} aria-label="Multas">
           {visibles.map((m) => (
             <li key={m.id} data-pagada={Boolean(m.pagadaEn)}>
-              <div className={styles.quien}>
+              <button
+                type="button"
+                className={styles.quien}
+                aria-haspopup="dialog"
+                aria-label={`Ver la multa de ${m.persona}: ${m.concepto}`}
+                onClick={() => setAbiertaId(m.id)}
+              >
                 <strong>{m.persona}</strong>
                 <span>
                   {m.concepto} · {fechaCorta(m.fecha)}
                   {m.nota ? ` · ${m.nota}` : ""}
                 </span>
-              </div>
+              </button>
               <span className={styles.importe}>{euros(m.importeCentimos)}</span>
               <div className={styles.accionesFila}>
                 <Button
                   size="sm"
-                  variant={m.pagadaEn ? "secondary" : "primary"}
+                  variant={m.pagadaEn ? "ghost" : "secondary"}
                   aria-pressed={Boolean(m.pagadaEn)}
                   aria-label={
                     m.pagadaEn
@@ -432,19 +460,59 @@ function Registro({
                 >
                   {m.pagadaEn ? `Pagada ${fechaCorta(m.pagadaEn)}` : "Cobrar"}
                 </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  aria-label={`Quitar la multa de ${m.persona}: ${m.concepto}`}
-                  onClick={() => quitar(m)}
-                >
-                  ✕
-                </Button>
               </div>
             </li>
           ))}
         </ul>
       )}
+
+      {movil && nueva}
+
+      <Dialog
+        open={abierta !== null}
+        onClose={() => setAbiertaId(null)}
+        title={abierta ? abierta.persona : "Multa"}
+        closeLabel="Cerrar multa"
+        mobilePresentation="sheet"
+      >
+        {abierta && (
+          <div className={styles.detalle}>
+            <p className={styles.detalleImporte}>{euros(abierta.importeCentimos)}</p>
+            <dl>
+              <div>
+                <dt>Motivo</dt>
+                <dd>{abierta.concepto}</dd>
+              </div>
+              <div>
+                <dt>Fecha</dt>
+                <dd>{fechaCorta(abierta.fecha)}</dd>
+              </div>
+              <div>
+                <dt>Estado</dt>
+                <dd>{abierta.pagadaEn ? `Pagada el ${fechaCorta(abierta.pagadaEn)}` : "Pendiente"}</dd>
+              </div>
+              {abierta.nota && (
+                <div>
+                  <dt>Nota</dt>
+                  <dd>{abierta.nota}</dd>
+                </div>
+              )}
+            </dl>
+            <div className={styles.detalleAcciones}>
+              <Button variant="secondary" onClick={() => void cobrar(abierta)}>
+                {abierta.pagadaEn ? "Volver a pendiente" : "Cobrar"}
+              </Button>
+              <Button
+                variant="danger"
+                aria-label={`Quitar la multa de ${abierta.persona}: ${abierta.concepto}`}
+                onClick={() => quitar(abierta)}
+              >
+                Quitar multa
+              </Button>
+            </div>
+          </div>
+        )}
+      </Dialog>
     </div>
   );
 }

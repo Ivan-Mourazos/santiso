@@ -114,6 +114,7 @@ test("clasificación móvil prioriza columnas, despliega detalle y guarda varias
   await comprobarControles(page, tabla);
   await ficha.getByRole("button", { name: "Cerrar ficha" }).click();
   await expect(ficha).toBeHidden();
+  await page.getByRole("button", { name: "Más opciones de la clasificación" }).click();
   await page.getByRole("button", { name: "Zonas de la clasificación", exact: true }).click();
   const dialogo = page.getByRole("dialog", { name: "Zonas de la clasificación", exact: true });
   for (let i = 1; i <= 2; i++) {

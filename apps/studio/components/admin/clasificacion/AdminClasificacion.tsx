@@ -10,6 +10,7 @@ import {
 } from "react";
 import type { ReglaClasificacion } from "@santiso/domain";
 import { Button } from "@/components/ui/foundation/Button";
+import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Select } from "@/components/ui/foundation/Fields";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import type { FilaClasificacion, PantallaClasificacion } from "@/lib/dto";
@@ -52,6 +53,7 @@ export default function AdminClasificacion({ categoria }: Props) {
     null,
   );
   const [editandoZonas, setEditandoZonas] = useState(false);
+  const [opciones, setOpciones] = useState(false);
   const {
     temporadas,
     selectedSeasonId,
@@ -343,44 +345,68 @@ export default function AdminClasificacion({ categoria }: Props) {
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => setEditandoZonas(true)}
-              disabled={cargando || competicionCargada !== selectedCompetitionId}
+              aria-label="Más opciones de la clasificación"
+              aria-haspopup="dialog"
+              pending={actualizando}
+              pendingLabel="…"
+              onClick={() => setOpciones(true)}
             >
-              Zonas de la clasificación
+              ⋯
             </Button>
-            {/* Compara con la oficial; si no cuadra, trae los resultados que falten. */}
-            {acceso?.rol !== "tecnico" && (
-              <Button
-                size="sm"
-                variant="secondary"
-                pending={actualizando}
-                pendingLabel="Comparando con la federación…"
-                disabled={cargando || competicionCargada !== selectedCompetitionId}
-                onClick={() => {
-                  const id = competicion.id;
-                  setActualizando(true);
-                  void actualizarClasificacionRfgf(id)
-                    .then(async (r) => {
-                      if (!r.ok) return showToast(r.error, "error");
-                      setMotivos({ competicionId: id, lista: r.datos.motivos });
-                      showToast(
-                        r.datos.cuadra
-                          ? "Coincide con la federación ✓"
-                          : "No coincide con la federación: mira el detalle arriba.",
-                        r.datos.cuadra ? "success" : "error",
-                      );
-                      await cargar(id);
-                    })
-                    .catch(() => showToast("No se pudo hablar con la federación.", "error"))
-                    .finally(() => setActualizando(false));
-                }}
-              >
-                Actualizar con la federación
-              </Button>
-            )}
           </div>
         )}
       </div>
+
+      {/* Lo de vez en cuando, fuera de la vista: la tabla empieza antes. */}
+      <Dialog
+        open={opciones}
+        onClose={() => setOpciones(false)}
+        title="Clasificación"
+        closeLabel="Cerrar opciones"
+        mobilePresentation="sheet"
+      >
+        <div className={styles.opciones}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setOpciones(false);
+              setEditandoZonas(true);
+            }}
+            disabled={cargando || competicionCargada !== selectedCompetitionId}
+          >
+            Zonas de la clasificación
+          </Button>
+          {/* Compara con la oficial; si no cuadra, trae los resultados que falten. */}
+          {acceso?.rol !== "tecnico" && competicion && (
+            <Button
+              variant="secondary"
+              disabled={actualizando || cargando || competicionCargada !== selectedCompetitionId}
+              onClick={() => {
+                const id = competicion.id;
+                setOpciones(false);
+                setActualizando(true);
+                showToast("Comparando con la federación…");
+                void actualizarClasificacionRfgf(id)
+                  .then(async (r) => {
+                    if (!r.ok) return showToast(r.error, "error");
+                    setMotivos({ competicionId: id, lista: r.datos.motivos });
+                    showToast(
+                      r.datos.cuadra
+                        ? "Coincide con la federación ✓"
+                        : "No coincide con la federación: mira el detalle arriba.",
+                      r.datos.cuadra ? "success" : "error",
+                    );
+                    await cargar(id);
+                  })
+                  .catch(() => showToast("No se pudo hablar con la federación.", "error"))
+                  .finally(() => setActualizando(false));
+              }}
+            >
+              Actualizar con la federación
+            </Button>
+          )}
+        </div>
+      </Dialog>
 
       {contenido}
 

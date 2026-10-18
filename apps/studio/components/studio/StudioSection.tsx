@@ -57,14 +57,15 @@ export function StudioSection({ section }: { section: Seccion }) {
   const hydrated = useSyncExternalStore(subscribeHydration, clientReady, serverReady);
   const category = categoriaDe(params);
   const feedback = { showToast, showConfirm };
+  // Partidos tampoco: sigue la competición elegida por su cuenta, y remontarla al fijarse la
+  // competición en la URL la cargaba dos veces al entrar.
   // Equipos no entra: carga el catálogo una vez y filtra en memoria por la competición elegida.
   // Remontarla al cambiar de competición no aporta nada y abre una carrera: un diálogo abierto
   // justo después de cambiar se montaba en la instancia vieja y desaparecía con ella.
   const contextual =
     section === "calendario" ||
     section === "clasificacion" ||
-    section === "liga" ||
-    section === "partidos";
+    section === "liga";
   // Plantilla y staff son por temporada: cambiar de temporada tiene que volver a montarlos.
   const squad = section === "jugadores" || section === "tecnicos" || section === "directiva";
   const key = contextual
