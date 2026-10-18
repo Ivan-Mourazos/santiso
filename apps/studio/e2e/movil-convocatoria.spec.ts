@@ -128,7 +128,6 @@ test("once inicial con nombres largos y doce suplentes: se genera y se lee enter
   };
   const peticion: PeticionCartel = {
     plantilla: "alineacion",
-    formato: "historia",
     datos: {
       institucionales: [],
       patrocinadores: [],
