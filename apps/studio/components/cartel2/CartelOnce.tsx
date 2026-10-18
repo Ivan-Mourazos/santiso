@@ -1,11 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- el cartel se exporta como imagen: sin optimizador */
-import {
-  categoriaCartel,
-  cuerpo,
-  fechaCorta,
-  urlFoto,
-  type DatosOnce,
-} from "@/lib/cartel2/modelo";
+import { categoriaCartel, cuerpo, fechaCorta, urlFoto, type DatosOnce } from "@/lib/cartel2/modelo";
 import { Escudo } from "./Escudo";
 import { Base } from "./Base";
 import b from "./Base.module.css";
@@ -32,6 +26,8 @@ export function CartelOnce({ datos }: { datos: DatosOnce }) {
   const columnas = retrato ? [titulares] : [titulares.slice(0, 6), titulares.slice(6)];
   const anchoNombre = retrato ? ANCHO_NOMBRE_RETRATO : ANCHO_NOMBRE;
   const filas = retrato ? titulares.length : 6;
+  // Con retrato, letra grande mientras los suplentes quepan en dos filas; con más, no cabe.
+  const letraRetrato = suplentes.length > 4 ? 40 : 52;
   const subtitulo = [
     datos.rival ? `VS ${datos.rival.nombre.toUpperCase()}` : "",
     fechaCorta(datos.fecha),
@@ -102,14 +98,19 @@ export function CartelOnce({ datos }: { datos: DatosOnce }) {
             <ol key={c}>
               {columna.map((j, i) => (
                 <li key={`${j.dorsal}-${i}`} data-lectura-fila>
-                  <span className={`${b.display} ${s.dorsal}`}>{j.dorsal}</span>
+                  <span
+                    className={`${b.display} ${s.dorsal}`}
+                    style={retrato ? { fontSize: letraRetrato === 52 ? 44 : 36 } : undefined}
+                  >
+                    {j.dorsal}
+                  </span>
                   <span
                     className={s.nombre}
                     style={{
                       fontSize: cuerpo(
                         j.nombre.toUpperCase(),
                         anchoNombre - (j.capitan ? 36 : 0),
-                        retrato ? 40 : 44,
+                        retrato ? letraRetrato : 44,
                         24,
                         EM_NOMBRE,
                       ),

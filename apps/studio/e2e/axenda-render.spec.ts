@@ -335,30 +335,33 @@ test("Lectura resultado: marcador centrado con uno o ambos escudos ausentes", as
 });
 
 test("Lectura retrato: once y doce suplentes completos en ambos lados", async ({ page }, info) => {
-  test.setTimeout(120000);
+  test.setTimeout(180000);
   await page.goto("/render/cartel");
   await page.waitForFunction(() => typeof window.__pintarCartel === "function");
-  for (const invertido of [false, true])
-    for (const [i, nombre] of NOMBRES_LECTURA.entries()) {
-      const p = casoLectura("once", nombre);
-      if (p.plantilla !== "once") throw new Error("plantilla");
-      p.datos.modoFoto = "retrato";
-      p.datos.invertido = invertido;
-      p.datos.titulares = p.datos.titulares.map((j, k) => ({
-        ...j,
-        dorsal: k === 0 ? "26" : j.dorsal,
-      }));
-      p.datos.foto = { url: club.escudo!, x: 0.5, y: 0.5, zoom: 1 };
-      p.datos.suplentes.push({ nombre: "Manuel Vázquez Novas", dorsal: "23", capitan: false });
-      await page.evaluate((p) => window.__pintarCartel?.(p), p);
-      const cartel = page.locator("[data-listo] [data-cartel]");
-      await expect(cartel.locator("ol li[data-lectura-fila]")).toHaveCount(11);
-      expect(await conflictosLectura(cartel)).toEqual([]);
-      await sinDesbordes(cartel, false);
-      await capturaCompleta(cartel, {
-        path: info.outputPath(`once-retrato-${invertido}-nombre-${i}.png`),
-      });
-    }
+  // Con cuatro suplentes la lista lleva la letra grande; con doce, la pequeña.
+  for (const suplentes of [4, 12])
+    for (const invertido of [false, true])
+      for (const [i, nombre] of NOMBRES_LECTURA.entries()) {
+        const p = casoLectura("once", nombre);
+        if (p.plantilla !== "once") throw new Error("plantilla");
+        p.datos.modoFoto = "retrato";
+        p.datos.invertido = invertido;
+        p.datos.titulares = p.datos.titulares.map((j, k) => ({
+          ...j,
+          dorsal: k === 0 ? "26" : j.dorsal,
+        }));
+        p.datos.foto = { url: club.escudo!, x: 0.5, y: 0.5, zoom: 1 };
+        p.datos.suplentes.push({ nombre: "Manuel Vázquez Novas", dorsal: "23", capitan: false });
+        p.datos.suplentes = p.datos.suplentes.slice(0, suplentes);
+        await page.evaluate((p) => window.__pintarCartel?.(p), p);
+        const cartel = page.locator("[data-listo] [data-cartel]");
+        await expect(cartel.locator("ol li[data-lectura-fila]")).toHaveCount(11);
+        expect(await conflictosLectura(cartel)).toEqual([]);
+        await sinDesbordes(cartel, false);
+        await capturaCompleta(cartel, {
+          path: info.outputPath(`once-retrato-${suplentes}-${invertido}-nombre-${i}.png`),
+        });
+      }
 });
 
 test("Lectura capacidad: listas y anuncios excesivos avisan y no generan PNG recortado", async ({

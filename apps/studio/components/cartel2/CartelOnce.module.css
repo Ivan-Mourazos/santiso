@@ -183,8 +183,11 @@
 .conRetrato .titulares {
   grid-template-columns: minmax(0, 1fr);
 }
+/* Columna explícita: con `space-between` (de las dos columnas) la implícita se encogía al
+   nombre más largo y la lista quedaba en mitad del cartel. */
 .conRetrato .titulares ol {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-auto-rows: minmax(0, 1fr);
   gap: 0;
 }
