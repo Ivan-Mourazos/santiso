@@ -7,6 +7,7 @@ export * from "./multas";
 export * from "./convocatoria";
 export * from "./rfgf";
 export * from "./rfgf-historico-partidos";
+export * from "./rfgf-clubes";
 export * from "./acceso";
 export * from "./liga";
 export * from "./carteles";

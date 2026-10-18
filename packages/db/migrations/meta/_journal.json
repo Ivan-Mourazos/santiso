@@ -155,6 +155,13 @@
       "when": 1792251926472,
       "tag": "0021_historico-partidos",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1792367731588,
+      "tag": "0022_fichas-clubes",
+      "breakpoints": true
     }
   ]
 }

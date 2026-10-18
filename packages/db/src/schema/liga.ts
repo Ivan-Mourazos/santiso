@@ -1,6 +1,6 @@
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { check, index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { partidos } from "./calendario";
-import { checkEnum, id, marcasTiempo } from "./comunes";
+import { checkEnum, condicion, id, marcasTiempo } from "./comunes";
 import { equipos } from "./plantilla";
 
 /** Lo que se apunta de cada acta para las tablas de toda la liga. */
@@ -45,5 +45,34 @@ export const ligaEventos = sqliteTable(
     index("liga_eventos_partido_idx").on(t.partidoId),
     index("liga_eventos_equipo_idx").on(t.equipoId),
     checkEnum("liga_eventos_tipo_ck", "tipo", TIPOS_EVENTO_LIGA),
+  ],
+);
+
+/**
+ * Quién jugó cada partido de la competición, de todos los equipos, según su acta en la
+ * federación: titulares y suplentes por su nombre. Sirve para saber en qué otros equipos se ha
+ * visto a un jugador del club. Se apunta al leer el acta, igual que `liga_eventos`.
+ */
+export const ligaAlineaciones = sqliteTable(
+  "liga_alineaciones",
+  {
+    id: id(),
+    partidoId: text("partido_id")
+      .notNull()
+      .references(() => partidos.id, { onDelete: "cascade" }),
+    equipoId: text("equipo_id")
+      .notNull()
+      .references(() => equipos.id, { onDelete: "cascade" }),
+    /** Nombre para enseñar, como en `liga_eventos`. */
+    persona: text("persona").notNull(),
+    personaClave: text("persona_clave").notNull(),
+    dorsal: integer("dorsal"),
+    titular: integer("titular", { mode: "boolean" }).notNull(),
+    ...marcasTiempo(),
+  },
+  (t) => [
+    index("liga_alineaciones_partido_idx").on(t.partidoId),
+    index("liga_alineaciones_persona_idx").on(t.personaClave),
+    check("liga_alineaciones_dorsal_ck", condicion(`"dorsal" is null or "dorsal" >= 0`)),
   ],
 );
