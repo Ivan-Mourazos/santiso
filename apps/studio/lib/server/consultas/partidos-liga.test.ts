@@ -20,6 +20,14 @@ describe("jornadaActual", () => {
       ),
     ).toBe(6);
   });
+  it("el recién jugado sigue dos días si le faltan carteles, salvo que hoy se juegue otro", () => {
+    const jugado = { ...p(5, "2026-10-17T17:00", true), cerrado: false };
+    const proximo = p(6, "2026-10-19T17:00", false);
+    expect(jornadaActual([jugado, proximo], "2026-10-18T10:00")).toBe(5);
+    expect(jornadaActual([{ ...jugado, cerrado: true }, proximo], "2026-10-18T10:00")).toBe(6);
+    expect(jornadaActual([jugado, proximo], "2026-10-19T10:00")).toBe(6);
+    expect(jornadaActual([jugado, p(6, "2026-10-25T17:00", false)], "2026-10-20T10:00")).toBe(6);
+  });
   it("sin partidos por jugar, la última jugada", () => {
     expect(jornadaActual([p(1, "2026-09-01", true), p(2, "2026-09-08", true)], "2027-01-01T10:00")).toBe(2);
   });

@@ -43,13 +43,45 @@ export function trasPartido(p: PartidoDeLaSemana, ahora: string) {
   return !Number.isNaN(fin.getTime()) && momentoLocal(fin) <= ahora;
 }
 
-/** Hoy se cierra el recién jugado. Al día siguiente vuelve a mandar el próximo. */
+/** Días que el recién jugado sigue en la mesa para cerrarlo, si no tiene aún sus carteles. */
+export const DIAS_PARA_CERRAR = 2;
+
+/** Los carteles de después del partido (resultado, cronoloxía y O Noso 11) ya están guardados. */
+export function cierreHecho(carteles: CartelesDelPartido) {
+  return (["resultado", "cronoloxia", "noso11"] as const).every(
+    (paso) => estadoPaso(carteles[paso]) !== "pendiente",
+  );
+}
+
+/**
+ * Si el recién jugado (`diaUltimo`) sigue en la mesa: el mismo día siempre; después, hasta
+ * DIAS_PARA_CERRAR días mientras le falten carteles, salvo que hoy se juegue el próximo.
+ */
+export function sigueEnMesa(
+  diaUltimo: string | null | undefined,
+  diaProximo: string | null | undefined,
+  ahora: string,
+  cerrado: boolean,
+) {
+  const hoy = ahora.slice(0, 10);
+  if (!diaUltimo) return false;
+  if (diaUltimo.slice(0, 10) === hoy) return true;
+  if (cerrado || diaProximo?.slice(0, 10) === hoy) return false;
+  const dias = Math.round((Date.parse(hoy) - Date.parse(diaUltimo.slice(0, 10))) / 86_400_000);
+  return dias > 0 && dias <= DIAS_PARA_CERRAR;
+}
+
+/**
+ * El día del partido se cierra el recién jugado, y sigue hasta dos días más mientras le falten
+ * los carteles de después. Luego vuelve a mandar el próximo.
+ */
 export function partidoEnMesa(
   proximo: PartidoDeLaSemana | null,
   ultimo: PartidoDeLaSemana | null,
   ahora: string,
 ) {
-  if (ultimo?.fecha?.slice(0, 10) === ahora.slice(0, 10)) return ultimo;
+  if (ultimo && sigueEnMesa(ultimo.fecha, proximo?.fecha, ahora, ultimo.cierreHecho ?? false))
+    return ultimo;
   return proximo ?? ultimo;
 }
 

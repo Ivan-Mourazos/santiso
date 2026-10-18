@@ -2,7 +2,8 @@ import "server-only";
 import { schema } from "@santiso/db";
 import { CATEGORIAS, type Categoria } from "@santiso/domain";
 import { aliasedTable, and, asc, eq, inArray, or, sql } from "drizzle-orm";
-import { momentoLocal, trasPartido } from "@/lib/jornada/vestiario";
+import { cierreHecho, momentoLocal, trasPartido } from "@/lib/jornada/vestiario";
+import { cartelesDePartidos } from "@/lib/server/carteles/guardados";
 import { semanaDe, type Semana } from "@/lib/jornada/semana";
 import { urlMedia } from "@/lib/media";
 import { clasificacionDeCompeticion } from "@/lib/server/consultas/clasificacion";
@@ -41,6 +42,8 @@ export interface PartidoDeLaSemana {
   /** Apercibidos, sancionados y expulsados de los dos equipos; solo en partidos por jugar. */
   avisos: { persona: string; propio: boolean; situacion: string; motivo: string }[];
   preparacion: { convocatoria: number | null; titulares: number; capitan: boolean };
+  /** Ya jugado y con sus carteles de después guardados: deja la mesa al próximo. */
+  cierreHecho?: boolean;
   /** `null` = todavía sin acta guardada. */
   acta: ActaDeLaSemana | null;
   /** Solo en competiciones de liga y si el Santiso está en la tabla. */
@@ -305,7 +308,7 @@ export async function pantallaJornada(
     return { categoria: f.categoria, partido };
   });
 
-  return {
+  const salida = {
     semana,
     momento,
     categorias: categorias.map((categoria) => {
@@ -343,4 +346,11 @@ export async function pantallaJornada(
       };
     }),
   };
+  // Del último jugado de cada categoría importa si ya tiene sus carteles: decide la mesa.
+  const ultimos = salida.categorias.flatMap((c) => (c.ultimo ? [c.ultimo] : []));
+  if (ultimos.length) {
+    const carteles = await cartelesDePartidos(ultimos.map((p) => p.id));
+    for (const p of ultimos) p.cierreHecho = cierreHecho(carteles[p.id] ?? {});
+  }
+  return salida;
 }

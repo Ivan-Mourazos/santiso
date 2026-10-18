@@ -1,7 +1,8 @@
 import "server-only";
 import { schema } from "@santiso/db";
 import { aliasedTable, and, asc, eq, inArray } from "drizzle-orm";
-import { momentoLocal } from "@/lib/jornada/vestiario";
+import { cierreHecho, momentoLocal, sigueEnMesa } from "@/lib/jornada/vestiario";
+import { cartelesDePartidos } from "@/lib/server/carteles/guardados";
 import { urlMedia } from "@/lib/media";
 import { grupoDeEnlace, urlActaWeb } from "@/lib/rfgf/enlace";
 import { obtenerDb } from "@/lib/server/db";
@@ -51,11 +52,12 @@ const minutoOrden = (minuto: string) => {
 
 /**
  * La jornada que toca: el día de un partido del Santiso, la de ese partido (aunque ya se haya
- * jugado, para cerrarlo); si no, la del próximo partido del Santiso; si no queda ninguno, la
- * última jugada. Igual que la mesa de la jornada (`partidoEnMesa`).
+ * jugado, para cerrarlo), que sigue mandando hasta dos días más si le faltan sus carteles; si no,
+ * la del próximo partido del Santiso; si no queda ninguno, la última jugada. Igual que la mesa de
+ * la jornada (`partidoEnMesa`).
  */
 export function jornadaActual(
-  propios: readonly { jornada: number; fecha: string | null; jugado: boolean }[],
+  propios: readonly { jornada: number; fecha: string | null; jugado: boolean; cerrado?: boolean }[],
   ahora: string,
 ): number | null {
   const hoy = ahora.slice(0, 10);
@@ -64,8 +66,18 @@ export function jornadaActual(
   const proximo = propios
     .filter((p) => !p.jugado && (p.fecha ?? "9999") >= hoy)
     .sort((a, b) => (a.fecha ?? "9999").localeCompare(b.fecha ?? "9999"))[0];
+  const ultimo = ultimoJugado(propios);
+  if (ultimo && sigueEnMesa(ultimo.fecha, proximo?.fecha, ahora, ultimo.cerrado ?? false))
+    return ultimo.jornada;
   if (proximo) return proximo.jornada;
   return propios.filter((p) => p.jugado).sort((a, b) => b.jornada - a.jornada)[0]?.jornada ?? null;
+}
+
+/** El último partido jugado, por fecha. */
+function ultimoJugado<T extends { fecha: string | null; jugado: boolean }>(propios: readonly T[]) {
+  return propios
+    .filter((p) => p.jugado && p.fecha)
+    .sort((a, b) => b.fecha!.localeCompare(a.fecha!))[0];
 }
 
 /** Todos los partidos de la competición con sus equipos, por jornada y fecha. */
@@ -143,16 +155,19 @@ export async function partidosDeLiga(
         .map((f) => f.fecha!)
         .sort()[0] ?? null,
   }));
-  const actual = jornadaActual(
-    filas
-      .filter((f) => f.localPropio || f.visitantePropio)
-      .map((f) => ({
-        jornada: f.jornada,
-        fecha: f.fecha,
-        jugado: f.golesLocal !== null || f.estado === "finalizado",
-      })),
-    ahora,
-  );
+  const propios = filas
+    .filter((f) => f.localPropio || f.visitantePropio)
+    .map((f) => ({
+      id: f.id,
+      jornada: f.jornada,
+      fecha: f.fecha,
+      jugado: f.golesLocal !== null || f.estado === "finalizado",
+      cerrado: false,
+    }));
+  // Si el último jugado tiene ya sus carteles de después, deja de mandar.
+  const ultimo = ultimoJugado(propios);
+  if (ultimo) ultimo.cerrado = cierreHecho((await cartelesDePartidos([ultimo.id]))[ultimo.id] ?? {});
+  const actual = jornadaActual(propios, ahora);
   const elegida =
     numero !== null && jornadas.some((j) => j.numero === numero)
       ? numero

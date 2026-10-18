@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { partidoEnMesa, progresoPartido, trasPartido } from "./vestiario";
+import { cierreHecho, partidoEnMesa, progresoPartido, trasPartido } from "./vestiario";
 import type { PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
 
 const partido = (cambios: Partial<PartidoDeLaSemana> = {}): PartidoDeLaSemana => ({
@@ -131,8 +131,28 @@ describe("mesa de trabajo", () => {
     const ultimo = partido({ id: "ultimo", golesSantiso: 1, golesRival: 0 });
     const proximo = partido({ id: "proximo", fecha: "2026-10-25T17:00" });
     expect(partidoEnMesa(proximo, ultimo, "2026-10-18T20:00")?.id).toBe("ultimo");
-    expect(partidoEnMesa(proximo, ultimo, "2026-10-19T12:00")?.id).toBe("proximo");
+    // Al día siguiente, con sus carteles ya hechos, manda el próximo.
+    expect(partidoEnMesa(proximo, { ...ultimo, cierreHecho: true }, "2026-10-19T12:00")?.id).toBe(
+      "proximo",
+    );
     expect(partidoEnMesa(null, ultimo, ahora)?.id).toBe("ultimo");
     expect(partidoEnMesa(null, null, ahora)).toBeNull();
+  });
+  it("el recién jugado sigue dos días mientras le falten los carteles de después", () => {
+    const ultimo = partido({ id: "ultimo", fecha: "2026-10-18T17:00", estado: "finalizado" });
+    const proximo = partido({ id: "proximo", fecha: "2026-10-25T17:00" });
+    expect(partidoEnMesa(proximo, ultimo, "2026-10-19T12:00")?.id).toBe("ultimo");
+    expect(partidoEnMesa(proximo, ultimo, "2026-10-20T23:00")?.id).toBe("ultimo");
+    expect(partidoEnMesa(proximo, ultimo, "2026-10-21T08:00")?.id).toBe("proximo");
+    const cerrado = { ...ultimo, cierreHecho: true };
+    expect(partidoEnMesa(proximo, cerrado, "2026-10-19T12:00")?.id).toBe("proximo");
+    // Si el próximo se juega hoy, manda el próximo aunque el anterior siga abierto.
+    const hoy = partido({ id: "proximo", fecha: "2026-10-19T17:00" });
+    expect(partidoEnMesa(hoy, ultimo, "2026-10-19T12:00")?.id).toBe("proximo");
+  });
+  it("el cierre pide resultado, cronoloxía y O Noso 11 guardados", () => {
+    const g = [{ formato: "publicacion" as const, url: "/x.png", generadoEn: "", desactualizado: false }];
+    expect(cierreHecho({ resultado: g, cronoloxia: g })).toBe(false);
+    expect(cierreHecho({ resultado: g, cronoloxia: g, noso11: g })).toBe(true);
   });
 });
