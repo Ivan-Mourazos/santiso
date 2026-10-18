@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import TarjetaPartido, { fechaPartido } from "@/components/admin/jornada/TarjetaPartido";
 import { useStudio } from "@/components/studio/StudioContext";
@@ -8,7 +9,13 @@ import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Select } from "@/components/ui/foundation/Fields";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import { hoyLocal } from "@/lib/jornada/semana";
-import { partidoEnMesa } from "@/lib/jornada/vestiario";
+import {
+  type CartelesDelPartido,
+  partidoEnMesa,
+  preparaConvocatoria,
+} from "@/lib/jornada/vestiario";
+import { estadoPaso, NOMBRE_FORMATO, PASOS, type PasoCartel } from "@/lib/cartel2/pasos";
+import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados";
 import { cargarPantallaJornada } from "@/lib/server/acciones/jornada";
 import { cargarPartidosLiga } from "@/lib/server/acciones/liga";
 import type { PantallaJornada, PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
@@ -73,11 +80,104 @@ function Fila({ partido: p, onAbrir }: { partido: PartidoDeLiga; onAbrir: () => 
   );
 }
 
+/** Dónde se hace el cartel de cada paso para un partido concreto. */
+function enlaceDelPaso(paso: PasoCartel, partidoId: string, categoria: string) {
+  const id = encodeURIComponent(partidoId);
+  const cat = encodeURIComponent(categoria);
+  if (paso === "convocatoria") return `/admin/convocatoria?categoria=${cat}&partido=${id}`;
+  if (paso === "once") return `/admin/alineacion?categoria=${cat}&partido=${id}`;
+  const plantilla = paso === "resultado" ? "resumo" : paso;
+  return `/admin/carteles?plantilla=${plantilla}&partido=${id}&categoria=${cat}`;
+}
+
+/**
+ * Los carteles de un partido del Santiso que ya no está en la mesa (el de ayer, uno de hace
+ * semanas): los guardados se descargan aquí mismo y cualquiera se puede hacer o rehacer.
+ */
+function CartelesDelPartidoLiga({
+  partido: p,
+  categoria,
+}: {
+  partido: PartidoDeLiga;
+  categoria: string;
+}) {
+  const { acceso } = useStudio();
+  const [carteles, setCarteles] = useState<{ id: string; deEste: CartelesDelPartido } | null>(null);
+  useEffect(() => {
+    let vigente = true;
+    void cargarCartelesPartido([p.id]).then((r) => {
+      if (vigente && r.ok) setCarteles({ id: p.id, deEste: r.datos[p.id] ?? {} });
+    });
+    return () => {
+      vigente = false;
+    };
+  }, [p.id]);
+  const jugado = marcadorDe(p) !== null;
+  const antes: PasoCartel[] = preparaConvocatoria(categoria)
+    ? ["partido", "convocatoria", "once"]
+    : ["partido"];
+  // Jugado, primero lo de después; los técnicos solo hacen convocatoria y once.
+  const pasos = (
+    jugado ? (["resultado", "cronoloxia", "noso11", ...antes] as PasoCartel[]) : antes
+  ).filter((paso) => acceso?.rol !== "tecnico" || paso === "convocatoria" || paso === "once");
+  const deEste = carteles?.id === p.id ? carteles.deEste : null;
+  return (
+    <section className={styles.carteles} aria-label="Carteles del partido">
+      <p className={styles.etiqueta}>Carteles del partido</p>
+      {!deEste ? (
+        <p className={styles.nota}>Buscando los carteles guardados…</p>
+      ) : (
+        <ul>
+          {pasos.map((paso) => {
+            const guardados = deEste[paso] ?? [];
+            const estado = estadoPaso(guardados);
+            return (
+              <li key={paso} data-estado={estado}>
+                <div>
+                  <strong>{PASOS[paso].nombre}</strong>
+                  <span>
+                    {estado === "hecho"
+                      ? "✓ Guardado"
+                      : estado === "desactualizado"
+                        ? "⚠ Guardado con datos viejos"
+                        : "Sin hacer"}
+                  </span>
+                </div>
+                <div className={styles.accionesCartel}>
+                  {guardados.map((g) => (
+                    <a
+                      key={g.formato}
+                      href={g.url}
+                      download={`${paso}-${g.formato}.png`}
+                      aria-label={`Descargar ${PASOS[paso].nombre}: ${NOMBRE_FORMATO[g.formato]}`}
+                    >
+                      ↓ {guardados.length > 1 ? NOMBRE_FORMATO[g.formato] : "Descargar"}
+                    </a>
+                  ))}
+                  <Link
+                    href={enlaceDelPaso(paso, p.id, categoria)}
+                    transitionTypes={["nav-forward"]}
+                    aria-label={`${guardados.length ? "Rehacer" : "Hacer"} ${PASOS[paso].nombre}`}
+                  >
+                    {guardados.length ? "Rehacer" : "Hacer"}
+                  </Link>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function Detalle({
   partido: p,
+  categoria,
   onClose,
 }: {
   partido: PartidoDeLiga | null;
+  categoria: string;
   onClose: () => void;
 }) {
   const cuando = fechaPartido(p?.fecha ?? null);
@@ -134,6 +234,9 @@ function Detalle({
             </ol>
           ) : (
             marcadorDe(p) && <p className={styles.nota}>Sin acta leída todavía.</p>
+          )}
+          {(p.local.propio || p.visitante.propio) && (
+            <CartelesDelPartidoLiga partido={p} categoria={categoria} />
           )}
           {p.enlaceActa && (
             <a className={styles.enlace} href={p.enlaceActa} target="_blank" rel="noreferrer">
@@ -200,7 +303,9 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
         title="No se pudieron cargar los partidos"
         detail={errorCompeticiones ?? error ?? ""}
         action={
-          <Button onClick={() => selectedCompetitionId && void cargar(selectedCompetitionId, pedida)}>
+          <Button
+            onClick={() => selectedCompetitionId && void cargar(selectedCompetitionId, pedida)}
+          >
             Reintentar
           </Button>
         }
@@ -221,8 +326,7 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
   const fechaJornada = datos.jornadas[posicion]?.fecha ?? null;
   const ir = (numero: number | undefined) =>
     numero !== undefined && setParams({ j: numero === datos.actual ? null : String(numero) });
-  const enMesa =
-    mesa && datos.partidos.some((p) => p.id === mesa.partido.id) ? mesa.partido : null;
+  const enMesa = mesa && datos.partidos.some((p) => p.id === mesa.partido.id) ? mesa.partido : null;
   const resto = datos.partidos.filter((p) => p.id !== enMesa?.id);
 
   return (
@@ -293,7 +397,7 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
       ) : (
         !enMesa && <EmptyState title="Esta jornada no tiene partidos." />
       )}
-      <Detalle partido={abierto} onClose={() => setAbierto(null)} />
+      <Detalle partido={abierto} categoria={categoria} onClose={() => setAbierto(null)} />
     </div>
   );
 }

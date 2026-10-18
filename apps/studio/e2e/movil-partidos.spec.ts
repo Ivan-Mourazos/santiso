@@ -42,3 +42,33 @@ for (const ancho of [360, 390]) {
     );
   });
 }
+
+/** Un partido nuestro ya pasado (no el de la mesa) también deja descargar y rehacer sus carteles. */
+test("partidos: nuestro partido de otra jornada lleva sus carteles", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto("/admin/partidos?categoria=Veteranos");
+  const jornada = page.getByRole("navigation", { name: "Jornada" });
+  await expect(jornada.getByText(/^Jornada \d+$/)).toBeVisible();
+  const anterior = jornada.getByRole("button", { name: "Jornada anterior" });
+  test.skip(!(await anterior.isEnabled()), "Sin jornadas anteriores en los datos reales");
+  const antes = await jornada.getByText(/^Jornada \d+$/).textContent();
+  await anterior.click();
+  await expect(jornada.getByText(/^Jornada \d+$/)).not.toHaveText(antes!);
+  const nuestro = page.locator("button[data-propio]").first();
+  test.skip((await nuestro.count()) === 0, "El Santiso descansó esa jornada");
+  await nuestro.click();
+  const carteles = page.getByRole("dialog").getByRole("region", { name: "Carteles del partido" });
+  await expect(carteles).toBeVisible();
+  const resultado = carteles.getByRole("link", { name: /^(Hacer|Rehacer) Resultado$/ });
+  await expect(resultado).toHaveAttribute("href", /plantilla=resumo&partido=[^&]+/);
+  // Veteranos no convoca ni alinea: no salen esos pasos.
+  await expect(carteles.getByText("Convocatoria", { exact: true })).toHaveCount(0);
+  for (const caja of await carteles
+    .getByRole("link")
+    .evaluateAll((els) => els.map((e) => e.getBoundingClientRect())))
+    expect(caja.height).toBeGreaterThanOrEqual(44);
+  await resultado.click();
+  await expect(
+    page.getByRole("banner").getByRole("heading", { level: 1, name: "Resultado" }),
+  ).toBeVisible();
+});
