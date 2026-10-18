@@ -32,6 +32,8 @@ export const PLANTILLAS = [
   "clasificacion",
   "alineacion",
   "convocatoria",
+  "fichaxe",
+  "comunicado",
 ] as const;
 export type Plantilla = (typeof PLANTILLAS)[number];
 
@@ -239,6 +241,47 @@ export interface DatosAnuncio extends Logos {
   escudoClub: string | null;
 }
 
+/** Fichaje, renovación o vuelta: foto a todo el cartel y solo texto, como los clubs profesionales. */
+export const TIPOS_FICHAXE = {
+  fichaxe: "NOVA INCORPORACIÓN",
+  renovacion: "RENOVACIÓN",
+  volta: "VOLVE A CASA",
+} as const;
+export type TipoFichaxe = keyof typeof TIPOS_FICHAXE;
+
+export interface DatosFichaxe {
+  tipo: TipoFichaxe;
+  /** Nombre (línea pequeña) y apellido o apodo (línea grande). */
+  nombre: string;
+  apellido: string;
+  /** Demarcación, dorsal, temporada…: una línea corta en amarillo. */
+  detalle: string;
+  frase: string;
+  /** Encuadre de la foto: foco (0–1) y zoom, como en O Noso 11. */
+  foto: { url: string; x: number; y: number; zoom: number } | null;
+  escudoClub: string | null;
+  /** El escudo pequeño arriba; sin él, el cartel lleva solo la foto y el texto. */
+  conEscudo: boolean;
+}
+
+/** Comunicado serio: sin patrocinadores ni texturas, con fecha y firma. */
+export const TIPOS_COMUNICADO = {
+  oficial: { etiqueta: "COMUNICADO OFICIAL", acento: "#f5c518" },
+  medico: { etiqueta: "PARTE MÉDICO", acento: "#ef4444" },
+  loito: { etiqueta: "LOITO", acento: "#a1a1aa" },
+} as const;
+export type TipoComunicado = keyof typeof TIPOS_COMUNICADO;
+
+export interface DatosComunicado {
+  tipo: TipoComunicado;
+  titulo: string;
+  texto: string;
+  /** `AAAA-MM-DD`; vacía, sin fecha. */
+  fecha: string;
+  firma: string;
+  escudoClub: string | null;
+}
+
 export interface FilaTabla {
   posicion: number;
   nombre: string;
@@ -278,7 +321,9 @@ export type PeticionCartel =
   | { plantilla: "anuncio"; datos: DatosAnuncio }
   | { plantilla: "clasificacion"; datos: DatosClasificacion }
   | { plantilla: "alineacion"; datos: DatosAlineacion }
-  | { plantilla: "convocatoria"; datos: DatosConvocatoria };
+  | { plantilla: "convocatoria"; datos: DatosConvocatoria }
+  | { plantilla: "fichaxe"; datos: DatosFichaxe }
+  | { plantilla: "comunicado"; datos: DatosComunicado };
 
 const DIAS = ["DOMINGO", "LUNS", "MARTES", "MÉRCORES", "XOVES", "VENRES", "SÁBADO"];
 const MESES = ["XAN", "FEB", "MAR", "ABR", "MAI", "XUÑ", "XUL", "AGO", "SET", "OUT", "NOV", "DEC"];

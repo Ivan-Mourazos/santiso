@@ -25,6 +25,8 @@ import PilotoCartel from "./cartel/PilotoCartel";
 import { FormNoso11 } from "./cartel/FormNoso11";
 import { FormMultiusos } from "./cartel/FormMultiusos";
 import { FormClasificacion } from "./cartel/FormClasificacion";
+import { FormComunicado } from "./cartel/FormComunicado";
+import { FormFichaxe } from "./cartel/FormFichaxe";
 import { PaqueteAxenda } from "./cartel/PaqueteAxenda";
 import { PlegableMovil } from "./cartel/PlegableMovil";
 import { Select } from "@/components/ui/foundation/Fields";
@@ -238,6 +240,15 @@ export default function GeneradorCartel({
             />
           )}
           {tipo === "clasificacion" && <FormClasificacion form={form} set={set} />}
+          {tipo === "fichaxe" && (
+            <FormFichaxe
+              form={form}
+              set={set}
+              jugFileName={jugFileName}
+              handleJugadorFile={handleJugadorFile}
+            />
+          )}
+          {tipo === "comunicado" && <FormComunicado form={form} set={set} />}
 
           {/* Con un partido del calendario la localía ya se sabe: solo se pregunta a mano. */}
           {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && !form.partido_id && (
@@ -323,6 +334,8 @@ export default function GeneradorCartel({
             showToast={showToast}
             guardado={guardado}
           />
+          {/* Fichajes y comunicados van sin logos: no hay nada que explicar. */}
+          {tipo !== "fichaxe" && tipo !== "comunicado" && (
           <PlegableMovil titulo="Logos y patrocinadores">
             <div className={styles.pie}>
               <p>
@@ -332,6 +345,7 @@ export default function GeneradorCartel({
               </p>
             </div>
           </PlegableMovil>
+          )}
         </div>
       </div>
     </div>

@@ -282,5 +282,17 @@ export function textoInstagram(tipo: TemplateId, f: FormState): string {
       return textoAnuncio(f);
     case "clasificacion":
       return textoClasificacion(f);
+    case "fichaxe": {
+      const etiqueta = { fichaxe: "NOVA INCORPORACIÓN", renovacion: "RENOVACIÓN", volta: "VOLVE A CASA" };
+      const quen = [f.fichaxeNombre.trim(), f.fichaxeApellido.trim()].filter(Boolean).join(" ");
+      const cuerpo = [quen, f.fichaxeDetalle.trim(), f.fichaxeFrase.trim() && `«${f.fichaxeFrase.trim()}»`]
+        .filter(Boolean)
+        .join("\n");
+      return [`✍️ ${etiqueta[f.fichaxeTipo]}`, cuerpo, "#UDSantiso"].filter(Boolean).join("\n\n");
+    }
+    case "comunicado":
+      return [f.comunicadoTitulo.trim().toUpperCase(), f.comunicadoTexto.trim(), "#UDSantiso"]
+        .filter(Boolean)
+        .join("\n\n");
   }
 }

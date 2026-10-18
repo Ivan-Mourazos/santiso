@@ -7,7 +7,9 @@ import {
   COMPOSICIONES,
   ESTILOS_FOTO,
   TEMAS_ANUNCIO,
+  TIPOS_COMUNICADO,
   TIPOS_EVENTO,
+  TIPOS_FICHAXE,
   type PeticionCartel,
 } from "./modelo";
 
@@ -270,7 +272,42 @@ const clasificacion = z.object({
   ]),
 });
 
+const fichaxe = z.object({
+  plantilla: z.literal("fichaxe"),
+  datos: z.object({
+    tipo: z.enum(Object.keys(TIPOS_FICHAXE) as [string, ...string[]]),
+    nombre: texto(60),
+    apellido: texto(60),
+    detalle: texto(120),
+    frase: texto(240),
+    foto: z
+      .object({
+        url: imagen,
+        x: z.number().min(0).max(1),
+        y: z.number().min(0).max(1),
+        zoom: z.number().positive().max(4),
+      })
+      .nullable(),
+    escudoClub: imagen.nullable(),
+    conEscudo: z.boolean(),
+  }),
+});
+
+const comunicado = z.object({
+  plantilla: z.literal("comunicado"),
+  datos: z.object({
+    tipo: z.enum(Object.keys(TIPOS_COMUNICADO) as [string, ...string[]]),
+    titulo: texto(120),
+    texto: texto(1600),
+    fecha: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)]),
+    firma: texto(80),
+    escudoClub: imagen.nullable(),
+  }),
+});
+
 const peticion = z.discriminatedUnion("plantilla", [
+  fichaxe,
+  comunicado,
   partido,
   resultado,
   cronoloxia,

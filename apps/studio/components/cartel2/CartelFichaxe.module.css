@@ -1,0 +1,105 @@
+/*
+ * Fichaje / renovación: foto a sangre (1080 × 1350), sombra de abajo hacia arriba y el texto
+ * apoyado abajo, de 64 a 1016. Escudo pequeño opcional arriba a la izquierda.
+ */
+
+.foto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Sin foto: el escudo enorme y desenfocado, para que el cartel no quede vacío. */
+.sinFoto {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 35%, rgb(245 197 24 / 22%), transparent 60%);
+}
+
+.sinFoto img {
+  width: 900px;
+  height: 900px;
+  object-fit: contain;
+  filter: blur(30px) saturate(1.3);
+  opacity: 0.35;
+}
+
+.sombra {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    linear-gradient(0deg, rgb(6 8 11 / 96%) 0%, rgb(6 8 11 / 80%) 24%, transparent 58%),
+    linear-gradient(180deg, rgb(6 8 11 / 45%) 0%, transparent 18%);
+}
+
+.escudo {
+  position: absolute;
+  z-index: 6;
+  top: 56px;
+  left: 64px;
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 18px rgb(0 0 0 / 55%));
+}
+
+.texto {
+  position: absolute;
+  z-index: 6;
+  left: 64px;
+  right: 64px;
+  bottom: 84px;
+}
+
+.etiqueta {
+  display: inline-block;
+  padding: 10px 20px 8px;
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: 0.22em;
+  color: var(--negro);
+  background: var(--amarillo);
+}
+
+.nombre {
+  margin-top: 30px;
+  font-weight: 600;
+  font-size: 54px;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+}
+
+.apellido {
+  margin: 12px 0 0;
+  font-weight: 400;
+  line-height: 1.5;
+  /* Anton necesita 1,5 de línea para que el control de lectura no la dé por desbordada; el
+     margen negativo devuelve el aspecto apretado. */
+  margin-block: -0.24em;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-shadow: 0 10px 40px rgb(0 0 0 / 55%);
+}
+
+.detalle {
+  margin-top: 18px;
+  font-weight: 800;
+  font-size: 36px;
+  letter-spacing: 0.16em;
+  color: var(--amarillo);
+}
+
+.frase {
+  margin: 22px 0 0;
+  max-width: 900px;
+  font-weight: 600;
+  font-style: italic;
+  font-size: 36px;
+  line-height: 1.25;
+  color: rgb(255 255 255 / 88%);
+}

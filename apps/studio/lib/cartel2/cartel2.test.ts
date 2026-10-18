@@ -118,6 +118,17 @@ function formulario(cambios: Partial<FormState> = {}): FormState {
         pts: 0,
       },
     ],
+    fichaxeTipo: "fichaxe",
+    fichaxeNombre: "",
+    fichaxeApellido: "",
+    fichaxeDetalle: "",
+    fichaxeFrase: "",
+    fichaxeConEscudo: true,
+    comunicadoTipo: "oficial",
+    comunicadoTitulo: "",
+    comunicadoTexto: "",
+    comunicadoFecha: "",
+    comunicadoFirma: "A Directiva",
     showAssets: true,
     ...cambios,
   } as FormState;
@@ -305,6 +316,34 @@ describe("peticionDeFormulario", () => {
     expect(fiesta.datos.institucionales).toEqual(recursos.institucionales);
   });
 
+  it("fichaje y comunicado: sin logos; la foto, la subida con su encuadre", () => {
+    const f = peticionDeFormulario(
+      "fichaxe",
+      formulario({
+        fichaxeNombre: " Hugo ",
+        fichaxeApellido: "Cea",
+        jugadorFotoUrl: "data:image/png;base64,AAAA",
+        jugadorZoom: 0.6,
+      }),
+      recursos,
+      opciones,
+    );
+    if (f.plantilla !== "fichaxe") throw new Error("plantilla");
+    expect(f.datos).toMatchObject({ nombre: "Hugo", apellido: "Cea" });
+    // El zoom de O Noso 11 puede bajar de 1; a pantalla completa no deja huecos.
+    expect(f.datos.foto?.zoom).toBe(1);
+    expect(f.datos).not.toHaveProperty("patrocinadores");
+    const c = peticionDeFormulario(
+      "comunicado",
+      formulario({ comunicadoTipo: "medico", comunicadoTitulo: " Baixas " }),
+      recursos,
+      opciones,
+    );
+    if (c.plantilla !== "comunicado") throw new Error("plantilla");
+    expect(c.datos).toMatchObject({ tipo: "medico", titulo: "Baixas" });
+    expect(c.datos).not.toHaveProperty("institucionales");
+  });
+
   it("clasificación: marca la fila del Santiso", () => {
     const p = peticionDeFormulario("clasificacion", formulario(), recursos, opciones);
     if (p.plantilla !== "clasificacion" || p.datos.tipo !== "liga") throw new Error("plantilla");
@@ -488,6 +527,8 @@ describe("leerPeticion", () => {
       "noso11",
       "multiusos",
       "clasificacion",
+      "fichaxe",
+      "comunicado",
     ] as const;
     const plantillas = tipos.map((t) => {
       const p = peticionDeFormulario(t, formulario(), recursos, opciones);

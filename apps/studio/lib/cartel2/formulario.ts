@@ -346,6 +346,40 @@ export function peticionDeFormulario(
           escudoClub: escudoClubDe(recursos) || null,
         },
       };
+    case "fichaxe":
+      // Estilo de los clubs profesionales: foto completa y texto, sin logos.
+      return {
+        plantilla: "fichaxe",
+        datos: {
+          tipo: form.fichaxeTipo,
+          nombre: form.fichaxeNombre.trim(),
+          apellido: form.fichaxeApellido.trim(),
+          detalle: form.fichaxeDetalle.trim(),
+          frase: form.fichaxeFrase.trim(),
+          foto: form.jugadorFotoUrl
+            ? {
+                url: form.jugadorFotoUrl,
+                x: form.jugadorXOffset,
+                y: form.jugadorYOffset,
+                zoom: Math.max(1, form.jugadorZoom),
+              }
+            : null,
+          escudoClub: escudoClubDe(recursos) || null,
+          conEscudo: form.fichaxeConEscudo,
+        },
+      };
+    case "comunicado":
+      return {
+        plantilla: "comunicado",
+        datos: {
+          tipo: form.comunicadoTipo,
+          titulo: form.comunicadoTitulo.trim(),
+          texto: form.comunicadoTexto.trim(),
+          fecha: form.comunicadoFecha,
+          firma: form.comunicadoFirma.trim(),
+          escudoClub: escudoClubDe(recursos) || null,
+        },
+      };
     case "clasificacion": {
       const base = {
         ...logos,

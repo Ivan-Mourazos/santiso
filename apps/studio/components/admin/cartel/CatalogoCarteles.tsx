@@ -75,14 +75,14 @@ const GRUPOS: { titulo: string; entradas: Entrada[] }[] = [
     entradas: [
       {
         titulo: "Fichajes y renovaciones",
-        para: "Nova incorporación",
-        href: "/admin/carteles?plantilla=multiusos&tema=fichaje",
+        para: "Foto completa y nombre, sin logos",
+        href: "/admin/carteles?plantilla=fichaxe",
         admin: true,
       },
       {
         titulo: "Comunicados y avisos",
-        para: "Aviso oficial o parte médico",
-        href: "/admin/carteles?plantilla=multiusos&tema=formal",
+        para: "Comunicado oficial, parte médico o loito",
+        href: "/admin/carteles?plantilla=comunicado",
         admin: true,
       },
       {

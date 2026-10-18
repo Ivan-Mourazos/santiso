@@ -13,6 +13,8 @@ export const TEMPLATES = [
   { id: "noso11", label: "O Noso 11", emoji: "👕" },
   { id: "multiusos", label: "Anuncio", emoji: "📢" },
   { id: "clasificacion", label: "Clasificación", emoji: "📈" },
+  { id: "fichaxe", label: "Fichaje", emoji: "✍️" },
+  { id: "comunicado", label: "Comunicado", emoji: "📢" },
 ] as const;
 
 export type TemplateId = (typeof TEMPLATES)[number]["id"];
@@ -70,6 +72,20 @@ export interface FormState {
   multiusosTexto: string;
   multiusosImg1Url: string;
   multiusosImg2Url: string;
+
+  // Fichaje, renovación o vuelta (la foto es la de O Noso 11: `jugadorFotoUrl` y encuadre)
+  fichaxeTipo: "fichaxe" | "renovacion" | "volta";
+  fichaxeNombre: string;
+  fichaxeApellido: string;
+  fichaxeDetalle: string;
+  fichaxeFrase: string;
+  fichaxeConEscudo: boolean;
+  // Comunicado oficial, parte médico o loito
+  comunicadoTipo: "oficial" | "medico" | "loito";
+  comunicadoTitulo: string;
+  comunicadoTexto: string;
+  comunicadoFecha: string;
+  comunicadoFirma: string;
 
   // Clasificación
   clasificacionTipo: "liga" | "copa";
