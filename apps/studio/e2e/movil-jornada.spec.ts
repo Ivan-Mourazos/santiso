@@ -30,6 +30,12 @@ for (const ancho of [360, 390]) {
   test(`jornada: cierre del último y panel Federación caben a ${ancho}px`, async ({ page }) => {
     await page.setViewportSize({ width: ancho, height: 780 });
     await page.goto("/admin/jornada");
+    // Recién jugado sin sus carteles: la mesa ya está en él y no hay «Último partido» aparte.
+    await expect(page.locator("[data-mesa-partido]")).toBeVisible({ timeout: 30000 });
+    test.skip(
+      (await page.locator("[data-mesa-partido]").getAttribute("data-fase")) === "despues",
+      "La mesa ya enseña el partido recién jugado",
+    );
     const ultimo = page.getByRole("region", { name: "Último partido", exact: true });
     await expect(ultimo).toBeVisible({ timeout: 30000 });
     await ultimo.getByRole("button", { name: "Acta y publicaciones" }).tap();

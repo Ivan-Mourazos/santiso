@@ -71,4 +71,11 @@ test("partidos: nuestro partido de otra jornada lleva sus carteles", async ({ pa
   await expect(
     page.getByRole("banner").getByRole("heading", { level: 1, name: "Resultado" }),
   ).toBeVisible();
+  // Llega con el partido puesto: su tarjeta arriba y los campos plegados para retocar.
+  const elegido = page.getByRole("region", { name: "Partido del cartel" });
+  await expect(elegido).toContainText(/\d+–\d+/);
+  await expect(elegido).toContainText("Veteranos");
+  await expect(page.getByLabel("Categoría")).toBeHidden();
+  await page.getByText("Cambiar partido o editar datos").click();
+  await expect(page.getByLabel("Categoría")).toHaveValue("Veteranos");
 });

@@ -29,15 +29,16 @@ for (const ancho of [360, 390]) {
     // Temporada histórica de juguete: partido propio finalizado, sin tocar datos reales.
     await activar(page, "2025/26");
     try {
+      // Desde Carteles, sin partido: se elige de un toque entre los últimos jugados.
       await page.goto("/admin/carteles?plantilla=resumo");
-      await expect(
-        page.locator('datalist#competiciones-cartel option[value="Liga Histórica"]'),
-      ).toHaveCount(1);
-      await page.getByLabel("Competición", { exact: true }).fill("Liga Histórica");
-      const partido = page.getByLabel("Autocompletar desde la liga", { exact: true });
+      const partido = page
+        .getByRole("region", { name: "Elige el partido" })
+        .getByRole("button", { name: /Ficticio/i })
+        .first();
       await expect(partido).toBeVisible();
-      const id = await partido.locator('option:not([value=""])').first().getAttribute("value");
-      await partido.selectOption(id!);
+      const id = await partido.getAttribute("data-partido");
+      await partido.tap();
+      await expect(page.getByRole("region", { name: "Partido del cartel" })).toBeVisible();
       const url = `/admin/carteles?plantilla=resumo&partido=${id}`;
       await page.goto(url);
       await expect(page.getByLabel("Rival", { exact: true })).toHaveValue(/Rival .*Ficticio/i);

@@ -2,6 +2,15 @@ import type { ReactNode } from "react";
 import { useEsMovil } from "@/components/ui/foundation/FiltrosMovil";
 import s from "./PlegableMovil.module.css";
 
+/** La misma flecha amarilla que los desplegables del formulario; gira al abrir. */
+export function Flecha() {
+  return (
+    <svg aria-hidden="true" width="12" height="8" viewBox="0 0 12 8">
+      <path d="m1 1 5 5 5-5" fill="none" stroke="var(--ui-accent)" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 /** Escritorio conserva sus campos; móvil abre opciones sin alargar el formulario inicial. */
 export function PlegableMovil({
   titulo,
@@ -20,16 +29,7 @@ export function PlegableMovil({
     <details className={s.bloque} name={grupo} data-partido-plegado={partido || undefined}>
       <summary title={titulo}>
         <span>{titulo}</span>
-        {/* La misma flecha amarilla que los desplegables del formulario. */}
-        <svg aria-hidden="true" width="12" height="8" viewBox="0 0 12 8">
-          <path
-            d="m1 1 5 5 5-5"
-            fill="none"
-            stroke="var(--ui-accent)"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
+        <Flecha />
       </summary>
       <div className={s.contenido}>{children}</div>
     </details>

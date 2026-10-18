@@ -6,7 +6,14 @@
 import React from "react";
 import { Field, Select } from "@/components/ui/foundation/Fields";
 import type { Player } from "@/lib/cartel/types";
-import { SectionLabel, CategorySelector, Deslizador, MatchSelector, Toggle } from "./Common";
+import {
+  SectionLabel,
+  CategorySelector,
+  ConPartidoElegido,
+  Deslizador,
+  MatchSelector,
+  Toggle,
+} from "./Common";
 import type { SelectorMatch } from "./Common";
 import { Button } from "@/components/ui/foundation/Button";
 import styles from "./Formularios.module.css";
@@ -71,6 +78,7 @@ export const FormNoso11: React.FC<Props> = ({
 
   return (
     <>
+      <ConPartidoElegido partidoId={form.partido_id} dbMatches={dbMatches} categoria={form.categoria} onSelect={loadMatchFromDb}>
       <MatchSelector
         dbMatches={dbMatches}
         onSelect={loadMatchFromDb}
@@ -97,6 +105,7 @@ export const FormNoso11: React.FC<Props> = ({
           />
         </div>
       </PlegableMovil>
+      </ConPartidoElegido>
 
       {/* A la vista y no dentro de «Foto y encuadre»: cualquier foto, no solo la guardada del
           jugador. La subida manda sobre la de la galería del partido. */}

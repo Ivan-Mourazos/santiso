@@ -6,7 +6,7 @@
 import React from "react";
 import { Field } from "@/components/ui/foundation/Fields";
 import type { CompetenciaRow } from "@/lib/competition";
-import { SectionLabel, MatchSelector } from "./Common";
+import { ConPartidoElegido, SectionLabel, MatchSelector } from "./Common";
 import type { SelectorMatch } from "./Common";
 import { FormPartido } from "./FormPartido";
 import styles from "./Formularios.module.css";
@@ -28,6 +28,7 @@ export const FormResumo = (props: Props & { tipo: string }) => {
   const { form, set, tipo, dbMatches, loadMatchFromDb } = props;
   return (
     <>
+      <ConPartidoElegido partidoId={form.partido_id} dbMatches={dbMatches} categoria={form.categoria} onSelect={loadMatchFromDb}>
       <MatchSelector
         dbMatches={dbMatches}
         onSelect={loadMatchFromDb}
@@ -54,6 +55,7 @@ export const FormResumo = (props: Props & { tipo: string }) => {
           onChange={(e) => set("golesRival", e.target.value)}
         />
       </div>
+      </ConPartidoElegido>
     </>
   );
 };

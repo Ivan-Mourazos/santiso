@@ -10,7 +10,7 @@ import { formatLiteralMatchDate } from "@/lib/match-date-time";
 import { competitionsForCategory, type CompetenciaRow } from "@/lib/competition";
 import { CategorySelector, type SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
-import { PlegableMovil } from "./PlegableMovil";
+import { Flecha, PlegableMovil } from "./PlegableMovil";
 import type { FormState } from "./types";
 
 interface Props {
@@ -336,7 +336,7 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
       <details className={styles.manual}>
         <summary>
           <span>Editar datos a mano</span>
-          <span aria-hidden="true">⌄</span>
+          <Flecha />
         </summary>
         <div className={styles.manualContenido}>{campos_}</div>
       </details>

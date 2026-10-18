@@ -6,7 +6,7 @@
 import React from "react";
 import { Field } from "@/components/ui/foundation/Fields";
 import type { CronEvent } from "@/lib/cartel/types";
-import { CategorySelector, MatchSelector } from "./Common";
+import { CategorySelector, ConPartidoElegido, MatchSelector } from "./Common";
 import type { SelectorMatch } from "./Common";
 import { RivalSelector } from "./FormPartido";
 import { Button } from "@/components/ui/foundation/Button";
@@ -104,6 +104,7 @@ export const FormCronoloxia: React.FC<Props & { tipo: string }> = ({
 
   return (
     <>
+      <ConPartidoElegido partidoId={form.partido_id} dbMatches={dbMatches} categoria={form.categoria} onSelect={loadMatchFromDb}>
       <MatchSelector
         dbMatches={dbMatches}
         onSelect={loadMatchFromDb}
@@ -151,6 +152,7 @@ export const FormCronoloxia: React.FC<Props & { tipo: string }> = ({
           onChange={(e) => set("golesRival", e.target.value)}
         />
       </div>
+      </ConPartidoElegido>
 
       <div
         style={{

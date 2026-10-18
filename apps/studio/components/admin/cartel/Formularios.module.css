@@ -52,12 +52,80 @@
 .manual > summary::-webkit-details-marker {
   display: none;
 }
-.manual[open] > summary > span:last-child {
+.manual > summary > svg {
+  flex: none;
+  transition: transform var(--ui-duration) var(--ui-ease);
+}
+.manual[open] > summary > svg {
   transform: rotate(180deg);
 }
 .manual > summary:focus-visible {
   outline: 3px solid var(--ui-accent);
   outline-offset: 2px;
+}
+/* Partido elegido del cartel: el cruce con su marcador, como se verá en el cartel. */
+.partidoElegido {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  border-left: 3px solid var(--ui-accent);
+  border-radius: var(--ui-radius-sm);
+  background: rgb(245 197 24 / 6%);
+}
+button.partidoElegido {
+  width: 100%;
+  margin: 0;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--ui-duration) var(--ui-ease);
+}
+button.partidoElegido:hover {
+  background: rgb(245 197 24 / 12%);
+}
+button.partidoElegido:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+.elegirPartido ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+.elegirPartido li > button {
+  margin-bottom: 0;
+}
+.partidoElegidoContexto {
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+  overflow-wrap: anywhere;
+}
+.partidoElegidoCruce {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--ui-text-base);
+  font-weight: 800;
+  line-height: 1.25;
+}
+.partidoElegidoCruce > span {
+  overflow-wrap: anywhere;
+}
+.partidoElegidoCruce > span:last-child {
+  text-align: right;
+}
+.partidoElegidoCruce > b {
+  color: var(--ui-accent);
+  font-size: var(--ui-text-lg);
+  white-space: nowrap;
 }
 .manualContenido {
   min-width: 0;
@@ -306,4 +374,35 @@
     font-size: var(--ui-text-sm);
     font-weight: 700;
   }
+}
+.elegirPartido > .seccion {
+  margin-top: 0;
+}
+/* Senior | Veteranos del selector de partido: dos mitades, la elegida en amarillo. */
+.categorias {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 0.75rem;
+  padding: 4px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-raised);
+}
+.categorias > button {
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--ui-radius-pill);
+  background: transparent;
+  color: var(--ui-muted);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.categorias > button[aria-pressed="true"] {
+  background: var(--ui-accent);
+  color: var(--ui-on-accent);
+}
+.categorias > button:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
 }
