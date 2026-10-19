@@ -138,6 +138,8 @@ export function StudioProvider({
   const restoring = useRef(false);
   // Fin de la transición de un recorrido del historial: se llama al pintarse la pantalla nueva.
   const finRecorrido = useRef<(() => void) | null>(null);
+  // Transición de vista del recorrido en curso, para no encadenar una sobre otra.
+  const transicionRecorrido = useRef<ViewTransition | null>(null);
   useLayoutEffect(() => {
     finRecorrido.current?.();
     finRecorrido.current = null;
@@ -218,18 +220,47 @@ export function StudioProvider({
         window.matchMedia("(prefers-reduced-motion: reduce)").matches
       )
         return;
+      // Un recorrido sobre otro aún animado (Atrás y Adelante seguidos) no anima: se corta el
+      // anterior y el aviso pasa tal cual. Tampoco con la pestaña oculta.
+      if (transicionRecorrido.current || document.visibilityState !== "visible") {
+        transicionRecorrido.current?.skipTransition();
+        return;
+      }
       event.stopImmediatePropagation();
       const estado: unknown = event.state;
-      document.startViewTransition({
+      let despachado = false;
+      const despachar = () => {
+        if (despachado) return false;
+        despachado = true;
+        window.dispatchEvent(new PopStateEvent("popstate", { state: estado }));
+        return true;
+      };
+      const transicion = document.startViewTransition({
         update: () =>
           new Promise<void>((resolve) => {
+            if (!despachar()) return resolve();
             finRecorrido.current = resolve;
             // Por si la pantalla no cambia (misma dirección): la transición no se queda colgada.
             setTimeout(resolve, 800);
-            window.dispatchEvent(new PopStateEvent("popstate", { state: estado }));
           }),
         types: [tipo],
       });
+      transicionRecorrido.current = transicion;
+      // Cortarla rechaza estas promesas: es lo esperado, no un error.
+      transicion.ready.catch(() => undefined);
+      transicion.updateCallbackDone.catch(() => undefined);
+      void transicion.finished
+        .catch(() => undefined)
+        .finally(() => {
+          if (transicionRecorrido.current === transicion) transicionRecorrido.current = null;
+        });
+      // Vigilante fuera del update: si el navegador no pinta (WebKit puede quedarse segundos sin
+      // fotogramas), el update no llega a correr. Se corta la animación y el router recibe el aviso.
+      setTimeout(() => {
+        if (despachado) return;
+        transicion.skipTransition();
+        despachar();
+      }, 800);
     }
     window.addEventListener("beforeunload", unload);
     window.addEventListener("popstate", traverse, true);

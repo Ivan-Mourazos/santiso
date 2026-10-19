@@ -25,6 +25,11 @@ test("entrar desliza hacia delante y volver, hacia atrás, también con el atrá
     page.evaluate(
       () => (window as Window & { tiposTransicion?: string[][] }).tiposTransicion?.length ?? 0,
     );
+  // Antes de cada paso del historial, que acabe la transición anterior: si no, la nueva no anima.
+  const sinTransicion = () =>
+    page.waitForFunction(
+      () => !(document as Document & { activeViewTransition?: unknown }).activeViewTransition,
+    );
   await page.goto("/admin/carteles");
   await page.waitForLoadState("networkidle");
   // Del catálogo a un cartel: misma ruta, pero también desliza.
@@ -32,16 +37,21 @@ test("entrar desliza hacia delante y volver, hacia atrás, también con el atrá
   await expect(page.getByRole("heading", { level: 1, name: "Cartel de partido" })).toBeVisible();
   await expect.poll(ultimo).toContain("nav-forward");
   let antes = await cuantos();
+  await sinTransicion();
   await page.getByRole("button", { name: "Atrás", exact: true }).tap();
   await expect(page.getByRole("heading", { level: 1, name: "Carteles" })).toBeVisible();
   await expect.poll(cuantos).toBeGreaterThan(antes);
   expect(await ultimo()).toContain("recorrido-atras");
   antes = await cuantos();
+  await sinTransicion();
   await page.goForward();
-  await expect(page.getByRole("heading", { level: 1, name: "Cartel de partido" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Cartel de partido" })).toBeVisible({
+    timeout: 10_000,
+  });
   await expect.poll(cuantos).toBeGreaterThan(antes);
   expect(await ultimo()).toContain("recorrido-adelante");
   antes = await cuantos();
+  await sinTransicion();
   await page.goBack();
   await expect(page.getByRole("heading", { level: 1, name: "Carteles" })).toBeVisible();
   await expect.poll(cuantos).toBeGreaterThan(antes);
