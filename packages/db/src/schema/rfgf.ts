@@ -55,6 +55,16 @@ export const rfgfActas = sqliteTable(
     aviso: text("aviso").notNull().default(""),
     /** Ya se apuntaron sus goles y tarjetas en `liga_eventos`. */
     eventos: integer("eventos", { mode: "boolean" }).notNull().default(false),
+    /**
+     * Cuándo se leyeron de su página web los jugadores del club con su código (`rfgf_jugadores`).
+     * Solo en partidos del club. `null` si aún no.
+     */
+    jugadoresEn: text("jugadores_en"),
+    /**
+     * Cuándo se volvió a leer el acta solo para apuntar sus alineaciones (`liga_alineaciones`),
+     * se pudieran leer o no: así no se repite. Las actas leídas después ya las traen.
+     */
+    alineacionesEn: text("alineaciones_en"),
     ...marcasTiempo(),
   },
   (t) => [

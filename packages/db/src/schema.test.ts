@@ -99,7 +99,13 @@ describe("sincronización con la federación", () => {
     // Borrar el partido no borra la constancia del acta: solo la deja sin partido.
     await db.delete(s.partidos).where(eq(s.partidos.id, p!.id));
     const [resto] = await db.select().from(s.rfgfActas);
-    expect(resto).toMatchObject({ codActa: "1444198", partidoId: null });
+    // Sin repasos todavía: ni jugadores ni alineaciones releídos.
+    expect(resto).toMatchObject({
+      codActa: "1444198",
+      partidoId: null,
+      jugadoresEn: null,
+      alineacionesEn: null,
+    });
     // Borrar la competición se lo lleva todo.
     await db.delete(s.jornadas).where(eq(s.jornadas.id, jornada.id));
     await db.delete(s.competiciones).where(eq(s.competiciones.id, competicion.id));

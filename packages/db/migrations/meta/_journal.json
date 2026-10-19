@@ -162,6 +162,13 @@
       "when": 1792367731588,
       "tag": "0022_fichas-clubes",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1792386422896,
+      "tag": "0023_actas-repaso",
+      "breakpoints": true
     }
   ]
 }
