@@ -93,7 +93,12 @@ export const MENU: readonly PestanaMenu[] = [
             icono: I.calendario,
           },
           { seccion: "clasificacion", label: "Clasificación", detalle: "La tabla", icono: I.tabla },
-          { seccion: "liga", label: "Goleadores", detalle: "Y tarjetas", icono: I.balon },
+          {
+            seccion: "liga",
+            label: "Goleadores y tarjetas",
+            detalle: "De la liga",
+            icono: I.balon,
+          },
           {
             seccion: "estadisticas",
             label: "Estadísticas",
@@ -156,15 +161,15 @@ export const MENU: readonly PestanaMenu[] = [
       {
         titulo: "Antes del partido",
         entradas: [
-          cartel("partido", "Partido", "Anuncio del partido", I.megafono),
-          cartel("proximos", "Axenda", "Próximos partidos", I.calendario),
+          cartel("partido", "Cartel de partido", "Día, hora y campo", I.megafono),
+          cartel("proximos", "Próximos partidos", "La axenda del fin de semana", I.calendario),
         ],
       },
       {
         titulo: "Club",
         entradas: [
           cartel("clasificacion", "Clasificación", "Cartel de la tabla", I.tabla),
-          cartel("fichaxe", "Fichaxe", "Nuevo jugador", I.firma),
+          cartel("fichaxe", "Fichaje", "Altas y renovaciones", I.firma),
           cartel("comunicado", "Comunicado", "Aviso del club", I.estrella),
           cartel("multiusos", "Celebración", "Títulos y fiestas", I.fiesta, "celebracion"),
         ],
@@ -181,7 +186,7 @@ export const MENU: readonly PestanaMenu[] = [
         entradas: [
           {
             seccion: "importar",
-            label: "Traer datos",
+            label: "Importar",
             detalle: "Actas, jornadas, PDF",
             icono: I.traer,
           },
@@ -210,8 +215,8 @@ export const MENU: readonly PestanaMenu[] = [
         titulo: "Club y ajustes",
         forma: "pastillas",
         entradas: [
-          { seccion: "equipos", label: "Equipos rivales", icono: I.escudo },
-          { seccion: "patrocinadores", label: "Patrocinadores", icono: I.estrella },
+          { seccion: "equipos", label: "Equipos", icono: I.escudo },
+          { seccion: "patrocinadores", label: "Patrocinadores y logos", icono: I.estrella },
           { seccion: "temporadas", label: "Temporadas", icono: I.calendario },
           { seccion: "ajustes-graficos", label: "Ajustes gráficos", icono: I.ajustes },
           { seccion: "usuarios", label: "Usuarios", icono: I.persona },

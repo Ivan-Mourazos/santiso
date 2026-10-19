@@ -85,9 +85,7 @@
   min-height: 64px;
   padding: 0.6rem 1.5rem;
   border-bottom: 1px solid var(--ui-line);
-  background: rgb(16 16 18 / 82%);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgb(16 16 18 / 96%);
 }
 .heading {
   display: flex;
@@ -260,10 +258,8 @@
     padding: 6px;
     border: 1px solid var(--ui-line);
     border-radius: var(--ui-radius-pill);
-    background: rgb(28 28 31 / 88%);
+    background: rgb(28 28 31 / 97%);
     box-shadow: var(--ui-shadow);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
   }
   .tab {
     display: grid;
