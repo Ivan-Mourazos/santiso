@@ -47,9 +47,18 @@
   border-color: color-mix(in srgb, var(--ui-danger) 55%, transparent);
   color: var(--ui-danger);
 }
+/* Desactivado: opaco y apagado, sin brillo. Con transparencia se veía lo de debajo y el
+   amarillo quedaba mostaza. */
 .button:disabled {
   cursor: not-allowed;
-  opacity: 0.45;
+  border-color: var(--ui-line);
+  background: var(--ui-control);
+  box-shadow: none;
+  color: var(--ui-muted);
+}
+.ghost:disabled,
+.danger:disabled {
+  background: transparent;
 }
 @media (hover: hover) {
   .primary:not(:disabled):hover {

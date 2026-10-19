@@ -21,13 +21,17 @@
 }
 /* Flecha que gira al abrir, como el resto de plegables. */
 .control summary::after {
-  content: "›";
-  color: var(--ui-muted);
-  font-size: var(--ui-text-lg);
+  content: "";
+  display: inline-block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: var(--ui-accent);
+  mask: var(--icono-chevron) center / contain no-repeat;
   transition: transform var(--ui-duration) var(--ui-ease);
 }
 .control[open] summary::after {
-  transform: rotate(90deg);
+  transform: rotate(180deg);
 }
 .control[open] {
   padding-bottom: var(--ui-space-4);

@@ -316,7 +316,7 @@ const ElegirPartido: React.FC<{
                 if (m) onSelect(m);
               }}
             >
-              <option value="">Elige la jornada…</option>
+              <option value="">Jornada…</option>
               {deLaCategoria.map((x) => (
                 <option key={x.id} value={x.id}>
                   {etiquetaJornada(x)}

@@ -78,33 +78,38 @@ export const FormNoso11: React.FC<Props> = ({
 
   return (
     <>
-      <ConPartidoElegido partidoId={form.partido_id} dbMatches={dbMatches} categoria={form.categoria} onSelect={loadMatchFromDb}>
-      <MatchSelector
+      <ConPartidoElegido
+        partidoId={form.partido_id}
         dbMatches={dbMatches}
-        onSelect={loadMatchFromDb}
         categoria={form.categoria}
-        competicionId={form.competicion_id}
-        tipo={tipo}
-        santisoOnly
-      />
-      {/* Fecha y estadio llegan con el partido elegido: a mano, solo si hace falta. */}
-      <PlegableMovil titulo="Editar datos a mano">
-        <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
-        <div className={styles.pareja}>
-          <Field
-            label="Fecha"
-            type="date"
-            value={form.fecha}
-            onChange={(e) => set("fecha", e.target.value)}
-          />
-          <Field
-            label="Estadio"
-            placeholder="Estadio Municipal de Santiso"
-            value={form.estadio}
-            onChange={(e) => set("estadio", e.target.value)}
-          />
-        </div>
-      </PlegableMovil>
+        onSelect={loadMatchFromDb}
+      >
+        <MatchSelector
+          dbMatches={dbMatches}
+          onSelect={loadMatchFromDb}
+          categoria={form.categoria}
+          competicionId={form.competicion_id}
+          tipo={tipo}
+          santisoOnly
+        />
+        {/* Fecha y estadio llegan con el partido elegido: a mano, solo si hace falta. */}
+        <PlegableMovil titulo="Editar datos a mano">
+          <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
+          <div className={styles.pareja}>
+            <Field
+              label="Fecha"
+              type="date"
+              value={form.fecha}
+              onChange={(e) => set("fecha", e.target.value)}
+            />
+            <Field
+              label="Estadio"
+              placeholder="Estadio Municipal de Santiso"
+              value={form.estadio}
+              onChange={(e) => set("estadio", e.target.value)}
+            />
+          </div>
+        </PlegableMovil>
       </ConPartidoElegido>
 
       {/* A la vista y no dentro de «Foto y encuadre»: cualquier foto, no solo la guardada del
@@ -166,7 +171,11 @@ export const FormNoso11: React.FC<Props> = ({
         {modoFoto === "retrato" && jugadoresCategoria.some((j) => j.foto_url) && (
           <Select
             label="Jugador de la plantilla"
-            value={jugadoresCategoria.some((j) => j.foto_url === form.jugadorFotoUrl) ? form.jugadorFotoUrl : ""}
+            value={
+              jugadoresCategoria.some((j) => j.foto_url === form.jugadorFotoUrl)
+                ? form.jugadorFotoUrl
+                : ""
+            }
             onChange={(e) => {
               set("jugadorFotoUrl", e.target.value);
               set("jugadorXOffset", 0.5);
@@ -225,26 +234,18 @@ export const FormNoso11: React.FC<Props> = ({
       </datalist>
 
       <SectionLabel>Titulares (11)</SectionLabel>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+      <div className={styles.listaJugadores}>
         {form.titulares.map((p, i) => (
-          <div
-            key={p.id}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "55px 1fr auto auto",
-              gap: "0.5rem",
-              alignItems: "center",
-            }}
-            className={styles.filaTitulares}
-          >
+          <div key={p.id} className={styles.filaTitulares}>
             <input
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
               placeholder="#"
+              aria-label={`Dorsal del titular ${i + 1}`}
+              className={styles.dorsal}
               value={p.dorsal}
               onChange={(e) => updatePlayer("titulares", i, { dorsal: e.target.value })}
-              style={{ textAlign: "center" }}
             />
             <input
               type="text"
@@ -261,28 +262,31 @@ export const FormNoso11: React.FC<Props> = ({
                 width: "100%",
               }}
             />
-            <Button size="sm" variant={p.eCapitan ? "primary" : "secondary"}
- aria-pressed={p.eCapitan}
+            <Button
+              size="sm"
+              variant={p.eCapitan ? "primary" : "secondary"}
+              aria-pressed={p.eCapitan}
               title="Capitán"
               onClick={() => updatePlayer("titulares", i, { eCapitan: !p.eCapitan })}
-              
             >
               C
             </Button>
             <div style={{ display: "flex", gap: "2px" }}>
-              <Button size="sm" variant="secondary"
+              <Button
+                size="sm"
+                variant="secondary"
                 title="Subir"
                 disabled={i === 0}
                 onClick={() => swapPlayers?.("titulares", i, i - 1)}
-                
               >
                 ▲
               </Button>
-              <Button size="sm" variant="secondary"
+              <Button
+                size="sm"
+                variant="secondary"
                 title="Bajar"
                 disabled={i === form.titulares.length - 1}
                 onClick={() => swapPlayers?.("titulares", i, i + 1)}
-                
               >
                 ▼
               </Button>
@@ -293,26 +297,18 @@ export const FormNoso11: React.FC<Props> = ({
 
       <PlegableMovil titulo={`Suplentes (${form.suplentes.length})`}>
         <SectionLabel>Suplentes</SectionLabel>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+        <div className={styles.listaJugadores}>
           {form.suplentes.map((p, i) => (
-            <div
-              key={p.id}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "55px 1fr auto",
-                gap: "0.5rem",
-                alignItems: "center",
-              }}
-              className={styles.filaSuplentes}
-            >
+            <div key={p.id} className={styles.filaSuplentes}>
               <input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
                 placeholder="#"
+                aria-label={`Dorsal del suplente ${i + 1}`}
+                className={styles.dorsal}
                 value={p.dorsal}
                 onChange={(e) => updatePlayer("suplentes", i, { dorsal: e.target.value })}
-                style={{ textAlign: "center" }}
               />
               <input
                 type="text"
@@ -330,19 +326,21 @@ export const FormNoso11: React.FC<Props> = ({
                 }}
               />
               <div style={{ display: "flex", gap: "2px" }}>
-                <Button size="sm" variant="secondary"
+                <Button
+                  size="sm"
+                  variant="secondary"
                   title="Subir"
                   disabled={i === 0}
                   onClick={() => swapPlayers?.("suplentes", i, i - 1)}
-                  
                 >
                   ▲
                 </Button>
-                <Button size="sm" variant="secondary"
+                <Button
+                  size="sm"
+                  variant="secondary"
                   title="Bajar"
                   disabled={i === form.suplentes.length - 1}
                   onClick={() => swapPlayers?.("suplentes", i, i + 1)}
-                  
                 >
                   ▼
                 </Button>

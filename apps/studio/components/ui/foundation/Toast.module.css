@@ -11,7 +11,9 @@
   pointer-events: auto;
   padding: var(--ui-space-1) var(--ui-space-1) var(--ui-space-1) var(--ui-space-4);
   background: var(--ui-control);
-  border-left: 4px solid var(--ui-success);
+  /* Aviso con borde fino de su color y fondo tintado, sin franja lateral. */
+  border: 1px solid color-mix(in srgb, var(--ui-success) 45%, transparent);
+  background-color: color-mix(in srgb, var(--ui-success) 10%, transparent);
   box-shadow: var(--ui-shadow);
   animation: entrar var(--ui-duration-lg) var(--ui-ease-enter);
 }

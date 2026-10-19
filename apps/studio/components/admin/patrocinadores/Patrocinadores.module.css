@@ -288,11 +288,15 @@
     font-size: 0;
   }
   .filaAcciones button::before {
-    content: "✎";
-    font-size: var(--ui-text-base);
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background: currentColor;
+    mask: var(--icono-editar) center / contain no-repeat;
   }
   .filaAcciones button:last-child::before {
-    content: "✕";
+    mask-image: var(--icono-quitar);
   }
   .posicion {
     display: grid;

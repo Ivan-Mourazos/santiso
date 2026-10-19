@@ -23,7 +23,9 @@
   display: grid;
   gap: 0.1rem;
   padding-left: 0.6rem;
-  border-left: 3px solid var(--ui-warning);
+  /* Aviso con borde fino de su color y fondo tintado, sin franja lateral. */
+  border: 1px solid color-mix(in srgb, var(--ui-warning) 45%, transparent);
+  background-color: color-mix(in srgb, var(--ui-warning) 10%, transparent);
   font-size: var(--ui-text-sm);
   overflow-wrap: anywhere;
 }

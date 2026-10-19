@@ -240,9 +240,18 @@
     padding: 0;
     font-size: 0;
   }
+  /* Icono dibujado según lo que hace el botón: lápiz para editar, papelera para quitar. */
   .filaAcciones button::before {
-    content: "✎";
-    font-size: var(--ui-text-base);
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background: currentColor;
+    mask: var(--icono-editar) center / contain no-repeat;
+  }
+  .filaAcciones button[aria-label^="Quitar"]::before,
+  .filaAcciones button[aria-label^="Eliminar"]::before {
+    mask-image: var(--icono-quitar);
   }
 }
 
