@@ -561,3 +561,13 @@
   padding: 0 var(--ui-space-4) var(--ui-space-3);
   font-size: var(--ui-text-sm);
 }
+
+/* Sin foto: las iniciales en letra de marcador, en vez de un cuadro vacío. */
+span.foto {
+  display: grid;
+  place-items: center;
+  background: var(--ui-control);
+  color: var(--ui-muted);
+  font: 800 0.95rem / 1 var(--ui-font-title);
+  letter-spacing: 0.02em;
+}

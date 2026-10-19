@@ -12,6 +12,7 @@ import {
 import type { FichaCompletaDeJugador } from "@/lib/server/consultas/fichas-rfgf";
 import { CuadrosCifras, Resultado, fechaCorta } from "./comunes";
 import styles from "./Fichas.module.css";
+import { iniciales } from "@/lib/iniciales";
 
 /** «34 años», a día de hoy; `null` sin fecha de nacimiento. */
 function edad(nacimiento: string | null) {
@@ -79,7 +80,9 @@ export default function FichaJugadorPantalla({ jugadorId }: { jugadorId: string 
         {j.fotoUrl ? (
           <img className={styles.foto} src={j.fotoUrl} alt="" />
         ) : (
-          <span className={styles.sinImagen} aria-hidden="true" />
+          <span className={styles.sinImagen} aria-hidden="true">
+            {iniciales(j.nombre)}
+          </span>
         )}
         <div className={styles.nombre}>
           <h2>{j.apodo || j.nombre}</h2>
