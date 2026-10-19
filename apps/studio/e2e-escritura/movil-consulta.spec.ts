@@ -90,7 +90,12 @@ test("calendario móvil guarda marcador, campo y fecha y mantiene tarjeta con co
     await anteriores.click();
   }
   // La jornada va en la línea de resumen de la fila, junto a fecha y campo.
-  await expect(tarjeta.first().getByText(/Jornada 1/).first()).toBeVisible();
+  await expect(
+    tarjeta
+      .first()
+      .getByText(/Jornada 1/)
+      .first(),
+  ).toBeVisible();
   await comprobarControles(page, tarjeta.first());
 });
 
@@ -104,7 +109,14 @@ test("clasificación móvil prioriza columnas, despliega detalle y guarda varias
     exact: true,
   });
   await expect(tabla.getByRole("cell", { name: LOCAL, exact: true })).toBeVisible();
-  await expect(tabla.getByRole("columnheader")).toHaveText(["#", "Equipo", "PTS", "PJ", "DG"]);
+  await expect(tabla.getByRole("columnheader")).toHaveText([
+    "#",
+    "Escudo",
+    "Equipo",
+    "PTS",
+    "PJ",
+    "DG",
+  ]);
   const detalle = tabla.getByRole("button", { name: `Ver estadísticas de ${LOCAL}`, exact: true });
   await detalle.click();
   const ficha = page.getByRole("dialog", { name: LOCAL, exact: true });
@@ -160,9 +172,7 @@ test("estadísticas móviles muestran métricas principales, detalle, orden y b�
   const filtros = page.getByRole("dialog", { name: "Filtros" });
   await filtros.getByLabel("Ordenar por", { exact: true }).selectOption("jugador");
   await expect(tabla.locator("tbody tr").first()).toContainText("Antón Consulta Móbil");
-  await filtros
-    .getByRole("button", { name: "Cambiar sentido de ordenación", exact: true })
-    .click();
+  await filtros.getByRole("button", { name: "Cambiar sentido de ordenación", exact: true }).click();
   await expect(tabla.locator("tbody tr").first()).toContainText("Xoán Xogador");
   await filtros.getByRole("button", { name: "Listo" }).click();
   await page.getByLabel("Buscar", { exact: true }).fill("sin-coincidencias");
