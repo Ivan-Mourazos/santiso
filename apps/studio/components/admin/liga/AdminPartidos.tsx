@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Select } from "@/components/ui/foundation/Fields";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
+import { ahoraLocal, partidoJugado } from "@/lib/actas/partido-por-defecto";
 import { hoyLocal } from "@/lib/jornada/semana";
 import {
   type CartelesDelPartido,
@@ -17,7 +18,8 @@ import {
 import { estadoPaso, NOMBRE_FORMATO, PASOS, type PasoCartel } from "@/lib/cartel2/pasos";
 import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados";
 import { cargarPantallaJornada } from "@/lib/server/acciones/jornada";
-import { cargarPartidosLiga } from "@/lib/server/acciones/liga";
+import { cargarPartidosLiga, ubicarPartido } from "@/lib/server/acciones/liga";
+import { traerActaRfgf } from "@/lib/server/acciones/rfgf";
 import type { PantallaJornada, PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
 import type { PartidoDeLiga, PartidosDeLiga } from "@/lib/server/consultas/partidos-liga";
 import { useCompeticiones } from "@/lib/useCompeticiones";
@@ -116,11 +118,18 @@ function CartelesDelPartidoLiga({
   const antes: PasoCartel[] = preparaConvocatoria(categoria)
     ? ["partido", "convocatoria", "once"]
     : ["partido"];
-  // Jugado, primero lo de después; los técnicos solo hacen convocatoria y once.
+  const deEste = carteles?.id === p.id ? carteles.deEste : null;
+  // Jugado, primero lo de después; los técnicos solo hacen convocatoria y once. Ya jugado, la
+  // convocatoria y el once no se hacen: solo se ven los carteles que se guardaron.
   const pasos = (
     jugado ? (["resultado", "cronoloxia", "noso11", ...antes] as PasoCartel[]) : antes
-  ).filter((paso) => acceso?.rol !== "tecnico" || paso === "convocatoria" || paso === "once");
-  const deEste = carteles?.id === p.id ? carteles.deEste : null;
+  )
+    .filter((paso) => acceso?.rol !== "tecnico" || paso === "convocatoria" || paso === "once")
+    .filter(
+      (paso) =>
+        !jugado || (paso !== "convocatoria" && paso !== "once") || (deEste?.[paso] ?? []).length > 0,
+    );
+  if (deEste && pasos.length === 0) return null;
   return (
     <section className={styles.carteles} aria-label="Carteles del partido">
       <p className={styles.etiqueta}>Carteles del partido</p>
@@ -154,13 +163,15 @@ function CartelesDelPartidoLiga({
                       ↓ {guardados.length > 1 ? NOMBRE_FORMATO[g.formato] : "Descargar"}
                     </a>
                   ))}
-                  <Link
-                    href={enlaceDelPaso(paso, p.id, categoria)}
-                    transitionTypes={["nav-forward"]}
-                    aria-label={`${guardados.length ? "Rehacer" : "Hacer"} ${PASOS[paso].nombre}`}
-                  >
-                    {guardados.length ? "Rehacer" : "Hacer"}
-                  </Link>
+                  {!(jugado && (paso === "convocatoria" || paso === "once")) && (
+                    <Link
+                      href={enlaceDelPaso(paso, p.id, categoria)}
+                      transitionTypes={["nav-forward"]}
+                      aria-label={`${guardados.length ? "Rehacer" : "Hacer"} ${PASOS[paso].nombre}`}
+                    >
+                      {guardados.length ? "Rehacer" : "Hacer"}
+                    </Link>
+                  )}
                 </div>
               </li>
             );
@@ -171,16 +182,80 @@ function CartelesDelPartidoLiga({
   );
 }
 
+/**
+ * El acta de un partido propio ya jugado: traerla de la federación (solo el administrador, con la
+ * competición enlazada) y meterla a mano o corregirla.
+ */
+function ActaDelPartido({
+  partido: p,
+  categoria,
+  competicion,
+  onNovedades,
+}: {
+  partido: PartidoDeLiga;
+  categoria: string;
+  competicion: PartidosDeLiga["competicion"];
+  onNovedades: () => void;
+}) {
+  const { acceso, showToast } = useStudio();
+  const [trayendo, setTrayendo] = useState(false);
+  const href = `/admin/actas?categoria=${encodeURIComponent(categoria)}&competicion=${encodeURIComponent(competicion.id)}&partido=${encodeURIComponent(p.id)}`;
+  function traer() {
+    setTrayendo(true);
+    void traerActaRfgf(competicion.id, p.id)
+      .then((r) => {
+        if (!r.ok) return showToast(r.error, "error");
+        const avisos = r.datos.avisos.join(" · ");
+        showToast(
+          r.datos.actas || r.datos.resultados
+            ? "Acta traída de la federación"
+            : avisos || "La federación no tiene nada nuevo de este partido.",
+        );
+        onNovedades();
+      })
+      .catch(() => showToast("No se pudo hablar con la federación.", "error"))
+      .finally(() => setTrayendo(false));
+  }
+  return (
+    <div className={styles.accionesCartel}>
+      {competicion.enlazada && acceso?.rol !== "tecnico" && (
+        <Button
+          size="sm"
+          variant="secondary"
+          pending={trayendo}
+          pendingLabel="Trayendo el acta…"
+          onClick={traer}
+        >
+          Traer acta
+        </Button>
+      )}
+      <Link href={href} transitionTypes={["nav-forward"]}>
+        {p.conActa ? "Corregir acta" : "Meter acta a mano"}
+      </Link>
+    </div>
+  );
+}
+
 function Detalle({
   partido: p,
   categoria,
+  competicion,
+  onNovedades,
   onClose,
 }: {
   partido: PartidoDeLiga | null;
   categoria: string;
+  competicion: PartidosDeLiga["competicion"];
+  onNovedades: () => void;
   onClose: () => void;
 }) {
   const cuando = fechaPartido(p?.fecha ?? null);
+  const pasado =
+    p !== null &&
+    partidoJugado(
+      { id: p.id, estado: p.estado, fecha: p.fecha, goles_local: p.golesLocal },
+      ahoraLocal(),
+    );
   return (
     <Dialog
       open={p !== null}
@@ -245,6 +320,14 @@ function Detalle({
           ) : (
             marcadorDe(p) && <p className={styles.nota}>Sin acta leída todavía.</p>
           )}
+          {(p.local.propio || p.visitante.propio) && pasado && (
+            <ActaDelPartido
+              partido={p}
+              categoria={categoria}
+              competicion={competicion}
+              onNovedades={onNovedades}
+            />
+          )}
           {(p.local.propio || p.visitante.propio) && (
             <CartelesDelPartidoLiga partido={p} categoria={categoria} />
           )}
@@ -273,6 +356,8 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
     errorCompeticiones,
   } = useCompeticiones(categoria, true);
   const pedida = Number(params.get("j")) || null;
+  // `?partido=` abre el detalle de ese partido en su jornada (enlaces desde otras pantallas).
+  const partidoPedido = params.get("partido");
   const [datos, setDatos] = useState<PartidosDeLiga | null>(null);
   const [mesa, setMesa] = useState<{ momento: string; partido: PartidoDeLaSemana } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -306,6 +391,41 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
     const id = window.setTimeout(() => void cargarMesa(), 0);
     return () => window.clearTimeout(id);
   }, [cargarMesa]);
+
+  // Primero se busca dónde está el partido pedido y se va a su competición y jornada.
+  useEffect(() => {
+    if (!partidoPedido) return;
+    let vigente = true;
+    void ubicarPartido(partidoPedido)
+      .then((r) => {
+        if (!vigente) return;
+        if (!r.ok || !r.datos) return setParams({ partido: null }, true);
+        setParams(
+          {
+            categoria: r.datos.categoria,
+            competicion: r.datos.competicionId,
+            j: String(r.datos.numero),
+            partido: partidoPedido,
+          },
+          true,
+        );
+      })
+      .catch(() => vigente && setParams({ partido: null }, true));
+    return () => {
+      vigente = false;
+    };
+  }, [partidoPedido, setParams]);
+  // Con su jornada cargada, se abre su detalle y se quita del enlace (cerrar no lo reabre).
+  useEffect(() => {
+    if (!partidoPedido || !datos) return;
+    const encontrado = datos.partidos.find((p) => p.id === partidoPedido);
+    if (!encontrado) return;
+    const id = window.setTimeout(() => {
+      setAbierto(encontrado);
+      setParams({ partido: null }, true);
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [partidoPedido, datos, setParams]);
 
   if (errorCompeticiones || error)
     return (
@@ -407,7 +527,13 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
       ) : (
         !enMesa && <EmptyState title="Esta jornada no tiene partidos." />
       )}
-      <Detalle partido={abierto} categoria={categoria} onClose={() => setAbierto(null)} />
+      <Detalle
+        partido={abierto ? (datos.partidos.find((p) => p.id === abierto.id) ?? abierto) : null}
+        categoria={categoria}
+        competicion={datos.competicion}
+        onNovedades={() => void cargar(selectedCompetitionId, pedida)}
+        onClose={() => setAbierto(null)}
+      />
     </div>
   );
 }

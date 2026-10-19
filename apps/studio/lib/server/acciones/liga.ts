@@ -8,6 +8,7 @@ import { pantallaLiga, type PantallaLiga } from "@/lib/server/consultas/liga";
 import {
   fichaEquipo,
   partidosDeLiga,
+  ubicacionDePartido,
   type FichaEquipo,
   type PartidosDeLiga,
 } from "@/lib/server/consultas/partidos-liga";
@@ -47,6 +48,11 @@ export async function cargarPartidosLiga(
   return capturar("No se pudieron cargar los partidos.", () =>
     partidosDeLiga(competicionId, numero),
   );
+}
+
+/** Competición, categoría y jornada de un partido, para abrirlo desde un enlace. Solo lee. */
+export async function ubicarPartido(partidoId: string) {
+  return capturar("No se encontró el partido.", () => ubicacionDePartido(partidoId));
 }
 
 /** Resultados, lo que le queda y goleadores de un equipo en la competición. Solo lee. */

@@ -79,3 +79,35 @@ test("partidos: nuestro partido de otra jornada lleva sus carteles", async ({ pa
   await page.getByText("Cambiar partido o editar datos").click();
   await expect(page.getByLabel("Categoría")).toHaveValue("Veteranos");
 });
+
+/**
+ * Un partido nuestro ya jugado: no ofrece hacer convocatoria ni once, sí el acta. Y `?partido=`
+ * abre ese mismo partido en su jornada.
+ */
+test("partidos: nuestro partido jugado lleva el acta y se abre por enlace", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto("/admin/partidos?categoria=Senior");
+  const jornada = page.getByRole("navigation", { name: "Jornada" });
+  await expect(jornada.getByText(/^Jornada \d+$/)).toBeVisible();
+  const anterior = jornada.getByRole("button", { name: "Jornada anterior" });
+  test.skip(!(await anterior.isEnabled()), "Sin jornadas anteriores en los datos reales");
+  const antes = await jornada.getByText(/^Jornada \d+$/).textContent();
+  await anterior.click();
+  await expect(jornada.getByText(/^Jornada \d+$/)).not.toHaveText(antes!);
+  const nuestro = page.locator("button[data-propio]").first();
+  test.skip((await nuestro.count()) === 0, "El Santiso descansó esa jornada");
+  await nuestro.click();
+  const hoja = page.getByRole("dialog");
+  const acta = hoja.getByRole("link", { name: /^(Corregir acta|Meter acta a mano)$/ });
+  await expect(acta).toHaveAttribute("href", /\/admin\/actas\?.*partido=[^&]+/);
+  await expect(hoja.getByRole("link", { name: /^Hacer (Convocatoria|Once)/ })).toHaveCount(0);
+  const titulo = await hoja.getByRole("heading").first().textContent();
+  const id = new URL((await acta.getAttribute("href"))!, page.url()).searchParams.get("partido")!;
+
+  await page.goto(`/admin/partidos?partido=${encodeURIComponent(id)}`);
+  const abierta = page.getByRole("dialog");
+  await expect(abierta.getByRole("heading").first()).toHaveText(titulo!);
+  await expect(page).not.toHaveURL(/partido=/);
+  await abierta.getByRole("button", { name: "Cerrar partido" }).click();
+  await expect(abierta).toBeHidden();
+});

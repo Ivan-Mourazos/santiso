@@ -1,6 +1,6 @@
 import "server-only";
 import { schema } from "@santiso/db";
-import { aliasedTable, and, asc, eq, inArray } from "drizzle-orm";
+import { aliasedTable, and, asc, eq, inArray, sql } from "drizzle-orm";
 import { cierreHecho, momentoLocal, sigueEnMesa } from "@/lib/jornada/vestiario";
 import { cartelesDePartidos } from "@/lib/server/carteles/guardados";
 import { urlMedia } from "@/lib/media";
@@ -30,6 +30,8 @@ export interface PartidoDeLiga {
   eventos: { tipo: TipoEvento; persona: string; minuto: string; lado: "local" | "visitante" }[];
   /** La página del partido en futgal.es, si ya se leyó su acta. */
   enlaceActa: string | null;
+  /** Ya tiene acta guardada en el Studio (convocados y eventos del Santiso). */
+  conActa: boolean;
 }
 
 export interface PartidosDeLiga {
@@ -103,6 +105,7 @@ async function filasDeCompeticion(competicionId: string) {
       visitanteNombre: visitante.nombre,
       visitanteEscudo: visitante.escudo,
       visitantePropio: visitante.esPropio,
+      participaciones: sql<number>`(select count(*) from ${schema.partidoParticipaciones} where ${schema.partidoParticipaciones.partidoId} = ${schema.partidos.id})`,
     })
     .from(schema.partidos)
     .innerJoin(schema.jornadas, eq(schema.jornadas.id, schema.partidos.jornadaId))
@@ -111,6 +114,24 @@ async function filasDeCompeticion(competicionId: string) {
     .leftJoin(schema.campos, eq(schema.campos.id, schema.partidos.campoId))
     .where(eq(schema.jornadas.competicionId, competicionId))
     .orderBy(asc(schema.jornadas.numero), asc(schema.partidos.fecha));
+}
+
+/** Dónde está un partido: su competición, categoría y número de jornada. `null` si no existe. */
+export async function ubicacionDePartido(
+  partidoId: string,
+): Promise<{ competicionId: string; categoria: string; numero: number } | null> {
+  const { db } = await obtenerDb();
+  const [fila] = await db
+    .select({
+      competicionId: schema.competiciones.id,
+      categoria: schema.competiciones.categoria,
+      numero: schema.jornadas.numero,
+    })
+    .from(schema.partidos)
+    .innerJoin(schema.jornadas, eq(schema.jornadas.id, schema.partidos.jornadaId))
+    .innerJoin(schema.competiciones, eq(schema.competiciones.id, schema.jornadas.competicionId))
+    .where(eq(schema.partidos.id, partidoId));
+  return fila ?? null;
 }
 
 const escudo = (clave: string | null) => (clave ? urlMedia(clave) : null);
@@ -239,6 +260,7 @@ export async function partidosDeLiga(
               (e.equipoId === f.localId) !== (e.tipo === "gol_propia") ? "local" : "visitante",
           })),
         enlaceActa: acta && grupo ? urlActaWeb(grupo, acta.codActa) : null,
+        conActa: Number(f.participaciones) > 0,
       };
     }),
   };
