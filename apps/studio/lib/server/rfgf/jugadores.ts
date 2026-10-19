@@ -37,11 +37,16 @@ async function ultimaActaPropia(competicionId: string) {
     )
     .orderBy(desc(schema.partidos.fecha))
     .limit(1);
-  return fila ? { codActa: fila.codActa, lado: fila.localPropio ? "local" : "visitante" } : null;
+  return fila
+    ? {
+        codActa: fila.codActa,
+        lado: fila.localPropio ? ("local" as const) : ("visitante" as const),
+      }
+    : null;
 }
 
 /** La plantilla de la categoría en la temporada activa, para reconocer los nombres. */
-async function plantillaDe(categoria: string) {
+export async function plantillaDe(categoria: string) {
   const { db } = await obtenerDb();
   return db
     .select({
@@ -58,6 +63,52 @@ async function plantillaDe(categoria: string) {
         sql`${schema.jugadoresTemporada.categoria} = ${categoria}`,
       ),
     );
+}
+
+/**
+ * Lee la página web de un acta del club (una página) y apunta a sus jugadores con su código en
+ * `rfgf_jugadores`, enlazados con la plantilla si el nombre se reconoce sin duda. Deja el acta
+ * marcada para no volver a leerla con este fin.
+ */
+export async function apuntarJugadoresDeActa(
+  competicionId: string,
+  categoria: string,
+  grupo: GrupoRfgf,
+  acta: { codActa: string; lado: "local" | "visitante" },
+  descargador: DescargadorRfgf,
+  ahora: Date,
+): Promise<number> {
+  const { db } = await obtenerDb();
+  const html = await descargador.html(urlActaWeb(grupo, acta.codActa));
+  const propios = jugadoresDeActaHtml(html).filter((jugador) => jugador.lado === acta.lado);
+  const plantilla = await plantillaDe(categoria);
+  for (const jugador of propios) {
+    const reconocido = jugadorSeguro(jugador.nombre, plantilla);
+    await db
+      .insert(schema.rfgfJugadores)
+      .values({
+        codigo: jugador.codigo,
+        competicionId,
+        jugadorId: reconocido?.id ?? null,
+        nombre: jugador.nombre,
+        codActa: acta.codActa,
+      })
+      .onConflictDoUpdate({
+        target: [schema.rfgfJugadores.codigo, schema.rfgfJugadores.competicionId],
+        set: {
+          nombre: jugador.nombre,
+          codActa: acta.codActa,
+          // Un jugador ya enlazado no se desenlaza porque hoy el nombre no se reconozca.
+          ...(reconocido ? { jugadorId: reconocido.id } : {}),
+          actualizadoEn: ahora.toISOString(),
+        },
+      });
+  }
+  await db
+    .update(schema.rfgfActas)
+    .set({ jugadoresEn: ahora.toISOString() })
+    .where(eq(schema.rfgfActas.codActa, acta.codActa));
+  return propios.length;
 }
 
 /**
@@ -87,33 +138,12 @@ export async function sincronizarJugadores(
       ),
     )
     .limit(1);
-  if (!yaVista) {
-    const html = await descargador.html(urlActaWeb(grupo, acta.codActa));
-    const propios = jugadoresDeActaHtml(html).filter((jugador) => jugador.lado === acta.lado);
-    const plantilla = await plantillaDe(categoria);
-    for (const jugador of propios) {
-      const reconocido = jugadorSeguro(jugador.nombre, plantilla);
-      await db
-        .insert(schema.rfgfJugadores)
-        .values({
-          codigo: jugador.codigo,
-          competicionId,
-          jugadorId: reconocido?.id ?? null,
-          nombre: jugador.nombre,
-          codActa: acta.codActa,
-        })
-        .onConflictDoUpdate({
-          target: [schema.rfgfJugadores.codigo, schema.rfgfJugadores.competicionId],
-          set: {
-            nombre: jugador.nombre,
-            codActa: acta.codActa,
-            // Un jugador ya enlazado no se desenlaza porque hoy el nombre no se reconozca.
-            ...(reconocido ? { jugadorId: reconocido.id } : {}),
-            actualizadoEn: ahora.toISOString(),
-          },
-        });
-    }
-  }
+  const [repasada] = await db
+    .select({ jugadoresEn: schema.rfgfActas.jugadoresEn })
+    .from(schema.rfgfActas)
+    .where(eq(schema.rfgfActas.codActa, acta.codActa));
+  if (!yaVista && !repasada?.jugadoresEn)
+    await apuntarJugadoresDeActa(competicionId, categoria, grupo, acta, descargador, ahora);
 
   // Los que nunca se leyeron van primero (en SQLite los nulos ordenan antes).
   const pendientes = await db

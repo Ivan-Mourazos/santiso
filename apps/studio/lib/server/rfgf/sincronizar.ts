@@ -262,19 +262,37 @@ async function guardarEventosDeLiga(partido: PartidoConEquipos, ficha: Ficha) {
     equipoId: partido.equipos[lado],
     ...evento,
   }));
+  await db.transaction(async (tx) => {
+    await tx.delete(schema.ligaEventos).where(eq(schema.ligaEventos.partidoId, partido.id));
+    if (filas.length) await tx.insert(schema.ligaEventos).values(filas);
+    await guardarAlineacionesDeLiga(partido, ficha, tx);
+  });
+}
+
+type Transaccion = Parameters<
+  Parameters<Awaited<ReturnType<typeof obtenerDb>>["db"]["transaction"]>[0]
+>[0];
+
+/** Sustituye las alineaciones de un partido de la liga por las de su acta. */
+export async function guardarAlineacionesDeLiga(
+  partido: { id: string; equipos: { local: string; visitante: string } },
+  ficha: Ficha,
+  tx?: Transaccion,
+) {
   const alineados = alineacionesDeFicha(ficha).map(({ lado, ...alineado }) => ({
     partidoId: partido.id,
     equipoId: partido.equipos[lado],
     ...alineado,
   }));
-  await db.transaction(async (tx) => {
-    await tx.delete(schema.ligaEventos).where(eq(schema.ligaEventos.partidoId, partido.id));
-    if (filas.length) await tx.insert(schema.ligaEventos).values(filas);
-    await tx
+  const escribir = async (t: Transaccion) => {
+    await t
       .delete(schema.ligaAlineaciones)
       .where(eq(schema.ligaAlineaciones.partidoId, partido.id));
-    if (alineados.length) await tx.insert(schema.ligaAlineaciones).values(alineados);
-  });
+    if (alineados.length) await t.insert(schema.ligaAlineaciones).values(alineados);
+  };
+  if (tx) return escribir(tx);
+  const { db } = await obtenerDb();
+  await db.transaction(escribir);
 }
 
 /**

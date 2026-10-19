@@ -5,6 +5,7 @@ import { comoSistema } from "@/lib/server/db";
 import { crearDescargador } from "./descargador";
 import { traerClubesSiToca } from "./clubes";
 import { avanzarHistorico } from "./historico";
+import { avanzarRepasoActas } from "./repaso-actas";
 import { sincronizarTodo, ultimaComprobacion } from "./sincronizar";
 
 /** Cada cuánto se mira el reloj para ver si ya toca la comprobación del día. */
@@ -19,8 +20,8 @@ declare global {
  * que la federación publica no cambia de una hora para otra, y cuantas menos descargas, mejor:
  * quien quiera los datos antes tiene «Comprobar ahora» en el panel de Jornada.
  *
- * En el mismo tic, el repaso de temporadas pasadas (dos páginas) y, una vez por semana, el
- * listado de clubes.
+ * En el mismo tic, dos páginas de repaso (lo que falta de las actas de esta temporada y, con
+ * eso al día, las temporadas pasadas) y, una vez por semana, el listado de clubes.
  *
  * Solo se activa con `STUDIO_RFGF_AUTO=1`, que lleva la copia de uso diario: ni desarrollo ni
  * pruebas salen nunca a la red por su cuenta.
@@ -44,11 +45,26 @@ export function iniciarProgramadorRfgf() {
     } catch (error) {
       console.error("[rfgf] La comprobación falló.", error);
     }
-    // Aparte, el repaso de temporadas pasadas: dos páginas por tic, hasta que no quede nada.
+    // Aparte, dos páginas por tic: primero lo que falta de las actas de esta temporada
+    // (jugadores del club y alineaciones); cuando eso está al día, las temporadas pasadas.
+    let repasadas = 0;
     try {
-      await comoSistema(() => avanzarHistorico(crearDescargador(), new Date()));
+      const repaso = await comoSistema(() => avanzarRepasoActas(crearDescargador(), new Date()));
+      repasadas = repaso.paginas;
+      if (repaso.jugadores || repaso.alineaciones || repaso.errores.length) {
+        console.info(
+          `[rfgf] Repaso de actas: ${repaso.jugadores} con jugadores, ${repaso.alineaciones} con alineaciones, ${repaso.errores.length} errores`,
+        );
+      }
     } catch (error) {
-      console.error("[rfgf] El repaso de temporadas pasadas falló.", error);
+      console.error("[rfgf] El repaso de actas falló.", error);
+    }
+    if (!repasadas) {
+      try {
+        await comoSistema(() => avanzarHistorico(crearDescargador(), new Date()));
+      } catch (error) {
+        console.error("[rfgf] El repaso de temporadas pasadas falló.", error);
+      }
     }
     // Y una vez por semana, el listado de clubes (una sola petición): datos y colores de cada rival.
     try {
