@@ -234,11 +234,7 @@ export const ConPartidoElegido: React.FC<{
       </>
     );
   return (
-    <ElegirPartido
-      dbMatches={dbMatches}
-      onSelect={onSelect}
-      porJugar={porJugar}
-    >
+    <ElegirPartido dbMatches={dbMatches} onSelect={onSelect} porJugar={porJugar}>
       {children}
     </ElegirPartido>
   );
@@ -250,6 +246,16 @@ const esDelSantiso = (x: SelectorMatch) =>
   `${x.equipo_local?.nombre ?? ""} ${x.equipo_visitante?.nombre ?? ""}`
     .toLowerCase()
     .includes("santiso");
+
+/** «J3 · U.D. Santiso F.C. 6–1 Atlético Éter · 18 oct»: cómo sale cada partido en la lista. */
+function etiquetaJornada(m: SelectorMatch) {
+  const marcador =
+    m.goles_local != null && m.goles_visitante != null
+      ? `${m.goles_local}–${m.goles_visitante}`
+      : "–";
+  const cuando = m.fecha ? ` · ${formatLiteralMatchDate(m.fecha)}` : "";
+  return `J${m.jornada?.numero ?? "?"} · ${m.equipo_local?.nombre ?? "Local"} ${marcador} ${m.equipo_visitante?.nombre ?? "Visitante"}${cuando}`;
+}
 
 /**
  * Las dos categorías arriba y los partidos de la elegida: los jugados, del último al primero, o
@@ -283,39 +289,42 @@ const ElegirPartido: React.FC<{
     <>
       <section className={styles.elegirPartido} aria-label="Elige el partido">
         <h4 className={styles.seccion}>¿De qué partido?</h4>
-        <div className={styles.categorias} role="group" aria-label="Categoría">
-          {CATEGORIAS_CARTEL.map((c) => (
-            <button
-              key={c}
-              type="button"
-              aria-pressed={c === categoria}
-              onClick={() => setElegida(c)}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
-        {deLaCategoria.length === 0 ? (
-          <p className={styles.partidoElegidoContexto}>
-            Sin partidos {porJugar ? "por jugar" : "jugados"} en {categoria}.
-          </p>
-        ) : (
-          <ul>
-            {deLaCategoria.map((x) => (
-              <li key={x.id}>
-                <button
-                  type="button"
-                  className={styles.partidoElegido}
-                  data-partido={x.id}
-                  onClick={() => onSelect(x)}
-                >
-                  {/* La categoría ya está elegida arriba: la tarjeta no la repite. */}
-                  <CrucePartido m={x} categoria="" />
-                </button>
-              </li>
+        {/* Una sola fila: la categoría y, al lado, su jornada. Cabe con una temporada entera. */}
+        <div className={styles.elegirFila}>
+          <div className={styles.categorias} role="group" aria-label="Categoría">
+            {CATEGORIAS_CARTEL.map((c) => (
+              <button
+                key={c}
+                type="button"
+                aria-pressed={c === categoria}
+                onClick={() => setElegida(c)}
+              >
+                {c}
+              </button>
             ))}
-          </ul>
-        )}
+          </div>
+          {deLaCategoria.length === 0 ? (
+            <p className={styles.partidoElegidoContexto}>
+              Sin partidos {porJugar ? "por jugar" : "jugados"} en {categoria}.
+            </p>
+          ) : (
+            <select
+              aria-label="Jornada"
+              value=""
+              onChange={(e) => {
+                const m = deLaCategoria.find((x) => x.id === e.target.value);
+                if (m) onSelect(m);
+              }}
+            >
+              <option value="">Elige la jornada…</option>
+              {deLaCategoria.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {etiquetaJornada(x)}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       </section>
       <details className={styles.manual}>
         <summary>

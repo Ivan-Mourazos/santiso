@@ -10,8 +10,10 @@ test("guardar convocatoria, generar y guardar su cartel, y pasar convocados al o
   await page.setViewportSize({ width: 390, height: 844 });
   const ruta = "/admin/convocatoria?partido=convocatoria-e2e";
   await page.goto(ruta);
-  await expect(page.getByText("3 convocados / 3")).toBeVisible({ timeout: 30000 });
+  // «Uno» viene de una expulsión: la propuesta lo deja fuera, pero se le puede convocar a mano.
+  await expect(page.getByText("2 convocados / 3")).toBeVisible({ timeout: 30000 });
   const plantilla = page.getByRole("list", { name: "Plantilla Senior" });
+  await plantilla.getByRole("button", { name: "Convocar: Uno Aliñación Ficticio" }).click();
   await plantilla.getByRole("button", { name: "Convocar: Tres Aliñación Ficticio" }).click();
   await page.getByLabel("Hora de quedada", { exact: true }).fill("16:00");
   await page.getByLabel("Lugar de quedada", { exact: true }).fill("Campo Calendario");

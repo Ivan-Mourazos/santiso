@@ -379,17 +379,35 @@ button.partidoElegido:focus-visible {
   margin-top: 0;
 }
 /* Senior | Veteranos del selector de partido: dos mitades, la elegida en amarillo. */
+.elegirFila {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ui-space-2);
+  margin-bottom: 0.75rem;
+}
+.elegirFila > select {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--ui-control-h);
+  padding: 0 2rem 0 var(--ui-space-3);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: var(--ui-text-base);
+}
 .categorias {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
-  margin-bottom: 0.75rem;
   padding: 4px;
   border-radius: var(--ui-radius-pill);
   background: var(--ui-raised);
 }
 .categorias > button {
   min-height: 44px;
+  padding: 0 var(--ui-space-3);
   border: 0;
   border-radius: var(--ui-radius-pill);
   background: transparent;

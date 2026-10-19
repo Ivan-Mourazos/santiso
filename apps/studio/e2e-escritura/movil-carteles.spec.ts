@@ -36,10 +36,14 @@ for (const ancho of [360, 390]) {
         .getByRole("group", { name: "Categoría" })
         .getByRole("button", { name: "Senior" })
         .tap();
-      const partido = elegir.getByRole("button", { name: /Ficticio/i }).first();
-      await expect(partido).toBeVisible();
-      const id = await partido.getAttribute("data-partido");
-      await partido.tap();
+      // La jornada se elige en el desplegable de al lado.
+      const jornada = elegir.getByLabel("Jornada", { exact: true });
+      const id = await jornada
+        .locator("option", { hasText: /Ficticio/i })
+        .first()
+        .getAttribute("value");
+      expect(id).toBeTruthy();
+      await jornada.selectOption(id!);
       await expect(page.getByRole("region", { name: "Partido del cartel" })).toBeVisible();
       const url = `/admin/carteles?plantilla=resumo&partido=${id}`;
       await page.goto(url);

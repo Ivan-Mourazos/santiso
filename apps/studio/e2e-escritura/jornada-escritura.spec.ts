@@ -9,7 +9,8 @@ const RECORRIDO = [
   ["sin-nada", "2099-06-07", "Preparar cartel de partido"],
   ["convocado", "2099-06-14", "Preparar cartel de partido"],
   ["once", "2099-06-21", "Preparar cartel de partido"],
-  ["jugado", "2001-06-03", "Anotar resultado"],
+  // La copa está enlazada con la federación: el marcador lo trae ella.
+  ["jugado", "2001-06-03", "Esperando a la federación · Traer ahora"],
   ["resultado", "2099-07-05", "Completar acta"],
   ["acta", "2099-07-12", "Hacer cartel de resultado"],
 ] as const;
