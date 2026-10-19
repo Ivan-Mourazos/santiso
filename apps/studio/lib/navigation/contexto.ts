@@ -6,6 +6,10 @@ export const SECCIONES = [
   { id: "estadisticas", label: "Estadísticas", grupo: "Competición" },
   { id: "liga", label: "Goleadores y tarjetas", grupo: "Competición" },
   { id: "federacion", label: "Federación", grupo: "Competición", admin: true },
+  { id: "archivo", label: "Archivo", grupo: "Competición" },
+  // Fichas: se abren tocando un equipo o un jugador, no desde el menú.
+  { id: "equipo", label: "Ficha de equipo", grupo: "Competición", oculta: true },
+  { id: "jugador", label: "Ficha de jugador", grupo: "Plantilla", oculta: true },
   { id: "jugadores", label: "Jugadores", grupo: "Plantilla" },
   { id: "tecnicos", label: "Cuerpo técnico", grupo: "Plantilla" },
   { id: "directiva", label: "Directiva", grupo: "Plantilla" },

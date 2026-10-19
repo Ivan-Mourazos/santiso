@@ -49,6 +49,13 @@ const Stats = dynamic(() => import("@/components/admin/estadisticas/AdminEstadis
   loading,
 });
 const LeagueTables = dynamic(() => import("@/components/admin/liga/AdminLiga"), { loading });
+const TeamCard = dynamic(() => import("@/components/admin/fichas/FichaEquipoPantalla"), {
+  loading,
+});
+const PlayerCard = dynamic(() => import("@/components/admin/fichas/FichaJugadorPantalla"), {
+  loading,
+});
+const Archive = dynamic(() => import("@/components/admin/fichas/Archivo"), { loading });
 const Users = dynamic(() => import("@/components/admin/acceso/AdminUsuarios"), { loading });
 const Account = dynamic(() => import("@/components/admin/acceso/MiCuenta"), { loading });
 const subscribeHydration = () => () => {};
@@ -99,6 +106,9 @@ export function StudioSection({ section }: { section: Seccion }) {
         <Lineup categoria="Senior" partidoInicial={params.get("partido")} showToast={showToast} />
       )}
       {section === "multas" && <Fines {...feedback} />}
+      {section === "equipo" && <TeamCard equipoId={params.get("id")} />}
+      {section === "jugador" && <PlayerCard jugadorId={params.get("id")} />}
+      {section === "archivo" && <Archive categoria={category} />}
       {section === "federacion" && <Federation showToast={showToast} categoria={category} />}
       {section === "carteles" && !template && (
         <PantallaDentro>

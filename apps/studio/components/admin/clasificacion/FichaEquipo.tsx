@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import boton from "@/components/ui/foundation/Button.module.css";
 import { fechaPartido } from "@/components/admin/jornada/TarjetaPartido";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import type { FilaClasificacion } from "@/lib/dto";
@@ -58,6 +60,15 @@ export default function FichaEquipo({
       title={fila?.nombre ?? "Equipo"}
       closeLabel="Cerrar ficha"
       mobilePresentation="sheet"
+      footer={
+        <Link
+          className={`${boton.button} ${boton.primary}`}
+          href={`/admin/equipo?id=${encodeURIComponent(fila?.equipoId ?? "")}`}
+          transitionTypes={["nav-forward"]}
+        >
+          Ver la ficha completa
+        </Link>
+      }
     >
       {fila && (
         <div className={styles.ficha}>

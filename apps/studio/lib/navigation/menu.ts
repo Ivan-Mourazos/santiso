@@ -105,6 +105,12 @@ export const MENU: readonly PestanaMenu[] = [
             detalle: "Del equipo",
             icono: I.barras,
           },
+          {
+            seccion: "archivo",
+            label: "Archivo",
+            detalle: "Temporadas pasadas",
+            icono: I.reloj,
+          },
         ],
       },
     ],
@@ -230,6 +236,8 @@ export const MENU: readonly PestanaMenu[] = [
 /** Secciones sin entrada propia en el menú y la pestaña a la que pertenecen. */
 const PESTANA_DE_OCULTA: Partial<Record<Seccion, IdPestana>> = {
   jornada: "liga",
+  equipo: "liga",
+  jugador: "equipo",
   actas: "mas",
   "importar-jornada": "mas",
 };
