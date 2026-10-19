@@ -206,7 +206,9 @@ export default function PilotoCartel({
     if (!nodo) return;
     const observador = new IntersectionObserver(
       ([entrada]) => setEnPantalla(Boolean(entrada?.isIntersecting)),
-      { threshold: 0.5 },
+      // Con un cuarto basta: al abrir «Ajustar la foto» los deslizadores empujan la vista previa
+      // y en el móvil suele quedar algo más de un tercio a la vista mientras se encuadra.
+      { threshold: 0.25 },
     );
     observador.observe(nodo);
     return () => observador.disconnect();
