@@ -24,6 +24,13 @@ import {
 } from "@/lib/server/rfgf/historico";
 import { soloAdmin } from "@/lib/server/acceso/permisos";
 import { pedirPartidosHistoricos, partidosHistoricos } from "@/lib/server/rfgf/historico-partidos";
+import {
+  elegirClubDeEquipo,
+  equiposPorEnlazar,
+  traerClubes,
+  type EquipoPorEnlazar,
+  type ResumenClubesRfgf,
+} from "@/lib/server/rfgf/clubes";
 
 export interface ActaPorRevisar {
   codActa: string;
@@ -316,4 +323,34 @@ export async function cargarPartidosHistoricosRfgf(
   return capturar("No se pudieron cargar los partidos de esa temporada.", () =>
     partidosHistoricos(codGrupo),
   );
+}
+
+/** Baja el listado de clubes de la federación (una petición) y enlaza los equipos inequívocos. */
+export async function traerClubesRfgf(): Promise<Resultado<ResumenClubesRfgf>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudo traer el listado de clubes de la federación.", () =>
+    traerClubes(crearDescargador()),
+  );
+}
+
+/** Los equipos sin club con candidatos para elegir. Solo lee, pero es cosa del administrador. */
+export async function cargarEquiposPorEnlazarRfgf(): Promise<Resultado<EquipoPorEnlazar[]>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudieron cargar los equipos sin club.", () => equiposPorEnlazar());
+}
+
+/** Enlaza a mano un equipo con su club de la federación; `null` lo deja sin club para siempre. */
+export async function enlazarEquipoConClubRfgf(
+  equipoId: string,
+  codigo: string | null,
+): Promise<Resultado<null>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  if (codigo !== null && !/^\d{1,12}$/u.test(codigo)) return fallo("Código de club no válido.");
+  return capturar("No se pudo enlazar el equipo con su club.", async () => {
+    await elegirClubDeEquipo(equipoId, codigo);
+    return null;
+  });
 }

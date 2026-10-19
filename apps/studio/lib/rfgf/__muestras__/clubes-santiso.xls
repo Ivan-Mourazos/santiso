@@ -1,0 +1,186 @@
+<table width="100%" border="0" cellpadding="3" cellspacing="0" bgcolor="#ffffff">
+<tr>
+<td colspan=3 style="FONT-FAMILY:Tahoma, Verdana, Helvetica; COLOR: #6E6E6E; FONT-SIZE: 12pt; ">
+						LISTADO DE CLUBES&nbsp;
+</td>
+</tr>
+</table>
+ 
+<br>
+<table width="100%" border="1" cellpadding="3" cellspacing="0" bgcolor="#F2F2F2">
+  <tr bgcolor="#F2F2F2">
+<td align="center"><strong>Clave Acceso</strong></td>
+<td align="center"><strong>Nombre</strong></td>
+<td align="center"><strong>Cif</strong></td>
+
+<td align="center"><strong>Delegación</strong></td>
+<td align="center"><strong>Comarca</strong></td>
+
+
+<td align="center"><strong>Dirección</strong></td>
+<td align="center"><strong>Localidad</strong></td>
+
+
+
+<td align="center"><strong>Provincia</strong></td>
+<td align="center"><strong>Codigo Postal</strong></td>
+
+
+
+
+	<td align="center"><strong>Fecha Fundación</strong></td>
+	<td align="center"><strong>Fecha Baja Comunidad</strong></td>
+	<td align="center"><strong>Número Registro Comunidad</strong></td>
+	<td align="center"><strong>Fecha Inscripción Comunidad</strong></td>
+	<td align="center"><strong>Fecha Inscripción Federación</strong></td>
+
+<td align="center"><strong>Camiseta</strong></td>
+<td align="center"><strong>Pantalón</strong></td>
+<td align="center"><strong>Medias</strong></td>
+
+
+
+
+
+
+
+
+
+<td align="center"><strong>Numero Equipos</strong></td>
+<td align="center"><strong>Equipos Renov. / No renov.</strong></td>
+<td align="center"><strong>Equipos Alta / Baja</strong></td>
+
+
+    
+	  <td align="center" class="fondotitulolistadosdcha">&nbsp;</td>
+  </tr>
+  
+
+  <tr bgcolor="#ffffff">
+<td align="center">1800</td>
+<td align="center">UNION DEPORTIVA SANTISO F.C.</td>
+<td align="center">G70117288</td>
+
+<td align="center">SANTIAGO</td>
+<td align="center"></td>
+
+
+<td align="center">Arcediago s/n</td>
+<td align="center">Santiso</td>
+
+
+
+<td align="center">A Coruña</td>
+<td align="center">15808</td> 
+
+
+  
+  
+  
+  
+  
+  	<td align="center"></td>
+  	<td align="center"></td>
+  	<td align="center">C09349</td>
+  	<td align="center"></td>
+  	<td align="center">21-08-2014</td>
+  			
+  
+  <td align="center">Amarilla</td>
+  <td align="center">Negro</td>
+  <td align="center">Negras</td>
+  
+  
+  
+  
+  
+  
+  
+ 
+  
+   
+  
+   
+  
+   
+   
+  
+  <td align="center">7</td>
+  
+  <td align="center">6
+    / &nbsp;1</td>
+  
+ 
+  <td align="center">2
+	  
+  
+  
+  
+  
+	</tr>
+
+  <tr bgcolor="#ffffff">
+<td align="center">5006</td>
+<td align="center">SANTISO  SOLAINA</td>
+<td align="center"></td>
+
+<td align="center">SANTIAGO</td>
+<td align="center"></td>
+
+
+<td align="center"></td>
+<td align="center">0</td>
+
+
+
+<td align="center">A Coruña</td>
+<td align="center"></td> 
+
+
+  
+  
+  
+  
+  
+  	<td align="center"></td>
+  	<td align="center"></td>
+  	<td align="center"></td>
+  	<td align="center"></td>
+  	<td align="center">09-08-2017</td>
+  			
+  
+  <td align="center"></td>
+  <td align="center"></td>
+  <td align="center"></td>
+  
+  
+  
+  
+  
+  
+  
+ 
+  
+   
+  
+   
+  
+   
+   
+  
+  <td align="center">1</td>
+  
+  <td align="center">1
+    / &nbsp;-</td>
+  
+  
+ 
+  <td align="center"> -
+	  
+  
+  
+  
+  
+	</tr>
+	
+</table>

@@ -7,7 +7,7 @@ import {
   normalizarCategoria,
   normalizarNombreEquipo,
 } from "@santiso/domain";
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import type { EquipoCatalogo } from "@/lib/equipos/modelo";
 import type { EquipoDto } from "@/lib/dto";
 import { urlMedia } from "@/lib/media";
@@ -80,7 +80,9 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
   }
 
   // Color del equipo: vacío lo quita (vuelve a sacarse del escudo).
-  const colorEscrito = formulario.has("color") ? String(formulario.get("color") ?? "").trim() : null;
+  const colorEscrito = formulario.has("color")
+    ? String(formulario.get("color") ?? "").trim()
+    : null;
   if (colorEscrito && !/^#[0-9a-f]{6}$/i.test(colorEscrito)) {
     return fallo("El color debe ser #rrggbb.", { color: "No válido" });
   }
@@ -121,10 +123,18 @@ export async function guardarEquipo(formulario: FormData): Promise<Resultado<Equ
       color: schema.equipos.color,
       color2: schema.equipos.color2,
     };
+    // Un color cambiado a mano deja de ser el de la federación: ya no se vuelve a escribir.
+    const nuevo = (columna: "color" | "color2") => {
+      const valor: string | null | undefined = (
+        valores as { color?: string | null; color2?: string | null }
+      )[columna];
+      return valor === undefined ? schema.equipos[columna] : sql`${valor}`;
+    };
+    const colorFederacion = sql<boolean>`case when ${schema.equipos.color} is ${nuevo("color")} and ${schema.equipos.color2} is ${nuevo("color2")} then ${schema.equipos.colorFederacion} else 0 end`;
     const [fila] = id
       ? await db
           .update(schema.equipos)
-          .set(valores)
+          .set({ ...valores, colorFederacion })
           .where(eq(schema.equipos.id, id))
           .returning(columnas)
       : await db.insert(schema.equipos).values(valores).returning(columnas);

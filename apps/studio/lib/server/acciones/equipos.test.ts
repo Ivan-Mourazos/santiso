@@ -99,7 +99,12 @@ describe("acciones de equipos", () => {
     if (!creado.ok) throw new Error("no se creó");
     expect(
       await acciones.guardarEquipo(
-        formulario({ id: creado.datos.id, nombre: "S.D. Touro", categoria: "Senior", color: "azul" }),
+        formulario({
+          id: creado.datos.id,
+          nombre: "S.D. Touro",
+          categoria: "Senior",
+          color: "azul",
+        }),
       ),
     ).toMatchObject({ ok: false, error: "El color debe ser #rrggbb." });
     expect(
@@ -130,6 +135,36 @@ describe("acciones de equipos", () => {
     expect(
       await acciones.guardarEquipo(formulario({ id, ...base, color: "", color2: "#ffffff" })),
     ).toMatchObject({ ok: true, datos: { color: null, color_2: null } });
+  });
+
+  it("un color cambiado a mano deja de ser el de la federación; guardar el mismo no", async () => {
+    const { acciones } = await entorno();
+    const base = { nombre: "C.D. Berres", categoria: "Senior" };
+    const creado = await acciones.guardarEquipo(
+      formulario({ id: "", ...base, color: "#f4c300", color2: "#111111" }),
+    );
+    if (!creado.ok) throw new Error(creado.error);
+    const id = creado.datos.id;
+    const bd = await import("@santiso/db");
+    const { eq } = await import("drizzle-orm");
+    const { db } = await globalThis.santisoConexionDb!;
+    const marca = async () =>
+      (
+        await db
+          .select({ f: bd.schema.equipos.colorFederacion })
+          .from(bd.schema.equipos)
+          .where(eq(bd.schema.equipos.id, id))
+      )[0]?.f;
+    await db
+      .update(bd.schema.equipos)
+      .set({ colorFederacion: true })
+      .where(eq(bd.schema.equipos.id, id));
+    await acciones.guardarEquipo(formulario({ id, ...base, color: "#F4C300", color2: "#111111" }));
+    expect(await marca()).toBe(true);
+    await acciones.guardarEquipo(formulario({ id, ...base }));
+    expect(await marca()).toBe(true);
+    await acciones.guardarEquipo(formulario({ id, ...base, color: "#f4c300", color2: "#ffffff" }));
+    expect(await marca()).toBe(false);
   });
 
   it("admite el mismo nombre en otra categoría", async () => {
