@@ -6,7 +6,7 @@
 import React from "react";
 import { Field } from "@/components/ui/foundation/Fields";
 import type { CronEvent } from "@/lib/cartel/types";
-import { CategorySelector, ConPartidoElegido, LadoSantiso, MatchSelector } from "./Common";
+import { ConPartidoElegido, LadoSantiso } from "./Common";
 import type { SelectorMatch } from "./Common";
 import { RivalSelector } from "./FormPartido";
 import { Button } from "@/components/ui/foundation/Button";
@@ -47,7 +47,6 @@ export const FormCronoloxia: React.FC<Props & { tipo: string }> = ({
   removeEvent,
   dbMatches,
   loadMatchFromDb,
-  tipo,
 }) => {
   const eventControlStyle: React.CSSProperties = {
     width: "100%",
@@ -104,15 +103,13 @@ export const FormCronoloxia: React.FC<Props & { tipo: string }> = ({
 
   return (
     <>
-      <ConPartidoElegido partidoId={form.partido_id} dbMatches={dbMatches} categoria={form.categoria} onSelect={loadMatchFromDb}>
-      <MatchSelector
+      <ConPartidoElegido
+        partidoId={form.partido_id}
         dbMatches={dbMatches}
-        onSelect={loadMatchFromDb}
         categoria={form.categoria}
-        tipo={tipo}
-        santisoOnly
-      />
-      <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
+        onSelect={loadMatchFromDb}
+        onCategoria={(c) => set("categoria", c)}
+      >
       <div className={styles.pareja}>
         <Field
           label="Fecha"

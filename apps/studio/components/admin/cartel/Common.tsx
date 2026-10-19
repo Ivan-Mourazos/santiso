@@ -118,63 +118,6 @@ export interface SelectorMatch {
   campo?: { nombre?: string | null } | null;
 }
 
-export const MatchSelector: React.FC<{
-  dbMatches: SelectorMatch[];
-  onSelect: (m: SelectorMatch) => void;
-  categoria: string;
-  competicionId?: string;
-  tipo: string;
-  santisoOnly?: boolean;
-}> = ({ dbMatches, onSelect, categoria, competicionId, tipo, santisoOnly }) => {
-  const isSantisoMatch = (m: SelectorMatch) => {
-    const local = m.equipo_local?.nombre?.toLowerCase() || "";
-    const visitante = m.equipo_visitante?.nombre?.toLowerCase() || "";
-    return local.includes("santiso") || visitante.includes("santiso");
-  };
-  const filtered =
-    dbMatches?.filter((m) => {
-      const isCat = m.categoria === categoria;
-      if (!isCat) return false;
-      if (competicionId) {
-        const mid = m.competicion_id || m.jornada?.competicion_id;
-        if (mid && mid !== competicionId) return false;
-      }
-      if (santisoOnly && !isSantisoMatch(m)) return false;
-
-      // Filtrar por estado según el tipo de cartel
-      if (tipo === "partido" || tipo === "proximos") {
-        return m.estado === "programado";
-      }
-      if (tipo === "resumo" || tipo === "cronoloxia" || tipo === "noso11") {
-        return m.estado === "finalizado";
-      }
-      return true;
-    }) || [];
-
-  if (filtered.length === 0) return null;
-
-  return (
-    <div className={styles.desdeLiga}>
-      <Select
-        label="Autocompletar desde la liga"
-        defaultValue=""
-        onChange={(e) => {
-          const m = filtered.find((x) => x.id === e.target.value);
-          if (m) onSelect(m);
-        }}
-      >
-        <option value="">Seleccionar partido reciente o próximo…</option>
-        {filtered.map((m) => (
-          <option key={m.id} value={m.id}>
-            J{m.jornada?.numero || "?"} - {m.equipo_local?.nombre} vs {m.equipo_visitante?.nombre} (
-            {m.fecha ? formatLiteralMatchDate(m.fecha) : "Sin fecha"})
-          </option>
-        ))}
-      </Select>
-    </div>
-  );
-};
-
 /** El cruce de un partido como se verá en el cartel: contexto, equipos con marcador y fecha. */
 const CrucePartido: React.FC<{ m: SelectorMatch; categoria: string }> = ({ m, categoria }) => {
   const competicion = m.competiciones?.nombre || m.competicion || m.jornada?.competicion || "";
@@ -213,10 +156,12 @@ export const ConPartidoElegido: React.FC<{
   dbMatches: SelectorMatch[];
   categoria: string;
   onSelect: (m: SelectorMatch) => void;
+  /** Al tocar una categoría: la del cartel hecho a mano (un amistoso). */
+  onCategoria?: (categoria: string) => void;
   /** Cartel de antes del partido: se eligen los que quedan por jugar. */
   porJugar?: boolean;
   children: React.ReactNode;
-}> = ({ partidoId, dbMatches, categoria, onSelect, porJugar, children }) => {
+}> = ({ partidoId, dbMatches, categoria, onSelect, onCategoria, porJugar, children }) => {
   const m = partidoId ? dbMatches.find((x) => x.id === partidoId) : undefined;
   if (m)
     return (
@@ -229,12 +174,30 @@ export const ConPartidoElegido: React.FC<{
             <span>Cambiar partido o editar datos</span>
             <Flecha />
           </summary>
-          <div className={styles.manualContenido}>{children}</div>
+          <div className={styles.manualContenido}>
+            {/* El mismo selector de arriba: un solo sitio para cambiar de partido. */}
+            <ElegirPartido
+              dbMatches={dbMatches}
+              onSelect={onSelect}
+              onCategoria={onCategoria}
+              porJugar={porJugar}
+              categoriaInicial={m.categoria ?? undefined}
+              soloSelector
+            >
+              {null}
+            </ElegirPartido>
+            {children}
+          </div>
         </details>
       </>
     );
   return (
-    <ElegirPartido dbMatches={dbMatches} onSelect={onSelect} porJugar={porJugar}>
+    <ElegirPartido
+      dbMatches={dbMatches}
+      onSelect={onSelect}
+      onCategoria={onCategoria}
+      porJugar={porJugar}
+    >
       {children}
     </ElegirPartido>
   );
@@ -264,9 +227,14 @@ function etiquetaJornada(m: SelectorMatch) {
 const ElegirPartido: React.FC<{
   dbMatches: SelectorMatch[];
   onSelect: (m: SelectorMatch) => void;
+  onCategoria?: (categoria: string) => void;
   porJugar?: boolean;
+  /** Con un partido ya elegido, empieza por su categoría. */
+  categoriaInicial?: string;
+  /** Solo la categoría y la jornada, sin el bloque a mano (va dentro de «Cambiar partido»). */
+  soloSelector?: boolean;
   children: React.ReactNode;
-}> = ({ dbMatches, onSelect, porJugar, children }) => {
+}> = ({ dbMatches, onSelect, onCategoria, porJugar, categoriaInicial, soloSelector, children }) => {
   // Abierto con `?categoria=` (desde el catálogo o Inicio), empieza por esa.
   const pedida = useOptionalStudio()?.params.get("categoria");
   const categoriaUrl = CATEGORIAS_CARTEL.find((c) => c === pedida);
@@ -282,7 +250,12 @@ const ElegirPartido: React.FC<{
     ? [...lista].sort((a, b) => (a.fecha ?? "￿").localeCompare(b.fecha ?? "￿"))[0]
     : lista[0];
   const [elegida, setElegida] = React.useState<string | null>(null);
-  const categoria = elegida ?? categoriaUrl ?? queToca?.categoria ?? "Senior";
+  const categoria =
+    elegida ??
+    CATEGORIAS_CARTEL.find((c) => c === categoriaInicial) ??
+    categoriaUrl ??
+    queToca?.categoria ??
+    "Senior";
   const deLaCategoria = lista.filter((x) => x.categoria === categoria);
   if (lista.length === 0) return <>{children}</>;
   return (
@@ -297,7 +270,10 @@ const ElegirPartido: React.FC<{
                 key={c}
                 type="button"
                 aria-pressed={c === categoria}
-                onClick={() => setElegida(c)}
+                onClick={() => {
+                  setElegida(c);
+                  onCategoria?.(c);
+                }}
               >
                 {c}
               </button>
@@ -326,6 +302,7 @@ const ElegirPartido: React.FC<{
           )}
         </div>
       </section>
+      {!soloSelector && (
       <details className={styles.manual}>
         <summary>
           <span>Otro partido o un amistoso, a mano</span>
@@ -333,6 +310,7 @@ const ElegirPartido: React.FC<{
         </summary>
         <div className={styles.manualContenido}>{children}</div>
       </details>
+      )}
     </>
   );
 };

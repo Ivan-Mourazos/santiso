@@ -156,9 +156,15 @@ test("las siete plantillas tienen su cartel en el Estudio", async ({ page }) => 
 
 test("la categoría del enlace manda al abrir el cartel", async ({ page }) => {
   await page.goto("/admin/carteles?plantilla=partido&categoria=Veteranos");
-  await expect(page.getByLabel("Categoría", { exact: true })).toHaveValue("Veteranos", {
-    timeout: 20000,
-  });
+  // El partido cargado es de esa categoría, y el selector para cambiarlo empieza por ella.
+  await expect(page.getByRole("region", { name: "Partido del cartel" })).toContainText(
+    "Veteranos",
+    { timeout: 20000 },
+  );
+  await page.locator("summary").filter({ hasText: "Cambiar partido o editar datos" }).click();
+  await expect(
+    page.getByRole("group", { name: "Categoría" }).getByRole("button", { name: "Veteranos" }),
+  ).toHaveAttribute("aria-pressed", "true");
   await page.goto("/admin/carteles?plantilla=resumo&categoria=Veteranos");
   // Sin partido en el enlace, la lista de jugados empieza por esa categoría.
   const lista = page.getByRole("group", { name: "Categoría" });

@@ -3,12 +3,10 @@
  * Form panel for the "Cartel de Partido" template.
  */
 
-import React, { useState } from "react";
-import { Field, Select } from "@/components/ui/foundation/Fields";
-import { formatLiteralMatchDate } from "@/lib/match-date-time";
+import React from "react";
+import { Field } from "@/components/ui/foundation/Fields";
 import { competitionsForCategory, type CompetenciaRow } from "@/lib/competition";
-import { porJugarDeCategoria } from "@/lib/jornada/proximos";
-import { CategorySelector, ConPartidoElegido, LadoSantiso, type SelectorMatch } from "./Common";
+import { ConPartidoElegido, LadoSantiso, type SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
 import { PlegableMovil } from "./PlegableMovil";
 import type { FormState } from "./types";
@@ -123,18 +121,6 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
   competiciones,
   tipo,
 }) => {
-  // Un solo «hoy» por montaje: la lista no cambia mientras se mira.
-  const [hoy] = useState(() => new Date());
-  /** Los partidos del Santiso de la categoría que aún no se han jugado, del más cercano al más lejano. */
-  const pendientes = porJugarDeCategoria(dbMatches, form.categoria, hoy);
-
-  function etiquetaDe(match: SelectorMatch) {
-    const enCasa = (match.equipo_local?.nombre?.toLowerCase() || "").includes("santiso");
-    const rival = (enCasa ? match.equipo_visitante?.nombre : match.equipo_local?.nombre) || "Rival";
-    const cuando = match.fecha ? formatLiteralMatchDate(match.fecha) : "sin fecha";
-    return `J${match.jornada?.numero ?? "?"} · ${rival} (${enCasa ? "casa" : "fuera"}) · ${cuando}`;
-  }
-
   const partido = tipo === "partido";
 
   const campos_ = (
@@ -225,15 +211,8 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
     </>
   );
 
-  // Las demás plantillas que reutilizan este formulario siguen con todos los campos a la vista.
-  if (!partido) {
-    return (
-      <>
-        <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
-        {campos_}
-      </>
-    );
-  }
+  // Resumo reutiliza estos campos dentro de su propio selector de partido (con la categoría).
+  if (!partido) return campos_;
 
   // Cartel de partido: el próximo ya viene cargado (o el del enlace) con su tarjeta arriba. Lo
   // demás queda plegado: otro partido, la categoría y los campos sueltos para retocar o para un
@@ -244,28 +223,9 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
       dbMatches={dbMatches}
       categoria={form.categoria}
       onSelect={loadMatchFromDb}
+      onCategoria={(c) => set("categoria", c)}
       porJugar
     >
-      <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
-      {pendientes.length > 0 && (
-        <div className={styles.desdeLiga}>
-          <Select
-            label="Otro partido por jugar"
-            value={pendientes.some((m) => m.id === form.partido_id) ? form.partido_id : ""}
-            onChange={(e) => {
-              const match = pendientes.find((m) => m.id === e.target.value);
-              if (match) loadMatchFromDb(match);
-            }}
-          >
-            <option value="">Elegir…</option>
-            {pendientes.map((m) => (
-              <option key={m.id} value={m.id}>
-                {etiquetaDe(m)}
-              </option>
-            ))}
-          </Select>
-        </div>
-      )}
       {campos_}
       <LadoSantiso
         partidoId={form.partido_id}

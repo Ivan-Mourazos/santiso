@@ -8,10 +8,8 @@ import { Field, Select } from "@/components/ui/foundation/Fields";
 import type { Player } from "@/lib/cartel/types";
 import {
   SectionLabel,
-  CategorySelector,
   ConPartidoElegido,
   Deslizador,
-  MatchSelector,
   Toggle,
 } from "./Common";
 import type { SelectorMatch } from "./Common";
@@ -52,7 +50,6 @@ export const FormNoso11: React.FC<Props> = ({
   swapPlayers,
   dbMatches,
   loadMatchFromDb,
-  tipo,
 }) => {
   const modoFoto = form.noso11FotoModo ?? "fondo";
   const getDisplayName = (j: CartelPlayerOption | undefined) => {
@@ -78,18 +75,15 @@ export const FormNoso11: React.FC<Props> = ({
 
   return (
     <>
-      <ConPartidoElegido partidoId={form.partido_id} dbMatches={dbMatches} categoria={form.categoria} onSelect={loadMatchFromDb}>
-      <MatchSelector
+      <ConPartidoElegido
+        partidoId={form.partido_id}
         dbMatches={dbMatches}
-        onSelect={loadMatchFromDb}
         categoria={form.categoria}
-        competicionId={form.competicion_id}
-        tipo={tipo}
-        santisoOnly
-      />
+        onSelect={loadMatchFromDb}
+        onCategoria={(c) => set("categoria", c)}
+      >
       {/* Fecha y estadio llegan con el partido elegido: a mano, solo si hace falta. */}
       <PlegableMovil titulo="Editar datos a mano">
-        <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
         <div className={styles.pareja}>
           <Field
             label="Fecha"

@@ -75,9 +75,16 @@ test("partidos: nuestro partido de otra jornada lleva sus carteles", async ({ pa
   const elegido = page.getByRole("region", { name: "Partido del cartel" });
   await expect(elegido).toContainText(/\d+–\d+/);
   await expect(elegido).toContainText("Veteranos");
-  await expect(page.getByLabel("Categoría")).toBeHidden();
+  const categorias = page.getByRole("group", { name: "Categoría" });
+  await expect(categorias).toBeHidden();
   await page.getByText("Cambiar partido o editar datos").click();
-  await expect(page.getByLabel("Categoría")).toHaveValue("Veteranos");
+  // Un solo selector de partido: el de arriba, dentro del plegable, ya en Veteranos.
+  await expect(categorias.getByRole("button", { name: "Veteranos" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByLabel("Jornada", { exact: true })).toHaveCount(1);
+  await expect(page.getByLabel("Autocompletar desde la liga")).toHaveCount(0);
 });
 
 /**

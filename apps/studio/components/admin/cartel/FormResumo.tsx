@@ -6,7 +6,7 @@
 import React from "react";
 import { Field } from "@/components/ui/foundation/Fields";
 import type { CompetenciaRow } from "@/lib/competition";
-import { ConPartidoElegido, LadoSantiso, SectionLabel, MatchSelector } from "./Common";
+import { ConPartidoElegido, LadoSantiso, SectionLabel } from "./Common";
 import type { SelectorMatch } from "./Common";
 import { FormPartido } from "./FormPartido";
 import styles from "./Formularios.module.css";
@@ -28,15 +28,13 @@ export const FormResumo = (props: Props & { tipo: string }) => {
   const { form, set, tipo, dbMatches, loadMatchFromDb } = props;
   return (
     <>
-      <ConPartidoElegido partidoId={form.partido_id} dbMatches={dbMatches} categoria={form.categoria} onSelect={loadMatchFromDb}>
-      <MatchSelector
+      <ConPartidoElegido
+        partidoId={form.partido_id}
         dbMatches={dbMatches}
-        onSelect={loadMatchFromDb}
         categoria={form.categoria}
-        competicionId={form.competicion_id}
-        tipo={tipo}
-        santisoOnly
-      />
+        onSelect={loadMatchFromDb}
+        onCategoria={(c) => set("categoria", c)}
+      >
       <FormPartido {...props} tipo={tipo} />
       <SectionLabel>Resultado</SectionLabel>
       <div className={styles.pareja}>
