@@ -77,8 +77,9 @@ export default function Archivo({ categoria }: { categoria: string }) {
                 <h4>
                   {g.competicion}
                   <small>
-                    {g.grupo} · {g.conCifras} de {g.jugadores} jugadores con cifras · partidos:{" "}
-                    {g.archivo.texto}
+                    {g.grupo} · {g.conCifras} de {g.jugadores} jugadores con cifras
+                    {/* Sin pedir no aporta nada: abajo ya sale el botón o «Sin partidos». */}
+                    {g.archivo.estado !== "no_pedido" && ` · partidos: ${g.archivo.texto}`}
                   </small>
                 </h4>
                 {g.partidos.length > 0 ? (

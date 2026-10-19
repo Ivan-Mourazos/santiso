@@ -77,16 +77,17 @@ export function resumenPartidosHistoricos(grupo: Grupo, partidos: Partido[]) {
     errores: partidos.filter((p) => p.estado === "error").length,
     pedidoEn: grupo.partidosPedidosEn,
     aviso: grupo.partidosAviso,
+    // Se enseña tal cual en Archivo y en Federación: en palabras de quien lo usa.
     texto:
       grupo.partidosEstado === "no_pedido"
-        ? "No pedido"
+        ? "Sin pedir"
         : grupo.partidosEstado === "en_cola"
-          ? "En cola"
+          ? "Pedidos, llegarán poco a poco"
           : grupo.partidosEstado === "terminado"
-            ? "Terminado"
+            ? "Todos traídos"
             : grupo.partidosEstado === "no_compatible"
-              ? "Formato no compatible"
-              : `${listos} de ${total} listos`,
+              ? "La federación no los tiene en un formato que se pueda leer"
+              : `${listos} de ${total} traídos`,
   };
 }
 

@@ -383,6 +383,6 @@ describe("archivo de temporadas pasadas", () => {
     ]);
     expect(grupo!.partidos[0]!.enlaceActa).toContain("CodActa=701");
     expect(grupo!.partidos[1]!.enlaceActa).toBeNull();
-    expect(archivo[1]!.grupos[0]!.archivo.texto).toBe("No pedido");
+    expect(archivo[1]!.grupos[0]!.archivo.texto).toBe("Sin pedir");
   });
 });

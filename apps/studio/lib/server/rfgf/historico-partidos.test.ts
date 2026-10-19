@@ -135,8 +135,8 @@ it("guarda resultado y eventos reales de ambos lados, ordenados y sin calendario
     pendientes: 0,
     estado: "terminado",
   });
-  expect(estados).toContain("1 de 2 listos");
-  expect(estados.at(-1)).toBe("Terminado");
+  expect(estados).toContain("1 de 2 traídos");
+  expect(estados.at(-1)).toBe("Todos traídos");
   expect(lectura.partidos.map((p) => p.jornada)).toEqual([1, 18]);
   for (const [i, p] of lectura.partidos.entries()) {
     const f = fichas[i]!;
