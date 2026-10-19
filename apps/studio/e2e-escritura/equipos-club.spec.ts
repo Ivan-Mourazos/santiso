@@ -5,6 +5,7 @@ test("equipos: elegir el club de la federación de un equipo dudoso", async ({ p
   await page.goto("/admin/equipos?categoria=Senior");
   const dudosos = page.getByRole("region", { name: "Equipos por enlazar con la federación" });
   await expect(dudosos).toBeVisible({ timeout: 30000 });
+  await dudosos.getByText(/por enlazar con su club/).click();
   await expect(dudosos.getByText("Rival Ficticio", { exact: true })).toBeVisible();
   await dudosos
     .getByRole("button", { name: "Enlazar Rival Ficticio con S.D. Rival Ficticio" })

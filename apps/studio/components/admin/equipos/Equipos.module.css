@@ -367,19 +367,26 @@
     display: none;
   }
 }
-/* Equipos por enlazar con su club de la federación: el nombre y, debajo, sus candidatos. */
+/* Equipos por enlazar con su club de la federación: una fila plegada; dentro, sus candidatos. */
 .porEnlazar {
-  display: grid;
-  gap: var(--ui-space-2);
-  margin-bottom: var(--ui-space-4);
-  padding: var(--ui-space-4);
+  margin-bottom: var(--ui-space-3);
   border: 1px solid var(--ui-accent);
   border-radius: var(--ui-radius);
   background: var(--ui-accent-soft);
 }
-.porEnlazar h4 {
-  margin: 0;
-  font-size: var(--ui-text-base);
+.porEnlazar summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--ui-space-4);
+  color: var(--ui-accent);
+  font-weight: 800;
+  font-size: var(--ui-text-sm);
+  cursor: pointer;
+}
+.porEnlazar details > p,
+.porEnlazar details > ul {
+  margin: 0 var(--ui-space-4) var(--ui-space-3);
 }
 .porEnlazar ul {
   display: grid;

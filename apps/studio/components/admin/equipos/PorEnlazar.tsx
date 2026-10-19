@@ -43,46 +43,53 @@ export default function PorEnlazar({
 
   return (
     <section className={styles.porEnlazar} aria-label="Equipos por enlazar con la federación">
-      <h4>¿Cuál es su club en la federación?</h4>
-      <p className={styles.detalle}>
-        Con el club enlazado, su ficha y sus carteles llevan su localidad, su campo y sus colores.
-      </p>
-      <ul>
-        {deLaCategoria.map((equipo) => (
-          <li key={equipo.equipoId}>
-            <strong>{equipo.nombre}</strong>
-            <div className={styles.candidatos}>
-              {equipo.candidatos.map((club) => (
+      {/* Plegado: la lista de equipos sigue siendo lo primero de la pantalla. */}
+      <details>
+        <summary>
+          {deLaCategoria.length === 1
+            ? "1 equipo por enlazar con su club de la federación"
+            : `${deLaCategoria.length} equipos por enlazar con su club de la federación`}
+        </summary>
+        <p className={styles.detalle}>
+          Con el club enlazado, su ficha y sus carteles llevan su localidad, su campo y sus colores.
+        </p>
+        <ul>
+          {deLaCategoria.map((equipo) => (
+            <li key={equipo.equipoId}>
+              <strong>{equipo.nombre}</strong>
+              <div className={styles.candidatos}>
+                {equipo.candidatos.map((club) => (
+                  <Button
+                    key={club.codigo}
+                    size="sm"
+                    variant="secondary"
+                    pending={guardando === `${equipo.equipoId}:${club.codigo}`}
+                    pendingLabel="Guardando…"
+                    disabled={guardando !== null}
+                    aria-label={`Enlazar ${equipo.nombre} con ${club.nombre}`}
+                    onClick={() => void elegir(equipo, club.codigo)}
+                  >
+                    {club.nombre}
+                    {club.localidad ? ` · ${club.localidad}` : ""}
+                  </Button>
+                ))}
+                {/* Ningún candidato es el suyo (un club de fútbol sala con el mismo nombre…). */}
                 <Button
-                  key={club.codigo}
                   size="sm"
-                  variant="secondary"
-                  pending={guardando === `${equipo.equipoId}:${club.codigo}`}
+                  variant="ghost"
+                  pending={guardando === `${equipo.equipoId}:ninguno`}
                   pendingLabel="Guardando…"
                   disabled={guardando !== null}
-                  aria-label={`Enlazar ${equipo.nombre} con ${club.nombre}`}
-                  onClick={() => void elegir(equipo, club.codigo)}
+                  aria-label={`${equipo.nombre}: ninguno de estos`}
+                  onClick={() => void elegir(equipo, null)}
                 >
-                  {club.nombre}
-                  {club.localidad ? ` · ${club.localidad}` : ""}
+                  Ninguno de estos
                 </Button>
-              ))}
-              {/* Ningún candidato es el suyo (un club de fútbol sala con el mismo nombre…). */}
-              <Button
-                size="sm"
-                variant="ghost"
-                pending={guardando === `${equipo.equipoId}:ninguno`}
-                pendingLabel="Guardando…"
-                disabled={guardando !== null}
-                aria-label={`${equipo.nombre}: ninguno de estos`}
-                onClick={() => void elegir(equipo, null)}
-              >
-                Ninguno de estos
-              </Button>
-            </div>
-          </li>
-        ))}
-      </ul>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </details>
     </section>
   );
 }
