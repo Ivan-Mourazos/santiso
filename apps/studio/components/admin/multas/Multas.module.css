@@ -331,7 +331,7 @@
 
 .grupo {
   margin: 0 0 0.4rem;
-  color: var(--ui-accent, #f5c518);
+  color: var(--ui-muted);
   font-size: var(--ui-text-xs);
   font-weight: 800;
   text-transform: uppercase;

@@ -51,7 +51,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--ui-accent);
+  color: var(--ui-muted);
 }
 .instagramCabecera p {
   margin: 0.25rem 0 0;
@@ -120,7 +120,7 @@
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--ui-accent);
+  color: var(--ui-muted);
 }
 .medidas {
   font-size: var(--ui-text-xs);

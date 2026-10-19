@@ -1,11 +1,11 @@
-/* Con la cara de un campo: mismo fondo, borde y radio que los desplegables de al lado. */
+/* Tarjeta de cristal, como el resto de bloques: el borde marcado queda para los campos. */
 .bloque {
   min-width: 0;
   margin: 0.5rem 0;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-sm);
-  background: var(--ui-field-face);
-  box-shadow: var(--ui-field-shadow);
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-panel-face);
+  box-shadow: var(--ui-panel-shadow);
 }
 .bloque > summary {
   display: flex;

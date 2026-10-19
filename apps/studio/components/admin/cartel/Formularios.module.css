@@ -6,7 +6,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--ui-accent);
+  color: var(--ui-muted);
 }
 
 .campo {
@@ -274,7 +274,7 @@ button.partidoElegido:focus-visible {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--ui-accent);
+  color: var(--ui-muted);
 }
 
 .nota {
