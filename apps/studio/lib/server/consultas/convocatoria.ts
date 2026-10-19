@@ -101,10 +101,13 @@ export async function pantallaConvocatoria(
   const guardada = elegido && disponible ? await convocatoriaDePartido(elegido.id) : null;
   const inscritos = new Set(jugadores.map((j) => j.id));
   const avisos = elegido ? await avisosDelPartido(elegido.id, jugadores) : [];
-  // Sin guardar: se proponen los 16 primeros sin sancionados y la quedada de la anterior.
+  // Sin guardar: se proponen los 16 primeros sin sancionados y la quedada de la anterior. En un
+  // partido ya jugado no se propone nada: lo que se ve es lo que se guardó, o nada.
   const convocatoria = guardada
     ? { ...guardada, jugadores: guardada.jugadores.filter((id) => inscritos.has(id)) }
-    : convocatoriaPropuesta(
+    : elegido?.finalizado
+      ? convocatoriaInicial([])
+      : convocatoriaPropuesta(
         jugadores.map((j) => j.id),
         avisos,
         elegido && disponible ? await convocatoriaAnterior(temporada, categoria, elegido) : null,

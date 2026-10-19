@@ -192,7 +192,13 @@ export default function AdminConvocatoria({
       {pantalla.migracionPendiente && (
         <p role="status">Migración de convocatorias pendiente de aplicar.</p>
       )}
-      {bloqueada && <p role="status">Partido ya jugado: convocatoria de solo lectura.</p>}
+      {bloqueada && (
+        <p role="status">
+          {persistida || c.jugadores.length > 0
+            ? "Partido ya jugado: convocatoria de solo lectura."
+            : "Partido ya jugado: no se guardó convocatoria."}
+        </p>
+      )}
       <AvisosPartido avisos={pantalla.avisos} />
       <p className={s.contador} role="status">
         {c.jugadores.length} convocados / {pantalla.jugadores.length}
