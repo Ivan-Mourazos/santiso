@@ -261,13 +261,69 @@ export function nucleoDeNombre(nombre: string): string {
   return palabras.join(" ");
 }
 
+/** Palabras de la forma jurídica que no cuentan para la sigla (artículos y categoría). */
+const SIN_SIGLA = new Set([
+  "de",
+  "del",
+  "do",
+  "da",
+  "dos",
+  "das",
+  "y",
+  "e",
+  "veteranos",
+  "veterans",
+  "vet",
+]);
+
+/**
+ * Las letras de la forma jurídica: «A.C.U.D. Camporrapado» y «Asociación Club Unión Deportiva
+ * Camporrapado» → «acud»; «U.D. Santiso F.C.» y «Unión Deportiva Santiso F.C.» → «udfc».
+ */
+export function siglaDeNombre(nombre: string): string {
+  let sigla = "";
+  for (const crudo of nombre.split(/\s+/u)) {
+    const token = crudo.replace(/^["«“(]+|["»”),]+$/gu, "");
+    if (esSiglaConPuntos(token)) {
+      sigla += claveNombre(token).replace(/ /gu, "");
+      continue;
+    }
+    const palabra = claveNombre(token);
+    if (SIGLAS.has(palabra)) sigla += palabra;
+    else if (FORMAS.has(palabra) && !SIN_SIGLA.has(palabra)) sigla += palabra[0];
+  }
+  return sigla;
+}
+
+/** Dos siglas casan si una está contenida en la otra («S.D.» en «Club … S.D.»); vacía casa con todo. */
+function siglasCasan(a: string, b: string): boolean {
+  const contenida = (corta: string, larga: string) => {
+    const resto = [...larga];
+    for (const letra of corta) {
+      const i = resto.indexOf(letra);
+      if (i < 0) return false;
+      resto.splice(i, 1);
+    }
+    return true;
+  };
+  return a.length <= b.length ? contenida(a, b) : contenida(b, a);
+}
+
+/** Un club de veteranos lleva la palabra en el nombre («Veteranos Berres»). */
+const esDeVeteranos = (nombre: string) =>
+  claveNombre(nombre)
+    .split(" ")
+    .some((p) => p === "veteranos" || p === "veterans" || p === "vet");
+
 export interface EquipoPorEmparejar {
   id: string;
   nombre: string;
+  /** Con ella, un equipo senior no se enlaza con un club de veteranos ni al revés. */
+  categoria?: string;
 }
 
 export interface Emparejamiento {
-  /** Un único club con el mismo núcleo de nombre. */
+  /** Un único club con el mismo núcleo de nombre (y sigla compatible). */
   enlazados: { equipoId: string; codigo: string }[];
   /** Hay donde elegir: o varios con el mismo núcleo, o alguno que se le parece. */
   dudosos: { equipoId: string; candidatos: string[] }[];
@@ -278,19 +334,28 @@ export interface Emparejamiento {
 const MAXIMO_CANDIDATOS = 6;
 
 /**
- * Empareja equipos con clubes. Solo se enlaza cuando no hay duda: un único club con el mismo
- * núcleo. Si hay varios, o solo parecidos (uno contiene al otro), queda para elegir a mano.
+ * Empareja equipos con clubes. Solo se enlaza cuando no hay duda: entre los clubes con el
+ * mismo núcleo de nombre (de veteranos o no, según la categoría del equipo), uno solo con la
+ * sigla compatible. Si hay varios, si la sigla no casa (un «C.S.D.» no es un «C.F.S.») o solo
+ * hay parecidos (uno contiene al otro), queda para elegir a mano.
  */
 export function emparejarClubes(
   equipos: readonly EquipoPorEmparejar[],
   clubes: readonly { codigo: string; nombre: string }[],
 ): Emparejamiento {
-  const porNucleo = new Map<string, string[]>();
-  const nucleos = clubes.map((club) => {
+  const fichas = clubes.map((club) => {
     const nucleo = nucleoDeNombre(club.nombre);
-    if (nucleo) porNucleo.set(nucleo, [...(porNucleo.get(nucleo) ?? []), club.codigo]);
-    return { codigo: club.codigo, palabras: new Set(nucleo.split(" ").filter(Boolean)) };
+    return {
+      codigo: club.codigo,
+      nucleo,
+      sigla: siglaDeNombre(club.nombre),
+      veteranos: esDeVeteranos(club.nombre),
+      palabras: new Set(nucleo.split(" ").filter(Boolean)),
+    };
   });
+  const porNucleo = new Map<string, typeof fichas>();
+  for (const ficha of fichas)
+    if (ficha.nucleo) porNucleo.set(ficha.nucleo, [...(porNucleo.get(ficha.nucleo) ?? []), ficha]);
   const salida: Emparejamiento = { enlazados: [], dudosos: [], sinClub: [] };
   for (const equipo of equipos) {
     const nucleo = nucleoDeNombre(equipo.nombre);
@@ -298,18 +363,31 @@ export function emparejarClubes(
       salida.sinClub.push(equipo.id);
       continue;
     }
-    const iguales = porNucleo.get(nucleo) ?? [];
-    if (iguales.length === 1) {
-      salida.enlazados.push({ equipoId: equipo.id, codigo: iguales[0]! });
+    let iguales = porNucleo.get(nucleo) ?? [];
+    if (equipo.categoria) {
+      const veteranos = /^vet/iu.test(equipo.categoria);
+      const deSuCategoria = iguales.filter((c) => c.veteranos === veteranos);
+      // Un senior nunca va con un club de veteranos; un veterano, si no hay, con el del pueblo.
+      if (deSuCategoria.length || !veteranos) iguales = deSuCategoria;
+    }
+    const sigla = siglaDeNombre(equipo.nombre);
+    const casan = iguales.filter((c) => siglasCasan(sigla, c.sigla));
+    if (casan.length === 1) {
+      salida.enlazados.push({ equipoId: equipo.id, codigo: casan[0]!.codigo });
       continue;
     }
-    if (iguales.length > 1) {
-      salida.dudosos.push({ equipoId: equipo.id, candidatos: iguales.slice(0, MAXIMO_CANDIDATOS) });
+    if (iguales.length) {
+      salida.dudosos.push({
+        equipoId: equipo.id,
+        candidatos: (casan.length ? casan : iguales)
+          .slice(0, MAXIMO_CANDIDATOS)
+          .map((c) => c.codigo),
+      });
       continue;
     }
     const palabras = nucleo.split(" ");
     const contiene = (a: Set<string>, b: readonly string[]) => b.every((p) => a.has(p));
-    const parecidos = nucleos
+    const parecidos = fichas
       .filter(
         (c) =>
           c.palabras.size > 0 &&
