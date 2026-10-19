@@ -1,6 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- media local servida por el route handler */
+import { sinConexion } from "@/lib/resultado";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
@@ -44,11 +45,13 @@ export default function GaleriaPartido({
 
   useEffect(() => {
     let vigente = true;
-    void listarFotosPartido(partidoId).then((r) => {
-      if (!vigente) return;
-      if (r.ok) setFotos(r.datos);
-      else setError(r.error);
-    });
+    void listarFotosPartido(partidoId)
+      .catch(sinConexion)
+      .then((r) => {
+        if (!vigente) return;
+        if (r.ok) setFotos(r.datos);
+        else setError(r.error);
+      });
     return () => {
       vigente = false;
     };

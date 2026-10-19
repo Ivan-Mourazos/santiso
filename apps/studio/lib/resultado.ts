@@ -11,6 +11,13 @@ export const exito = <T>(datos: T): Resultado<T> => ({ ok: true, datos });
 export const fallo = (error: string, campos?: Record<string, string>): Fallo =>
   campos ? { ok: false, error, campos } : { ok: false, error };
 
+/**
+ * Para el `.catch` de una acción llamada desde el cliente: si la red cae, la acción rechaza en
+ * vez de devolver un fallo. Así la pantalla sigue por su camino de error y no se queda cargando.
+ */
+export const sinConexion = (): Fallo =>
+  fallo("No se pudo conectar con el Studio. Revisa la conexión y vuelve a intentarlo.");
+
 /** Valida la entrada de una acción. De cada campo se devuelve el primer mensaje, con su ruta. */
 export function validar<T>(esquema: z.ZodType<T>, entrada: unknown): Resultado<T> {
   const resultado = esquema.safeParse(entrada);

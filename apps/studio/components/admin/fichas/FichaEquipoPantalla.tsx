@@ -1,5 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- escudos de la media local */
+import { sinConexion } from "@/lib/resultado";
 import { useEffect, useState } from "react";
 import { EmptyState, LoadingState } from "@/components/ui/foundation/States";
 import { cargarFichaDeEquipo } from "@/lib/server/acciones/fichas-rfgf";
@@ -38,10 +39,12 @@ export default function FichaEquipoPantalla({ equipoId }: { equipoId: string | n
   useEffect(() => {
     if (!equipoId) return;
     let vigente = true;
-    void cargarFichaDeEquipo(equipoId).then((r) => {
-      if (!vigente) return;
-      setEstado({ id: equipoId, ficha: r.ok ? r.datos : null, error: r.ok ? null : r.error });
-    });
+    void cargarFichaDeEquipo(equipoId)
+      .catch(sinConexion)
+      .then((r) => {
+        if (!vigente) return;
+        setEstado({ id: equipoId, ficha: r.ok ? r.datos : null, error: r.ok ? null : r.error });
+      });
     return () => {
       vigente = false;
     };

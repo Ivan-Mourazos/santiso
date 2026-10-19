@@ -1,4 +1,5 @@
 "use client";
+import { sinConexion } from "@/lib/resultado";
 import { useCallback, useEffect, useState } from "react";
 import { useStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
@@ -25,11 +26,13 @@ export default function Archivo({ categoria }: { categoria: string }) {
   }, []);
   useEffect(() => {
     let vigente = true;
-    void cargarArchivoHistorico().then((r) => {
-      if (!vigente) return;
-      if (r.ok) setArchivo(r.datos);
-      else setError(r.error);
-    });
+    void cargarArchivoHistorico()
+      .catch(sinConexion)
+      .then((r) => {
+        if (!vigente) return;
+        if (r.ok) setArchivo(r.datos);
+        else setError(r.error);
+      });
     return () => {
       vigente = false;
     };

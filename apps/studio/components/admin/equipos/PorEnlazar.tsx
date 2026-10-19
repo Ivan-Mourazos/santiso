@@ -1,4 +1,5 @@
 "use client";
+import { sinConexion } from "@/lib/resultado";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { cargarEquiposPorEnlazarRfgf, enlazarEquipoConClubRfgf } from "@/lib/server/acciones/rfgf";
@@ -21,9 +22,11 @@ export default function PorEnlazar({
   const [codigos, setCodigos] = useState<Record<string, string>>({});
   useEffect(() => {
     let vigente = true;
-    void cargarEquiposPorEnlazarRfgf().then((r) => {
-      if (vigente && r.ok) setDudosos(r.datos);
-    });
+    void cargarEquiposPorEnlazarRfgf()
+      .catch(sinConexion)
+      .then((r) => {
+        if (vigente && r.ok) setDudosos(r.datos);
+      });
     return () => {
       vigente = false;
     };

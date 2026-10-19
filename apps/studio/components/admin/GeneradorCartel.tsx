@@ -1,5 +1,6 @@
 "use client";
 
+import { sinConexion } from "@/lib/resultado";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { LIMITE_INSTAGRAM, textoInstagram } from "@/lib/cartel/instagram";
@@ -117,7 +118,9 @@ export default function GeneradorCartel({
   useEffect(() => {
     if (!claveGuardados || !partidoId || !paso) return;
     let vigente = true;
-    void cargarCartelesPartido([partidoId]).then((r) => {
+    void cargarCartelesPartido([partidoId])
+      .catch(sinConexion)
+      .then((r) => {
       if (vigente) {
         setGuardados({ clave: claveGuardados, lista: r.ok ? (r.datos[partidoId]?.[paso] ?? []) : [] });
       }

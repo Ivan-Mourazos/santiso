@@ -1,5 +1,6 @@
 "use client";
 
+import { sinConexion } from "@/lib/resultado";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
@@ -224,7 +225,9 @@ function Registro({
       {
         label: "Deshacer",
         onClick: () =>
-          void cambiarPagoMulta(multa.id, !pagar).then((x) =>
+          void cambiarPagoMulta(multa.id, !pagar)
+      .catch(sinConexion)
+      .then((x) =>
             x.ok ? recargar() : showToast(x.error, "error"),
           ),
       },

@@ -1,5 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- fotos de la media local */
+import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useStudio } from "@/components/studio/StudioContext";
@@ -44,10 +45,12 @@ export default function FichaJugadorPantalla({ jugadorId }: { jugadorId: string 
   useEffect(() => {
     if (!jugadorId) return;
     let vigente = true;
-    void cargarFichaCompletaDeJugador(jugadorId).then((r) => {
-      if (vigente)
-        setEstado({ id: jugadorId, ficha: r.ok ? r.datos : null, error: r.ok ? null : r.error });
-    });
+    void cargarFichaCompletaDeJugador(jugadorId)
+      .catch(sinConexion)
+      .then((r) => {
+        if (vigente)
+          setEstado({ id: jugadorId, ficha: r.ok ? r.datos : null, error: r.ok ? null : r.error });
+      });
     return () => {
       vigente = false;
     };

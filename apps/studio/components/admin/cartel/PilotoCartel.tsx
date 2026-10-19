@@ -1,5 +1,6 @@
 "use client";
 
+import { sinConexion } from "@/lib/resultado";
 import { prepararFotoSubida } from "@/lib/cartel2/subida";
 import { cargarFotoGuardada } from "@/lib/server/acciones/carteles-guardados";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -135,7 +136,10 @@ export default function PilotoCartel({
     let vigente = true;
     void Promise.all(
       clavePendientes.split("|").map(async (u) => [u, await colorDeEscudo(u)] as const),
-    ).then((leidos) => {
+    )
+      // Sin poder leerlos, el color de reserva: la vista previa no se queda esperando.
+      .catch(() => clavePendientes.split("|").map((u) => [u, null] as const))
+      .then((leidos) => {
       if (!vigente) return;
       setColores((antes) => {
         const despues = { ...antes };
@@ -155,7 +159,9 @@ export default function PilotoCartel({
   useEffect(() => {
     if (!partidoGuardado || !pasoGuardado) return;
     let vigente = true;
-    void cargarFotoGuardada(partidoGuardado, pasoGuardado).then((r) => {
+    void cargarFotoGuardada(partidoGuardado, pasoGuardado)
+      .catch(sinConexion)
+      .then((r) => {
       const guardada = r.ok ? r.datos : null;
       if (vigente && guardada) setFoto((actual) => actual ?? guardada);
     });

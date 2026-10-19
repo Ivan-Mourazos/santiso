@@ -1,4 +1,5 @@
 "use client";
+import { sinConexion } from "@/lib/resultado";
 import { useEffect, useState } from "react";
 import { useStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
@@ -33,9 +34,11 @@ export default function PlantillaFrenteActas({
   const [anadiendo, setAnadiendo] = useState<string | null>(null);
   useEffect(() => {
     let vigente = true;
-    void cargarPlantillaFrenteActas(categoria).then((r) => {
-      if (vigente && r.ok) setDatos({ categoria, comparacion: r.datos });
-    });
+    void cargarPlantillaFrenteActas(categoria)
+      .catch(sinConexion)
+      .then((r) => {
+        if (vigente && r.ok) setDatos({ categoria, comparacion: r.datos });
+      });
     return () => {
       vigente = false;
     };

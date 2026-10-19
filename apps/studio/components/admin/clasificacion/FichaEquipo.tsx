@@ -1,5 +1,6 @@
 "use client";
 
+import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import boton from "@/components/ui/foundation/Button.module.css";
@@ -44,9 +45,11 @@ export default function FichaEquipo({
   useEffect(() => {
     if (!equipoId) return;
     let vigente = true;
-    void cargarFichaEquipo(competicionId, equipoId).then((r) => {
-      if (vigente) setFicha({ id: equipoId, datos: r.ok ? r.datos : null });
-    });
+    void cargarFichaEquipo(competicionId, equipoId)
+      .catch(sinConexion)
+      .then((r) => {
+        if (vigente) setFicha({ id: equipoId, datos: r.ok ? r.datos : null });
+      });
     return () => {
       vigente = false;
     };

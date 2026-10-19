@@ -1,6 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- media local servida por el route handler */
+import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import boton from "@/components/ui/foundation/Button.module.css";
@@ -59,11 +60,13 @@ export default function FichaJugador({
 
   useEffect(() => {
     let vigente = true;
-    void cargarFichaJugador(jugadorId, categoria, temporadaId, competicionId).then((r) => {
-      if (!vigente) return;
-      if (r.ok) setFicha(r.datos);
-      else setError(r.error);
-    });
+    void cargarFichaJugador(jugadorId, categoria, temporadaId, competicionId)
+      .catch(sinConexion)
+      .then((r) => {
+        if (!vigente) return;
+        if (r.ok) setFicha(r.datos);
+        else setError(r.error);
+      });
     return () => {
       vigente = false;
     };

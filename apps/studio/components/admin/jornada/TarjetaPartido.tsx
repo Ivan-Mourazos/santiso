@@ -1,5 +1,6 @@
 "use client";
 
+import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import GaleriaPartido from "@/components/admin/fotos/GaleriaPartido";
@@ -73,7 +74,9 @@ export default function TarjetaPartido({
   );
   useEffect(() => {
     let vigente = true;
-    void cargarCartelesPartido([p.id]).then((r) => {
+    void cargarCartelesPartido([p.id])
+      .catch(sinConexion)
+      .then((r) => {
       if (vigente && r.ok) setCarteles({ id: p.id, deEste: r.datos[p.id] ?? {} });
     });
     return () => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import TarjetaPartido, { fechaPartido } from "@/components/admin/jornada/TarjetaPartido";
@@ -105,15 +106,23 @@ function CartelesDelPartidoLiga({
 }) {
   const { acceso } = useStudio();
   const [carteles, setCarteles] = useState<{ id: string; deEste: CartelesDelPartido } | null>(null);
+  // Si la búsqueda falla se dice, con «Reintentar»: antes se quedaba «Buscando…» para siempre.
+  const [fallo, setFallo] = useState<{ id: string; error: string } | null>(null);
+  const [intento, setIntento] = useState(0);
   useEffect(() => {
     let vigente = true;
-    void cargarCartelesPartido([p.id]).then((r) => {
-      if (vigente && r.ok) setCarteles({ id: p.id, deEste: r.datos[p.id] ?? {} });
-    });
+    void cargarCartelesPartido([p.id])
+      .catch(sinConexion)
+      .then((r) => {
+        if (!vigente) return;
+        if (r.ok) setCarteles({ id: p.id, deEste: r.datos[p.id] ?? {} });
+        else setFallo({ id: p.id, error: r.error });
+      });
     return () => {
       vigente = false;
     };
-  }, [p.id]);
+  }, [p.id, intento]);
+  const error = fallo?.id === p.id ? fallo.error : null;
   const jugado = marcadorDe(p) !== null;
   const antes: PasoCartel[] = preparaConvocatoria(categoria)
     ? ["partido", "convocatoria", "once"]
@@ -133,7 +142,21 @@ function CartelesDelPartidoLiga({
   return (
     <section className={styles.carteles} aria-label="Carteles del partido">
       <p className={styles.etiqueta}>Carteles del partido</p>
-      {!deEste ? (
+      {!deEste && error ? (
+        <p className={styles.nota} role="alert">
+          {error}{" "}
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              setFallo(null);
+              setIntento((n) => n + 1);
+            }}
+          >
+            Reintentar
+          </Button>
+        </p>
+      ) : !deEste ? (
         <p className={styles.nota}>Buscando los carteles guardados…</p>
       ) : (
         <ul>
