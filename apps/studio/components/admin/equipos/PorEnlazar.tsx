@@ -18,6 +18,7 @@ export default function PorEnlazar({
 }) {
   const [dudosos, setDudosos] = useState<EquipoPorEnlazar[]>([]);
   const [guardando, setGuardando] = useState<string | null>(null);
+  const [codigos, setCodigos] = useState<Record<string, string>>({});
   useEffect(() => {
     let vigente = true;
     void cargarEquiposPorEnlazarRfgf().then((r) => {
@@ -86,6 +87,32 @@ export default function PorEnlazar({
                   Ninguno de estos
                 </Button>
               </div>
+              {/* Si el suyo no sale entre los candidatos: su código en la federación. */}
+              <form
+                className={styles.codigoClub}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const codigo = (codigos[equipo.equipoId] ?? "").trim();
+                  if (codigo) void elegir(equipo, codigo);
+                }}
+              >
+                <input
+                  aria-label={`Código del club de ${equipo.nombre}`}
+                  placeholder="Otro: código del club"
+                  inputMode="numeric"
+                  value={codigos[equipo.equipoId] ?? ""}
+                  onChange={(e) => setCodigos((c) => ({ ...c, [equipo.equipoId]: e.target.value }))}
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="secondary"
+                  aria-label={`Enlazar ${equipo.nombre} por código`}
+                  disabled={guardando !== null || !(codigos[equipo.equipoId] ?? "").trim()}
+                >
+                  Enlazar
+                </Button>
+              </form>
             </li>
           ))}
         </ul>

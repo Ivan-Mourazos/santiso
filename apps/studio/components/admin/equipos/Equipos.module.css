@@ -404,3 +404,18 @@
   flex-wrap: wrap;
   gap: var(--ui-space-2);
 }
+.codigoClub {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--ui-space-2);
+}
+.codigoClub input {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--ui-space-3);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 16px;
+}
