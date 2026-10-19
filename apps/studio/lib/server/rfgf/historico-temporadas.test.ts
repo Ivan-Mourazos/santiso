@@ -101,3 +101,67 @@ it("con el código del equipo ya conocido, una página trae todas las temporadas
   expect(await avanzarHistorico(descargador, AHORA, 2)).toBe(0);
   expect(urls).toHaveLength(1);
 });
+
+const PAGINA_JUGADOR = `<html><body><a>Generar PDF</a><h4>SANCHEZ VAZQUEZ, IVAN</h4><span>Equipo:</span><b>U.D. SANTISO F.C.</b>
+<b>TERCERA FUTGAL | GRUPO 4</b><strong>Temporada 2025-2026</strong>
+<td>Convocados</td><td>9</td><td>Titular</td><td>7</td><td>Suplente</td><td>2</td><td>Jugados</td><td>8</td>
+<td>Total</td><td>1</td><td>Tarjeta amarilla</td><td>3</td><td>Doble tarjeta amarilla</td><td>0</td><td>Tarjeta roja</td><td>1</td>
+<h5>Goles</h5><td>Total</td><td>5</td></body></html>`;
+
+it("a demanda, un jugador identificado tarde entra en los grupos ya preparados y se lee", async () => {
+  const { db } = conexion;
+  const [competicion] = await db.select().from(s.competiciones);
+  const [jugador] = await db
+    .insert(s.jugadores)
+    .values({ nombre: "Iván Sánchez Vázquez" })
+    .returning();
+  const [otro] = await db.insert(s.jugadores).values({ nombre: "Otro" }).returning();
+  const { traerTemporadasDeJugador } = await import("./historico");
+  const urls: string[] = [];
+  const descargador: DescargadorRfgf = {
+    async html(url) {
+      urls.push(url);
+      if (url.includes("NFG_EstadisticasJugador")) return PAGINA_JUGADOR;
+      throw new Error(`No se esperaba ${url}`);
+    },
+    async pdf() {
+      throw new Error("No se piden PDF");
+    },
+  };
+
+  // Sin código en la federación no hay nada que pedir.
+  expect(await traerTemporadasDeJugador(jugador!.id, descargador, AHORA)).toMatchObject({
+    paginas: 0,
+    avisos: [expect.stringContaining("no tiene identificado")],
+  });
+
+  for (const [codigo, j] of [
+    ["21", jugador!],
+    ["22", otro!],
+  ] as const) {
+    await db.insert(s.rfgfJugadores).values({
+      codigo,
+      competicionId: competicion!.id,
+      jugadorId: j.id,
+      nombre: "SANCHEZ VAZQUEZ, IVAN",
+      codActa: "900",
+    });
+  }
+  const resumen = await traerTemporadasDeJugador(jugador!.id, descargador, AHORA);
+  expect(resumen).toMatchObject({ paginas: 1, leidas: 1, pendientes: 0, errores: [] });
+  expect(urls).toEqual([expect.stringMatching(/jugador=21&codacta=77/u)]);
+  const filas = await db.select().from(s.rfgfHistorico);
+  // Solo él: al otro lo apunta el repaso de fondo.
+  expect(filas.find((f) => f.jugadorId === jugador!.id)?.cifras).toMatchObject({
+    convocados: 9,
+    goles: 5,
+    rojas: 1,
+  });
+  expect(filas.find((f) => f.jugadorId === otro!.id)).toBeUndefined();
+
+  expect(await traerTemporadasDeJugador(jugador!.id, descargador, AHORA)).toMatchObject({
+    paginas: 0,
+    avisos: [expect.stringContaining("Ya están leídas")],
+  });
+  expect(urls).toHaveLength(1);
+});

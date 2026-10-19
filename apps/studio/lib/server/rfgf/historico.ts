@@ -147,6 +147,9 @@ async function prepararGrupo(
           : undefined,
         // Una categoría sin jugadores identificados no bloquea las demás.
         sql`exists (select 1 from ${schema.rfgfJugadores} r join ${schema.competiciones} c on c.id = r.competicion_id where r.jugador_id is not null and c.categoria = ${schema.rfgfGruposHistoricos.categoria})`,
+        opciones.jugadorId
+          ? sql`exists (select 1 from ${schema.rfgfJugadores} r join ${schema.competiciones} c on c.id = r.competicion_id where r.jugador_id = ${opciones.jugadorId} and c.categoria = ${schema.rfgfGruposHistoricos.categoria})`
+          : undefined,
       ),
     )
     .orderBy(
@@ -292,6 +295,7 @@ async function leerUno(
         isNull(schema.rfgfHistorico.leidoEn),
         isNotNull(schema.rfgfGruposHistoricos.codActa),
         opciones.codGrupo ? eq(schema.rfgfHistorico.codGrupo, opciones.codGrupo) : undefined,
+        opciones.jugadorId ? eq(schema.rfgfHistorico.jugadorId, opciones.jugadorId) : undefined,
         opciones.jugadoresVistos.length
           ? notInArray(
               sql<string>`${schema.rfgfHistorico.codGrupo} || ':' || ${schema.rfgfHistorico.jugadorId}`,
@@ -399,6 +403,8 @@ export async function avanzarHistorico(
 
 interface OpcionesPaso {
   codGrupo?: string;
+  /** Solo lo que falta de este jugador: los grupos de sus categorías y sus páginas. */
+  jugadorId?: string;
   gruposVistos: string[];
   jugadoresVistos: string[];
   errores: string[];
@@ -412,7 +418,12 @@ async function avanzarSinCandado(
 ): Promise<number> {
   // El descubrimiento tampoco espera a que todas las páginas de jugadores se puedan leer.
   // Se reserva su coste completo: nunca se empieza con solo una página de presupuesto.
-  let pedidas = !opciones.codGrupo && maximo >= 2 ? await descubrirGrupos(descargador, ahora) : 0;
+  // Sin peticiones: quien se identificó después de preparar un grupo también entra en él.
+  await completarJugadores(opciones.jugadorId);
+  let pedidas =
+    !opciones.codGrupo && !opciones.jugadorId && maximo >= 2
+      ? await descubrirGrupos(descargador, ahora)
+      : 0;
   while (pedidas < maximo) {
     // Preparar antes de leer: una página de jugador rota no deja esperando todos los grupos.
     const paso =
@@ -422,6 +433,144 @@ async function avanzarSinCandado(
     pedidas += paso;
   }
   return pedidas;
+}
+
+/**
+ * Apunta a los jugadores identificados en los grupos ya preparados de su categoría en los que
+ * todavía no están (se identificaron después). No pide nada a la federación.
+ */
+async function completarJugadores(jugadorId?: string): Promise<void> {
+  const { db } = await obtenerDb();
+  const faltan = await db
+    .selectDistinct({
+      jugadorId: schema.rfgfJugadores.jugadorId,
+      codigo: schema.rfgfJugadores.codigo,
+      codGrupo: schema.rfgfGruposHistoricos.codGrupo,
+    })
+    .from(schema.rfgfJugadores)
+    .innerJoin(
+      schema.competiciones,
+      eq(schema.competiciones.id, schema.rfgfJugadores.competicionId),
+    )
+    .innerJoin(
+      schema.rfgfGruposHistoricos,
+      sql`${schema.rfgfGruposHistoricos.categoria} = ${schema.competiciones.categoria}`,
+    )
+    .where(
+      and(
+        isNotNull(schema.rfgfJugadores.jugadorId),
+        jugadorId ? eq(schema.rfgfJugadores.jugadorId, jugadorId) : undefined,
+        eq(schema.rfgfGruposHistoricos.estado, "listo"),
+        sql`not exists (select 1 from ${schema.rfgfHistorico} h where h.jugador_id = ${schema.rfgfJugadores.jugadorId} and h.cod_grupo = ${schema.rfgfGruposHistoricos.codGrupo})`,
+      ),
+    );
+  // Un jugador con dos códigos (dos competiciones) entra una vez por grupo: con el primero.
+  for (const fila of faltan) {
+    await db
+      .insert(schema.rfgfHistorico)
+      .values({ jugadorId: fila.jugadorId!, codGrupo: fila.codGrupo, codigo: fila.codigo })
+      .onConflictDoNothing();
+  }
+}
+
+export interface ResumenTemporadasJugador {
+  jugadorId: string;
+  /** Páginas pedidas en esta llamada (dos como mucho). */
+  paginas: number;
+  /** Temporadas de las que se leyeron sus cifras en esta llamada. */
+  leidas: number;
+  /** Lo que aún le falta: grupos por leer y grupos de su categoría por preparar. */
+  pendientes: number;
+  avisos: string[];
+  errores: string[];
+}
+
+/** Lo que le falta a un jugador, sin pedir nada. */
+async function pendientesDeJugador(jugadorId: string): Promise<number> {
+  const { db } = await obtenerDb();
+  const [porLeer] = await db
+    .select({ n: sql<number>`count(*)` })
+    .from(schema.rfgfHistorico)
+    .where(
+      and(eq(schema.rfgfHistorico.jugadorId, jugadorId), isNull(schema.rfgfHistorico.leidoEn)),
+    );
+  const [porPreparar] = await db
+    .select({ n: sql<number>`count(*)` })
+    .from(schema.rfgfGruposHistoricos)
+    .where(
+      and(
+        eq(schema.rfgfGruposHistoricos.estado, "pendiente"),
+        sql`exists (select 1 from ${schema.rfgfJugadores} r join ${schema.competiciones} c on c.id = r.competicion_id where r.jugador_id = ${jugadorId} and c.categoria = ${schema.rfgfGruposHistoricos.categoria})`,
+      ),
+    );
+  return Number(porLeer?.n ?? 0) + Number(porPreparar?.n ?? 0);
+}
+
+/** Temporadas pasadas de un jugador ya leídas. */
+async function leidasDeJugador(jugadorId: string): Promise<number> {
+  const { db } = await obtenerDb();
+  const [fila] = await db
+    .select({ n: sql<number>`count(*)` })
+    .from(schema.rfgfHistorico)
+    .where(
+      and(eq(schema.rfgfHistorico.jugadorId, jugadorId), isNotNull(schema.rfgfHistorico.leidoEn)),
+    );
+  return Number(fila?.n ?? 0);
+}
+
+/**
+ * Adelanta las temporadas pasadas de un jugador: primero lo apunta en los grupos ya preparados
+ * de su categoría (sin peticiones), luego prepara grupos de su categoría y lee sus páginas.
+ * Dos páginas como mucho por llamada, con la misma reserva que el repaso en segundo plano: el
+ * resto lo sigue haciendo el programador a su ritmo.
+ */
+export async function traerTemporadasDeJugador(
+  jugadorId: string,
+  descargador: DescargadorRfgf,
+  ahora = new Date(),
+): Promise<ResumenTemporadasJugador> {
+  const vacio: ResumenTemporadasJugador = {
+    jugadorId,
+    paginas: 0,
+    leidas: 0,
+    pendientes: 0,
+    avisos: [],
+    errores: [],
+  };
+  const resultado = await conCandadoRfgf(async () => {
+    const { db } = await obtenerDb();
+    const [conocido] = await db
+      .select({ codigo: schema.rfgfJugadores.codigo })
+      .from(schema.rfgfJugadores)
+      .where(eq(schema.rfgfJugadores.jugadorId, jugadorId))
+      .limit(1);
+    if (!conocido)
+      return {
+        ...vacio,
+        avisos: ["La federación aún no tiene identificado a este jugador en esta temporada."],
+      };
+    const antes = await leidasDeJugador(jugadorId);
+    const opciones: OpcionesPaso = {
+      jugadorId,
+      gruposVistos: [],
+      jugadoresVistos: [],
+      errores: [],
+    };
+    const paginas = await avanzarSinCandado(descargador, ahora, 2, opciones);
+    const pendientes = await pendientesDeJugador(jugadorId);
+    return {
+      ...vacio,
+      paginas,
+      leidas: (await leidasDeJugador(jugadorId)) - antes,
+      pendientes,
+      avisos:
+        paginas || pendientes
+          ? []
+          : ["Ya están leídas todas las temporadas pasadas que la federación tiene de él."],
+      errores: opciones.errores,
+    };
+  });
+  return resultado ?? { ...vacio, avisos: [AVISO_RFGF_OCUPADA] };
 }
 
 /** Estado local, también de los grupos sin jugadores o que no tienen acta de referencia. */
