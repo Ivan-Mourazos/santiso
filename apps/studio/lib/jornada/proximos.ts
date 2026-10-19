@@ -33,7 +33,7 @@ export function huecoProximo(categoria: string): NextMatch {
     rival: "",
     rivalEscudoUrl: "",
     fecha: "",
-    hora: "18:00",
+    hora: "",
     categoria,
     lugar: "",
     santisoSide: "right",

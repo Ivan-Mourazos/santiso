@@ -61,7 +61,7 @@ export const FormMultiusos: React.FC<Props> = ({
         <Textarea
           label="Texto"
           rows={4}
-          placeholder="Escribe o texto do comunicado ou aviso…"
+          placeholder="Pasamos á seguinte fase do torneo. Parabéns a todo o equipo!"
           value={form.multiusosTexto}
           onChange={(e) => set("multiusosTexto", e.target.value)}
         />

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { SelectorMatch } from "@/components/admin/cartel/Common";
-import { elegirProximos, porJugarDeCategoria, proximoDeCategoria } from "./proximos";
+import {
+  elegirProximos,
+  huecoProximo,
+  porJugarDeCategoria,
+  proximoDeCategoria,
+} from "./proximos";
 
 const SANTISO = { nombre: "U.D. Santiso F.C.", escudo_url: "/media/s.webp" };
 const SOLAINA = { nombre: "U.D. Santiso F.C. Solaina", escudo_url: "/media/s.webp" };
@@ -159,5 +164,16 @@ describe("porJugarDeCategoria y proximoDeCategoria", () => {
     expect(proximoDeCategoria(lista, "Senior", HOY)?.id).toBe("cerca");
     expect(proximoDeCategoria(lista, "Veteranos", HOY)?.id).toBe("vet");
     expect(proximoDeCategoria([], "Senior", HOY)).toBeNull();
+  });
+});
+
+describe("sin datos inventados", () => {
+  it("un partido sin hora y un hueco vacío no ponen las 18:00", () => {
+    expect(huecoProximo("Senior").hora).toBe("");
+    const [senior] = elegirProximos(
+      [partido({ id: "s", categoria: "Senior", fecha: "2026-09-27", equipo_local: SANTISO })],
+      HOY,
+    );
+    expect(senior).toMatchObject({ fecha: "2026-09-27", hora: "" });
   });
 });
