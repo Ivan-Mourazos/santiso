@@ -160,3 +160,22 @@
     flex: 0 1 auto;
   }
 }
+
+/* Cerrar: círculo de 44 px sin borde, con la X dibujada. */
+.cerrar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ui-control);
+  color: var(--ui-text);
+  cursor: pointer;
+}
+.cerrar:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}

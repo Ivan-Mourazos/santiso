@@ -4,7 +4,7 @@ export const SECCIONES = [
   { id: "calendario", label: "Calendario", grupo: "Competición" },
   { id: "clasificacion", label: "Clasificación", grupo: "Competición" },
   { id: "estadisticas", label: "Estadísticas", grupo: "Competición" },
-  { id: "liga", label: "Goleadores y tarjetas", grupo: "Competición" },
+  { id: "liga", label: "Goleadores", grupo: "Competición" },
   { id: "federacion", label: "Federación", grupo: "Competición", admin: true },
   { id: "archivo", label: "Archivo", grupo: "Competición" },
   // Fichas: se abren tocando un equipo o un jugador, no desde el menú.

@@ -250,9 +250,9 @@ for (const ancho of [360, 390]) {
     await page.setViewportSize({ width: ancho, height: 844 });
     await abrir(page, "federacion");
     const jornadas = page.getByRole("region", { name: "Jornadas", exact: true });
-    await expect(jornadas.locator("details").first()).toBeVisible({ timeout: 30000 });
+    await expect(jornadas.locator("details[data-estado]").first()).toBeVisible({ timeout: 30000 });
     // Se abre la primera jornada para ver sus partidos. Ningún «Traer»: saldría a la red.
-    await jornadas.locator("details > summary").first().click();
+    await jornadas.locator("details[data-estado] > summary").first().click();
     await page.locator("main details:not([open]) > summary").filter({ hasText: "Enlaces" }).click();
     for (const control of await page.locator("main input:visible, main button:visible").all()) {
       const caja = (await control.boundingBox())!;

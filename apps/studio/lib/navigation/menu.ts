@@ -95,8 +95,8 @@ export const MENU: readonly PestanaMenu[] = [
           { seccion: "clasificacion", label: "Clasificación", detalle: "La tabla", icono: I.tabla },
           {
             seccion: "liga",
-            label: "Goleadores y tarjetas",
-            detalle: "De la liga",
+            label: "Goleadores",
+            detalle: "Y tarjetas",
             icono: I.balon,
           },
           {

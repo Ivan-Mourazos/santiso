@@ -28,12 +28,38 @@
   margin: 0;
   font-size: var(--ui-text-body);
 }
+/* Cada bloque, plegable en una tarjeta de cristal: la página entera se recorre de un vistazo. */
 .bloque {
   display: grid;
   gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--ui-border);
+  padding: 4px 14px;
+  border: 1px solid var(--ui-line);
   border-radius: var(--ui-radius);
+  background: var(--ui-panel-face);
+  box-shadow: var(--ui-panel-shadow);
+}
+.bloque[open] {
+  padding-bottom: 14px;
+}
+.bloque > summary {
+  list-style: none;
+  justify-content: space-between;
+}
+.bloque > summary::-webkit-details-marker {
+  display: none;
+}
+.bloque > summary::after {
+  content: "";
+  display: inline-block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: var(--ui-accent);
+  mask: var(--icono-chevron) center / contain no-repeat;
+  transition: transform var(--ui-duration) var(--ui-ease);
+}
+.bloque[open] > summary::after {
+  transform: rotate(180deg);
 }
 .bloque h3,
 .bloque > summary {

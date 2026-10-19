@@ -6,8 +6,10 @@
 .list {
   display: flex;
   gap: var(--ui-space-1);
-  flex-wrap: wrap;
-  border-bottom: 1px solid var(--ui-border);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--ui-line);
 }
 .tab {
   flex: 0 1 auto;
@@ -16,16 +18,18 @@
   overflow-wrap: anywhere;
   padding: var(--ui-space-3) var(--ui-space-4);
   border: 0;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
   background: transparent;
   color: var(--ui-muted);
   font: inherit;
+  font-weight: 800;
+  white-space: nowrap;
   cursor: pointer;
 }
 .tab[aria-selected="true"] {
+  /* Como las pestañas de Liga: raya amarilla debajo, sin caja. */
   border-bottom-color: var(--ui-accent);
   color: var(--ui-text);
-  background: var(--ui-raised);
 }
 .tab:disabled {
   opacity: 0.55;

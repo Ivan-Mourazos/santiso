@@ -178,7 +178,10 @@ export default function FichaEquipoPantalla({ equipoId }: { equipoId: string | n
                   {j.dorsal !== null ? `${j.dorsal} · ` : ""}
                   {j.persona}
                   <small>
-                    {j.partidos} {j.partidos === 1 ? "partido" : "partidos"}
+                    {/* Sin alineaciones leídas solo se sabe de sus goles y tarjetas. */}
+                    {j.partidos
+                      ? `${j.partidos} ${j.partidos === 1 ? "partido" : "partidos"}`
+                      : "En goles y tarjetas"}
                     {j.titular ? ` · ${j.titular} de titular` : ""}
                     {j.amarillas ? ` · ${j.amarillas} amarillas` : ""}
                     {j.rojas ? ` · ${j.rojas} rojas` : ""}
@@ -228,7 +231,8 @@ export default function FichaEquipoPantalla({ equipoId }: { equipoId: string | n
                 {ficha.pendientes[0].rival} · {fechaCorta(ficha.pendientes[0].fecha)}
               </p>
             )}
-            {goleadores.length > 0 && (
+            {/* Con sus jugadores ya listados arriba, los goleadores no se repiten. */}
+            {goleadores.length > 0 && f.jugadoresVistos.length === 0 && (
               <ul className={styles.lista} aria-label="Goleadores">
                 {goleadores.map((g) => (
                   <li key={g.persona}>

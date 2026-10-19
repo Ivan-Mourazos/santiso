@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   SECCIONES,
   cambiarParametros,
@@ -100,7 +100,15 @@ export function StudioShell({
   // La hoja abierta: la de la pestaña tocada, o ninguna.
   const [hoja, setHoja] = useState<IdPestana | null>(null);
   const pestanaActiva = pestanaDe(section?.id);
-  const subnavLiga = pestanaActiva === "liga";
+  // Solo en sus propias pantallas: en una ficha no quedaría ninguna marcada.
+  const subnavLiga = SUBNAV_LIGA.some((item) => item.id === section?.id);
+  // A 360 px la pestaña marcada puede quedar fuera: se desplaza hasta verla.
+  const subnavRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    subnavRef.current
+      ?.querySelector('[aria-current="page"]')
+      ?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [section?.id]);
   const plantilla =
     section?.id === "carteles"
       ? (TEMPLATES.find((t) => t.id === params.get("plantilla")) ?? null)
@@ -260,7 +268,7 @@ export function StudioShell({
           ) : (
             <>
               {subnavLiga && (
-                <nav aria-label="Liga" className={styles.subnav}>
+                <nav aria-label="Liga" className={styles.subnav} ref={subnavRef}>
                   {SUBNAV_LIGA.map((item) => (
                     <Link
                       key={item.id}

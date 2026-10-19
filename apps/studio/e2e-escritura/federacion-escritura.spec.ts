@@ -22,13 +22,13 @@ test("federación: jornadas y partidos de cada competición, sin traer nada sin 
   await expect(page.getByText(/Sin enlazar con la federación/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Traer de la federación" })).toHaveCount(0);
   const jornadas = page.getByRole("region", { name: "Jornadas", exact: true });
-  const primera = jornadas.locator("details").first();
+  const primera = jornadas.locator("details[data-estado]").first();
   await expect(primera).toContainText("J1");
   await primera.locator("summary").click();
   await expect(primera.getByText("Norte Convocatoria – Sur Convocatoria")).toBeVisible();
   await expect(primera.getByRole("button", { name: /^Traer/ })).toHaveCount(0);
   // La jornada 2 ya se jugó (1–1) y no tiene acta de la federación.
-  const segunda = jornadas.locator("details").nth(1);
+  const segunda = jornadas.locator("details[data-estado]").nth(1);
   await segunda.locator("summary").click();
   await expect(segunda.getByText("1–1", { exact: true })).toBeVisible();
   await expect(segunda.getByText("Sin acta", { exact: true })).toBeVisible();
@@ -44,6 +44,8 @@ test("federación: partidos de temporadas pasadas, archivados y a pedir", async 
   await page.goto("/admin/federacion?categoria=Senior");
   const pasadas = page.getByRole("region", { name: "Temporadas pasadas" });
   await expect(pasadas).toBeVisible({ timeout: 30000 });
+  // Plegado por defecto: se abre para ver las temporadas.
+  await pasadas.locator("summary").first().click();
   // La de 2023-24 ya está traída: se despliega sin salir a la red.
   await expect(pasadas.getByText("Partidos del Santiso: Terminado")).toBeVisible();
   await pasadas.locator("summary").filter({ hasText: "Ver partidos" }).click();

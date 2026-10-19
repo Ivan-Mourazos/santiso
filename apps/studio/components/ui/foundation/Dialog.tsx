@@ -108,12 +108,23 @@ export function Dialog({
         </h2>
         <button
           type="button"
-          className={styles.button}
+          className={styles.cerrar}
           disabled={pending}
           onClick={onClose}
           aria-label={closeLabel}
         >
-          <span aria-hidden="true">×</span>
+          <svg
+            aria-hidden="true"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+          >
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
         </button>
       </div>
       {description ? (
