@@ -14,6 +14,7 @@ import {
 } from "@/lib/navigation/contexto";
 import {
   gruposVisibles,
+  MENU,
   pestanaDe,
   pestanasVisibles,
   type EntradaMenu,
@@ -231,7 +232,10 @@ export function StudioShell({
               </button>
             )}
             <div>
-              <p className={styles.eyebrow}>{section?.grupo ?? "Studio"}</p>
+              {/* El antetítulo es la pestaña del menú donde vive la pantalla. */}
+              <p className={styles.eyebrow}>
+                {MENU.find((p) => p.id === pestanaActiva)?.label ?? "Studio"}
+              </p>
               {/* En Carteles, el nombre del cartel abierto; el catálogo es «Carteles». */}
               <h1>{tituloCartel ?? section?.label ?? "Panel"}</h1>
             </div>
