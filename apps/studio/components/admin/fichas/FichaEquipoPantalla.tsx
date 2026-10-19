@@ -168,6 +168,33 @@ export default function FichaEquipoPantalla({ equipoId }: { equipoId: string | n
         </section>
       )}
 
+      {f.jugadoresVistos.length > 0 && (
+        <section className={styles.bloque} aria-label="Jugadores vistos en actas">
+          <h3>Sus jugadores esta temporada</h3>
+          <ul className={styles.lista}>
+            {f.jugadoresVistos.map((j) => (
+              <li key={j.persona}>
+                <span>
+                  {j.dorsal !== null ? `${j.dorsal} · ` : ""}
+                  {j.persona}
+                  <small>
+                    {j.partidos} {j.partidos === 1 ? "partido" : "partidos"}
+                    {j.titular ? ` · ${j.titular} de titular` : ""}
+                    {j.amarillas ? ` · ${j.amarillas} amarillas` : ""}
+                    {j.rojas ? ` · ${j.rojas} rojas` : ""}
+                  </small>
+                </span>
+                {j.goles > 0 && (
+                  <span className={styles.marcador} aria-label={`${j.goles} goles`}>
+                    {j.goles}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {f.temporada.map(({ competicionId, competicion, ficha }) => {
         const ultimos = ficha.jugados.slice(0, 5);
         const goleadores = ficha.goleadores.slice(0, 5);

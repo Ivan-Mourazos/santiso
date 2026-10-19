@@ -478,3 +478,62 @@
     font-size: var(--ui-text-base);
   }
 }
+/* Plantilla frente a las actas: aviso amarillo de quién juega sin estar apuntado. */
+.frenteActas {
+  display: grid;
+  gap: var(--ui-space-2);
+  margin-bottom: var(--ui-space-4);
+}
+.frenteAviso {
+  display: grid;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-4);
+  border: 1px solid var(--ui-accent);
+  border-radius: var(--ui-radius);
+  background: var(--ui-accent-soft);
+}
+.frenteAviso h4 {
+  margin: 0;
+  font-size: var(--ui-text-base);
+}
+.frenteAviso ul {
+  display: grid;
+  gap: var(--ui-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.frenteAviso li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+}
+.frenteAviso li > span {
+  display: grid;
+  min-width: 0;
+}
+.frenteAviso small {
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.frenteSinActas {
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+}
+.frenteSinActas > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--ui-space-4);
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+.frenteSinActas > p {
+  margin: 0;
+  padding: 0 var(--ui-space-4) var(--ui-space-3);
+  font-size: var(--ui-text-sm);
+}

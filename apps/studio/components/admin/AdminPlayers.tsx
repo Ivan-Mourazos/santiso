@@ -22,6 +22,7 @@ import {
 } from "@/lib/server/acciones/jugadores";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import FichaJugador from "./estadisticas/FichaJugador";
+import PlantillaFrenteActas from "./plantilla/PlantillaFrenteActas";
 import BarraTemporada from "./plantilla/BarraTemporada";
 import EditorJugador from "./plantilla/EditorJugador";
 import IncorporarDeTemporada, { type Elegido } from "./plantilla/IncorporarDeTemporada";
@@ -250,18 +251,18 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
             {masFiltros ? "Menos filtros" : "Más filtros"}
           </button>
           <div className={styles.filtroExtra}>
-          <Select
-            label="Posición"
-            value={filtro.posicion}
-            onChange={(e) => setFiltro((f) => ({ ...f, posicion: e.target.value }))}
-          >
-            <option value="">Todas</option>
-            {POSICIONES.map((p) => (
-              <option key={p} value={p}>
-                {ETIQUETAS_POSICION[p]}
-              </option>
-            ))}
-          </Select>
+            <Select
+              label="Posición"
+              value={filtro.posicion}
+              onChange={(e) => setFiltro((f) => ({ ...f, posicion: e.target.value }))}
+            >
+              <option value="">Todas</option>
+              {POSICIONES.map((p) => (
+                <option key={p} value={p}>
+                  {ETIQUETAS_POSICION[p]}
+                </option>
+              ))}
+            </Select>
           </div>
           <label className={`${styles.casilla} ${styles.filtroExtra}`}>
             <input
@@ -383,6 +384,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
           </div>
         )}
       </div>
+      <PlantillaFrenteActas categoria={categoria} onAnadido={() => void fetchJugadores()} />
 
       {contenido}
 
