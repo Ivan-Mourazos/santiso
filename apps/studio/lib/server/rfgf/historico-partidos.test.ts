@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { schema as s, type ConexionDb } from "@santiso/db";
 import { crearDbPrueba } from "@santiso/db/testing";
-import { eq } from "drizzle-orm";
-import { eventosDeFicha } from "@/lib/liga/eventos";
+import { eq, sql } from "drizzle-orm";
+import { alineacionesDeFicha, eventosDeFicha } from "@/lib/liga/eventos";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { Calendario, Ficha } from "@santiso/actas";
 import type { DescargadorRfgf } from "./descargador";
@@ -59,14 +59,12 @@ beforeEach(async () => {
     codEquipo: "12",
     estado: "sin_acta",
   });
-  await conexion.db
-    .insert(s.equipos)
-    .values({
-      nombre: fichas[0]!.local.nombre,
-      clave: "equipo local",
-      categoria: "Senior",
-      esPropio: true,
-    });
+  await conexion.db.insert(s.equipos).values({
+    nombre: fichas[0]!.local.nombre,
+    clave: "equipo local",
+    categoria: "Senior",
+    esPropio: true,
+  });
   // Cualquier acceso real accidental hace fallar la prueba, incluida una lectura de fixture mal resuelta.
   vi.stubGlobal(
     "fetch",
@@ -163,6 +161,21 @@ it("guarda resultado y eventos reales de ambos lados, ordenados y sin calendario
         tecnico,
       })),
     ).toEqual(eventosDeFicha(f));
+    const alineados = await conexion.db
+      .select()
+      .from(s.rfgfHistoricoAlineaciones)
+      .where(eq(s.rfgfHistoricoAlineaciones.partidoId, p.id))
+      .orderBy(sql`rowid`);
+    expect(
+      alineados.map(({ lado, persona, personaClave, dorsal, titular }) => ({
+        lado,
+        persona,
+        personaClave,
+        dorsal,
+        titular,
+      })),
+    ).toEqual(alineacionesDeFicha(f));
+    expect(alineados.length).toBeGreaterThanOrEqual(22);
   }
   for (const tabla of [s.partidos, s.jornadas, s.competiciones, s.ligaEventos, s.jugadores]) {
     expect(await conexion.db.select().from(tabla)).toEqual([]);

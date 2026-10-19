@@ -19,7 +19,7 @@ import {
   type GrupoRfgf,
 } from "@/lib/rfgf/enlace";
 import { obtenerDb } from "@/lib/server/db";
-import { eventosDeFicha } from "@/lib/liga/eventos";
+import { alineacionesDeFicha, eventosDeFicha } from "@/lib/liga/eventos";
 import type { DescargadorRfgf } from "./descargador";
 
 type Grupo = typeof schema.rfgfGruposHistoricos.$inferSelect;
@@ -242,11 +242,16 @@ async function leerPartido(p: Partido, grupo: Grupo, descargador: DescargadorRfg
         return;
       }
       const eventos = eventosDeFicha(ficha).map((evento) => ({ ...evento, partidoId: p.id }));
+      const alineados = alineacionesDeFicha(ficha).map((a) => ({ ...a, partidoId: p.id }));
       await db.transaction(async (tx) => {
         await tx
           .delete(schema.rfgfHistoricoEventos)
           .where(eq(schema.rfgfHistoricoEventos.partidoId, p.id));
         if (eventos.length) await tx.insert(schema.rfgfHistoricoEventos).values(eventos);
+        await tx
+          .delete(schema.rfgfHistoricoAlineaciones)
+          .where(eq(schema.rfgfHistoricoAlineaciones.partidoId, p.id));
+        if (alineados.length) await tx.insert(schema.rfgfHistoricoAlineaciones).values(alineados);
         await tx
           .update(tabla)
           .set({

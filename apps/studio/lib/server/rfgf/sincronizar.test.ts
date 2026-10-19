@@ -335,6 +335,10 @@ it("del PDF de jornada salen los marcadores; el acta se pide una vez para goles 
   expect(new Set(eventos.map((e) => e.partidoId))).toEqual(new Set([partidoId]));
   const equipos = new Set((await db.select().from(s.equipos)).map((e) => e.id));
   expect(eventos.every((e) => equipos.has(e.equipoId) && e.personaClave)).toBe(true);
+  // Y quién jugó, de los dos equipos: para saber dónde se ha visto a cada jugador.
+  const alineados = await db.select().from(s.ligaAlineaciones);
+  expect(new Set(alineados.map((a) => a.equipoId)).size).toBe(2);
+  expect(alineados.some((a) => a.titular) && alineados.some((a) => !a.titular)).toBe(true);
   expect(await db.select().from(s.rfgfActas)).toMatchObject([
     { codActa: "901", estado: "resultado", eventos: true },
   ]);

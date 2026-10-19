@@ -33,7 +33,7 @@ import {
   tocaMirarHorarios,
 } from "@/lib/rfgf/horarios";
 import { partidosDeJornada } from "@/lib/rfgf/jornada";
-import { eventosDeFicha } from "@/lib/liga/eventos";
+import { alineacionesDeFicha, eventosDeFicha } from "@/lib/liga/eventos";
 import {
   jornadasSinEventos,
   jornadasPendientes,
@@ -183,10 +183,7 @@ export async function tratarJornada(
     // federación lo corrige después, manda lo suyo: ya se tiene el PDF y no cuesta nada.
     const arbitro = enPdf.arbitro ? nombreDeArbitro(enPdf.arbitro) : null;
     if (arbitro && arbitro !== partido.arbitro) {
-      await db
-        .update(schema.partidos)
-        .set({ arbitro })
-        .where(eq(schema.partidos.id, partido.id));
+      await db.update(schema.partidos).set({ arbitro }).where(eq(schema.partidos.id, partido.id));
     }
     if (partido.conMarcador && !actualizarResultados) continue;
 
@@ -254,7 +251,10 @@ export async function tratarJornada(
   return cambios;
 }
 
-/** Apunta los goles y las tarjetas de un acta en las tablas de la liga, sustituyendo los que hubiera. */
+/**
+ * Apunta los goles, las tarjetas y las alineaciones de un acta en las tablas de la liga,
+ * sustituyendo lo que hubiera.
+ */
 async function guardarEventosDeLiga(partido: PartidoConEquipos, ficha: Ficha) {
   const { db } = await obtenerDb();
   const filas = eventosDeFicha(ficha).map(({ lado, ...evento }) => ({
@@ -262,9 +262,18 @@ async function guardarEventosDeLiga(partido: PartidoConEquipos, ficha: Ficha) {
     equipoId: partido.equipos[lado],
     ...evento,
   }));
+  const alineados = alineacionesDeFicha(ficha).map(({ lado, ...alineado }) => ({
+    partidoId: partido.id,
+    equipoId: partido.equipos[lado],
+    ...alineado,
+  }));
   await db.transaction(async (tx) => {
     await tx.delete(schema.ligaEventos).where(eq(schema.ligaEventos.partidoId, partido.id));
     if (filas.length) await tx.insert(schema.ligaEventos).values(filas);
+    await tx
+      .delete(schema.ligaAlineaciones)
+      .where(eq(schema.ligaAlineaciones.partidoId, partido.id));
+    if (alineados.length) await tx.insert(schema.ligaAlineaciones).values(alineados);
   });
 }
 

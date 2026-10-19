@@ -58,3 +58,38 @@ export function eventosDeFicha(ficha: Ficha): EventoDeActa[] {
   }
   return eventos;
 }
+
+/** Un jugador de la alineación de un acta, listo para guardarse en `liga_alineaciones`. */
+export interface AlineadoDeActa {
+  lado: Lado;
+  persona: string;
+  personaClave: string;
+  dorsal: number | null;
+  titular: boolean;
+}
+
+/**
+ * Titulares y suplentes de los dos equipos de un acta, con las mismas reglas de nombre que los
+ * goles y las tarjetas. Una persona repetida en el mismo lado cuenta una vez.
+ */
+export function alineacionesDeFicha(ficha: Ficha): AlineadoDeActa[] {
+  const salida: AlineadoDeActa[] = [];
+  for (const lado of ["local", "visitante"] as const) {
+    const equipo = ficha[lado];
+    for (const [titular, jugadores] of [
+      [true, equipo.titulares],
+      [false, equipo.suplentes],
+    ] as const) {
+      for (const jugador of jugadores) {
+        const persona = personaDeActa(jugador.nombre);
+        const personaClave = claveNombre(persona);
+        if (!personaClave) continue;
+        if (salida.some((a) => a.lado === lado && a.personaClave === personaClave)) continue;
+        const dorsal =
+          Number.isInteger(jugador.dorsal) && jugador.dorsal >= 0 ? jugador.dorsal : null;
+        salida.push({ lado, persona, personaClave, dorsal, titular });
+      }
+    }
+  }
+  return salida;
+}
