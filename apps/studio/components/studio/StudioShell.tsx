@@ -40,7 +40,10 @@ const SUBNAV_LIGA = [
   { id: "clasificacion", label: "Clasificación" },
   { id: "liga", label: "Goleadores" },
   { id: "estadisticas", label: "Estadísticas" },
+  { id: "archivo", label: "Archivo" },
 ] as const;
+/** Lo que la barra de Liga lleva de una pantalla a otra: el contexto, no lo propio de cada una. */
+const CONTEXTO_LIGA = ["categoria", "temporada", "competicion"];
 
 /** Marca de sesión: la app ya arrancó en esta pestaña. */
 const ARRANQUE = "santiso_arrancada";
@@ -102,6 +105,9 @@ export function StudioShell({
   const [hoja, setHoja] = useState<IdPestana | null>(null);
   const pestanaActiva = pestanaDe(section?.id);
   const subnavLiga = pestanaActiva === "liga";
+  const contextoLiga = new URLSearchParams(
+    [...params].filter(([clave]) => CONTEXTO_LIGA.includes(clave)),
+  );
   const plantilla =
     section?.id === "carteles"
       ? (TEMPLATES.find((t) => t.id === params.get("plantilla")) ?? null)
@@ -268,12 +274,12 @@ export function StudioShell({
                   {SUBNAV_LIGA.map((item) => (
                     <Link
                       key={item.id}
-                      href={rutaSeccion(item.id, params)}
+                      href={rutaSeccion(item.id, contextoLiga)}
                       aria-current={item.id === section?.id ? "page" : undefined}
                       onNavigate={(event) => {
                         event.preventDefault();
                         if (item.id !== section?.id)
-                          navigate(rutaSeccion(item.id, params), "nav-tab");
+                          navigate(rutaSeccion(item.id, contextoLiga), "nav-tab");
                       }}
                     >
                       {item.label}

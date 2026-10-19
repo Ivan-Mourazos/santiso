@@ -118,3 +118,19 @@ test("partidos: nuestro partido jugado lleva el acta y se abre por enlace", asyn
   await abierta.getByRole("button", { name: "Cerrar partido" }).click();
   await expect(abierta).toBeHidden();
 });
+
+/** La barra de Liga lleva a Archivo y solo arrastra el contexto (categoría), no `j=` ni `id=`. */
+test("partidos: la barra de Liga incluye Archivo y no arrastra parámetros ajenos", async ({
+  page,
+}) => {
+  await page.goto("/admin/partidos?categoria=Veteranos&j=2");
+  const liga = page.getByRole("navigation", { name: "Liga" });
+  await expect(liga.getByRole("link", { name: "Archivo" })).toHaveAttribute(
+    "href",
+    "/admin/archivo?categoria=Veteranos",
+  );
+  await expect(liga.getByRole("link", { name: "Clasificación" })).toHaveAttribute(
+    "href",
+    "/admin/clasificacion?categoria=Veteranos",
+  );
+});
