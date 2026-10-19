@@ -4,13 +4,13 @@
  */
 
 import React, { useState } from "react";
-import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select } from "@/components/ui/foundation/Fields";
 import { formatLiteralMatchDate } from "@/lib/match-date-time";
 import { competitionsForCategory, type CompetenciaRow } from "@/lib/competition";
-import { CategorySelector, type SelectorMatch } from "./Common";
+import { porJugarDeCategoria } from "@/lib/jornada/proximos";
+import { CategorySelector, ConPartidoElegido, LadoSantiso, type SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
-import { Flecha, PlegableMovil } from "./PlegableMovil";
+import { PlegableMovil } from "./PlegableMovil";
 import type { FormState } from "./types";
 
 interface Props {
@@ -111,9 +111,6 @@ export const RivalSelector = ({
   );
 };
 
-/** Fecha del partido en milisegundos; `NaN` si no la tiene o no se entiende. */
-const tiempoDe = (m: SelectorMatch) => (m.fecha ? new Date(m.fecha).getTime() : Number.NaN);
-
 export const FormPartido: React.FC<Props & { tipo: string }> = ({
   form,
   set,
@@ -126,57 +123,10 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
   competiciones,
   tipo,
 }) => {
-  const [autoFillMessage, setAutoFillMessage] = useState("");
-  /** El partido elegido en el desplegable; vacío si se cargó «el próximo» o nada. */
-  const [elegido, setElegido] = useState("");
-
-  function handleLoadNextMatch() {
-    setAutoFillMessage("");
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const nextMatch = dbMatches
-      .filter((match) => {
-        if (!match.fecha) return false;
-        if (match.categoria !== form.categoria) return false;
-        if (
-          ["finalizado", "cancelado", "aplazado"].includes(
-            (match.estado || "").toLowerCase().trim(),
-          )
-        )
-          return false;
-
-        const localName = match.equipo_local?.nombre?.toLowerCase() || "";
-        const visitorName = match.equipo_visitante?.nombre?.toLowerCase() || "";
-        if (!localName.includes("santiso") && !visitorName.includes("santiso")) return false;
-
-        const cuando = tiempoDe(match);
-        if (Number.isNaN(cuando)) return false;
-        return cuando >= today.getTime();
-      })
-      .sort((a, b) => tiempoDe(a) - tiempoDe(b))[0];
-
-    if (nextMatch) {
-      loadMatchFromDb(nextMatch);
-      setAutoFillMessage("Partido cargado.");
-      return;
-    }
-
-    setAutoFillMessage("No hay ningún partido pendiente para esa categoría.");
-  }
-
+  // Un solo «hoy» por montaje: la lista no cambia mientras se mira.
+  const [hoy] = useState(() => new Date());
   /** Los partidos del Santiso de la categoría que aún no se han jugado, del más cercano al más lejano. */
-  const pendientes = dbMatches
-    .filter((match) => {
-      if (match.categoria !== form.categoria) return false;
-      if (["finalizado", "cancelado"].includes((match.estado || "").toLowerCase().trim())) {
-        return false;
-      }
-      const local = match.equipo_local?.nombre?.toLowerCase() || "";
-      const visitante = match.equipo_visitante?.nombre?.toLowerCase() || "";
-      return local.includes("santiso") || visitante.includes("santiso");
-    })
-    .sort((a, b) => (tiempoDe(a) || Infinity) - (tiempoDe(b) || Infinity));
+  const pendientes = porJugarDeCategoria(dbMatches, form.categoria, hoy);
 
   function etiquetaDe(match: SelectorMatch) {
     const enCasa = (match.equipo_local?.nombre?.toLowerCase() || "").includes("santiso");
@@ -285,38 +235,26 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
     );
   }
 
-  // Cartel de partido: categoría y partido, y el cartel sale relleno. Los campos sueltos quedan
-  // plegados para retocar o para un amistoso que no está en el calendario.
+  // Cartel de partido: el próximo ya viene cargado (o el del enlace) con su tarjeta arriba. Lo
+  // demás queda plegado: otro partido, la categoría y los campos sueltos para retocar o para un
+  // amistoso que no está en el calendario.
   return (
-    <>
-      <CategorySelector
-        value={form.categoria}
-        onChange={(v: string) => {
-          set("categoria", v);
-          setElegido("");
-          setAutoFillMessage("");
-        }}
-      />
-      <div className={styles.desdeLiga}>
-        <Button
-          onClick={() => {
-            setElegido("");
-            handleLoadNextMatch();
-          }}
-        >
-          Cargar próximo partido
-        </Button>
-        {pendientes.length > 0 && (
+    <ConPartidoElegido
+      partidoId={form.partido_id}
+      dbMatches={dbMatches}
+      categoria={form.categoria}
+      onSelect={loadMatchFromDb}
+      porJugar
+    >
+      <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
+      {pendientes.length > 0 && (
+        <div className={styles.desdeLiga}>
           <Select
-            label="O elige otro partido"
-            value={elegido}
+            label="Otro partido por jugar"
+            value={pendientes.some((m) => m.id === form.partido_id) ? form.partido_id : ""}
             onChange={(e) => {
               const match = pendientes.find((m) => m.id === e.target.value);
-              setElegido(e.target.value);
-              if (match) {
-                loadMatchFromDb(match);
-                setAutoFillMessage("Partido cargado.");
-              }
+              if (match) loadMatchFromDb(match);
             }}
           >
             <option value="">Elegir…</option>
@@ -326,20 +264,14 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
               </option>
             ))}
           </Select>
-        )}
-        {autoFillMessage && (
-          <p role="status" className={styles.aviso}>
-            {autoFillMessage}
-          </p>
-        )}
-      </div>
-      <details className={styles.manual}>
-        <summary>
-          <span>Editar datos a mano</span>
-          <Flecha />
-        </summary>
-        <div className={styles.manualContenido}>{campos_}</div>
-      </details>
-    </>
+        </div>
+      )}
+      {campos_}
+      <LadoSantiso
+        partidoId={form.partido_id}
+        value={form.santisoSide}
+        onChange={(v) => set("santisoSide", v)}
+      />
+    </ConPartidoElegido>
   );
 };

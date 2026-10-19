@@ -206,3 +206,12 @@
   }
 }
 
+/* Partido ya elegido desde su tarjeta: contexto, cruce y la opción de cambiarlo. */
+.partidoFijado {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+}
+.partidoFijado > span {
+  font-size: var(--ui-text-sm);
+}

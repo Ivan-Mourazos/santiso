@@ -41,10 +41,12 @@ test("la pantalla monta el cartel y las acciones de cada plantilla", async ({ pa
 test("cambiar de plantilla cambia el formulario y el cartel", async ({ page }) => {
   await elegir(page, "Cartel de partido", "partido");
 
-  // Partido: se elige categoría y partido; los campos sueltos están plegados para retocar.
-  await expect(page.getByRole("button", { name: "Cargar próximo partido" })).toBeVisible();
+  // Partido: el próximo ya viene cargado con su tarjeta; los campos sueltos, plegados para retocar.
+  await expect(page.getByRole("region", { name: "Partido del cartel" })).toBeVisible({
+    timeout: 20000,
+  });
   await expect(page.getByLabel("Rival", { exact: true })).toBeHidden();
-  await page.locator("summary").filter({ hasText: "Editar datos a mano" }).click();
+  await page.locator("summary").filter({ hasText: "Cambiar partido o editar datos" }).click();
   await expect(page.getByLabel("Rival", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Fecha", { exact: true })).toBeVisible();
 
@@ -150,4 +152,19 @@ test("las siete plantillas tienen su cartel en el Estudio", async ({ page }) => 
       timeout: 30000,
     });
   }
+});
+
+test("la categoría del enlace manda al abrir el cartel", async ({ page }) => {
+  await page.goto("/admin/carteles?plantilla=partido&categoria=Veteranos");
+  await expect(page.getByLabel("Categoría", { exact: true })).toHaveValue("Veteranos", {
+    timeout: 20000,
+  });
+  await page.goto("/admin/carteles?plantilla=resumo&categoria=Veteranos");
+  // Sin partido en el enlace, la lista de jugados empieza por esa categoría.
+  const lista = page.getByRole("group", { name: "Categoría" });
+  await expect(lista.getByRole("button", { name: "Veteranos" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+    { timeout: 20000 },
+  );
 });

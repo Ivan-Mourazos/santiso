@@ -18,6 +18,7 @@ const partido = (cambios: Partial<PartidoDeLaSemana> = {}): PartidoDeLaSemana =>
   golesRival: null,
   campo: null,
   arbitro: null,
+  federacion: false,
   cambioFederacion: null,
   avisos: [],
   acta: null,
@@ -89,7 +90,7 @@ describe("mesa de trabajo", () => {
     const p = partido({ golesSantiso: 2, golesRival: 1, acta });
     const { pasos } = progresoPartido(p, ahora);
     expect(pasos.map((x) => x.titulo)).toEqual([
-      "Resultado",
+      "Marcador",
       "Acta",
       "Cartel de resultado",
       "Cronoloxía",
@@ -110,6 +111,19 @@ describe("mesa de trabajo", () => {
     expect(trasPartido(partido(), "2026-10-18T17:01")).toBe(false);
     expect(trasPartido(partido(), "2026-10-18T19:00")).toBe(true);
     expect(trasPartido(partido({ estado: "aplazado" }), "2026-10-19T19:00")).toBe(false);
+  });
+  it("con la federación, sin marcador se espera a que lo traiga: no se manda a Calendario", () => {
+    const { pasos, principal } = progresoPartido(
+      partido({ federacion: true }),
+      "2026-10-18T20:00",
+    );
+    expect(principal).toMatchObject({ titulo: "Esperando a la federación", traerActa: true });
+    expect(principal.href).not.toContain("/admin/calendario");
+    expect(pasos[0]).toMatchObject({ titulo: "Marcador", estado: "Lo trae la federación" });
+    expect(pasos[0]!.href).toContain("/admin/actas");
+    const sin = progresoPartido(partido(), "2026-10-18T20:00");
+    expect(sin.principal).toMatchObject({ titulo: "Anotar resultado" });
+    expect(sin.principal.traerActa).toBeUndefined();
   });
   it("marcador completo y acta gobiernan cierre, incluido 0–0", () => {
     expect(progresoPartido(partido(), "2026-10-18T20:00").principal.titulo).toBe(

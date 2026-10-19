@@ -188,7 +188,7 @@ export const FormProximos: React.FC<Props> = ({
                 <Field
                   label="Hora"
                   type="time"
-                  value={m.hora || "18:00"}
+                  value={m.hora}
                   onChange={(e) => updateMatch(i, { hora: e.target.value })}
                 />
               </div>

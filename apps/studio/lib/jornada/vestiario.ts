@@ -146,10 +146,15 @@ export function progresoPartido(
   const pasos: PasoPartido[] = despues
     ? [
         {
-          titulo: "Resultado",
-          estado: resultado ? `${resultado.desenlace} ${resultado.cifras}` : "Pendiente",
+          titulo: "Marcador",
+          estado: resultado
+            ? `${resultado.desenlace} ${resultado.cifras}`
+            : p.federacion
+              ? "Lo trae la federación"
+              : "Pendiente",
           tono: tieneResultado(p) ? "hecho" : "pendiente",
-          href: e.calendario,
+          // Con la federación, el marcador llega con el acta y se corrige en ella.
+          href: p.federacion ? e.acta : e.calendario,
         },
         {
           titulo: "Acta",
@@ -193,12 +198,14 @@ export function progresoPartido(
             href: e.once,
           },
         ];
-  const principal =
+  const principal: { titulo: string; href: string; traerActa?: boolean } =
     p.estado === "cancelado" || p.estado === "aplazado"
       ? { titulo: "Revisar fecha del partido", href: e.calendario }
       : despues
         ? !tieneResultado(p)
-          ? { titulo: "Anotar resultado", href: e.calendario }
+          ? p.federacion
+            ? { titulo: "Esperando a la federación", href: e.acta, traerActa: true }
+            : { titulo: "Anotar resultado", href: e.calendario }
           : !p.acta
             ? { titulo: "Completar acta", href: e.acta }
             : !cResultado.hecho

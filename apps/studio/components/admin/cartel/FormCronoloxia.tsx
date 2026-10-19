@@ -6,7 +6,7 @@
 import React from "react";
 import { Field } from "@/components/ui/foundation/Fields";
 import type { CronEvent } from "@/lib/cartel/types";
-import { CategorySelector, ConPartidoElegido, MatchSelector } from "./Common";
+import { CategorySelector, ConPartidoElegido, LadoSantiso, MatchSelector } from "./Common";
 import type { SelectorMatch } from "./Common";
 import { RivalSelector } from "./FormPartido";
 import { Button } from "@/components/ui/foundation/Button";
@@ -152,6 +152,11 @@ export const FormCronoloxia: React.FC<Props & { tipo: string }> = ({
           onChange={(e) => set("golesRival", e.target.value)}
         />
       </div>
+      <LadoSantiso
+        partidoId={form.partido_id}
+        value={form.santisoSide}
+        onChange={(v) => set("santisoSide", v)}
+      />
       </ConPartidoElegido>
 
       <div

@@ -16,7 +16,8 @@ export function matchDateInput(value?: string | null) {
   return splitMatchDateTime(value).date;
 }
 
-export function matchTimeInput(value?: string | null, fallback = "18:00") {
+/** Sin hora en el calendario queda vacía: el cartel no inventa una. */
+export function matchTimeInput(value?: string | null, fallback = "") {
   return splitMatchDateTime(value).time || fallback;
 }
 

@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DeteccionCapturas } from "@/lib/importar/tipo";
-import { cargarActaGuardada, cargarPantallaActa, guardarActa } from "@/lib/server/acciones/actas";
+import {
+  cargarActaGuardada,
+  cargarActaPrevista,
+  cargarPantallaActa,
+  guardarActa,
+} from "@/lib/server/acciones/actas";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
 import { PageHeader } from "@/components/ui/foundation/PageHeader";
@@ -277,6 +282,12 @@ export default function AdminActaImporter({
   const [isDetecting, setIsDetecting] = useState(false);
 
   const selectedMatch = matches.find((match) => match.id === selectedMatchId);
+  /** Llegado con el partido en el enlace (desde su tarjeta), no se vuelve a preguntar. */
+  const [cambiarPartido, setCambiarPartido] = useState(false);
+  const partidoFijado =
+    !cambiarPartido && selectedMatch && selectedMatch.id === inicial?.partidoId
+      ? selectedMatch
+      : null;
   const santisoLocal = isSantisoLocal(selectedMatch);
   /** La ficha federativa en PDF se lee en local; una foto del acta necesita OCR o IA. */
   const esFicha = file?.type === "application/pdf";
@@ -667,6 +678,24 @@ export default function AdminActaImporter({
     }
   }
 
+  /** Acta a mano: parte del once y la convocatoria guardados, si los hay; si no, en blanco. */
+  async function rellenarAMano() {
+    if (!selectedMatchId) return;
+    setBusy(true);
+    setBusyText("Buscando el once guardado...");
+    let prevista: ParsedActa | null = null;
+    try {
+      const resultado = await cargarActaPrevista(selectedMatchId);
+      if (resultado.ok) prevista = resultado.datos;
+      else showToast(resultado.error, "error");
+    } catch {
+      // Sin conexión con el servidor se sigue en blanco: el acta a mano no depende del once.
+    } finally {
+      setActa({ ...(prevista ?? emptyActa()), rawText: "__manual__" });
+      setBusy(false);
+    }
+  }
+
   async function saveActa() {
     if (!selectedMatchId || !canSave) return;
 
@@ -698,11 +727,40 @@ export default function AdminActaImporter({
       )}
 
       <PageHeader
-        title="Importar acta con OCR"
+        title={partidoFijado ? "Acta del partido" : "Importar acta"}
         eyebrow="Acta individual"
         description="Sube una ficha PDF o una captura, revisa los datos y confirma. No modifica nombres ni motes de jugadores."
       />
       <div className={styles.fields}>
+        {partidoFijado ? (
+          <section
+            className={`${styles.full} ${styles.partidoFijado}`}
+            aria-label="Partido del acta"
+            data-partido={partidoFijado.id}
+          >
+            <span>
+              {[
+                categoria,
+                competitionsInCategory.find((c) => c.id === selectedCompetitionId)?.nombre ??
+                  partidoFijado.competicion,
+                partidoFijado.jornada?.numero ? `Jornada ${partidoFijado.jornada.numero}` : "",
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+            <strong>
+              {partidoFijado.equipo_local?.nombre || "Local"}{" "}
+              {partidoFijado.goles_local != null && partidoFijado.goles_visitante != null
+                ? `${partidoFijado.goles_local}–${partidoFijado.goles_visitante}`
+                : "vs"}{" "}
+              {partidoFijado.equipo_visitante?.nombre || "Visitante"}
+            </strong>
+            <Button variant="secondary" onClick={() => setCambiarPartido(true)}>
+              Cambiar partido
+            </Button>
+          </section>
+        ) : (
+          <>
         <div className={styles.fieldSlot}>
           <Select
             label="Categoría"
@@ -745,6 +803,8 @@ export default function AdminActaImporter({
             ))}
           </Select>
         </div>
+          </>
+        )}
 
         <div className={styles.full}>
           <div
@@ -829,10 +889,7 @@ export default function AdminActaImporter({
         </Button>
         <Button
           variant="secondary"
-          onClick={() => {
-            if (!selectedMatchId) return;
-            setActa({ ...emptyActa(), rawText: "__manual__" });
-          }}
+          onClick={() => void rellenarAMano()}
           disabled={busy || !selectedMatchId}
         >
           ✏️ Rellenar manualmente (sin acta)
@@ -952,20 +1009,21 @@ export default function AdminActaImporter({
           </section>
 
           {acta.rawText !== "__manual__" && (
-            <section className={styles.fullSection}>
+            // Solo hace falta si la lectura salió mal: plegado.
+            <details className={styles.fullSection}>
+              <summary>Texto leído del acta</summary>
               <div className={styles.sectionHeader}>
-                <h2>Texto OCR</h2>
                 <Button variant="secondary" onClick={reparseText}>
                   Reprocesar texto
                 </Button>
               </div>
               <Textarea
-                label="Texto OCR para reprocesar"
+                label="Texto leído, para corregirlo y reprocesar"
                 value={ocrText}
                 onChange={(e) => setOcrText(e.target.value)}
                 rows={8}
               />
-            </section>
+            </details>
           )}
         </div>
       )}

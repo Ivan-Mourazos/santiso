@@ -36,7 +36,12 @@ test("Actas abre con categoría, competición y partido de la URL", async ({ pag
   expect(id).toBeTruthy();
 
   await page.goto(`/admin/actas?categoria=${categoria}&competicion=${competicion}&partido=${id}`);
-  await expect(page.getByLabel("Partido", { exact: true })).toHaveValue(id!, { timeout: 30000 });
+  // Con el partido en el enlace no se vuelve a preguntar: su tarjeta y «Cambiar partido».
+  const fijado = page.getByRole("region", { name: "Partido del acta" });
+  await expect(fijado).toHaveAttribute("data-partido", id!, { timeout: 30000 });
+  await expect(page.getByLabel("Partido", { exact: true })).toHaveCount(0);
+  await fijado.getByRole("button", { name: "Cambiar partido", exact: true }).click();
+  await expect(page.getByLabel("Partido", { exact: true })).toHaveValue(id!);
 });
 
 test("Importar jornada abre con la jornada de destino de la URL", async ({ page }) => {

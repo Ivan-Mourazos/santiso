@@ -37,6 +37,8 @@ export interface PartidoDeLaSemana {
   campo: string | null;
   /** Quién arbitró; `null` hasta que la federación lo publica. */
   arbitro: string | null;
+  /** Su competición está enlazada con la federación: el marcador y el acta llegan solos. */
+  federacion: boolean;
   /** El último cambio de la federación sobre este partido, si es reciente. */
   cambioFederacion: { texto: string; cuando: string } | null;
   /** Apercibidos, sancionados y expulsados de los dos equipos; solo en partidos por jugar. */
@@ -237,6 +239,16 @@ export async function pantallaJornada(
         .from(schema.rfgfPartidos)
         .where(inArray(schema.rfgfPartidos.partidoId, ids))
     : [];
+  const competicionIds = [...new Set(filas.map((f) => f.competicionId))];
+  const federadas = new Set(
+    (competicionIds.length
+      ? await db
+          .select({ id: schema.rfgfCompeticiones.competicionId })
+          .from(schema.rfgfCompeticiones)
+          .where(inArray(schema.rfgfCompeticiones.competicionId, competicionIds))
+      : []
+    ).map((f) => f.id),
+  );
   // Un cambio deja de ser noticia a los cinco días.
   const haceCincoDias = new Date(Date.now() - 5 * 86_400_000).toISOString();
 
@@ -274,6 +286,7 @@ export async function pantallaJornada(
       golesRival: santisoLocal ? f.golesVisitante : f.golesLocal,
       campo: f.campo,
       arbitro: f.arbitro,
+      federacion: federadas.has(f.competicionId),
       cambioFederacion:
         cambio?.cambioEn && f.golesLocal === null
           ? { texto: cambio.cambio, cuando: cambio.cambioEn }

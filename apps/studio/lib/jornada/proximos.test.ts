@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { SelectorMatch } from "@/components/admin/cartel/Common";
-import { elegirProximos } from "./proximos";
+import {
+  elegirProximos,
+  huecoProximo,
+  porJugarDeCategoria,
+  proximoDeCategoria,
+} from "./proximos";
 
 const SANTISO = { nombre: "U.D. Santiso F.C.", escudo_url: "/media/s.webp" };
 const SOLAINA = { nombre: "U.D. Santiso F.C. Solaina", escudo_url: "/media/s.webp" };
@@ -122,5 +127,53 @@ describe("elegirProximos", () => {
       HOY,
     );
     expect(primero!.rival).toBe("Hoy");
+  });
+});
+
+describe("porJugarDeCategoria y proximoDeCategoria", () => {
+  const lista = [
+    partido({
+      id: "jugado",
+      categoria: "Senior",
+      estado: "finalizado",
+      fecha: "2026-09-27T17:00",
+      equipo_local: SANTISO,
+    }),
+    partido({ id: "ajeno", categoria: "Senior", fecha: "2026-09-26T17:00" }),
+    partido({ id: "sinFecha", categoria: "Senior", equipo_visitante: SANTISO }),
+    partido({
+      id: "lejos",
+      categoria: "Senior",
+      fecha: "2026-10-11T17:00",
+      equipo_local: SANTISO,
+    }),
+    partido({ id: "cerca", categoria: "Senior", fecha: "2026-09-27T17:00", equipo_local: SANTISO }),
+    partido({ id: "ayer", categoria: "Senior", fecha: "2026-09-23T17:00", equipo_local: SANTISO }),
+    partido({ id: "vet", categoria: "Veteranos", fecha: "2026-09-25T17:00", equipo_local: SOLAINA }),
+  ];
+
+  it("solo los del Santiso por jugar de la categoría, por fecha y sin fecha al final", () => {
+    expect(porJugarDeCategoria(lista, "Senior", HOY).map((m) => m.id)).toEqual([
+      "cerca",
+      "lejos",
+      "sinFecha",
+    ]);
+  });
+
+  it("el próximo es el más cercano con fecha", () => {
+    expect(proximoDeCategoria(lista, "Senior", HOY)?.id).toBe("cerca");
+    expect(proximoDeCategoria(lista, "Veteranos", HOY)?.id).toBe("vet");
+    expect(proximoDeCategoria([], "Senior", HOY)).toBeNull();
+  });
+});
+
+describe("sin datos inventados", () => {
+  it("un partido sin hora y un hueco vacío no ponen las 18:00", () => {
+    expect(huecoProximo("Senior").hora).toBe("");
+    const [senior] = elegirProximos(
+      [partido({ id: "s", categoria: "Senior", fecha: "2026-09-27", equipo_local: SANTISO })],
+      HOY,
+    );
+    expect(senior).toMatchObject({ fecha: "2026-09-27", hora: "" });
   });
 });

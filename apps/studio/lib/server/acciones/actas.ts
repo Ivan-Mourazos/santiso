@@ -13,7 +13,9 @@ import type { CampoDto, JugadorDto, PartidoActaDto } from "@/lib/dto";
 import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
 import { asegurarCampo } from "@/lib/server/acciones/campos";
 import {
+  alineacionPrevistaDePartido,
   eventosDePartido,
+  jugadoresDePartido,
   participacionesDePartido,
   partidosParaActa,
 } from "@/lib/server/consultas/actas";
@@ -43,8 +45,9 @@ export async function cargarEventosDePartido(partidoId: string) {
   return partidoId ? eventosDePartido(partidoId) : [];
 }
 
-export async function cargarParticipacionesDePartido(partidoId: string) {
-  return partidoId ? participacionesDePartido(partidoId) : [];
+/** Los del acta o, si aún no la hay, el once y la convocatoria guardados. */
+export async function cargarJugadoresDePartido(partidoId: string) {
+  return partidoId ? jugadoresDePartido(partidoId) : [];
 }
 
 /**
@@ -82,6 +85,33 @@ export async function cargarActaGuardada(partidoId: string): Promise<Resultado<P
     ]);
     if (convocados.length === 0 && eventos.length === 0) return null;
     return actaDeGuardado(partido, convocados, eventos);
+  });
+}
+
+/**
+ * Punto de partida del acta a mano: el once y la convocatoria guardados, sin eventos. El marcador
+ * solo si el partido ya lo tiene. `null` si no hay once guardado.
+ */
+export async function cargarActaPrevista(partidoId: string): Promise<Resultado<ParsedActa | null>> {
+  return capturar("No se pudo abrir el once guardado.", async () => {
+    const { db } = await obtenerDb();
+    const [partido] = await db
+      .select({
+        golesLocal: schema.partidos.golesLocal,
+        golesVisitante: schema.partidos.golesVisitante,
+        campoId: schema.partidos.campoId,
+      })
+      .from(schema.partidos)
+      .where(eq(schema.partidos.id, partidoId));
+    if (!partido) return null;
+    const previstos = await alineacionPrevistaDePartido(partidoId);
+    if (previstos.length === 0) return null;
+    const acta = actaDeGuardado(partido, previstos, []);
+    return {
+      ...acta,
+      marcadorLocal: partido.golesLocal === null ? "" : acta.marcadorLocal,
+      marcadorVisitante: partido.golesVisitante === null ? "" : acta.marcadorVisitante,
+    };
   });
 }
 

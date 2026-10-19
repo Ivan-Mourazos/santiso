@@ -1,8 +1,10 @@
 import "server-only";
 import { schema } from "@santiso/db";
-import { asc, eq, sql } from "drizzle-orm";
+import { normalizarCategoria } from "@santiso/domain";
+import { and, asc, desc, eq, lt, ne, sql } from "drizzle-orm";
 import {
   convocatoriaInicial,
+  convocatoriaPropuesta,
   type Convocatoria,
   type PantallaConvocatoria,
 } from "@/lib/convocatoria/modelo";
@@ -41,6 +43,39 @@ export async function convocatoriaDePartido(partidoId: string): Promise<Convocat
     nota: cabecera.nota,
   };
 }
+/**
+ * La convocatoria guardada más reciente de la categoría antes del partido (por fecha), de la que
+ * se heredan la quedada y la equipación. `null` si no hay ninguna.
+ */
+export async function convocatoriaAnterior(
+  temporadaId: string,
+  categoria: string,
+  partido: { id: string; fecha: string | null },
+): Promise<Convocatoria | null> {
+  const { db } = await obtenerDb();
+  const cabecera = await db
+    .select({
+      horaQuedada: schema.partidoConvocatorias.horaQuedada,
+      lugarQuedada: schema.partidoConvocatorias.lugarQuedada,
+      equipacion: schema.partidoConvocatorias.equipacion,
+    })
+    .from(schema.partidoConvocatorias)
+    .innerJoin(schema.partidos, eq(schema.partidos.id, schema.partidoConvocatorias.partidoId))
+    .innerJoin(schema.jornadas, eq(schema.jornadas.id, schema.partidos.jornadaId))
+    .innerJoin(schema.competiciones, eq(schema.competiciones.id, schema.jornadas.competicionId))
+    .where(
+      and(
+        eq(schema.competiciones.temporadaId, temporadaId),
+        eq(schema.competiciones.categoria, normalizarCategoria(categoria)),
+        ne(schema.partidos.id, partido.id),
+        partido.fecha ? lt(schema.partidos.fecha, partido.fecha) : undefined,
+      ),
+    )
+    .orderBy(desc(schema.partidos.fecha), desc(schema.partidoConvocatorias.actualizadoEn))
+    .limit(1)
+    .get();
+  return cabecera ? { ...cabecera, jugadores: [], nota: "" } : null;
+}
 export async function pantallaConvocatoria(
   categoria: string,
   hoy: string,
@@ -65,9 +100,15 @@ export async function pantallaConvocatoria(
   const elegido = partidos.find((p) => p.id === pedido) ?? partidos.find((p) => !p.finalizado);
   const guardada = elegido && disponible ? await convocatoriaDePartido(elegido.id) : null;
   const inscritos = new Set(jugadores.map((j) => j.id));
+  const avisos = elegido ? await avisosDelPartido(elegido.id, jugadores) : [];
+  // Sin guardar: se proponen los 16 primeros sin sancionados y la quedada de la anterior.
   const convocatoria = guardada
     ? { ...guardada, jugadores: guardada.jugadores.filter((id) => inscritos.has(id)) }
-    : convocatoriaInicial(jugadores.map((j) => j.id));
+    : convocatoriaPropuesta(
+        jugadores.map((j) => j.id),
+        avisos,
+        elegido && disponible ? await convocatoriaAnterior(temporada, categoria, elegido) : null,
+      );
   return {
     partidos,
     jugadores,
@@ -75,6 +116,6 @@ export async function pantallaConvocatoria(
     convocatoria,
     guardada: Boolean(guardada && guardada.jugadores.length === convocatoria.jugadores.length),
     migracionPendiente: !disponible,
-    avisos: elegido ? await avisosDelPartido(elegido.id, jugadores) : [],
+    avisos,
   };
 }

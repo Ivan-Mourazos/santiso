@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 import {
   cargarEventosDePartido,
   cargarPantallaActa,
-  cargarParticipacionesDePartido,
+  cargarJugadoresDePartido,
 } from "@/lib/server/acciones/actas";
 import { cargarEquiposDeCategoria } from "@/lib/server/acciones/equipos";
 import type { FormState } from "./types";
@@ -18,13 +18,14 @@ import type { Player, CronEvent, NextMatch } from "@/lib/cartel/types";
 import { fetchCompeticiones, type CompetenciaRow } from "@/lib/lecturas-cliente";
 import { pickDefaultCompetitionId } from "@/lib/competition";
 import { matchDateInput, matchTimeInput } from "./matchDateTime";
-import { CATEGORIAS_PROXIMOS, huecoProximo } from "@/lib/jornada/proximos";
+import { CATEGORIAS_PROXIMOS, huecoProximo, proximoDeCategoria } from "@/lib/jornada/proximos";
 interface CartelPlayer {
   id: string;
   nombre: string;
   apodo?: string | null;
   dorsal?: number | null;
   categoria?: string | null;
+  capitan?: boolean;
 }
 
 export interface CartelTeam {
@@ -92,7 +93,7 @@ function toCartelPlayer(player: CartelPlayer): Player {
     id: uuidv4(),
     dorsal: player.dorsal?.toString() || "",
     nome: getPlayerDisplayName(player),
-    eCapitan: false,
+    eCapitan: Boolean(player.capitan),
   };
 }
 
@@ -101,15 +102,15 @@ const DEFAULT_FORM: FormState = {
   partido_id: "",
   competicion_id: "",
   competicion: "",
-  jornada: "1",
+  jornada: "",
   rivalNombre: "",
   rivalEscudoUrl: "",
   fecha: "",
-  hora: "18:00",
+  hora: "",
   lugar: "",
   santisoSide: "right",
-  golesLocal: "0",
-  golesRival: "0",
+  golesLocal: "",
+  golesRival: "",
   estadio: "",
   localSponsor: "",
   rivalSponsor: "",
@@ -125,8 +126,9 @@ const DEFAULT_FORM: FormState = {
   titulares: Array.from({ length: 11 }, mkPlayer),
   suplentes: Array.from({ length: 5 }, mkPlayer),
   multiusosTema: "celebracion",
-  multiusosTitulo: "¡CAMPIÓNS DA COPA!",
-  multiusosTexto: "Pasamos á seguinte fase do torneo. Parabéns a todo o equipo polo gran traballo!",
+  // Sin datos inventados: el ejemplo va de marcador de posición en el formulario.
+  multiusosTitulo: "",
+  multiusosTexto: "",
   multiusosImg1Url: "",
   multiusosImg2Url: "",
   fichaxeTipo: "fichaxe",
@@ -146,13 +148,28 @@ const DEFAULT_FORM: FormState = {
   showAssets: true,
 };
 
+/** Marca de `partidoInicialRef`: cargar el próximo partido de la categoría. */
+const PROXIMO = Symbol("proximo");
+
 /**
  * @param partidoInicial Partido que cargar al abrir (enlace desde «Jornada»). Solo se usa al
  * montar: cambiarlo después no vuelve a cargar nada.
+ * @param opciones `categoria`: con la que abre y a la que vuelve «Limpiar datos» (`?categoria=`).
+ * `proximo`: sin partido en el enlace, cargar el próximo de esa categoría (cartel de partido).
  */
-export function useCartelForm(partidoInicial?: string | null) {
-  const [form, setForm] = useState<FormState>(DEFAULT_FORM);
-  const partidoInicialRef = useRef(partidoInicial);
+export function useCartelForm(
+  partidoInicial?: string | null,
+  opciones: { categoria?: string | null; proximo?: boolean } = {},
+) {
+  const categoriaInicial = CATEGORIAS_PROXIMOS.find((c) => c === opciones.categoria) ?? "Senior";
+  const categoriaInicialRef = useRef(categoriaInicial);
+  const [form, setForm] = useState<FormState>(() => ({
+    ...DEFAULT_FORM,
+    categoria: categoriaInicial,
+  }));
+  const partidoInicialRef = useRef<string | typeof PROXIMO | null>(
+    partidoInicial || (opciones.proximo ? PROXIMO : null),
+  );
   const [equipos, setEquipos] = useState<CartelTeam[]>([]);
   const [jugadores, setJugadores] = useState<CartelPlayer[]>([]);
   const [dbMatches, setDbMatches] = useState<SelectorMatch[]>([]);
@@ -246,10 +263,11 @@ export function useCartelForm(partidoInicial?: string | null) {
 
   function resetForm() {
     const cat = catalogRef.current;
-    const id = pickDefaultCompetitionId(cat, "Senior");
+    const id = pickDefaultCompetitionId(cat, categoriaInicialRef.current);
     const row = cat.find((c) => c.id === id);
     setForm({
       ...DEFAULT_FORM,
+      categoria: categoriaInicialRef.current,
       competicion_id: id,
       competicion: row?.nombre ?? "",
     });
@@ -365,7 +383,7 @@ export function useCartelForm(partidoInicial?: string | null) {
       partido_id: match.id,
       competicion_id: compId || p.competicion_id,
       competicion: compNombre || p.competicion,
-      jornada: match.jornada?.numero?.toString() || "1",
+      jornada: match.jornada?.numero?.toString() || "",
       rivalNombre: rival?.nombre || "",
       rivalEscudoUrl: rival?.escudo_url || "",
       fecha: matchDateInput(match.fecha),
@@ -374,8 +392,8 @@ export function useCartelForm(partidoInicial?: string | null) {
       localidad: undefined,
       estadio: campoNombre,
       santisoSide: isSantisoLocal ? "left" : "right",
-      golesLocal: match.goles_local?.toString() || "0",
-      golesRival: match.goles_visitante?.toString() || "0",
+      golesLocal: match.goles_local?.toString() ?? "",
+      golesRival: match.goles_visitante?.toString() ?? "",
       events: [],
     }));
 
@@ -401,8 +419,8 @@ export function useCartelForm(partidoInicial?: string | null) {
       setForm((p) => ({ ...p, events }));
     });
 
-    // La consulta ya devuelve titulares primero y luego por dorsal.
-    cargarParticipacionesDePartido(match.id).then((filas) => {
+    // Los del acta y, mientras no llega, el once y la convocatoria guardados. Titulares primero.
+    cargarJugadoresDePartido(match.id).then((filas) => {
       if (filas.length === 0) return;
 
       const aJugador = (fila: (typeof filas)[number]) =>
@@ -412,6 +430,7 @@ export function useCartelForm(partidoInicial?: string | null) {
           apodo: fila.apodo,
           dorsal: fila.dorsal,
           categoria: fila.categoria,
+          capitan: fila.capitan,
         });
 
       const titulares = filas
@@ -429,11 +448,14 @@ export function useCartelForm(partidoInicial?: string | null) {
   }
 
   // Abierto desde «Jornada» con un partido: se carga como si se hubiera elegido a mano, en
-  // cuanto llega la lista y una sola vez.
+  // cuanto llega la lista y una sola vez. Sin él, el cartel de partido carga el próximo.
   useEffect(() => {
     const id = partidoInicialRef.current;
     if (!id) return;
-    const partido = dbMatches.find((m) => m.id === id);
+    const partido =
+      id === PROXIMO
+        ? proximoDeCategoria(dbMatches, categoriaInicialRef.current, new Date())
+        : dbMatches.find((m) => m.id === id);
     if (!partido) return;
     // La ref se vacía al cargar, no antes: en desarrollo React ejecuta el efecto dos veces y
     // la primera pasada se cancela.
