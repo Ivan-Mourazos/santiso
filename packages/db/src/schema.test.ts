@@ -477,3 +477,93 @@ describe("plantilla por temporada", () => {
     expect(await db.select().from(s.jugadoresTemporada)).toHaveLength(0);
   });
 });
+
+describe("clubes de la federación y alineaciones vistas", () => {
+  it("enlaza equipos con su club, suelta el enlace al borrar el club y valida alineaciones", async () => {
+    const { db } = conexion;
+    const { jornada, local, visitante } = await sembrar();
+    await db.insert(s.rfgfClubes).values({
+      codigo: "1800",
+      nombre: "Unión Deportiva Santiso F.C.",
+      clave: "union deportiva santiso f c",
+      leidoEn: "2026-10-18T10:00:00.000Z",
+    });
+    await rechaza(
+      db
+        .insert(s.rfgfClubes)
+        .values({ codigo: "1800", nombre: "Otro", clave: "otro", leidoEn: "" }),
+    );
+    await db.update(s.equipos).set({ clubCodigo: "1800" }).where(eq(s.equipos.id, local.id));
+    await rechaza(
+      db.update(s.equipos).set({ clubCodigo: "ausente" }).where(eq(s.equipos.id, visitante.id)),
+    );
+    const [enlazado] = await db.select().from(s.equipos).where(eq(s.equipos.id, local.id));
+    expect(enlazado).toMatchObject({
+      clubCodigo: "1800",
+      clubManual: false,
+      colorFederacion: false,
+    });
+    await db.delete(s.rfgfClubes);
+    const [suelto] = await db.select().from(s.equipos).where(eq(s.equipos.id, local.id));
+    expect(suelto!.clubCodigo).toBeNull();
+
+    await db
+      .insert(s.rfgfEquiposClub)
+      .values({ categoria: "Senior", codEquipo: "2860", temporadasEn: "2026-10-18" });
+    await rechaza(
+      db
+        .insert(s.rfgfEquiposClub)
+        .values({ categoria: "Juvenil" as "Senior", codEquipo: "1", temporadasEn: "" }),
+    );
+
+    const [p] = await db
+      .insert(s.partidos)
+      .values({ jornadaId: jornada.id, equipoLocalId: local.id, equipoVisitanteId: visitante.id })
+      .returning();
+    const fila = {
+      partidoId: p!.id,
+      equipoId: visitante.id,
+      persona: "Ana Pérez",
+      personaClave: "ana perez",
+      titular: true,
+    };
+    await db.insert(s.ligaAlineaciones).values(fila);
+    await rechaza(db.insert(s.ligaAlineaciones).values({ ...fila, dorsal: -1 }));
+    await db.delete(s.partidos);
+    expect(await db.select().from(s.ligaAlineaciones)).toHaveLength(0);
+
+    await db.insert(s.rfgfGruposHistoricos).values({
+      codGrupo: "antiguo",
+      categoria: "Senior",
+      temporada: "2018-2019",
+      competicion: "Liga",
+      grupo: "6",
+      codCompeticion: "30",
+      codEquipo: "2860",
+    });
+    const [h] = await db
+      .insert(s.rfgfHistoricoPartidos)
+      .values({
+        codGrupo: "antiguo",
+        jornada: 1,
+        fechaNominal: "2018-09-16",
+        local: "Santiso",
+        visitante: "Rival",
+        santisoLocal: true,
+      })
+      .returning();
+    const vista = {
+      partidoId: h!.id,
+      lado: "visitante" as const,
+      persona: "Ana",
+      personaClave: "ana",
+      titular: false,
+    };
+    await db.insert(s.rfgfHistoricoAlineaciones).values(vista);
+    await rechaza(
+      db.insert(s.rfgfHistoricoAlineaciones).values({ ...vista, lado: "otro" as "local" }),
+    );
+    await db.delete(s.rfgfGruposHistoricos);
+    expect(await db.select().from(s.rfgfHistoricoAlineaciones)).toHaveLength(0);
+  });
+});

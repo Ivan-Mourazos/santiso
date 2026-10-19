@@ -68,3 +68,25 @@ export const rfgfHistoricoEventos = sqliteTable(
     checkEnum("rfgf_historico_eventos_lado_ck", "lado", ["local", "visitante"]),
   ],
 );
+
+/** Titulares y suplentes de cada acta del archivo, de los dos equipos, como `liga_alineaciones`. */
+export const rfgfHistoricoAlineaciones = sqliteTable(
+  "rfgf_historico_alineaciones",
+  {
+    id: id(),
+    partidoId: text("partido_id")
+      .notNull()
+      .references(() => rfgfHistoricoPartidos.id, { onDelete: "cascade" }),
+    lado: text("lado", { enum: ["local", "visitante"] }).notNull(),
+    persona: text("persona").notNull(),
+    personaClave: text("persona_clave").notNull(),
+    dorsal: integer("dorsal"),
+    titular: integer("titular", { mode: "boolean" }).notNull(),
+    ...marcasTiempo(),
+  },
+  (t) => [
+    index("rfgf_historico_alineaciones_partido_idx").on(t.partidoId),
+    index("rfgf_historico_alineaciones_persona_idx").on(t.personaClave),
+    checkEnum("rfgf_historico_alineaciones_lado_ck", "lado", ["local", "visitante"]),
+  ],
+);

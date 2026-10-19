@@ -1,3 +1,4 @@
+import { CATEGORIAS } from "@santiso/domain";
 import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { partidos } from "./calendario";
 import { checkEnum, marcasTiempo } from "./comunes";
@@ -204,4 +205,22 @@ export const rfgfHistorico = sqliteTable(
     ...marcasTiempo(),
   },
   (t) => [primaryKey({ columns: [t.jugadorId, t.codGrupo] })],
+);
+
+/**
+ * El código de cada equipo del club en la federación, por categoría, y cuándo se apuntaron
+ * todas sus temporadas pasadas. La página de competiciones del equipo las trae todas de una vez
+ * (desde 2014-2015 en el Senior): con este apunte no se vuelve a pedir.
+ */
+export const rfgfEquiposClub = sqliteTable(
+  "rfgf_equipos_club",
+  {
+    categoria: text("categoria", { enum: CATEGORIAS }).primaryKey(),
+    /** Vacío si no se encontró al equipo en la jornada 1 de su competición. */
+    codEquipo: text("cod_equipo").notNull(),
+    /** Cuándo se apuntaron todas sus temporadas, ISO. */
+    temporadasEn: text("temporadas_en").notNull(),
+    ...marcasTiempo(),
+  },
+  () => [checkEnum("rfgf_equipos_club_categoria_ck", "categoria", CATEGORIAS)],
 );

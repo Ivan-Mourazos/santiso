@@ -335,6 +335,10 @@ it("del PDF de jornada salen los marcadores; el acta se pide una vez para goles 
   expect(new Set(eventos.map((e) => e.partidoId))).toEqual(new Set([partidoId]));
   const equipos = new Set((await db.select().from(s.equipos)).map((e) => e.id));
   expect(eventos.every((e) => equipos.has(e.equipoId) && e.personaClave)).toBe(true);
+  // Y quién jugó, de los dos equipos: para saber dónde se ha visto a cada jugador.
+  const alineados = await db.select().from(s.ligaAlineaciones);
+  expect(new Set(alineados.map((a) => a.equipoId)).size).toBe(2);
+  expect(alineados.some((a) => a.titular) && alineados.some((a) => !a.titular)).toBe(true);
   expect(await db.select().from(s.rfgfActas)).toMatchObject([
     { codActa: "901", estado: "resultado", eventos: true },
   ]);
@@ -670,22 +674,29 @@ it("repasa una temporada pasada poco a poco y apunta el año en el historial del
   expect(await avanzarHistorico(historico, AHORA, 2)).toBe(2);
   const db = await leer();
   const grupos = await db.select().from(s.rfgfGruposHistoricos);
-  // Solo las temporadas pasadas dentro del plazo: ni la actual ni la de hace diez años.
+  // Todas las temporadas pasadas, también la de hace diez años; la actual no.
   expect(grupos.map((g) => [g.codGrupo, g.temporada, g.estado, g.codEquipo])).toEqual([
     ["200", "2024-2025", "pendiente", "2"],
+    ["100", "2015-2016", "pendiente", "2"],
+  ]);
+  expect(await db.select().from(s.rfgfEquiposClub)).toMatchObject([
+    { categoria: "Senior", codEquipo: "2" },
   ]);
 
   while ((await avanzarHistorico(historico, AHORA, 2)) > 0);
-  const [grupo] = await db.select().from(s.rfgfGruposHistoricos);
-  expect(grupo).toMatchObject({ estado: "listo", codActa: "900" });
+  const listos = await db.select().from(s.rfgfGruposHistoricos);
+  expect(listos.map((g) => [g.estado, g.codActa])).toEqual([
+    ["listo", "900"],
+    ["listo", "900"],
+  ]);
   const filas = await db.select().from(s.rfgfHistorico);
-  expect(filas).toHaveLength(1);
+  expect(filas).toHaveLength(2);
   expect(filas[0]!.cifras).toMatchObject({ convocados: 3, goles: 4 });
   const [persona] = await db
     .select()
     .from(s.jugadores)
     .where((await import("drizzle-orm")).eq(s.jugadores.id, filas[0]!.jugadorId));
-  expect(persona!.historial).toEqual(["24/25: Equipo Visitante"]);
+  expect(persona!.historial).toEqual(["24/25: Equipo Visitante", "15/16: Equipo Visitante"]);
 
   // Terminado: no vuelve a pedir nada.
   const antes = pedidas.length;

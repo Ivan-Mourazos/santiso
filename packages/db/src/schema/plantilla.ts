@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { temporadas } from "./competicion";
 import { checkEnum, condicion, id, marcasTiempo } from "./comunes";
+import { rfgfClubes } from "./rfgf-clubes";
 
 export const equipos = sqliteTable(
   "equipos",
@@ -22,10 +23,20 @@ export const equipos = sqliteTable(
     color: text("color"),
     /** Segundo color (`#rrggbb`), opcional: equipos de dos colores (rojiblancos, blanquiazules…). */
     color2: text("color_2"),
+    /**
+     * Los colores salieron de la equipación que publica la federación: se pueden volver a
+     * escribir con ella. En cuanto alguien los toca a mano, dejan de serlo.
+     */
+    colorFederacion: integer("color_federacion", { mode: "boolean" }).notNull().default(false),
+    /** El club de la federación al que pertenece; `null` si no se supo sin duda. */
+    clubCodigo: text("club_codigo").references(() => rfgfClubes.codigo, { onDelete: "set null" }),
+    /** El club lo eligió una persona: el emparejamiento automático no lo cambia (ni lo pone). */
+    clubManual: integer("club_manual", { mode: "boolean" }).notNull().default(false),
     ...marcasTiempo(),
   },
   (t) => [
     uniqueIndex("equipos_categoria_clave_uq").on(t.categoria, t.clave),
+    index("equipos_club_idx").on(t.clubCodigo),
     checkEnum("equipos_categoria_ck", "categoria", CATEGORIAS),
   ],
 );
