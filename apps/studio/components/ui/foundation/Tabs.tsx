@@ -8,9 +8,11 @@ export interface TabsProps {
   onValueChange: (value: string) => void;
   label: string;
   items: readonly { value: string; label: string; content: ReactNode; disabled?: boolean }[];
+  /** «segmentado» para pestañas dentro de una pantalla que ya lleva las suyas arriba. */
+  variant?: "linea" | "segmentado";
 }
 
-export function Tabs({ value, onValueChange, label, items }: TabsProps) {
+export function Tabs({ value, onValueChange, label, items, variant = "linea" }: TabsProps) {
   const id = useId();
   const enabled = items.filter((item) => !item.disabled);
   const focusValue = enabled.some((item) => item.value === value) ? value : enabled[0]?.value;
@@ -44,7 +46,11 @@ export function Tabs({ value, onValueChange, label, items }: TabsProps) {
 
   return (
     <div className={styles.root}>
-      <div role="tablist" aria-label={label} className={styles.list}>
+      <div
+        role="tablist"
+        aria-label={label}
+        className={variant === "segmentado" ? `${styles.list} ${styles.segmentado}` : styles.list}
+      >
         {items.map((item, index) => (
           <button
             key={item.value}

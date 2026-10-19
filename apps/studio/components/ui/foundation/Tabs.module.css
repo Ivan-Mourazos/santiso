@@ -31,6 +31,25 @@
   border-bottom-color: var(--ui-accent);
   color: var(--ui-text);
 }
+/* Segundo nivel: píldora neutra, la elegida en relieve; la raya amarilla queda para el primero. */
+.segmentado {
+  gap: 2px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 2px;
+  border-bottom: 0;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-raised);
+}
+.segmentado .tab {
+  padding: 0 var(--ui-space-4);
+  border-bottom: 0;
+  border-radius: var(--ui-radius-pill);
+  font-size: var(--ui-text-sm);
+}
+.segmentado .tab[aria-selected="true"] {
+  background: var(--ui-control);
+}
 .tab:disabled {
   opacity: 0.55;
   cursor: not-allowed;

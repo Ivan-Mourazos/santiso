@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select } from "@/components/ui/foundation/Fields";
+import { FiltrosMovil } from "@/components/ui/foundation/FiltrosMovil";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import { Tabs } from "@/components/ui/foundation/Tabs";
 import type { Disciplina, Goleador } from "@/lib/liga/tablas";
@@ -151,7 +152,10 @@ export default function AdminLiga({ categoria, showToast }: Props) {
     setTrayendo(true);
     try {
       const resultado = await comprobarRfgfAhora();
-      showToast(resultado.ok ? resultado.datos : resultado.error, resultado.ok ? "success" : "error");
+      showToast(
+        resultado.ok ? resultado.datos : resultado.error,
+        resultado.ok ? "success" : "error",
+      );
       await cargar(selectedCompetitionId);
     } catch {
       showToast("No se pudo consultar la federación.", "error");
@@ -204,25 +208,34 @@ export default function AdminLiga({ categoria, showToast }: Props) {
   return (
     <div className={styles.panel}>
       <div className={styles.selectores}>
-        <Select
-          label="Competición"
-          value={selectedCompetitionId}
-          onChange={(e) => setSelectedCompetitionId(e.target.value)}
+        {/* En el móvil, los dos filtros en una sola línea que abre su hoja, como en Estadísticas. */}
+        <FiltrosMovil
+          resumen={[
+            competicionesEnCategoria.find((c) => c.id === selectedCompetitionId)?.nombre ??
+              "Competición",
+            soloRival || "Todos los equipos",
+          ].join(" · ")}
         >
-          {competicionesEnCategoria.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nombre}
-            </option>
-          ))}
-        </Select>
-        <Select label="Equipo" value={soloRival} onChange={(e) => setSoloRival(e.target.value)}>
-          <option value="">Todos los equipos</option>
-          {equipos.map((equipo) => (
-            <option key={equipo} value={equipo}>
-              {equipo}
-            </option>
-          ))}
-        </Select>
+          <Select
+            label="Competición"
+            value={selectedCompetitionId}
+            onChange={(e) => setSelectedCompetitionId(e.target.value)}
+          >
+            {competicionesEnCategoria.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre}
+              </option>
+            ))}
+          </Select>
+          <Select label="Equipo" value={soloRival} onChange={(e) => setSoloRival(e.target.value)}>
+            <option value="">Todos los equipos</option>
+            {equipos.map((equipo) => (
+              <option key={equipo} value={equipo}>
+                {equipo}
+              </option>
+            ))}
+          </Select>
+        </FiltrosMovil>
       </div>
       {error ? (
         <ErrorState
@@ -255,12 +268,18 @@ export default function AdminLiga({ categoria, showToast }: Props) {
           />
           {pantalla.partidosCargados + pantalla.partidosSinLeer < pantalla.partidosJugados && (
             <div className={styles.traer}>
-              <Button variant="secondary" pending={trayendo} pendingLabel="Mirando la federación…" onClick={() => void traerAhora()}>
+              <Button
+                variant="secondary"
+                pending={trayendo}
+                pendingLabel="Mirando la federación…"
+                onClick={() => void traerAhora()}
+              >
                 Traer ahora las jornadas que faltan (dos cada vez)
               </Button>
             </div>
           )}
           <Tabs
+            variant="segmentado"
             label="Datos de la liga"
             value={pestana}
             onValueChange={setPestana}
