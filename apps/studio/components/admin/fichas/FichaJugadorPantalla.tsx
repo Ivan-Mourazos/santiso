@@ -56,7 +56,7 @@ export default function FichaJugadorPantalla({ jugadorId }: { jugadorId: string 
     };
   }, [jugadorId]);
 
-  if (!jugadorId) return <EmptyState title="Elige un jugador desde Jugadores o Goleadores." />;
+  if (!jugadorId) return <EmptyState title="Elige un jugador en Jugadores o en Estadísticas." />;
   if (!estado || estado.id !== jugadorId) return <LoadingState title="Cargando la ficha…" />;
   if (estado.error) return <EmptyState title={estado.error} />;
   const f = estado.ficha;
