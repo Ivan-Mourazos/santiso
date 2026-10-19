@@ -87,20 +87,23 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
               competicion?.nombre ?? "Sin competición",
             ].join(" · ")}
           >
-            <Select
-              label="Temporada"
-              value={c.selectedSeasonId}
-              onChange={(e) =>
-                setParams({ temporada: e.target.value, competicion: null, jornada: null })
-              }
-            >
-              {c.temporadas.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nombre}
-                  {t.activa ? " (activa)" : ""}
-                </option>
-              ))}
-            </Select>
+            {/* Con una sola temporada no hay nada que elegir. */}
+            {c.temporadas.length > 1 && (
+              <Select
+                label="Temporada"
+                value={c.selectedSeasonId}
+                onChange={(e) =>
+                  setParams({ temporada: e.target.value, competicion: null, jornada: null })
+                }
+              >
+                {c.temporadas.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nombre}
+                    {t.activa ? " (activa)" : ""}
+                  </option>
+                ))}
+              </Select>
+            )}
             <Select
               label="Competición"
               value={c.selectedCompetitionId}

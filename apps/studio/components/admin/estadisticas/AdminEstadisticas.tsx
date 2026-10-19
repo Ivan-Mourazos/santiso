@@ -200,19 +200,22 @@ export default function AdminEstadisticas({ showToast, categoria }: Props) {
               "Todas las competiciones",
           ].join(" · ")}
         >
-        <Select
-          label="Temporada"
-          value={pantalla.temporadaId}
-          onChange={(e) => cambiarTemporada(e.target.value)}
-          disabled={cargando || pantalla.temporadas.length === 0}
-        >
-          {pantalla.temporadas.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.nombre}
-              {t.activa ? " (activa)" : ""}
-            </option>
-          ))}
-        </Select>
+        {/* Con una sola temporada no hay nada que elegir. */}
+        {pantalla.temporadas.length > 1 && (
+          <Select
+            label="Temporada"
+            value={pantalla.temporadaId}
+            onChange={(e) => cambiarTemporada(e.target.value)}
+            disabled={cargando}
+          >
+            {pantalla.temporadas.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nombre}
+                {t.activa ? " (activa)" : ""}
+              </option>
+            ))}
+          </Select>
+        )}
         <Select
           label="Competición"
           value={pantalla.competicionId ?? ""}

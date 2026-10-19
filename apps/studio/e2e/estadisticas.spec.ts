@@ -15,7 +15,10 @@ test("abre con la temporada activa sin errores ni salidas a internet", async ({ 
   await expect(page.getByRole("heading", { name: "Estadísticas de Senior" })).toBeVisible({
     timeout: 30000,
   });
-  await expect(page.getByLabel("Temporada", { exact: true })).toBeVisible();
+  // El selector de temporada solo sale si hay más de una para elegir.
+  const temporada = page.getByLabel("Temporada", { exact: true });
+  if (await temporada.count())
+    expect(await temporada.locator("option").count()).toBeGreaterThan(1);
 
   expect(errores).toEqual([]);
   expect(externas).toEqual([]);

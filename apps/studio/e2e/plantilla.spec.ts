@@ -14,7 +14,6 @@ test("la plantilla de la temporada activa se lista y se filtra sin tocar nada", 
   page.on("pageerror", (error) => errores.push(error.message));
 
   await page.goto("/admin/jugadores?categoria=Senior");
-  await expect(page.getByLabel("Temporada", { exact: true })).toBeVisible({ timeout: 20000 });
   const tabla = page.getByRole("table", { name: /^Plantilla Senior/ });
   await expect(tabla).toBeVisible({ timeout: 20000 });
   expect(await tabla.getByRole("row").count()).toBeGreaterThan(1);
@@ -36,8 +35,6 @@ test("la plantilla de la temporada activa se lista y se filtra sin tocar nada", 
 
 test("cerrar el editor con cambios pide descartarlos", async ({ page }) => {
   await page.goto("/admin/jugadores?categoria=Senior");
-  const temporada = page.getByLabel("Temporada", { exact: true });
-  await expect(temporada).toBeVisible({ timeout: 20000 });
   await expect(page.getByRole("button", { name: /^Editar a / }).first()).toBeVisible({
     timeout: 20000,
   });
