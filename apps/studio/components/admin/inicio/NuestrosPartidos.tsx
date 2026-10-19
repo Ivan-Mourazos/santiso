@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fechaPartido } from "@/components/admin/jornada/TarjetaPartido";
 import { useStudio } from "@/components/studio/StudioContext";
+import { Button } from "@/components/ui/foundation/Button";
+import { ErrorState } from "@/components/ui/foundation/States";
 import { hoyLocal } from "@/lib/jornada/semana";
 import {
   type CartelesDelPartido,
@@ -40,6 +42,8 @@ export default function NuestrosPartidos() {
   const { acceso } = useStudio();
   const [datos, setDatos] = useState<Datos | null>(null);
   const [fallo, setFallo] = useState(false);
+  // Cada «Reintentar» vuelve a pedir la semana.
+  const [intento, setIntento] = useState(0);
   useEffect(() => {
     let vigente = true;
     void (async () => {
@@ -53,9 +57,26 @@ export default function NuestrosPartidos() {
     return () => {
       vigente = false;
     };
-  }, []);
+  }, [intento]);
 
-  if (fallo) return null;
+  if (fallo)
+    return (
+      <ErrorState
+        title="No se pudieron cargar los partidos de la semana"
+        detail="Comprueba la conexión y vuelve a intentarlo. El calendario entero está en Liga → Partidos."
+        action={
+          <Button
+            onClick={() => {
+              setFallo(false);
+              setDatos(null);
+              setIntento((n) => n + 1);
+            }}
+          >
+            Reintentar
+          </Button>
+        }
+      />
+    );
   if (!datos)
     return (
       <div className={styles.partidos} role="status" aria-label="Cargando los partidos">

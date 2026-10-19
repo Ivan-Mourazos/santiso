@@ -18,3 +18,20 @@ test("cuando la lectura falla, la pantalla lo dice en vez de inventarse datos", 
   // Y lo que importa: ni rastro del catálogo inventado que había hasta la 2C.
   await expect(page.getByText("Tercera Futgal - Gr. 3")).toHaveCount(0);
 });
+
+test("si Inicio no puede leer la semana, lo dice y deja reintentar", async ({ page }) => {
+  let cortar = true;
+  await page.route("**/admin**", async (ruta) => {
+    if (cortar && ruta.request().method() === "POST") return ruta.abort();
+    return ruta.fallback();
+  });
+  await page.goto("/admin/inicio");
+  const aviso = page.getByRole("alert").filter({ hasText: "partidos de la semana" });
+  await expect(aviso).toBeVisible({ timeout: 15000 });
+  cortar = false;
+  await aviso.getByRole("button", { name: "Reintentar" }).click();
+  await expect(aviso).toBeHidden();
+  await expect(
+    page.locator("[data-partido-inicio]").or(page.getByText("Sin partidos esta semana")).first(),
+  ).toBeVisible({ timeout: 15000 });
+});
