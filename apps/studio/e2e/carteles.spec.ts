@@ -83,7 +83,7 @@ test("la clasificación en modo manual se dibuja sin errores", async ({ page }) 
   await expect(lienzo(page)).toBeVisible({ timeout: 20000 });
   // Hasta el arreglo, las filas manuales guardaban «puntos» y la plantilla leía «pts»: el
   // dibujo reventaba con cada fila.
-  await page.getByRole("button", { name: /Manual/ }).click();
+  await page.getByRole("button", { name: "A mano", exact: true }).click();
   await page.waitForTimeout(2000);
   expect(errores).toEqual([]);
 });

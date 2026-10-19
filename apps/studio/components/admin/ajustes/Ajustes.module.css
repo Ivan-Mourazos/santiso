@@ -213,8 +213,8 @@
   /* Enlaces dentro del texto: zona táctil más alta sin separar las líneas del párrafo. */
   .nota a,
   .cabecera a {
-    padding-block: 12px;
-    margin-block: -12px;
+    padding-block: 14px;
+    margin-block: -14px;
     overflow-wrap: anywhere;
   }
   .barra li {

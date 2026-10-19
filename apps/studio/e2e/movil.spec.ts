@@ -147,7 +147,14 @@ for (const ancho of [360, 390]) {
     await abrir(page, "clasificacion");
     const tabla = page.getByRole("table", { name: /^Clasificación de / });
     await expect(tabla).toBeVisible();
-    await expect(tabla.getByRole("columnheader")).toHaveText(["#", "Equipo", "PTS", "PJ", "DG"]);
+    await expect(tabla.getByRole("columnheader")).toHaveText([
+      "#",
+      "Escudo",
+      "Equipo",
+      "PTS",
+      "PJ",
+      "DG",
+    ]);
     const detalle = tabla.getByRole("button", { name: /^Ver estadísticas de / }).first();
     // Tocar un equipo abre su ficha en una hoja: números, forma, lo que le queda y goleadores.
     await detalle.click();
