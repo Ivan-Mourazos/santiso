@@ -4,7 +4,7 @@ import { useSyncExternalStore, ViewTransition, type ReactNode } from "react";
 import type { Seccion } from "@/lib/navigation/contexto";
 import { categoriaDe } from "@/lib/navigation/contexto";
 import { TEMPLATES } from "@/components/admin/cartel/types";
-import { LoadingState } from "@/components/ui/foundation/States";
+import { EmptyState, LoadingState } from "@/components/ui/foundation/States";
 import { Select } from "@/components/ui/foundation/Fields";
 import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
@@ -63,7 +63,7 @@ const clientReady = () => true;
 const serverReady = () => false;
 
 export function StudioSection({ section }: { section: Seccion }) {
-  const { params, setParams, showToast, showConfirm } = useStudio();
+  const { params, setParams, showToast, showConfirm, acceso } = useStudio();
   const hydrated = useSyncExternalStore(subscribeHydration, clientReady, serverReady);
   const category = categoriaDe(params);
   const feedback = { showToast, showConfirm };
@@ -186,7 +186,16 @@ export function StudioSection({ section }: { section: Seccion }) {
       )}
       {section === "ajustes-graficos" && <Graphics showToast={showToast} />}
       {section === "usuarios" && <Users {...feedback} />}
-      {section === "cuenta" && <Account showToast={showToast} />}
+      {/* Sin acceso con contraseña no hay cuenta que cambiar ni sesión que cerrar. */}
+      {section === "cuenta" &&
+        (acceso ? (
+          <Account showToast={showToast} />
+        ) : (
+          <EmptyState
+            title="El acceso con contraseña está apagado en esta copia"
+            detail="Aquí se entra sin usuario ni contraseña: no hay cuenta que cambiar ni sesión que cerrar."
+          />
+        ))}
     </div>
   );
 }

@@ -154,3 +154,10 @@ test("Equipos espera a resolver contexto antes de permitir edición", async ({ p
   await editor.getByRole("button", { name: "Cancelar" }).click();
   await expect(editor).toBeHidden();
 });
+
+test("«Mi cuenta» con el acceso apagado lo dice en vez de pedir contraseñas", async ({ page }) => {
+  await page.goto("/admin/cuenta");
+  await expect(page.getByText("El acceso con contraseña está apagado en esta copia")).toBeVisible();
+  await expect(page.getByLabel(/contraseña/i)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Salir" })).toHaveCount(0);
+});
