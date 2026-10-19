@@ -239,7 +239,10 @@ export function StudioShell({
               </button>
             )}
             <div>
-              <p className={styles.eyebrow}>{section?.grupo ?? "Studio"}</p>
+              {/* Sin grupo propio (Inicio) no se repite el título encima del título. */}
+              {section?.grupo && section.grupo !== section.label && (
+                <p className={styles.eyebrow}>{section.grupo}</p>
+              )}
               {/* En Carteles, el nombre del cartel abierto; el catálogo es «Carteles». */}
               <h1>{tituloCartel ?? section?.label ?? "Panel"}</h1>
             </div>

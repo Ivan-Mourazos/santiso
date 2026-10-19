@@ -249,3 +249,23 @@
 .barras span[data-hecho] {
   background: var(--ui-accent);
 }
+
+/* Móvil estrecho: el siguiente paso cabe sin partir palabras a medias. */
+@media (max-width: 379px) {
+  .siguienteTexto {
+    font-size: var(--ui-text-body);
+    text-wrap: balance;
+    overflow-wrap: normal;
+  }
+}
+
+/* Escritorio ancho: Senior y Veteranos uno al lado del otro, sin media pantalla vacía. */
+@media (min-width: 1100px) {
+  .inicio {
+    max-width: 1280px;
+  }
+  .partidos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
