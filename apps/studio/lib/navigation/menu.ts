@@ -168,7 +168,7 @@ export const MENU: readonly PestanaMenu[] = [
         titulo: "Antes del partido",
         entradas: [
           cartel("partido", "Cartel de partido", "Día, hora y campo", I.megafono),
-          cartel("proximos", "Próximos partidos", "La axenda del fin de semana", I.calendario),
+          cartel("proximos", "Próximos partidos", "Agenda del finde", I.calendario),
         ],
       },
       {

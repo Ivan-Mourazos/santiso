@@ -45,10 +45,10 @@ for (const ancho of [360, 390]) {
       ["cronoloxia", "Cronoloxía"],
       ["proximos", "Próximos partidos"],
       ["noso11", "O Noso 11"],
-      ["multiusos", "Celebraciones y despedidas"],
+      ["multiusos", "Celebración"],
       ["clasificacion", "Clasificación"],
-      ["fichaxe", "Fichajes y renovaciones"],
-      ["comunicado", "Comunicados y avisos"],
+      ["fichaxe", "Fichaje"],
+      ["comunicado", "Comunicado"],
     ]) {
       await page.goto("/admin/carteles");
       const fila = page.getByRole("main").getByRole("link", { name: new RegExp(`^${nombre}`) });

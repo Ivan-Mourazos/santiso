@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useStudio } from "@/components/studio/StudioContext";
+import type { Seccion } from "@/lib/navigation/contexto";
+import { MENU } from "@/lib/navigation/menu";
 import styles from "./CatalogoCarteles.module.css";
 
 interface Entrada {
@@ -12,88 +14,36 @@ interface Entrada {
   admin?: boolean;
 }
 
+/** Convocatoria y once tienen su cartel en su propia pantalla, que es donde se hacen. */
+const EN_SU_PANTALLA: readonly Seccion[] = ["convocatoria", "alineacion"];
+
 /**
- * Los carteles en el orden de la semana: lo de antes del partido, lo de después, la liga y lo
- * del club. Convocatoria y once tienen su cartel en su propia pantalla, que es donde se hacen.
+ * Los grupos y nombres salen de la hoja «Carteles» de la barra (`MENU`), para que el catálogo
+ * y la hoja digan lo mismo y en el mismo orden. Antes del partido suma convocatoria y once.
  */
-const GRUPOS: { titulo: string; entradas: Entrada[] }[] = [
-  {
-    titulo: "Antes del partido",
-    entradas: [
-      {
-        titulo: "Próximos partidos",
-        para: "La agenda del fin de semana",
-        href: "/admin/carteles?plantilla=proximos",
-        admin: true,
-      },
-      {
-        titulo: "Cartel de partido",
-        para: "Rival, día, hora y campo",
-        href: "/admin/carteles?plantilla=partido",
-        admin: true,
-      },
-      { titulo: "Convocatoria", para: "Los convocados del partido", href: "/admin/convocatoria" },
-      { titulo: "Once inicial", para: "La alineación en el campo", href: "/admin/alineacion" },
-    ],
-  },
-  {
-    titulo: "Después del partido",
-    entradas: [
-      {
-        titulo: "Resultado",
-        para: "Marcador y goleadores",
-        href: "/admin/carteles?plantilla=resumo",
-        admin: true,
-      },
-      {
-        titulo: "O Noso 11",
-        para: "El once que jugó, con foto",
-        href: "/admin/carteles?plantilla=noso11",
-        admin: true,
-      },
-      {
-        titulo: "Cronoloxía",
-        para: "Goles, tarjetas y cambios minuto a minuto",
-        href: "/admin/carteles?plantilla=cronoloxia",
-        admin: true,
-      },
-    ],
-  },
-  {
-    titulo: "Liga",
-    entradas: [
-      {
-        titulo: "Clasificación",
-        para: "La tabla de la competición",
-        href: "/admin/carteles?plantilla=clasificacion",
-        admin: true,
-      },
-    ],
-  },
-  {
-    titulo: "Club",
-    entradas: [
-      {
-        titulo: "Fichajes y renovaciones",
-        para: "Foto completa y nombre, sin logos",
-        href: "/admin/carteles?plantilla=fichaxe",
-        admin: true,
-      },
-      {
-        titulo: "Comunicados y avisos",
-        para: "Comunicado oficial, parte médico o loito",
-        href: "/admin/carteles?plantilla=comunicado",
-        admin: true,
-      },
-      {
-        titulo: "Celebraciones y despedidas",
-        para: "Títulos, ascensos, grazas",
-        href: "/admin/carteles?plantilla=multiusos&tema=celebracion",
-        admin: true,
-      },
-    ],
-  },
-];
+const GRUPOS: { titulo: string; entradas: Entrada[] }[] = (() => {
+  const todas = MENU.flatMap((pestana) => (pestana.grupos ?? []).flatMap((g) => g.entradas));
+  const conPantalla = EN_SU_PANTALLA.flatMap((seccion) => {
+    const e = todas.find((x) => x.seccion === seccion && !x.extra);
+    return e ? [{ titulo: e.label, para: e.detalle ?? "", href: `/admin/${seccion}` }] : [];
+  });
+  const carteles = MENU.find((pestana) => pestana.id === "carteles")?.grupos ?? [];
+  return carteles.map((grupo) => {
+    const entradas: Entrada[] = grupo.entradas.map((e) => {
+      const consulta = new URLSearchParams(e.extra ?? {}).toString();
+      return {
+        titulo: e.label,
+        para: e.detalle ?? "",
+        href: `/admin/${e.seccion}${consulta ? `?${consulta}` : ""}`,
+        admin: e.admin,
+      };
+    });
+    return {
+      titulo: grupo.titulo,
+      entradas: grupo.titulo === "Antes del partido" ? [...entradas, ...conPantalla] : entradas,
+    };
+  });
+})();
 
 /** Carteles sin plantilla elegida: el catálogo por grupos, una fila por cartel. */
 export default function CatalogoCarteles() {
