@@ -646,6 +646,23 @@ async function sembrar() {
     },
   ]);
 
+  // Dos clubes de la federación que encajan con «Rival Ficticio»: hay que elegir a mano.
+  await db.insert(schema.rfgfClubes).values(
+    [
+      ["9001", "C.D. Rival Ficticio", "Lugo"],
+      ["9002", "S.D. Rival Ficticio", "Ourense"],
+    ].map(([codigo, nombre, localidad]) => ({
+      codigo: codigo!,
+      nombre: nombre!,
+      clave: claveNombre(nombre!),
+      localidad,
+      camiseta: "Roja",
+      pantalon: "Blanco",
+      medias: "Rojas",
+      leidoEn: "2026-10-19T00:00:00.000Z",
+    })),
+  );
+
   cerrar();
   console.log(`Datos de prueba en ${DIR_ESCRITURA}`);
 }

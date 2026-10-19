@@ -10,6 +10,7 @@ import ControlesCompeticion from "./equipos/ControlesCompeticion";
 import EditorEquipo from "./equipos/EditorEquipo";
 import IncorporarEquipo from "./equipos/IncorporarEquipo";
 import EliminarEquipo from "./equipos/EliminarEquipo";
+import PorEnlazar from "./equipos/PorEnlazar";
 import styles from "./equipos/Equipos.module.css";
 
 interface Props {
@@ -116,6 +117,7 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
           </Button>
         </div>
       </header>
+      <PorEnlazar categoria={categoria} showToast={showToast} />
       {/* Competición y vista en una sola fila. */}
       <div className={styles.barra} data-mas={masFiltros}>
         <ControlesCompeticion
