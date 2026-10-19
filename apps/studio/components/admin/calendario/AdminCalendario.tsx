@@ -156,22 +156,23 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
           )}
           {/* Para corregir horas y campos de toda la temporada sin ir jornada a jornada. */}
           <div className={styles.vistas} role="group" aria-label="Qué partidos">
-            <Button
-              size="sm"
-              variant={c.vista === "jornada" ? "primary" : "secondary"}
-              aria-pressed={c.vista === "jornada"}
-              onClick={() => c.setVista("jornada")}
-            >
-              Por jornada
-            </Button>
-            <Button
-              size="sm"
-              variant={c.vista === "santiso" ? "primary" : "secondary"}
-              aria-pressed={c.vista === "santiso"}
-              onClick={() => c.setVista("santiso")}
-            >
-              Partidos del Santiso
-            </Button>
+            <div className={styles.segmento}>
+              <button
+                type="button"
+                aria-pressed={c.vista === "jornada"}
+                onClick={() => c.setVista("jornada")}
+              >
+                Por jornada
+              </button>
+              <button
+                type="button"
+                aria-pressed={c.vista === "santiso"}
+                aria-label="Partidos del Santiso"
+                onClick={() => c.setVista("santiso")}
+              >
+                Del Santiso
+              </button>
+            </div>
             <button
               type="button"
               className={styles.masGestion}
