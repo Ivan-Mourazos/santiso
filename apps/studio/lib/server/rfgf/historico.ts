@@ -5,7 +5,7 @@ import {
   partidosConCodigos,
 } from "@santiso/actas";
 import { schema } from "@santiso/db";
-import { and, asc, eq, isNotNull, isNull, notInArray, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull, ne, notInArray, sql } from "drizzle-orm";
 
 import {
   grupoDeEnlace,
@@ -22,8 +22,6 @@ import {
   resumenPartidosHistoricos,
 } from "./historico-partidos";
 
-/** Cuántas temporadas atrás se traen (decisión del usuario, 13/10/2026). */
-export const TEMPORADAS_ATRAS = 5;
 /** Jornadas que se miran buscando un partido del club antes de dar el grupo por perdido. */
 const INTENTOS_GRUPO = 3;
 
@@ -31,11 +29,13 @@ const INTENTOS_GRUPO = 3;
 const inicioDe = (temporada: string) => Number(temporada.slice(0, 4));
 
 /**
- * Apunta los grupos de las temporadas pasadas de cada equipo del club. Una sola vez por
- * categoría: dos páginas (la jornada actual, para saber el código del equipo, y su lista de
- * competiciones). Devuelve cuántas páginas pidió.
+ * Apunta los grupos de todas las temporadas pasadas de cada equipo del club: la página
+ * «competiciones del equipo» las trae todas de una vez (el Senior, desde 2014-2015). Una sola
+ * vez por categoría, y queda anotado en `rfgf_equipos_club`. Si el código del equipo ya se
+ * conoce (de un repaso anterior) basta esa página; si no, antes la jornada 1 para sacarlo.
+ * Devuelve cuántas páginas pidió.
  */
-async function descubrirGrupos(descargador: DescargadorRfgf): Promise<number> {
+async function descubrirGrupos(descargador: DescargadorRfgf, ahora: Date): Promise<number> {
   const { db } = await obtenerDb();
   const enlazadas = await db
     .select({
@@ -50,56 +50,65 @@ async function descubrirGrupos(descargador: DescargadorRfgf): Promise<number> {
     );
   const hechas = new Set(
     (
-      await db
-        .selectDistinct({ categoria: schema.rfgfGruposHistoricos.categoria })
-        .from(schema.rfgfGruposHistoricos)
+      await db.select({ categoria: schema.rfgfEquiposClub.categoria }).from(schema.rfgfEquiposClub)
     ).map((fila) => fila.categoria),
   );
   for (const enlazada of enlazadas) {
     const grupo = grupoDeEnlace(enlazada.enlace);
     if (!grupo || hechas.has(enlazada.categoria)) continue;
-    // El código del equipo del club: el que juega un partido propio en la jornada 1.
-    const propios = await db
-      .select({ nombre: schema.equipos.nombre })
-      .from(schema.equipos)
+    const anotar = (codEquipo: string) =>
+      db
+        .insert(schema.rfgfEquiposClub)
+        .values({ categoria: enlazada.categoria, codEquipo, temporadasEn: ahora.toISOString() })
+        .onConflictDoUpdate({
+          target: schema.rfgfEquiposClub.categoria,
+          set: { codEquipo, temporadasEn: ahora.toISOString() },
+        });
+    let paginas = 0;
+    // El código del equipo, si un repaso anterior (el de cinco temporadas) ya lo apuntó.
+    const [conocido] = await db
+      .select({ codEquipo: schema.rfgfGruposHistoricos.codEquipo })
+      .from(schema.rfgfGruposHistoricos)
       .where(
         and(
-          eq(schema.equipos.esPropio, true),
-          sql`${schema.equipos.categoria} = ${enlazada.categoria}`,
+          sql`${schema.rfgfGruposHistoricos.categoria} = ${enlazada.categoria}`,
+          ne(schema.rfgfGruposHistoricos.codEquipo, ""),
         ),
+      )
+      .limit(1);
+    let codEquipo = conocido?.codEquipo ?? "";
+    if (!codEquipo) {
+      // El código del equipo del club: el que juega un partido propio en la jornada 1.
+      const propios = await db
+        .select({ nombre: schema.equipos.nombre })
+        .from(schema.equipos)
+        .where(
+          and(
+            eq(schema.equipos.esPropio, true),
+            sql`${schema.equipos.categoria} = ${enlazada.categoria}`,
+          ),
+        );
+      const clave = (nombre: string) => nombre.toUpperCase().replace(/[^A-Z0-9]/gu, "");
+      const nombres = new Set(propios.map((equipo) => clave(equipo.nombre)));
+      const jornada = partidosConCodigos(await descargador.html(urlJornada(grupo, 1)));
+      paginas++;
+      const partido = jornada.find(
+        (p) => nombres.has(clave(p.local)) || nombres.has(clave(p.visitante)),
       );
-    const clave = (nombre: string) => nombre.toUpperCase().replace(/[^A-Z0-9]/gu, "");
-    const nombres = new Set(propios.map((equipo) => clave(equipo.nombre)));
-    const jornada = partidosConCodigos(await descargador.html(urlJornada(grupo, 1)));
-    const partido = jornada.find(
-      (p) => nombres.has(clave(p.local)) || nombres.has(clave(p.visitante)),
-    );
-    if (!partido) {
-      await db
-        .insert(schema.rfgfGruposHistoricos)
-        .values({
-          codGrupo: `sin-equipo-${enlazada.categoria}`,
-          categoria: enlazada.categoria,
-          temporada: "",
-          competicion: "",
-          grupo: "",
-          codCompeticion: "",
-          codEquipo: "",
-          estado: "sin_acta",
-        })
-        .onConflictDoNothing();
-      return 1;
+      // Sin el equipo en la jornada 1 no hay a quién preguntar: queda anotado para no repetir.
+      if (!partido) {
+        await anotar("");
+        return paginas;
+      }
+      codEquipo = nombres.has(clave(partido.local)) ? partido.codLocal : partido.codVisitante;
     }
-    const codEquipo = nombres.has(clave(partido.local)) ? partido.codLocal : partido.codVisitante;
     const todos = gruposDeEquipoHtml(
       await descargador.html(urlCompeticionesDeEquipo(codEquipo, grupo.codTemporada)),
     );
+    paginas++;
     const actual = Math.max(...todos.map((g) => inicioDe(g.temporada)));
-    const pasados = todos.filter((g) => {
-      const inicio = inicioDe(g.temporada);
-      return inicio < actual && inicio >= actual - TEMPORADAS_ATRAS;
-    });
-    for (const pasado of pasados) {
+    // Todas las pasadas, por antiguas que sean: el ritmo lo marca el repaso, no el plazo.
+    for (const pasado of todos.filter((g) => inicioDe(g.temporada) < actual)) {
       await db
         .insert(schema.rfgfGruposHistoricos)
         .values({
@@ -113,23 +122,8 @@ async function descubrirGrupos(descargador: DescargadorRfgf): Promise<number> {
         })
         .onConflictDoNothing();
     }
-    // Sin temporadas pasadas, una fila centinela evita volver a preguntar cada vez.
-    if (pasados.length === 0) {
-      await db
-        .insert(schema.rfgfGruposHistoricos)
-        .values({
-          codGrupo: `sin-pasado-${enlazada.categoria}`,
-          categoria: enlazada.categoria,
-          temporada: "",
-          competicion: "",
-          grupo: "",
-          codCompeticion: "",
-          codEquipo,
-          estado: "sin_acta",
-        })
-        .onConflictDoNothing();
-    }
-    return 2;
+    await anotar(codEquipo);
+    return paginas;
   }
   return 0;
 }
@@ -418,7 +412,7 @@ async function avanzarSinCandado(
 ): Promise<number> {
   // El descubrimiento tampoco espera a que todas las páginas de jugadores se puedan leer.
   // Se reserva su coste completo: nunca se empieza con solo una página de presupuesto.
-  let pedidas = !opciones.codGrupo && maximo >= 2 ? await descubrirGrupos(descargador) : 0;
+  let pedidas = !opciones.codGrupo && maximo >= 2 ? await descubrirGrupos(descargador, ahora) : 0;
   while (pedidas < maximo) {
     // Preparar antes de leer: una página de jugador rota no deja esperando todos los grupos.
     const paso =
