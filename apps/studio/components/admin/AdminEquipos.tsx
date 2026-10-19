@@ -135,23 +135,21 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
           </p>
         )}
         <div className={styles.vistas} role="group" aria-label="Vista de equipos">
-          <Button
-            size="sm"
-            variant={verBiblioteca ? "secondary" : "primary"}
+          <button
+            type="button"
             aria-pressed={!verBiblioteca}
             disabled={!competicion}
             onClick={() => setBiblioteca(false)}
           >
             Esta competición
-          </Button>
-          <Button
-            size="sm"
-            variant={verBiblioteca ? "primary" : "secondary"}
+          </button>
+          <button
+            type="button"
             aria-pressed={verBiblioteca}
             onClick={() => setBiblioteca(true)}
           >
             Biblioteca de {categoria}
-          </Button>
+          </button>
         </div>
       </div>
       {error ? (

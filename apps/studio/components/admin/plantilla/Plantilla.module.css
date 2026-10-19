@@ -420,17 +420,32 @@
     font-size: var(--ui-text-xs);
   }
   .masFiltros {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     justify-self: start;
+    width: fit-content;
     min-height: 44px;
-    padding: 0 0.25rem;
-    border: 0;
-    background: none;
-    color: var(--ui-accent, #f5c518);
+    padding: 0 1rem;
+    border: 1px solid var(--ui-line);
+    border-radius: var(--ui-radius-pill);
+    background: var(--ui-control);
+    color: var(--ui-text);
     font: inherit;
-    font-weight: 800;
-    text-decoration: underline;
+    font-weight: 700;
     cursor: pointer;
+  }
+  /* La flecha amarilla de los plegables; gira al abrir. */
+  .masFiltros::after {
+    content: "";
+    width: 14px;
+    height: 14px;
+    background: var(--ui-accent);
+    mask: var(--icono-chevron) center / contain no-repeat;
+    transition: transform var(--ui-duration) var(--ui-ease);
+  }
+  .masFiltros[aria-expanded="true"]::after {
+    transform: rotate(180deg);
   }
   .herramientas[data-mas="false"] .filtroExtra {
     display: none;
