@@ -153,7 +153,8 @@
   border: 0;
   border-radius: var(--ui-radius-pill);
   background: var(--ui-accent);
-  box-shadow: var(--ui-glow);
+  /* Sin brillo: el campo lo recortaba en un rectángulo. */
+  box-shadow: none;
   color: var(--ui-on-accent);
   font: 800 var(--ui-text-body) var(--ui-font-body);
   cursor: pointer;

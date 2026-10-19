@@ -108,7 +108,9 @@
   height: 64px;
   padding: 6px;
   border-radius: var(--ui-radius-sm);
-  background: #f0ede4;
+  /* Sobre el grafito, como el resto de escudos: nada de baldosa clara. */
+  background: none;
+  filter: drop-shadow(0 4px 10px rgb(0 0 0 / 45%));
   object-fit: contain;
   flex: none;
 }
