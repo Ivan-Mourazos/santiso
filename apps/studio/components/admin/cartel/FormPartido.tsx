@@ -165,7 +165,7 @@ export const FormPartido: React.FC<Props & { tipo: string }> = ({
 
       <div className={styles.pareja}>
         <Field
-          label="Nº de xornada"
+          label="Nº de jornada"
           inputMode="numeric"
           pattern="[0-9]*"
           value={form.jornada}

@@ -27,6 +27,7 @@ import BarraTemporada from "./plantilla/BarraTemporada";
 import EditorJugador from "./plantilla/EditorJugador";
 import IncorporarDeTemporada, { type Elegido } from "./plantilla/IncorporarDeTemporada";
 import styles from "./plantilla/Plantilla.module.css";
+import { iniciales } from "@/lib/iniciales";
 
 interface AdminPlayersProps {
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -308,7 +309,9 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
                       // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
                       <img className={styles.foto} src={j.foto_url} alt="" />
                     ) : (
-                      <span className={styles.foto} aria-hidden="true" />
+                      <span className={styles.foto} aria-hidden="true">
+                        {iniciales(j.nombre)}
+                      </span>
                     )}
                   </td>
                   <td className={styles.celdaDorsal}>

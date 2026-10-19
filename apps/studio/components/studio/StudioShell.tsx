@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   SECCIONES,
   cambiarParametros,
@@ -104,10 +104,18 @@ export function StudioShell({
   // La hoja abierta: la de la pestaña tocada, o ninguna.
   const [hoja, setHoja] = useState<IdPestana | null>(null);
   const pestanaActiva = pestanaDe(section?.id);
-  const subnavLiga = pestanaActiva === "liga";
+  // Solo en sus propias pantallas: en una ficha no quedaría ninguna marcada.
+  const subnavLiga = SUBNAV_LIGA.some((item) => item.id === section?.id);
   const contextoLiga = new URLSearchParams(
     [...params].filter(([clave]) => CONTEXTO_LIGA.includes(clave)),
   );
+  // A 360 px la pestaña marcada puede quedar fuera: se desplaza hasta verla.
+  const subnavRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    subnavRef.current
+      ?.querySelector('[aria-current="page"]')
+      ?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [section?.id]);
   const plantilla =
     section?.id === "carteles"
       ? (TEMPLATES.find((t) => t.id === params.get("plantilla")) ?? null)
@@ -238,10 +246,14 @@ export function StudioShell({
               </button>
             )}
             <div>
-              {/* El antetítulo es la pestaña del menú donde vive la pantalla. */}
-              <p className={styles.eyebrow}>
-                {MENU.find((p) => p.id === pestanaActiva)?.label ?? "Studio"}
-              </p>
+              {/* El antetítulo es la pestaña del menú donde vive la pantalla; en Inicio no se
+                  repite el título encima del título. */}
+              {(() => {
+                const pestana = MENU.find((p) => p.id === pestanaActiva)?.label;
+                return pestana && pestana !== section?.label ? (
+                  <p className={styles.eyebrow}>{pestana}</p>
+                ) : null;
+              })()}
               {/* En Carteles, el nombre del cartel abierto; el catálogo es «Carteles». */}
               <h1>{tituloCartel ?? section?.label ?? "Panel"}</h1>
             </div>
@@ -270,7 +282,7 @@ export function StudioShell({
           ) : (
             <>
               {subnavLiga && (
-                <nav aria-label="Liga" className={styles.subnav}>
+                <nav aria-label="Liga" className={styles.subnav} ref={subnavRef}>
                   {SUBNAV_LIGA.map((item) => (
                     <Link
                       key={item.id}

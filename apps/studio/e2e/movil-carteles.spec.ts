@@ -45,10 +45,10 @@ for (const ancho of [360, 390]) {
       ["cronoloxia", "Cronoloxía"],
       ["proximos", "Próximos partidos"],
       ["noso11", "O Noso 11"],
-      ["multiusos", "Celebraciones y despedidas"],
+      ["multiusos", "Celebración"],
       ["clasificacion", "Clasificación"],
-      ["fichaxe", "Fichajes y renovaciones"],
-      ["comunicado", "Comunicados y avisos"],
+      ["fichaxe", "Fichaje"],
+      ["comunicado", "Comunicado"],
     ]) {
       await page.goto("/admin/carteles");
       const fila = page.getByRole("main").getByRole("link", { name: new RegExp(`^${nombre}`) });
@@ -70,7 +70,8 @@ for (const ancho of [360, 390]) {
       expect(Math.round(Math.min(...altos))).toBeGreaterThanOrEqual(44);
       if (plantilla === "cronoloxia")
         await page.getByRole("button", { name: "+ Evento", exact: true }).tap();
-      if (plantilla === "clasificacion") await page.getByRole("button", { name: /Manual/ }).tap();
+      if (plantilla === "clasificacion")
+        await page.getByRole("button", { name: "A mano", exact: true }).tap();
       // Las opciones móviles están plegadas; se revisan también sus controles al abrirlas.
       // Se abren solo los cerrados, de uno en uno: al abrir uno aparecen los que lleva dentro,
       // y tocar uno ya abierto lo cerraría.

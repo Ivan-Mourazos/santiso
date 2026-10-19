@@ -18,11 +18,11 @@ interface Props {
 }
 
 const TEMAS: { id: MultiusosTema; label: string; icon: string }[] = [
-  { id: "celebracion", label: "🏆 Celebración (Títulos/Ascensos)", icon: "🏆" },
-  { id: "medico", label: "🏥 Parte Médico", icon: "🏥" },
-  { id: "fichaje", label: "✍️ Nova Incorporación", icon: "✍️" },
-  { id: "despedida", label: "👋 Grazas / Despedida", icon: "👋" },
-  { id: "formal", label: "📢 Aviso Formal / Comunicado", icon: "📢" },
+  { id: "celebracion", label: "Celebración (títulos y ascensos)", icon: "🏆" },
+  { id: "medico", label: "Parte médico", icon: "🏥" },
+  { id: "fichaje", label: "Nueva incorporación", icon: "✍️" },
+  { id: "despedida", label: "Agradecimiento o despedida", icon: "👋" },
+  { id: "formal", label: "Aviso o comunicado", icon: "📢" },
 ];
 
 export const FormMultiusos: React.FC<Props> = ({
@@ -92,7 +92,7 @@ export const FormMultiusos: React.FC<Props> = ({
                 marginBottom: "0.5rem",
               }}
             >
-              📸 Imagen Principal (Centro o Izquierda)
+              Imagen principal (centro o izquierda)
             </label>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <label className="file-input-label" style={{ flex: 1, margin: 0 }}>
@@ -159,7 +159,7 @@ export const FormMultiusos: React.FC<Props> = ({
                 marginBottom: "0.5rem",
               }}
             >
-              📸 Segunda Imagen (Derecha / Cuadrante secundario)
+              Segunda imagen (derecha)
             </label>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <label className="file-input-label" style={{ flex: 1, margin: 0 }}>

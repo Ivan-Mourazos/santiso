@@ -6,8 +6,10 @@
 .list {
   display: flex;
   gap: var(--ui-space-1);
-  flex-wrap: wrap;
-  border-bottom: 1px solid var(--ui-border);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--ui-line);
 }
 .tab {
   flex: 0 1 auto;
@@ -16,16 +18,37 @@
   overflow-wrap: anywhere;
   padding: var(--ui-space-3) var(--ui-space-4);
   border: 0;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
   background: transparent;
   color: var(--ui-muted);
   font: inherit;
+  font-weight: 800;
+  white-space: nowrap;
   cursor: pointer;
 }
 .tab[aria-selected="true"] {
+  /* Como las pestañas de Liga: raya amarilla debajo, sin caja. */
   border-bottom-color: var(--ui-accent);
   color: var(--ui-text);
+}
+/* Segundo nivel: píldora neutra, la elegida en relieve; la raya amarilla queda para el primero. */
+.segmentado {
+  gap: 2px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 2px;
+  border-bottom: 0;
+  border-radius: var(--ui-radius-pill);
   background: var(--ui-raised);
+}
+.segmentado .tab {
+  padding: 0 var(--ui-space-4);
+  border-bottom: 0;
+  border-radius: var(--ui-radius-pill);
+  font-size: var(--ui-text-sm);
+}
+.segmentado .tab[aria-selected="true"] {
+  background: var(--ui-control);
 }
 .tab:disabled {
   opacity: 0.55;

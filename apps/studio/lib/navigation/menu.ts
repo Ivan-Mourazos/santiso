@@ -95,8 +95,8 @@ export const MENU: readonly PestanaMenu[] = [
           { seccion: "clasificacion", label: "Clasificación", detalle: "La tabla", icono: I.tabla },
           {
             seccion: "liga",
-            label: "Goleadores y tarjetas",
-            detalle: "De la liga",
+            label: "Goleadores",
+            detalle: "Y tarjetas",
             icono: I.balon,
           },
           {
@@ -168,7 +168,7 @@ export const MENU: readonly PestanaMenu[] = [
         titulo: "Antes del partido",
         entradas: [
           cartel("partido", "Cartel de partido", "Día, hora y campo", I.megafono),
-          cartel("proximos", "Próximos partidos", "La axenda del fin de semana", I.calendario),
+          cartel("proximos", "Próximos partidos", "Agenda del finde", I.calendario),
         ],
       },
       {

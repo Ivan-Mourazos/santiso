@@ -15,8 +15,8 @@ interface Props {
 }
 
 const ORDENES = [
-  { valor: "xunta_izquierda", etiqueta: "Xunta a la izquierda" },
-  { valor: "rfgf_izquierda", etiqueta: "RFGF a la izquierda" },
+  { valor: "xunta_izquierda", etiqueta: "Xunta", nombre: "Xunta a la izquierda" },
+  { valor: "rfgf_izquierda", etiqueta: "RFGF", nombre: "RFGF a la izquierda" },
 ] as const;
 
 /**
@@ -108,7 +108,6 @@ export default function AjustesGraficos({ showToast }: Props) {
   return (
     <div className={styles.panel}>
       <div className={styles.cabecera}>
-        <h3>Ajustes gráficos</h3>
         <p>
           Las imágenes fijas de los carteles. El escudo del Santiso sale del equipo de cada
           categoría, en <Link href="/admin/equipos">Equipos</Link>. Lo que cambies aquí sale en los carteles que generes a
@@ -151,6 +150,7 @@ export default function AjustesGraficos({ showToast }: Props) {
                   key={o.valor}
                   variant={activo ? "primary" : "secondary"}
                   aria-pressed={activo}
+                  aria-label={o.nombre}
                   disabled={cambiandoOrden}
                   onClick={() => void cambiarOrden(o.valor)}
                 >

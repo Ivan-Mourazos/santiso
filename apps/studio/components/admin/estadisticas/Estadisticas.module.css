@@ -190,21 +190,20 @@
     gap: 0.35rem;
     margin-bottom: 0.5rem;
   }
+  /* La cifra arriba, en letra de marcador; la etiqueta debajo, entera. */
   .dato {
-    display: flex;
-    align-items: baseline;
-    gap: 0.3rem;
+    display: grid;
+    gap: 2px;
     margin: 0;
-    padding: 0.3rem 0.5rem;
+    padding: 0.5rem;
     min-width: 0;
   }
   .dato strong {
-    font-size: var(--ui-text-base);
+    font: 900 26px / 1 var(--ui-font-title);
   }
   .dato span {
     font-size: var(--ui-text-xs);
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
   }
   /*
    * Una línea por jugador: dorsal, nombre y las cuatro cifras que más se miran. El resto
@@ -460,7 +459,9 @@
   display: grid;
   gap: 0.15rem;
   padding: 0.5rem 0.75rem;
-  border-left: 4px solid var(--ui-border, #333);
+  /* Aviso con borde fino de su color y fondo tintado, sin franja lateral. */
+  border: 1px solid color-mix(in srgb, var(--ui-border, #333) 45%, transparent);
+  background-color: color-mix(in srgb, var(--ui-border, #333) 10%, transparent);
   background: rgb(255 255 255 / 4%);
   font-size: var(--ui-text-sm);
   overflow-wrap: anywhere;
@@ -493,7 +494,9 @@
   display: grid;
   gap: 0.1rem;
   padding: 0.4rem 0.6rem;
-  border-left: 3px solid var(--ui-accent);
+  /* Aviso con borde fino de su color y fondo tintado, sin franja lateral. */
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 45%, transparent);
+  background-color: color-mix(in srgb, var(--ui-accent) 10%, transparent);
   background: rgb(255 255 255 / 4%);
   overflow-wrap: anywhere;
 }

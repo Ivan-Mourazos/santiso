@@ -14,6 +14,8 @@
 .tarjetas {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Todas las tarjetas de la hoja, de la misma altura aunque una descripción baje de línea. */
+  grid-auto-rows: 1fr;
   gap: var(--ui-space-2);
 }
 .tarjeta {

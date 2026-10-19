@@ -125,7 +125,7 @@ const CrucePartido: React.FC<{ m: SelectorMatch; categoria: string }> = ({ m, ca
     m.goles_local != null && m.goles_visitante != null
       ? `${m.goles_local}–${m.goles_visitante}`
       : "vs";
-  const contexto = [categoria, competicion, m.jornada?.numero ? `Xornada ${m.jornada.numero}` : ""]
+  const contexto = [categoria, competicion, m.jornada?.numero ? `Jornada ${m.jornada.numero}` : ""]
     .filter(Boolean)
     .join(" · ");
   return (
@@ -292,7 +292,7 @@ const ElegirPartido: React.FC<{
                 if (m) onSelect(m);
               }}
             >
-              <option value="">Elige la jornada…</option>
+              <option value="">Jornada…</option>
               {deLaCategoria.map((x) => (
                 <option key={x.id} value={x.id}>
                   {etiquetaJornada(x)}

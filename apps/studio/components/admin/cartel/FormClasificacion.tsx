@@ -126,7 +126,7 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
           }}
           
         >
-          Automático (BD)
+          De la liga
         </Button>
         <Button size="sm" variant={modoManual ? "primary" : "secondary"}
  aria-pressed={modoManual}
@@ -189,7 +189,7 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
           }}
           
         >
-          ✍️ Manual (Sin BD)
+          A mano
         </Button>
       </div>
 

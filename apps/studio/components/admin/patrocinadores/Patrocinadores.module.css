@@ -73,11 +73,18 @@
   color: var(--ui-muted, #aaa);
   font-size: var(--ui-text-sm);
 }
+/* Chip: si el logo sale en la barra de los carteles. */
 .estado {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-control);
   font-weight: 700;
-  font-size: var(--ui-text-sm);
+  font-size: var(--ui-text-xs);
+  white-space: nowrap;
 }
 .dentro {
+  background: var(--ui-accent-soft);
   color: var(--ui-accent);
 }
 .fuera {
@@ -235,14 +242,17 @@
   .tabla tbody {
     display: block;
   }
-  /* Una línea por ficha: logo, nombre, si sale en carteles y las dos acciones como iconos. */
+  /* Una fila por ficha: logo, nombre con el chip debajo y las dos acciones como iconos. */
   .tabla tr {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) auto auto;
-    grid-template-areas: "logo nombre estado acciones";
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "logo nombre acciones"
+      "logo estado acciones";
     align-items: center;
-    gap: 0 0.5rem;
-    min-height: 56px;
+    gap: 2px 0.75rem;
+    min-height: 64px;
+    padding-block: 6px;
     border-bottom: 1px solid var(--ui-border);
   }
   .tabla td {
@@ -272,6 +282,7 @@
   }
   .celdaEstado {
     grid-area: estado;
+    align-self: start;
   }
   .celdaAcciones {
     grid-area: acciones;
@@ -288,11 +299,15 @@
     font-size: 0;
   }
   .filaAcciones button::before {
-    content: "✎";
-    font-size: var(--ui-text-base);
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background: currentColor;
+    mask: var(--icono-editar) center / contain no-repeat;
   }
   .filaAcciones button:last-child::before {
-    content: "✕";
+    mask-image: var(--icono-quitar);
   }
   .posicion {
     display: grid;

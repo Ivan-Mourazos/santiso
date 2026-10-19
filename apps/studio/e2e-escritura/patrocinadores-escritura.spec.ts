@@ -27,7 +27,7 @@ test("alta nueva y nombre repetido que no pisa la ficha existente", async ({ pag
   await alta.getByLabel("Web").fill("https://example.test/talleres");
   await alta.getByRole("button", { name: "Añadir", exact: true }).click();
   await expect(alta).toBeHidden();
-  await expect(fila(page, "Talleres Ficticio")).toContainText("No");
+  await expect(fila(page, "Talleres Ficticio")).toContainText("Fuera");
 
   // Mismo nombre que otra ficha, con otras mayúsculas: se avisa y no se escribe nada.
   await page.getByRole("button", { name: "Añadir patrocinador o logo" }).click();
@@ -46,7 +46,7 @@ test("alta nueva y nombre repetido que no pisa la ficha existente", async ({ pag
   await expect(existente.getByLabel("Web")).toHaveValue("https://example.test/autobuses");
   await existente.getByRole("button", { name: "Cancelar" }).click();
   await expect(existente).toBeHidden();
-  await expect(fila(page, "Autobuses Ficticio")).toContainText("No");
+  await expect(fila(page, "Autobuses Ficticio")).toContainText("Fuera");
 });
 
 test("activar mete el logo al final de la barra y las flechas lo colocan", async ({ page }) => {
@@ -62,7 +62,7 @@ test("activar mete el logo al final de la barra y las flechas lo colocan", async
   await editor.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(editor).toBeHidden();
 
-  await expect(fila(page, "Autobuses Ficticio")).toContainText("Sí");
+  await expect(fila(page, "Autobuses Ficticio")).toContainText("En cartel");
   await expect(barra(page).getByRole("listitem")).toHaveText([
     /Concello Ficticio/,
     /Deporte Ficticio/,
@@ -88,7 +88,7 @@ test("quitar del cartel conserva la ficha; eliminar la borra entera", async ({ p
     .getByRole("button", { name: "Confirmar" })
     .click();
 
-  await expect(fila(page, "Concello Ficticio")).toContainText("No");
+  await expect(fila(page, "Concello Ficticio")).toContainText("Fuera");
   await expect(barra(page).getByRole("listitem")).toHaveText([
     /Autobuses Ficticio/,
     /Deporte Ficticio/,

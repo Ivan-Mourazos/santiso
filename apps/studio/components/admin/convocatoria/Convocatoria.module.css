@@ -87,12 +87,20 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* La misma flecha amarilla que el resto de plegables; gira al abrir. */
 .detalles summary::before {
-  content: "+";
+  content: "";
+  display: inline-block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: var(--ui-accent);
+  mask: var(--icono-chevron) center / contain no-repeat;
+  transition: transform var(--ui-duration) var(--ui-ease);
   margin-right: 8px;
 }
 .detalles[open] summary::before {
-  content: "−";
+  transform: rotate(180deg);
 }
 .campos {
   border: 0;

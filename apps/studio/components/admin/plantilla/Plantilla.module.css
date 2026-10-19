@@ -240,9 +240,18 @@
     padding: 0;
     font-size: 0;
   }
+  /* Icono dibujado según lo que hace el botón: lápiz para editar, papelera para quitar. */
   .filaAcciones button::before {
-    content: "✎";
-    font-size: var(--ui-text-base);
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background: currentColor;
+    mask: var(--icono-editar) center / contain no-repeat;
+  }
+  .filaAcciones button[aria-label^="Quitar"]::before,
+  .filaAcciones button[aria-label^="Eliminar"]::before {
+    mask-image: var(--icono-quitar);
   }
 }
 
@@ -411,17 +420,32 @@
     font-size: var(--ui-text-xs);
   }
   .masFiltros {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     justify-self: start;
+    width: fit-content;
     min-height: 44px;
-    padding: 0 0.25rem;
-    border: 0;
-    background: none;
-    color: var(--ui-accent, #f5c518);
+    padding: 0 1rem;
+    border: 1px solid var(--ui-line);
+    border-radius: var(--ui-radius-pill);
+    background: var(--ui-control);
+    color: var(--ui-text);
     font: inherit;
-    font-weight: 800;
-    text-decoration: underline;
+    font-weight: 700;
     cursor: pointer;
+  }
+  /* La flecha amarilla de los plegables; gira al abrir. */
+  .masFiltros::after {
+    content: "";
+    width: 14px;
+    height: 14px;
+    background: var(--ui-accent);
+    mask: var(--icono-chevron) center / contain no-repeat;
+    transition: transform var(--ui-duration) var(--ui-ease);
+  }
+  .masFiltros[aria-expanded="true"]::after {
+    transform: rotate(180deg);
   }
   .herramientas[data-mas="false"] .filtroExtra {
     display: none;
@@ -536,4 +560,14 @@
   margin: 0;
   padding: 0 var(--ui-space-4) var(--ui-space-3);
   font-size: var(--ui-text-sm);
+}
+
+/* Sin foto: las iniciales en letra de marcador, en vez de un cuadro vacío. */
+span.foto {
+  display: grid;
+  place-items: center;
+  background: var(--ui-control);
+  color: var(--ui-muted);
+  font: 800 0.95rem / 1 var(--ui-font-title);
+  letter-spacing: 0.02em;
 }

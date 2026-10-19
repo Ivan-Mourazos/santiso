@@ -101,7 +101,7 @@ export default function AdminTemporadas({ showToast, showConfirm }: AdminTempora
     <div className={styles.layout}>
       <section className={styles.list} aria-labelledby="temporadas-listado">
         <div className={styles.intro}>
-          <h2 id="temporadas-listado">Tu historial deportivo</h2>
+          <h2 id="temporadas-listado">Todas las temporadas</h2>
           <p>
             La temporada activa se usa como destino por defecto. Consultar otra temporada en
             Calendario no cambia cuál está activa.

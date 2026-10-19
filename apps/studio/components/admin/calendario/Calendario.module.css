@@ -14,10 +14,10 @@
 .titulo {
   margin: 0 0 var(--ui-space-3, 0.75rem);
   font-size: var(--ui-text-xs);
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--ui-accent);
+  letter-spacing: 0.12em;
+  color: var(--ui-muted);
 }
 .nota {
   margin: 0;
@@ -38,8 +38,33 @@
 }
 .vistas {
   display: flex;
+  align-items: center;
   gap: 0.4rem;
   padding-bottom: 0.2rem;
+}
+/* Segmentado neutro: el amarillo queda para lo que se guarda. */
+.segmento {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-raised);
+}
+.segmento button {
+  flex: 1;
+  min-height: 40px;
+  padding: 0 var(--ui-space-4);
+  border: 0;
+  border-radius: var(--ui-radius-pill);
+  background: transparent;
+  color: var(--ui-muted);
+  font: 800 var(--ui-text-sm) var(--ui-font-body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.segmento button[aria-pressed="true"] {
+  background: var(--ui-control);
+  color: var(--ui-text);
 }
 .acciones {
   display: flex;
@@ -243,17 +268,20 @@
     flex-wrap: nowrap;
     padding: 0;
   }
-  .vistas > button {
+  .segmento {
     flex: 1;
-    padding-inline: 0.4rem;
-    font-size: var(--ui-text-sm);
+  }
+  .segmento button {
+    min-height: 44px;
+    padding-inline: 0.5rem;
   }
   .vistas > .masGestion {
     display: block;
-    flex: 0 0 44px;
-    border: 1px solid var(--ui-border);
-    border-radius: var(--ui-radius);
-    background: none;
+    flex: 0 0 48px;
+    height: 48px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ui-control);
     color: var(--ui-text);
     font-size: var(--ui-text-base);
     cursor: pointer;
@@ -337,19 +365,30 @@
   .goles > :last-child {
     grid-area: golesVisitante;
   }
+  /* Marcador como en Partidos: cifra grande sin caja; el borde sale solo al editarla. */
   .goles input {
     width: 44px;
     padding-inline: 0;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    font: 900 1.6rem / 1 var(--ui-font-title);
+  }
+  .goles input:focus {
+    border-color: var(--ui-accent);
+    background: var(--ui-field-face);
   }
   .partido .desplegar {
     display: grid;
     place-items: center;
     grid-area: desplegar;
-    align-self: stretch;
+    align-self: center;
+    width: 44px;
+    height: 44px;
     padding: 0;
-    border: 1px solid var(--ui-border);
-    border-radius: var(--ui-radius);
-    background: none;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ui-control);
     box-shadow: none;
     color: var(--ui-muted, #aaa);
     cursor: pointer;

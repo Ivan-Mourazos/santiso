@@ -43,9 +43,32 @@
   flex: 1;
   min-width: min(100%, 12rem);
 }
+/* Segmentado neutro: el amarillo queda para la acción principal de la pantalla. */
 .vistas {
-  margin: 0;
-  padding-bottom: 0.2rem;
+  gap: 2px;
+  width: fit-content;
+  margin: 0 0 0.2rem;
+  padding: 2px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-raised);
+}
+.vistas button {
+  min-height: 44px;
+  padding: 0 var(--ui-space-4);
+  border: 0;
+  border-radius: var(--ui-radius-pill);
+  background: transparent;
+  color: var(--ui-muted);
+  font: 800 var(--ui-text-sm) var(--ui-font-body);
+  cursor: pointer;
+}
+.vistas button[aria-pressed="true"] {
+  background: var(--ui-control);
+  color: var(--ui-text);
+}
+.vistas button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 .herramientas {
   margin-bottom: 0.5rem;
@@ -159,7 +182,9 @@
 }
 .error {
   color: var(--ui-danger, #f87171);
-  border-left: 3px solid currentColor;
+  /* Aviso con borde fino de su color y fondo tintado, sin franja lateral. */
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  background-color: color-mix(in srgb, currentColor 10%, transparent);
   padding: 0.75rem;
 }
 .candidatos {
@@ -266,14 +291,18 @@
     font-size: 0;
   }
   .tabla .acciones button::before {
-    content: "✕";
-    font-size: var(--ui-text-base);
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background: currentColor;
+    mask: var(--icono-quitar) center / contain no-repeat;
   }
   .tabla .acciones button:first-child::before {
-    content: "✎";
+    mask-image: var(--icono-editar);
   }
   .tabla .acciones button:nth-child(2):not(:last-child)::before {
-    content: "−";
+    mask-image: var(--icono-retirar);
   }
   .escudo {
     width: 36px;
@@ -350,16 +379,32 @@
     display: none;
   }
   .masFiltros {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-self: start;
+    width: fit-content;
     min-height: 44px;
-    padding: 0 0.25rem;
-    border: 0;
-    background: none;
-    color: var(--ui-accent, #f5c518);
+    padding: 0 1rem;
+    border: 1px solid var(--ui-line);
+    border-radius: var(--ui-radius-pill);
+    background: var(--ui-control);
+    color: var(--ui-text);
     font: inherit;
-    font-weight: 800;
-    text-decoration: underline;
+    font-weight: 700;
     cursor: pointer;
+  }
+  /* La flecha amarilla de los plegables; gira al abrir. */
+  .masFiltros::after {
+    content: "";
+    width: 14px;
+    height: 14px;
+    background: var(--ui-accent);
+    mask: var(--icono-chevron) center / contain no-repeat;
+    transition: transform var(--ui-duration) var(--ui-ease);
+  }
+  .masFiltros[aria-expanded="true"]::after {
+    transform: rotate(180deg);
   }
   /* Plegado: fuera «Sin escudo» y crear o eliminar competición (se usan una vez al año). */
   .herramientas[data-mas="false"] .filtroExtra,
@@ -370,19 +415,37 @@
 /* Equipos por enlazar con su club de la federación: una fila plegada; dentro, sus candidatos. */
 .porEnlazar {
   margin-bottom: var(--ui-space-3);
-  border: 1px solid var(--ui-accent);
+  border: 1px solid var(--ui-line);
   border-radius: var(--ui-radius);
-  background: var(--ui-accent-soft);
+  background: var(--ui-panel-face);
 }
 .porEnlazar summary {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  list-style: none;
   min-height: 44px;
   padding: 0 var(--ui-space-4);
-  color: var(--ui-accent);
+  color: var(--ui-text);
   font-weight: 800;
   font-size: var(--ui-text-sm);
   cursor: pointer;
+}
+.porEnlazar summary::-webkit-details-marker {
+  display: none;
+}
+.porEnlazar summary::after {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: var(--ui-accent);
+  mask: var(--icono-chevron) center / contain no-repeat;
+  transition: transform var(--ui-duration) var(--ui-ease);
+}
+.porEnlazar details[open] summary::after {
+  transform: rotate(180deg);
 }
 .porEnlazar details > p,
 .porEnlazar details > ul {

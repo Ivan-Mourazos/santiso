@@ -43,10 +43,14 @@
   background: var(--ui-control);
 }
 .sinImagen {
+  display: grid;
+  place-items: center;
   width: 72px;
   height: 72px;
   border-radius: 20px;
   background: var(--ui-control);
+  color: var(--ui-muted);
+  font: 800 1.75rem / 1 var(--ui-font-title);
 }
 .nombre {
   position: relative;
@@ -311,6 +315,25 @@
   font-size: var(--ui-text-xs);
 }
 @media (max-width: 480px) {
+  /* Siete cifras en dos filas de cuatro: ninguna queda sola. */
+  .cuadros {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .cuadro {
+    padding: var(--ui-space-2);
+  }
+  .cuadro strong {
+    font-size: 26px;
+  }
+  .tabla th,
+  .tabla td {
+    padding: var(--ui-space-2) 6px;
+  }
+  .tabla th:first-child,
+  .tabla td:first-child {
+    min-width: 0;
+    font-size: var(--ui-text-xs);
+  }
   .cabecera {
     grid-template-columns: 64px minmax(0, 1fr);
   }
@@ -320,4 +343,24 @@
     width: 64px;
     height: 64px;
   }
+}
+
+/* «Acta» del archivo: chip de 32 px con zona táctil de 44 px (el margen negativo no mueve la línea). */
+.chipActa {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  margin-block: -6px;
+  padding: 0 12px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-control);
+  color: var(--ui-text);
+  font-weight: 700;
+  text-decoration: none;
+  position: relative;
+}
+.chipActa::after {
+  content: "";
+  position: absolute;
+  inset: -6px 0;
 }

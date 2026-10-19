@@ -27,7 +27,10 @@ import type { ResultadoClasificacionRfgf } from "@/lib/server/rfgf/demanda";
 import { ArchivoPartidos } from "./ArchivoPartidos";
 import s from "./Federacion.module.css";
 
-type Historico = Extract<Awaited<ReturnType<typeof cargarEstadoHistoricoRfgf>>, { ok: true }>["datos"];
+type Historico = Extract<
+  Awaited<ReturnType<typeof cargarEstadoHistoricoRfgf>>,
+  { ok: true }
+>["datos"];
 
 const FECHA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "numeric" });
 const MOMENTO = new Intl.DateTimeFormat("es-ES", {
@@ -83,7 +86,9 @@ function frase(r: {
   const partes = [
     r.resultados ? `${r.resultados} resultado${r.resultados > 1 ? "s" : ""}` : "",
     r.actas ? `${r.actas} acta${r.actas > 1 ? "s" : ""}` : "",
-    r.horarios?.length ? `${r.horarios.length} cambio${r.horarios.length > 1 ? "s" : ""} de horario` : "",
+    r.horarios?.length
+      ? `${r.horarios.length} cambio${r.horarios.length > 1 ? "s" : ""} de horario`
+      : "",
     r.jugadores ? `cifras de ${r.jugadores} jugador${r.jugadores > 1 ? "es" : ""}` : "",
     r.paginas ? `${r.paginas} página${r.paginas > 1 ? "s" : ""}` : "",
     r.revisar?.length ? `${r.revisar.length} por revisar` : "",
@@ -261,260 +266,274 @@ export default function AdminFederacion({
       />
 
       {actual.enlace && (
-        <section className={s.bloque} aria-label="Traer de la federación">
-          <h3>Traer ahora</h3>
-          <div className={s.opcion}>
-            <div>
-              <strong>Horarios</strong>
-              <span>Fechas, horas y campos de lo que queda por jugar.</span>
-              <small>Última vez: {momento(estado?.competicion.horariosEn ?? null)}</small>
+        <section aria-label="Traer de la federación">
+          <details className={s.bloque}>
+            <summary>
+              <h3>Traer ahora, a mano</h3>
+            </summary>
+            <div className={s.opcion}>
+              <div>
+                <strong>Horarios</strong>
+                <span>Fechas, horas y campos de lo que queda por jugar.</span>
+                <small>Última vez: {momento(estado?.competicion.horariosEn ?? null)}</small>
+              </div>
+              <Button
+                variant="secondary"
+                pending={trayendo === "horarios"}
+                pendingLabel="Trayendo…"
+                disabled={ocupado}
+                onClick={() =>
+                  void traer("horarios", () => traerHorariosRfgf(actual.competicionId), frase)
+                }
+              >
+                Traer horarios
+              </Button>
             </div>
-            <Button
-              variant="secondary"
-              pending={trayendo === "horarios"}
-              pendingLabel="Trayendo…"
-              disabled={ocupado}
-              onClick={() =>
-                void traer("horarios", () => traerHorariosRfgf(actual.competicionId), frase)
-              }
-            >
-              Traer horarios
-            </Button>
-          </div>
-          <div className={s.opcion}>
-            <div>
-              <strong>Cifras de jugadores</strong>
-              <span>
-                {estado
-                  ? `${estado.jugadores.conCifras} de ${estado.jugadores.plantilla} jugadores con sus cifras oficiales.`
-                  : "Cifras oficiales de la plantilla."}{" "}
-                Cuatro por vez.
-              </span>
-              <small>Última lectura: {momento(estado?.jugadores.lecturaMasReciente ?? null)}</small>
+            <div className={s.opcion}>
+              <div>
+                <strong>Cifras de jugadores</strong>
+                <span>
+                  {estado
+                    ? `${estado.jugadores.conCifras} de ${estado.jugadores.plantilla} jugadores con sus cifras oficiales.`
+                    : "Cifras oficiales de la plantilla."}{" "}
+                  Cuatro por vez.
+                </span>
+                <small>
+                  Última lectura: {momento(estado?.jugadores.lecturaMasReciente ?? null)}
+                </small>
+              </div>
+              <Button
+                variant="secondary"
+                pending={trayendo === "jugadores"}
+                pendingLabel="Trayendo…"
+                disabled={ocupado}
+                onClick={() =>
+                  void traer(
+                    "jugadores",
+                    () => traerCifrasJugadoresRfgf(actual.competicionId),
+                    frase,
+                  )
+                }
+              >
+                Traer cifras
+              </Button>
             </div>
-            <Button
-              variant="secondary"
-              pending={trayendo === "jugadores"}
-              pendingLabel="Trayendo…"
-              disabled={ocupado}
-              onClick={() =>
-                void traer(
-                  "jugadores",
-                  () => traerCifrasJugadoresRfgf(actual.competicionId),
-                  frase,
-                )
-              }
-            >
-              Traer cifras
-            </Button>
-          </div>
-          <div className={s.opcion}>
-            <div>
-              <strong>Clasificación</strong>
-              <span>
-                {comparacion
-                  ? comparacion.diferencias.length
-                    ? `No cuadraba con la oficial (J${comparacion.jornada}) en ${comparacion.diferencias.length} equipo${comparacion.diferencias.length > 1 ? "s" : ""}.`
-                    : `Cuadra con la oficial (J${comparacion.jornada}).`
-                  : "Compárala con la oficial; si no cuadra, se traen los resultados que falten."}
-              </span>
+            <div className={s.opcion}>
+              <div>
+                <strong>Clasificación</strong>
+                <span>
+                  {comparacion
+                    ? comparacion.diferencias.length
+                      ? `No cuadraba con la oficial (J${comparacion.jornada}) en ${comparacion.diferencias.length} equipo${comparacion.diferencias.length > 1 ? "s" : ""}.`
+                      : `Cuadra con la oficial (J${comparacion.jornada}).`
+                    : "Compárala con la oficial; si no cuadra, se traen los resultados que falten."}
+                </span>
+              </div>
+              <Button
+                variant="secondary"
+                pending={trayendo === "clasificacion"}
+                pendingLabel="Comparando…"
+                disabled={ocupado}
+                onClick={() =>
+                  void traer(
+                    "clasificacion",
+                    async () => {
+                      const r = await actualizarClasificacionRfgf(actual.competicionId);
+                      if (r.ok) setClasificacion(r.datos);
+                      return r;
+                    },
+                    (c) =>
+                      c.cuadra
+                        ? "La clasificación coincide con la federación ✓"
+                        : "La clasificación no coincide: mira el detalle.",
+                  )
+                }
+              >
+                Actualizar
+              </Button>
             </div>
-            <Button
-              variant="secondary"
-              pending={trayendo === "clasificacion"}
-              pendingLabel="Comparando…"
-              disabled={ocupado}
-              onClick={() =>
-                void traer(
-                  "clasificacion",
-                  async () => {
-                    const r = await actualizarClasificacionRfgf(actual.competicionId);
-                    if (r.ok) setClasificacion(r.datos);
-                    return r;
-                  },
-                  (c) =>
-                    c.cuadra
-                      ? "La clasificación coincide con la federación ✓"
-                      : "La clasificación no coincide: mira el detalle.",
-                )
-              }
-            >
-              Actualizar
-            </Button>
-          </div>
-          {clasificacion && !clasificacion.cuadra && (
-            <div className={s.detalle} role="status">
-              <strong>
-                No coincide con la oficial
-                {clasificacion.jornadaOficial ? ` (J${clasificacion.jornadaOficial})` : ""}:
-              </strong>
-              <ul>
-                {clasificacion.diferencias.map((d, i) => (
-                  <li key={d}>
-                    {d}
-                    {clasificacion.motivos[i] ? <em> — {clasificacion.motivos[i]}</em> : null}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+            {clasificacion && !clasificacion.cuadra && (
+              <div className={s.detalle} role="status">
+                <strong>
+                  No coincide con la oficial
+                  {clasificacion.jornadaOficial ? ` (J${clasificacion.jornadaOficial})` : ""}:
+                </strong>
+                <ul>
+                  {clasificacion.diferencias.map((d, i) => (
+                    <li key={d}>
+                      {d}
+                      {clasificacion.motivos[i] ? <em> — {clasificacion.motivos[i]}</em> : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </details>
         </section>
       )}
 
-      <section className={s.bloque} aria-label="Jornadas">
-        <h3>Jornadas</h3>
-        {!estado ? (
-          <LoadingState title="Cargando jornadas…" />
-        ) : (
-          <ol className={s.jornadas}>
-            {jornadas.map((j) => (
-              <li key={j.numero}>
-                <details className={s.jornada} data-estado={j.estado}>
-                  <summary>
-                    <span className={s.numero}>J{j.numero}</span>
-                    <span className={s.fecha}>{fecha(j.fecha)}</span>
-                    <span className={s.resumen}>
-                      {j.estado === "por_jugar"
-                        ? `${j.partidos} partidos`
-                        : `${j.conResultado}/${j.partidos} resultados · ${j.conActaTratada}/${j.partidos} actas`}
-                    </span>
-                    <span className={s.estado}>{ESTADO_JORNADA[j.estado]}</span>
-                  </summary>
-                  <ul className={s.partidos}>
-                    {j.encuentros.map((p) => (
-                      <li key={p.id} data-propio={p.propio}>
-                        <span className={s.cruce}>
-                          {p.local} – {p.visitante}
-                        </span>
-                        <strong className={s.marcador}>
-                          {p.marcador ? `${p.marcador[0]}–${p.marcador[1]}` : "—"}
-                        </strong>
-                        <span className={s.acta} data-acta={p.acta.estado}>
-                          {ESTADO_ACTA[p.acta.estado]}
-                          {p.acta.aviso ? ` · ${p.acta.aviso}` : ""}
-                        </span>
-                        {actual.enlace && j.estado !== "por_jugar" && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            disabled={ocupado}
-                            pending={trayendo === `acta:${p.id}`}
-                            pendingLabel="Trayendo…"
-                            aria-label={`Traer acta: ${p.local} – ${p.visitante}`}
-                            onClick={() =>
-                              void traer(
-                                `acta:${p.id}`,
-                                () => traerActaRfgf(actual.competicionId, p.id),
-                                frase,
-                              )
-                            }
-                          >
-                            Traer acta
-                          </Button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                  {actual.enlace && (
-                    <Button
-                      variant="secondary"
-                      disabled={ocupado}
-                      pending={trayendo === `jornada:${j.numero}`}
-                      pendingLabel="Trayendo…"
-                      onClick={() =>
-                        void traer(
-                          `jornada:${j.numero}`,
-                          () => traerJornadaRfgf(actual.competicionId, j.numero),
-                          frase,
-                        )
-                      }
-                    >
-                      Traer jornada {j.numero}
-                    </Button>
-                  )}
-                </details>
-              </li>
-            ))}
-          </ol>
-        )}
+      <section aria-label="Jornadas">
+        <details open className={s.bloque}>
+          <summary>
+            <h3>Jornadas</h3>
+          </summary>
+          {!estado ? (
+            <LoadingState title="Cargando jornadas…" />
+          ) : (
+            <ol className={s.jornadas}>
+              {jornadas.map((j) => (
+                <li key={j.numero}>
+                  <details className={s.jornada} data-estado={j.estado}>
+                    <summary>
+                      <span className={s.numero}>J{j.numero}</span>
+                      <span className={s.fecha}>{fecha(j.fecha)}</span>
+                      <span className={s.resumen}>
+                        {j.estado === "por_jugar"
+                          ? `${j.partidos} partidos`
+                          : `${j.conResultado}/${j.partidos} resultados · ${j.conActaTratada}/${j.partidos} actas`}
+                      </span>
+                      <span className={s.estado}>{ESTADO_JORNADA[j.estado]}</span>
+                    </summary>
+                    <ul className={s.partidos}>
+                      {j.encuentros.map((p) => (
+                        <li key={p.id} data-propio={p.propio}>
+                          <span className={s.cruce}>
+                            {p.local} – {p.visitante}
+                          </span>
+                          <strong className={s.marcador}>
+                            {p.marcador ? `${p.marcador[0]}–${p.marcador[1]}` : "—"}
+                          </strong>
+                          <span className={s.acta} data-acta={p.acta.estado}>
+                            {ESTADO_ACTA[p.acta.estado]}
+                            {p.acta.aviso ? ` · ${p.acta.aviso}` : ""}
+                          </span>
+                          {actual.enlace && j.estado !== "por_jugar" && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={ocupado}
+                              pending={trayendo === `acta:${p.id}`}
+                              pendingLabel="Trayendo…"
+                              aria-label={`Traer acta: ${p.local} – ${p.visitante}`}
+                              onClick={() =>
+                                void traer(
+                                  `acta:${p.id}`,
+                                  () => traerActaRfgf(actual.competicionId, p.id),
+                                  frase,
+                                )
+                              }
+                            >
+                              Traer acta
+                            </Button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    {actual.enlace && (
+                      <Button
+                        variant="secondary"
+                        disabled={ocupado}
+                        pending={trayendo === `jornada:${j.numero}`}
+                        pendingLabel="Trayendo…"
+                        onClick={() =>
+                          void traer(
+                            `jornada:${j.numero}`,
+                            () => traerJornadaRfgf(actual.competicionId, j.numero),
+                            frase,
+                          )
+                        }
+                      >
+                        Traer jornada {j.numero}
+                      </Button>
+                    )}
+                  </details>
+                </li>
+              ))}
+            </ol>
+          )}
+        </details>
       </section>
 
       {historico && historico.length > 0 && (
-        <section className={s.bloque} aria-label="Temporadas pasadas">
-          <h3>Temporadas pasadas</h3>
-          <p className={s.nota}>
-            Las cifras de los jugadores de temporadas anteriores se repasan solas, poco a poco.
-            Los partidos del Santiso de cada temporada se traen solo si los pides: tardan unas
-            horas, para no saturar a la federación, y se guardan aparte del calendario actual.
-          </p>
-          <ul className={s.historico}>
-            {historico.map((g) => (
-              <li key={g.codGrupo}>
-                <div>
-                  <strong>
-                    {g.temporada} · {g.categoria}
-                  </strong>
-                  <span>
-                    {g.competicion} · {g.grupo}
-                  </span>
-                  <small>
-                    {ESTADO_GRUPO[g.estado] ?? g.estado} · {g.conCifras} jugadores con cifras
-                    {g.intentos ? ` · ${g.intentos} intentos` : ""}
-                  </small>
-                </div>
-                <div className={s.archivo}>
-                  <span>Partidos del Santiso: {g.archivoPartidos.texto}</span>
-                  {g.archivoPartidos.estado === "no_pedido" ? (
+        <section aria-label="Temporadas pasadas">
+          <details className={s.bloque}>
+            <summary>
+              <h3>Temporadas pasadas</h3>
+            </summary>
+            <p className={s.nota}>
+              Las cifras de los jugadores de temporadas anteriores se repasan solas, poco a poco.
+              Los partidos del Santiso de cada temporada se traen solo si los pides: tardan unas
+              horas, para no saturar a la federación, y se guardan aparte del calendario actual.
+            </p>
+            <ul className={s.historico}>
+              {historico.map((g) => (
+                <li key={g.codGrupo}>
+                  <div>
+                    <strong>
+                      {g.temporada} · {g.categoria}
+                    </strong>
+                    <span>
+                      {g.competicion} · {g.grupo}
+                    </span>
+                    <small>
+                      {ESTADO_GRUPO[g.estado] ?? g.estado} · {g.conCifras} jugadores con cifras
+                      {g.intentos ? ` · ${g.intentos} intentos` : ""}
+                    </small>
+                  </div>
+                  <div className={s.archivo}>
+                    <span>Partidos del Santiso: {g.archivoPartidos.texto}</span>
+                    {g.archivoPartidos.estado === "no_pedido" ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={ocupado}
+                        aria-label={`Traer partidos: ${g.temporada} · ${g.competicion}`}
+                        onClick={() =>
+                          void traer(
+                            `partidos:${g.codGrupo}`,
+                            async () => {
+                              const r = await pedirPartidosHistoricosRfgf(g.codGrupo);
+                              await cargarHistorico();
+                              return r;
+                            },
+                            () =>
+                              "Pedidos. Se irán trayendo poco a poco, unas horas por temporada.",
+                          )
+                        }
+                      >
+                        Traer partidos
+                      </Button>
+                    ) : (
+                      <ArchivoPartidos codGrupo={g.codGrupo} />
+                    )}
+                  </div>
+                  {g.estado !== "listo" && (
                     <Button
                       size="sm"
                       variant="secondary"
                       disabled={ocupado}
-                      aria-label={`Traer partidos: ${g.temporada} · ${g.competicion}`}
+                      pending={trayendo === `grupo:${g.codGrupo}`}
+                      pendingLabel="Trayendo…"
+                      aria-label={`Adelantar cifras de jugadores: ${g.temporada} · ${g.competicion}`}
                       onClick={() =>
                         void traer(
-                          `partidos:${g.codGrupo}`,
+                          `grupo:${g.codGrupo}`,
                           async () => {
-                            const r = await pedirPartidosHistoricosRfgf(g.codGrupo);
+                            const r = await traerTemporadaHistoricaRfgf(g.codGrupo);
                             await cargarHistorico();
                             return r;
                           },
-                          () =>
-                            "Pedidos. Se irán trayendo poco a poco, unas horas por temporada.",
+                          frase,
                         )
                       }
                     >
-                      Traer partidos
+                      Adelantar cifras
                     </Button>
-                  ) : (
-                    <ArchivoPartidos codGrupo={g.codGrupo} />
                   )}
-                </div>
-                {g.estado !== "listo" && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={ocupado}
-                    pending={trayendo === `grupo:${g.codGrupo}`}
-                    pendingLabel="Trayendo…"
-                    aria-label={`Adelantar cifras de jugadores: ${g.temporada} · ${g.competicion}`}
-                    onClick={() =>
-                      void traer(
-                        `grupo:${g.codGrupo}`,
-                        async () => {
-                          const r = await traerTemporadaHistoricaRfgf(g.codGrupo);
-                          await cargarHistorico();
-                          return r;
-                        },
-                        frase,
-                      )
-                    }
-                  >
-                    Adelantar cifras
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          </details>
         </section>
       )}
 

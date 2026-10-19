@@ -30,6 +30,7 @@ import {
   cargarFotoGuardada,
 } from "@/lib/server/acciones/carteles-guardados";
 import styles from "./Alineacion.module.css";
+import { iniciales } from "@/lib/iniciales";
 
 interface Props {
   categoria: string;
@@ -246,7 +247,9 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
                     {j.fotoUrl ? (
                       <img className={styles.foto} src={`${j.fotoUrl}?ancho=480`} alt="" />
                     ) : (
-                      <span className={styles.foto} aria-hidden="true" />
+                      <span className={styles.foto} aria-hidden="true">
+                        {iniciales(nombre)}
+                      </span>
                     )}
                     <span className={styles.nombre}>
                       {nombre}

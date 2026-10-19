@@ -195,7 +195,7 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
                     <span
                       className={`${styles.estado} ${p.en_carteles ? styles.dentro : styles.fuera}`}
                     >
-                      {p.en_carteles ? "Sí" : "No"}
+                      {p.en_carteles ? "En cartel" : "Fuera"}
                     </span>
                   </td>
                   <td className={styles.celdaAcciones}>
