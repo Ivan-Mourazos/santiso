@@ -384,8 +384,20 @@ function Registro({
     formulario
   );
 
+  const sinCobrar = pantalla.multas.filter((m) => !m.pagadaEn);
+  const pendienteCentimos = resumirMultas(pantalla.multas).pendienteCentimos;
+
   return (
     <div className={styles.seccion}>
+      {sinCobrar.length > 0 && (
+        <p className={styles.cifra}>
+          <strong>{euros(pendienteCentimos)}</strong>
+          <span>
+            pendiente de cobrar · {sinCobrar.length}{" "}
+            {sinCobrar.length === 1 ? "multa" : "multas"}
+          </span>
+        </p>
+      )}
       {!movil && nueva}
 
       <div className={styles.filtros}>
