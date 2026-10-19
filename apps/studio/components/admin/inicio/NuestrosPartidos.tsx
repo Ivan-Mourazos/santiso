@@ -105,7 +105,7 @@ export default function NuestrosPartidos() {
               <p className={styles.partidoContexto}>
                 <span className={styles.categoria}>{categoria}</span>
                 <span>
-                  Xornada {p.jornadaNumero} ·{" "}
+                  Jornada {p.jornadaNumero} ·{" "}
                   {despues ? "Final" : p.santisoLocal ? "Casa" : "Fuera"}
                 </span>
               </p>

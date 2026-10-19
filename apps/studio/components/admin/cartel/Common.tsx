@@ -182,7 +182,7 @@ const CrucePartido: React.FC<{ m: SelectorMatch; categoria: string }> = ({ m, ca
     m.goles_local != null && m.goles_visitante != null
       ? `${m.goles_local}–${m.goles_visitante}`
       : "vs";
-  const contexto = [categoria, competicion, m.jornada?.numero ? `Xornada ${m.jornada.numero}` : ""]
+  const contexto = [categoria, competicion, m.jornada?.numero ? `Jornada ${m.jornada.numero}` : ""]
     .filter(Boolean)
     .join(" · ");
   return (

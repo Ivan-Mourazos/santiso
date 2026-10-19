@@ -190,21 +190,20 @@
     gap: 0.35rem;
     margin-bottom: 0.5rem;
   }
+  /* La cifra arriba, en letra de marcador; la etiqueta debajo, entera. */
   .dato {
-    display: flex;
-    align-items: baseline;
-    gap: 0.3rem;
+    display: grid;
+    gap: 2px;
     margin: 0;
-    padding: 0.3rem 0.5rem;
+    padding: 0.5rem;
     min-width: 0;
   }
   .dato strong {
-    font-size: var(--ui-text-base);
+    font: 900 26px / 1 var(--ui-font-title);
   }
   .dato span {
     font-size: var(--ui-text-xs);
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
   }
   /*
    * Una línea por jugador: dorsal, nombre y las cuatro cifras que más se miran. El resto
