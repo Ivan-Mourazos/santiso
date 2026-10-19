@@ -12,6 +12,7 @@ const sinDeslizar = async (page: import("@playwright/test").Page) => {
 test("fichas: de la clasificación a la ficha de un equipo", async ({ page }) => {
   await page.goto("/admin/clasificacion?categoria=Senior");
   const fila = page.getByRole("button", { name: /^Ver estadísticas de / }).first();
+  await fila.waitFor({ timeout: 20000 }).catch(() => {});
   test.skip((await fila.count()) === 0, "Sin clasificación en los datos reales");
   await fila.tap();
   await page.getByRole("link", { name: "Ver la ficha completa" }).tap();
@@ -25,6 +26,7 @@ test("fichas: de la clasificación a la ficha de un equipo", async ({ page }) =>
 test("fichas: de la plantilla a la ficha completa de un jugador", async ({ page }) => {
   await page.goto("/admin/jugadores?categoria=Senior");
   const nombre = page.getByRole("button", { name: /^Ver ficha de / }).first();
+  await nombre.waitFor({ timeout: 20000 }).catch(() => {});
   test.skip((await nombre.count()) === 0, "Sin jugadores en los datos reales");
   await nombre.tap();
   await page.getByRole("link", { name: "Ver la ficha completa" }).tap();
