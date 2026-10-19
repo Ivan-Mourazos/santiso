@@ -146,6 +146,110 @@ export interface FichaDeEquipo {
   temporada: { competicionId: string; competicion: string; ficha: FichaEquipo }[];
   /** Contra el Santiso: de lo más reciente a lo más antiguo, con totales desde el Santiso. */
   contraSantiso: { partidos: PartidoCaraACara[]; totales: TotalesCaraACara };
+  /** Sus jugadores según las actas de esta temporada: más partidos primero. */
+  jugadoresVistos: JugadorVisto[];
+}
+
+/** Un jugador de un equipo tal como sale en las actas de la temporada activa. */
+export interface JugadorVisto {
+  /** «Nombre Apellidos», como se guarda en las tablas de la liga. */
+  persona: string;
+  /** El dorsal que más ha llevado; `null` si solo sale en goles o tarjetas. */
+  dorsal: number | null;
+  /** Partidos en los que sale en la alineación. */
+  partidos: number;
+  /** De ellos, de titular. */
+  titular: number;
+  goles: number;
+  amarillas: number;
+  /** Rojas directas y dobles amarillas. */
+  rojas: number;
+}
+
+/**
+ * Los jugadores de un equipo en la temporada activa según las actas de la federación:
+ * alineaciones (dorsal, partidos, titularidades) y goles y tarjetas. Los técnicos no cuentan.
+ * Solo lee.
+ */
+export async function jugadoresVistosDeEquipo(equipoId: string): Promise<JugadorVisto[]> {
+  const { db } = await obtenerDb();
+  const activa = eq(schema.temporadas.activa, true);
+  const alineaciones = await db
+    .select({
+      partidoId: schema.ligaAlineaciones.partidoId,
+      persona: schema.ligaAlineaciones.persona,
+      clave: schema.ligaAlineaciones.personaClave,
+      dorsal: schema.ligaAlineaciones.dorsal,
+      titular: schema.ligaAlineaciones.titular,
+    })
+    .from(schema.ligaAlineaciones)
+    .innerJoin(schema.partidos, eq(schema.partidos.id, schema.ligaAlineaciones.partidoId))
+    .innerJoin(schema.jornadas, eq(schema.jornadas.id, schema.partidos.jornadaId))
+    .innerJoin(schema.competiciones, eq(schema.competiciones.id, schema.jornadas.competicionId))
+    .innerJoin(schema.temporadas, eq(schema.temporadas.id, schema.competiciones.temporadaId))
+    .where(and(eq(schema.ligaAlineaciones.equipoId, equipoId), activa));
+  const eventos = await db
+    .select({
+      persona: schema.ligaEventos.persona,
+      clave: schema.ligaEventos.personaClave,
+      tipo: schema.ligaEventos.tipo,
+    })
+    .from(schema.ligaEventos)
+    .innerJoin(schema.partidos, eq(schema.partidos.id, schema.ligaEventos.partidoId))
+    .innerJoin(schema.jornadas, eq(schema.jornadas.id, schema.partidos.jornadaId))
+    .innerJoin(schema.competiciones, eq(schema.competiciones.id, schema.jornadas.competicionId))
+    .innerJoin(schema.temporadas, eq(schema.temporadas.id, schema.competiciones.temporadaId))
+    .where(
+      and(eq(schema.ligaEventos.equipoId, equipoId), eq(schema.ligaEventos.tecnico, false), activa),
+    );
+  const porClave = new Map<
+    string,
+    JugadorVisto & { dorsales: (number | null)[]; actas: Set<string>; deTitular: Set<string> }
+  >();
+  const de = (clave: string, persona: string) => {
+    const visto = porClave.get(clave) ?? {
+      persona,
+      dorsal: null,
+      partidos: 0,
+      titular: 0,
+      goles: 0,
+      amarillas: 0,
+      rojas: 0,
+      dorsales: [],
+      actas: new Set<string>(),
+      deTitular: new Set<string>(),
+    };
+    porClave.set(clave, visto);
+    return visto;
+  };
+  for (const a of alineaciones) {
+    const visto = de(a.clave, a.persona);
+    visto.dorsales.push(a.dorsal);
+    visto.actas.add(a.partidoId);
+    if (a.titular) visto.deTitular.add(a.partidoId);
+  }
+  for (const e of eventos) {
+    const visto = de(e.clave, e.persona);
+    if (e.tipo === "gol") visto.goles++;
+    else if (e.tipo === "amarilla") visto.amarillas++;
+    else if (e.tipo === "roja" || e.tipo === "doble_amarilla") visto.rojas++;
+  }
+  return [...porClave.values()]
+    .map(({ dorsales, actas, deTitular, ...visto }) => {
+      const cuenta = new Map<number, number>();
+      for (const d of dorsales) if (d !== null) cuenta.set(d, (cuenta.get(d) ?? 0) + 1);
+      const [dorsal = null] = [...cuenta]
+        .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+        .map(([d]) => d);
+      return { ...visto, dorsal, partidos: actas.size, titular: deTitular.size };
+    })
+    .sort(
+      (a, b) =>
+        b.partidos - a.partidos ||
+        b.goles - a.goles ||
+        (a.dorsal ?? 999) - (b.dorsal ?? 999) ||
+        a.persona.localeCompare(b.persona, "es"),
+    );
 }
 
 /** Totales desde el Santiso de una lista de partidos (solo los que tienen marcador). */
@@ -366,6 +470,7 @@ export async function fichaDeEquipo(equipoId: string): Promise<FichaDeEquipo | n
     campoHabitual: campo ? { ...campo, partidos: Number(campo.partidos) } : null,
     temporada,
     contraSantiso: { partidos, totales: totalesCaraACara(partidos) },
+    jugadoresVistos: await jugadoresVistosDeEquipo(equipoId),
   };
 }
 
