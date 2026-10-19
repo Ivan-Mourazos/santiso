@@ -2,8 +2,14 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 async function abrirIndividual(page: Page) {
   await page.goto("/admin/actas");
-  await expect(page.getByLabel("Categoría", { exact: true })).toHaveValue("Veteranos");
+  // Sin categoría en el enlace, la de la cabecera (Senior), y como partido el último jugado sin
+  // acta, nunca uno por jugar. Si todos tienen acta, se elige a mano.
+  await expect(page.getByLabel("Categoría", { exact: true })).toHaveValue("Senior");
   const partido = page.getByLabel("Partido", { exact: true });
+  await expect(partido.locator("option", { hasText: " vs " }).first()).toBeAttached({
+    timeout: 20000,
+  });
+  if ((await partido.inputValue()) === "") await partido.selectOption({ index: 1 });
   await expect(partido).not.toHaveValue("");
   await expect(page.getByRole("button", { name: /Rellenar manualmente/ })).toBeEnabled();
   return partido;

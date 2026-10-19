@@ -44,6 +44,7 @@ export async function partidosParaActa(categoria?: string): Promise<PartidoActaD
       jornadaNumero: schema.jornadas.numero,
       campoNombre: schema.campos.nombre,
       campoPoblacion: schema.campos.poblacion,
+      participaciones: sql<number>`(select count(*) from ${schema.partidoParticipaciones} where ${schema.partidoParticipaciones.partidoId} = ${schema.partidos.id})`,
     })
     .from(schema.partidos)
     .innerJoin(schema.jornadas, eq(schema.jornadas.id, schema.partidos.jornadaId))
@@ -66,6 +67,7 @@ export async function partidosParaActa(categoria?: string): Promise<PartidoActaD
     estado: f.estado,
     fecha: f.fecha,
     campo_id: f.campoId,
+    con_acta: Number(f.participaciones) > 0,
     // Con escudo: los carteles («Próximos encuentros», «Partido») lo toman de aquí.
     equipo_local: {
       nombre: f.nombreLocal,

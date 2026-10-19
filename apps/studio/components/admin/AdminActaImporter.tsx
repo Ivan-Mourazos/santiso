@@ -21,6 +21,7 @@ import {
 import { fetchCompeticiones } from "@/lib/lecturas-cliente";
 import { parseFutgalActaText } from "@/lib/actas/futgal-parser";
 import { MAX_CAPTURAS, elegirArchivosDeActa } from "@/lib/actas/capturas";
+import { ahoraLocal, partidoPorDefectoActa } from "@/lib/actas/partido-por-defecto";
 import { leerFichaPdf } from "@/lib/server/acciones/fichas";
 import type {
   ActaCampoDb,
@@ -262,7 +263,8 @@ export default function AdminActaImporter({
   deteccionInicial,
 }: AdminActaImporterProps) {
   const [categoria, setCategoria] = useState<ActaCategoria>(
-    () => CATEGORIES.find((c) => c === inicial?.categoria) ?? "Veteranos",
+    // Sin categoría en el enlace, la de la cabecera por defecto: el Senior.
+    () => CATEGORIES.find((c) => c === inicial?.categoria) ?? "Senior",
   );
   const [competicionesCatalog, setCompeticionesCatalog] = useState<CompetenciaRow[]>([]);
   const [selectedCompetitionId, setSelectedCompetitionId] = useState(inicial?.competicionId ?? "");
@@ -347,7 +349,9 @@ export default function AdminActaImporter({
       });
       setMatches(data);
       setSelectedMatchId((current) =>
-        data.some((match) => match.id === current) ? current : data[0]?.id || "",
+        data.some((match) => match.id === current)
+          ? current
+          : partidoPorDefectoActa(data, ahoraLocal()),
       );
     } catch (error) {
       console.error(error);

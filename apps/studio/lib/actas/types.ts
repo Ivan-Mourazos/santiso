@@ -62,6 +62,8 @@ export interface ActaMatchDb {
   goles_local: number | null;
   goles_visitante: number | null;
   estado: string | null;
+  fecha?: string | null;
+  con_acta?: boolean;
   campo_id?: string | null;
   equipo_local?: { nombre?: string | null } | null;
   equipo_visitante?: { nombre?: string | null } | null;
