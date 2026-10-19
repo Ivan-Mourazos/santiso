@@ -6,7 +6,7 @@ import { CartelesDelPaso } from "@/components/admin/cartel/CartelesDelPaso";
 import { useCartelAssets } from "@/components/admin/cartel/useCartelAssets";
 import { AvisosPartido, avisoDe, MarcaAviso } from "@/components/admin/liga/AvisosPartido";
 import { FotoFondoControl } from "@/components/cartel2/FotoFondoControl";
-import { useUnsavedChanges } from "@/components/studio/StudioContext";
+import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Select } from "@/components/ui/foundation/Fields";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
@@ -60,6 +60,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
 
   const sucio = JSON.stringify(alineacion) !== JSON.stringify(guardada);
   useUnsavedChanges(sucio);
+  const { showConfirm } = useStudio();
 
   const cargar = useCallback(
     async (partidoId: string | null) => {
@@ -185,8 +186,9 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
             value={partido.id}
             disabled={ocupada}
             onChange={(e) => {
-              if (sucio && !window.confirm("Hay cambios sin guardar. ¿Descartarlos?")) return;
-              void cargar(e.target.value);
+              const id = e.target.value;
+              if (sucio) showConfirm("Hay cambios sin guardar. ¿Descartarlos?", () => cargar(id));
+              else void cargar(id);
             }}
           >
             {pantalla.partidos.map((p) => (
