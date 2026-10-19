@@ -634,39 +634,39 @@ input[type="number"] {
   transform: scale(1.05);
 }
 
+/* Subir un fichero: botón secundario en píldora, con texto normal (sin mayúsculas). */
 .file-input-label {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 12px !important;
-  background: rgba(255, 255, 255, 0.02) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 0.6rem !important;
+  gap: 10px !important;
+  background: var(--ui-control, #26262b) !important;
+  border: 1px solid var(--ui-line, rgb(255 255 255 / 10%)) !important;
+  border-radius: var(--ui-radius-pill, 999px) !important;
   cursor: pointer !important;
-  color: #a3a3a3 !important;
-  font-weight: 850 !important;
-  text-transform: uppercase !important;
-  font-size: 0.7rem !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  height: 48px !important;
+  color: var(--ui-text, #f4f4f5) !important;
+  font: 700 var(--ui-text-body, 0.95rem) var(--ui-font-body, sans-serif) !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease !important;
+  min-height: 48px !important;
+  height: auto !important;
   width: 100% !important;
-  padding: 0 1.5rem !important;
+  padding: 0 1.25rem !important;
   user-select: none !important;
 }
 .file-input-label:hover {
-  border-color: var(--primary) !important;
-  background: rgba(245, 197, 24, 0.05) !important;
-  color: white !important;
-  transform: translateY(-1px);
+  border-color: var(--ui-accent, #f5c518) !important;
+}
+.file-input-label:focus-within {
+  outline: 2px solid var(--ui-accent, #f5c518);
+  outline-offset: 2px;
 }
 .file-input-label svg {
   flex-shrink: 0;
-  color: var(--primary);
-  opacity: 0.8;
-}
-.file-input-label:hover svg {
-  opacity: 1;
-  transform: scale(1.1);
+  color: var(--ui-accent, #f5c518);
 }
 .hidden-input {
   display: none;

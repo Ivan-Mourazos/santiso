@@ -12,9 +12,10 @@
   font: 800 var(--ui-text-xl) var(--ui-font-title, sans-serif);
 }
 .cabecera p {
-  margin: 0.25rem 0 var(--ui-space-5, 1.5rem);
+  margin: 0 0 var(--ui-space-5, 1.5rem);
   color: var(--ui-muted, #aaa);
   font-size: var(--ui-text-sm);
+  line-height: 1.45;
 }
 .bloque + .bloque {
   margin-top: var(--ui-space-6, 2rem);
@@ -24,10 +25,10 @@
 .titulo {
   margin: 0 0 var(--ui-space-3, 0.75rem);
   font-size: var(--ui-text-xs);
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--ui-accent);
+  letter-spacing: 0.12em;
+  color: var(--ui-muted);
 }
 .pareja {
   display: grid;
@@ -101,10 +102,28 @@
   font-size: var(--ui-text-sm);
   font-weight: 700;
 }
+/* Segmentado: las dos opciones en una píldora, la elegida en amarillo. */
 .interruptores {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--ui-space-2, 0.5rem);
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-control);
+}
+.interruptores button {
+  flex: 1 1 0;
+  min-width: 6.5rem;
+  min-height: 44px;
+  white-space: nowrap;
+  border-radius: var(--ui-radius-pill);
+}
+.interruptores button[aria-pressed="false"] {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 /* ─── Barra de patrocinadores ─── */
@@ -161,8 +180,9 @@
   .panel {
     padding: var(--ui-space-4, 1rem);
   }
-  .imagen {
-    flex-direction: column;
+  .miniatura {
+    width: 4rem;
+    height: 4rem;
   }
 }
 
@@ -186,20 +206,15 @@
     min-height: 44px;
     white-space: normal;
   }
-  .acciones button,
-  .interruptores button {
+  .acciones button {
     min-height: 44px;
     min-width: 44px;
   }
-  .interruptores {
-    flex-direction: column;
-  }
+  /* Enlaces dentro del texto: zona táctil más alta sin separar las líneas del párrafo. */
   .nota a,
   .cabecera a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    min-width: 44px;
+    padding-block: 12px;
+    margin-block: -12px;
     overflow-wrap: anywhere;
   }
   .barra li {
