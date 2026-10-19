@@ -37,7 +37,7 @@ function rotuloSemana(desde: string, hasta: string) {
 
 /** Mesa de trabajo de cada equipo. Todas las acciones aquí son navegación o consulta. */
 export default function AdminJornada() {
-  const { params, setParams, showToast } = useStudio();
+  const { params, setParams, showToast, acceso } = useStudio();
   const pedida = params.get("semana");
   const historico = esDia(pedida);
   const dia = historico ? pedida : hoyLocal();
@@ -246,10 +246,12 @@ export default function AdminJornada() {
           </button>
         </div>
       </details>
-      {/* A la vista: es el cartel de cada semana, no algo de archivo. */}
-      <Link className={styles.acceso} href="/admin/carteles?plantilla=proximos&rellenar=1">
-        Próximos encuentros<span aria-hidden="true">↗</span>
-      </Link>
+      {/* A la vista: es el cartel de cada semana, no algo de archivo. Lo lleva el delegado. */}
+      {acceso?.rol !== "tecnico" && (
+        <Link className={styles.acceso} href="/admin/carteles?plantilla=proximos&rellenar=1">
+          Próximos encuentros<span aria-hidden="true">↗</span>
+        </Link>
+      )}
       <PanelRfgf showToast={showToast} onNovedades={() => void cargar(dia)} />
     </div>
   );

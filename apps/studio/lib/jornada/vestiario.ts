@@ -119,13 +119,17 @@ function cartel(
 /**
  * Solo los datos guardados prueban un paso: la convocatoria o el once guardados y el cartel
  * guardado con datos al día. Compartirlo pasa fuera del Studio: «guardado» no es «publicado».
+ * Con `conCarteles` a falso (el técnico: los carteles los lleva el delegado) no hay pasos de
+ * cartel y la convocatoria y el once cuentan como hechos al guardarse.
  */
 export function progresoPartido(
   p: PartidoDeLaSemana,
   ahora: string,
   categoria = "Senior",
   carteles: CartelesDelPartido = {},
+  conCarteles = true,
 ) {
+  if (!conCarteles) return progresoSinCarteles(p, ahora, categoria);
   const e = enlacesPartido(p, categoria);
   const despues = trasPartido(p, ahora);
   const resultado = marcador(p);
@@ -224,5 +228,68 @@ export function progresoPartido(
               : !once || !cOnce.hecho
                 ? { titulo: "Completar once inicial", href: e.once }
                 : { titulo: "Todo listo: compartir", href: e.cartel("partido") };
+  return { despues, pasos, principal };
+}
+
+/** El progreso del partido para quien no hace carteles: marcador, acta, convocatoria y once. */
+function progresoSinCarteles(p: PartidoDeLaSemana, ahora: string, categoria: string) {
+  const e = enlacesPartido(p, categoria);
+  const despues = trasPartido(p, ahora);
+  const resultado = marcador(p);
+  const convocados = p.preparacion.convocatoria;
+  const once = p.preparacion.titulares === 11 && p.preparacion.capitan;
+  const pasos: PasoPartido[] = despues
+    ? [
+        {
+          titulo: "Marcador",
+          estado: resultado
+            ? `${resultado.desenlace} ${resultado.cifras}`
+            : p.federacion
+              ? "Lo trae la federación"
+              : "Pendiente",
+          tono: tieneResultado(p) ? "hecho" : "pendiente",
+          href: p.federacion ? e.acta : e.calendario,
+        },
+        {
+          titulo: "Acta",
+          estado: p.acta ? "Guardada" : "Pendiente",
+          tono: p.acta ? "hecho" : "pendiente",
+          href: e.acta,
+        },
+      ]
+    : !preparaConvocatoria(categoria)
+      ? [{ titulo: "Partido", estado: "Por jugar", tono: "espera", href: e.calendario }]
+      : [
+          {
+            titulo: "Convocatoria",
+            estado: convocados ? `${convocados} convocados` : "Pendiente",
+            tono: convocados ? "hecho" : "pendiente",
+            href: e.convocatoria,
+          },
+          {
+            titulo: "Once inicial",
+            estado: `${p.preparacion.titulares}/11${p.preparacion.titulares === 11 && !p.preparacion.capitan ? " · falta capitán" : ""}`,
+            tono: once ? "hecho" : "pendiente",
+            href: e.once,
+          },
+        ];
+  const principal: { titulo: string; href: string; traerActa?: boolean } =
+    p.estado === "cancelado" || p.estado === "aplazado"
+      ? { titulo: "Revisar fecha del partido", href: e.calendario }
+      : despues
+        ? !tieneResultado(p)
+          ? p.federacion
+            ? { titulo: "Esperando a la federación", href: e.acta, traerActa: true }
+            : { titulo: "Anotar resultado", href: e.calendario }
+          : !p.acta
+            ? { titulo: "Completar acta", href: e.acta }
+            : { titulo: "Revisar acta", href: e.acta }
+        : !preparaConvocatoria(categoria)
+          ? { titulo: "Ver fecha, hora y campo", href: e.calendario }
+          : !convocados
+            ? { titulo: "Preparar convocatoria", href: e.convocatoria }
+            : !once
+              ? { titulo: "Completar once inicial", href: e.once }
+              : { titulo: "Revisar once inicial", href: e.once };
   return { despues, pasos, principal };
 }

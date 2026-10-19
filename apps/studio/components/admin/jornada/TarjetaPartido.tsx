@@ -81,14 +81,17 @@ export default function TarjetaPartido({
     };
   }, [p.id]);
   const cuando = fechaPartido(p.fecha);
+  // El técnico no hace carteles ni trae actas: eso lo lleva el delegado.
+  const puedeTraer = acceso?.rol !== "tecnico";
+  const conCarteles = puedeTraer;
   const { despues, pasos, principal } = progresoPartido(
     p,
     momento,
     categoria,
     carteles?.id === p.id ? carteles.deEste : {},
+    conCarteles,
   );
   const e = enlacesPartido(p, categoria);
-  const puedeTraer = acceso?.rol !== "tecnico";
   function traerActa() {
     setTrayendo(true);
     void traerActaRfgf(p.competicionId, p.id)
@@ -232,7 +235,7 @@ export default function TarjetaPartido({
               <Acceso href={e.once}>Once inicial</Acceso>
             </>
           )}
-          <Acceso href={e.cartel("partido")}>Cartel de partido</Acceso>
+          {conCarteles && <Acceso href={e.cartel("partido")}>Cartel de partido</Acceso>}
           <Acceso href={e.calendario}>Cambiar fecha, hora o campo</Acceso>
           {/* El acta llega sola cada noche; esto la pide ya, solo la de este partido. */}
           {despues && puedeTraer && (
@@ -248,21 +251,29 @@ export default function TarjetaPartido({
           <Acceso href={e.acta} disponible={despues || Boolean(p.acta)} motivo="Tras el partido">
             {p.acta ? "Corregir acta" : "Meter acta a mano"}
           </Acceso>
-          <Acceso href={e.cartel("resumo")} disponible={marcado} motivo="Necesita resultado">
-            Cartel de resultado
-          </Acceso>
-          {/* Veteranos no alinea antes del partido: el once se publica después, con el resumen. */}
-          {!preparaConvocatoria(categoria) && (
-            <Acceso href={e.cartel("noso11")} disponible={despues} motivo="Tras el partido">
-              Cartel del once
-            </Acceso>
+          {conCarteles && (
+            <>
+              <Acceso href={e.cartel("resumo")} disponible={marcado} motivo="Necesita resultado">
+                Cartel de resultado
+              </Acceso>
+              {/* Veteranos no alinea antes del partido: el once se publica después, con el resumen. */}
+              {!preparaConvocatoria(categoria) && (
+                <Acceso href={e.cartel("noso11")} disponible={despues} motivo="Tras el partido">
+                  Cartel del once
+                </Acceso>
+              )}
+              <Acceso
+                href={e.cartel("cronoloxia")}
+                disponible={Boolean(p.acta)}
+                motivo="Necesita acta"
+              >
+                Cronoloxía
+              </Acceso>
+              <Acceso href={e.cartel("noso11")} disponible={Boolean(p.acta)} motivo="Necesita acta">
+                O noso 11
+              </Acceso>
+            </>
           )}
-          <Acceso href={e.cartel("cronoloxia")} disponible={Boolean(p.acta)} motivo="Necesita acta">
-            Cronoloxía
-          </Acceso>
-          <Acceso href={e.cartel("noso11")} disponible={Boolean(p.acta)} motivo="Necesita acta">
-            O noso 11
-          </Acceso>
           <button type="button" className={styles.acceso} onClick={() => setGaleria(true)}>
             Fotos del partido<span aria-hidden="true">↗</span>
           </button>
@@ -270,7 +281,9 @@ export default function TarjetaPartido({
             Importar resultados
           </Acceso>
           <Acceso href={e.clasificacion}>Ver clasificación</Acceso>
-          <Acceso href="/admin/carteles?plantilla=clasificacion">Cartel de clasificación</Acceso>
+          {conCarteles && (
+            <Acceso href="/admin/carteles?plantilla=clasificacion">Cartel de clasificación</Acceso>
+          )}
         </div>
       </details>
       {galeria && (

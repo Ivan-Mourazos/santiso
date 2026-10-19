@@ -33,6 +33,31 @@ const guardado = (desactualizado = false) => [
 ];
 
 describe("mesa de trabajo", () => {
+  it("el técnico no recibe pasos de cartel: los lleva el delegado", () => {
+    const antes = progresoPartido(partido(), ahora, "Senior", {}, false);
+    expect(antes.pasos.map((p) => p.titulo)).toEqual(["Convocatoria", "Once inicial"]);
+    expect(antes.principal.titulo).toBe("Preparar convocatoria");
+    const listo = progresoPartido(
+      partido({ preparacion: { convocatoria: 18, titulares: 11, capitan: true } }),
+      ahora,
+      "Senior",
+      {},
+      false,
+    );
+    expect(listo.pasos.every((p) => p.tono === "hecho")).toBe(true);
+    expect(listo.principal.href).not.toContain("/admin/carteles");
+    const jugado = progresoPartido(
+      partido({ fecha: "2026-10-11T17:00", golesSantiso: 2, golesRival: 1, acta: {} as never }),
+      ahora,
+      "Senior",
+      {},
+      false,
+    );
+    expect(jugado.pasos.map((p) => p.titulo)).toEqual(["Marcador", "Acta"]);
+    expect(jugado.principal).toMatchObject({ titulo: "Revisar acta" });
+    const veteranos = progresoPartido(partido(), ahora, "Veteranos", {}, false);
+    expect(veteranos.principal.href).not.toContain("/admin/carteles");
+  });
   it("Senior antes del partido: cartel de partido, convocatoria y once inicial, en ese orden", () => {
     const { pasos, principal } = progresoPartido(partido(), ahora, "Senior");
     expect(pasos.map((p) => p.titulo)).toEqual([

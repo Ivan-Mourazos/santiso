@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fechaPartido } from "@/components/admin/jornada/TarjetaPartido";
+import { useStudio } from "@/components/studio/StudioContext";
 import { hoyLocal } from "@/lib/jornada/semana";
 import {
   type CartelesDelPartido,
@@ -36,6 +37,7 @@ function datosDe(pantalla: PantallaJornada): Omit<Datos, "carteles"> {
  * Es solo un resumen; el partido entero, con todos sus pasos, está en Liga → Partidos.
  */
 export default function NuestrosPartidos() {
+  const { acceso } = useStudio();
   const [datos, setDatos] = useState<Datos | null>(null);
   const [fallo, setFallo] = useState(false);
   useEffect(() => {
@@ -79,6 +81,8 @@ export default function NuestrosPartidos() {
           datos.momento,
           categoria,
           datos.carteles[p.id] ?? {},
+          // Los carteles los lleva el delegado: al técnico no se le mandan a ellos.
+          acceso?.rol !== "tecnico",
         );
         const cuando = fechaPartido(p.fecha);
         const hechos = pasos.filter((paso) => paso.tono === "hecho").length;

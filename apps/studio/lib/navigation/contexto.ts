@@ -16,7 +16,8 @@ export const SECCIONES = [
   { id: "multas", label: "Multas", grupo: "Plantilla" },
   { id: "convocatoria", label: "Convocatoria", grupo: "Producción" },
   { id: "alineacion", label: "Once inicial", grupo: "Producción" },
-  { id: "carteles", label: "Carteles", grupo: "Producción" },
+  // Los carteles los lleva el delegado: el técnico no los ve en el menú ni puede abrirlos.
+  { id: "carteles", label: "Carteles", grupo: "Producción", admin: true },
   { id: "importar", label: "Importar", grupo: "Producción" },
   // Siguen teniendo dirección propia (enlaces desde Jornada, lote, calendario PDF), pero se
   // entra por «Importar»: no salen en el menú.

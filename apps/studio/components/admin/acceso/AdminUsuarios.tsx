@@ -114,8 +114,8 @@ export default function AdminUsuarios({ showToast, showConfirm }: Props) {
       <section aria-labelledby="usuarios-listado">
         <h2 id="usuarios-listado">Quién puede entrar</h2>
         <p className={styles.detalle}>
-          El cuerpo técnico usa el día a día (convocatoria, alineación, multas, actas, carteles).
-          Temporadas, competiciones, ajustes y usuarios quedan para el administrador.
+          El cuerpo técnico usa el día a día (convocatoria, alineación, multas y actas). Carteles,
+          temporadas, competiciones, ajustes y usuarios quedan para el administrador.
         </p>
         {cargando ? (
           <LoadingState title="Cargando usuarios…" />
