@@ -89,7 +89,12 @@ export default function Archivo({ categoria }: { categoria: string }) {
                             {p.enlaceActa && (
                               <>
                                 {" · "}
-                                <a href={p.enlaceActa} target="_blank" rel="noreferrer">
+                                <a
+                                  className={styles.chipActa}
+                                  href={p.enlaceActa}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
                                   Acta
                                 </a>
                               </>

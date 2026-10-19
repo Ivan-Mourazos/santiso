@@ -344,3 +344,23 @@
     height: 64px;
   }
 }
+
+/* «Acta» del archivo: chip de 32 px con zona táctil de 44 px (el margen negativo no mueve la línea). */
+.chipActa {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  margin-block: -6px;
+  padding: 0 12px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-control);
+  color: var(--ui-text);
+  font-weight: 700;
+  text-decoration: none;
+  position: relative;
+}
+.chipActa::after {
+  content: "";
+  position: absolute;
+  inset: -6px 0;
+}
