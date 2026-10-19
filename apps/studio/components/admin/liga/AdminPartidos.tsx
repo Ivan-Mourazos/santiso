@@ -192,15 +192,25 @@ function Detalle({
       {p && (
         <div className={styles.detalle}>
           <div className={styles.marcador}>
-            <span>
+            {/* Tocar un equipo abre su ficha. */}
+            <Link
+              href={`/admin/equipo?id=${encodeURIComponent(p.local.id)}`}
+              transitionTypes={["nav-forward"]}
+              aria-label={`Ficha de ${p.local.nombre}`}
+            >
               <Escudo url={p.local.escudoUrl} />
               {p.local.nombre}
-            </span>
+            </Link>
             <strong>{marcadorDe(p) ?? (cuando.hora || "—")}</strong>
-            <span>
+            {/* Tocar un equipo abre su ficha. */}
+            <Link
+              href={`/admin/equipo?id=${encodeURIComponent(p.visitante.id)}`}
+              transitionTypes={["nav-forward"]}
+              aria-label={`Ficha de ${p.visitante.nombre}`}
+            >
               <Escudo url={p.visitante.escudoUrl} />
               {p.visitante.nombre}
-            </span>
+            </Link>
           </div>
           <dl className={styles.datos}>
             <div>

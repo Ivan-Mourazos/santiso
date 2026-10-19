@@ -1,7 +1,9 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- media local servida por el route handler */
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import boton from "@/components/ui/foundation/Button.module.css";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { LoadingState } from "@/components/ui/foundation/States";
 import {
@@ -70,7 +72,21 @@ export default function FichaJugador({
   const totales = ficha ? totalesDeFicha(ficha.partidos) : null;
 
   return (
-    <Dialog open onClose={onCerrar} title={nombre} description={`Ficha · ${categoria}`}>
+    <Dialog
+      open
+      onClose={onCerrar}
+      title={nombre}
+      description={`Ficha · ${categoria}`}
+      footer={
+        <Link
+          className={`${boton.button} ${boton.primary}`}
+          href={`/admin/jugador?id=${encodeURIComponent(jugadorId)}`}
+          transitionTypes={["nav-forward"]}
+        >
+          Ver la ficha completa
+        </Link>
+      }
+    >
       {error ? (
         <p className={styles.nota}>{error}</p>
       ) : !ficha || !totales ? (
@@ -179,7 +195,9 @@ export default function FichaJugador({
             </details>
           )}
           {ficha.partidos.length === 0 ? (
-            <p className={styles.nota}>Todavía no ha estado convocado en ningún partido con acta.</p>
+            <p className={styles.nota}>
+              Todavía no ha estado convocado en ningún partido con acta.
+            </p>
           ) : (
             <ul className={styles.fichaPartidos} aria-label="Partidos">
               {ficha.partidos.map((p) => {
