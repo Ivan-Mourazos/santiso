@@ -149,8 +149,7 @@ export default function TarjetaPartido({
       </div>
       {marcado && (
         <p className={styles.contexto}>
-          {marcador(p)?.desenlace} ·{" "}
-          {p.santisoLocal ? `${p.santiso} – ${p.rival.nombre}` : `${p.rival.nombre} – ${p.santiso}`}
+          {marcador(p)?.desenlace}
         </p>
       )}
       <p className={styles.campo}>{p.campo || "Campo por confirmar"}</p>

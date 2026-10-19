@@ -8,7 +8,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import type { ReglaClasificacion } from "@santiso/domain";
+import { esEquipoPropio, type ReglaClasificacion } from "@santiso/domain";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Select } from "@/components/ui/foundation/Fields";
@@ -207,7 +207,11 @@ export default function AdminClasificacion({ categoria }: Props) {
                 return (
                   <tr
                       key={fila.equipoId}
-                      className={regla ? styles.enZona : undefined}
+                      className={
+                        [regla && styles.enZona, esEquipoPropio(fila.nombre) && styles.propio]
+                          .filter(Boolean)
+                          .join(" ") || undefined
+                      }
                       style={regla ? conColor(regla.color) : undefined}
                     >
                       <td className={styles.posicion}>{puesto}</td>

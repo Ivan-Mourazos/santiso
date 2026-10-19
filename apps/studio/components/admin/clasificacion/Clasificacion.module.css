@@ -94,6 +94,14 @@
 .enZona .equipo {
   color: var(--color-regla);
 }
+/* El Santiso se encuentra de un vistazo: fila con tinte amarillo y puesto en amarillo. */
+.propio td {
+  background: var(--ui-accent-soft);
+}
+.propio .posicion,
+.propio .equipo {
+  color: var(--ui-accent);
+}
 .posicion {
   width: 2.5rem;
   font-weight: 800;
@@ -186,9 +194,16 @@
   .tabla th:last-child {
     width: 2.35rem;
   }
-  .tabla .escudo,
   .tabla [data-prioridad="false"] {
     display: none;
+  }
+  /* En el móvil, el escudo pequeño: ayuda a encontrar cada equipo sin quitar sitio al nombre. */
+  .tabla .escudo {
+    width: 1.75rem;
+  }
+  .tabla .escudo img {
+    width: 1.25rem;
+    height: 1.25rem;
   }
   .verDetalle {
     min-height: 44px;
