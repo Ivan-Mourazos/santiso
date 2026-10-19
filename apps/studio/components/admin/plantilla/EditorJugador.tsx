@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Field, Select } from "@/components/ui/foundation/Fields";
-import { useUnsavedChanges } from "@/components/studio/StudioContext";
+import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import type { JugadorDto } from "@/lib/dto";
 import { prepararImagen } from "@/lib/imagen-cliente";
 import {
@@ -48,6 +48,7 @@ export default function EditorJugador({
   onGuardado,
   onQuitar,
 }: Props) {
+  const { showConfirm } = useStudio();
   const alta = jugador === null;
   const [inicial] = useState(() => borradorDeJugador(jugador));
   const [borrador, setBorrador] = useState(inicial);
@@ -81,7 +82,8 @@ export default function EditorJugador({
 
   function cerrar() {
     if (guardando.current) return;
-    if (sucio && !window.confirm("Hay cambios sin guardar. ¿Descartarlos?")) return;
+    if (sucio)
+      return showConfirm("Hay cambios sin guardar. ¿Descartarlos?", onCerrar, { trasCerrar: true });
     onCerrar();
   }
 

@@ -174,8 +174,11 @@ for (const ancho of [360, 390]) {
       expect(box.height).toBeGreaterThanOrEqual(44);
       expect(box.x + box.width).toBeLessThanOrEqual(ancho + 1);
     }
-    page.once("dialog", (confirmacion) => confirmacion.accept());
     await dialogo.getByRole("button", { name: "Cancelar", exact: true }).click();
+    await page
+      .getByRole("dialog", { name: "Confirmar acción" })
+      .getByRole("button", { name: "Confirmar" })
+      .click();
     await expect(dialogo).toBeHidden();
     await comprobarAncho(page);
   });
@@ -347,7 +350,13 @@ for (const ancho of [360, 390]) {
     await page.setViewportSize({ width: ancho, height: 844 });
     await abrir(page, "actas");
     await expect(page.getByRole("status").filter({ hasText: "solo en escritorio" })).toHaveCount(0);
-    await expect(page.getByLabel("Partido", { exact: true })).not.toHaveValue("");
+    // Abre en el último jugado sin acta; si todos la tienen, se elige uno a mano.
+    const partido = page.getByLabel("Partido", { exact: true });
+    await expect(partido.locator("option", { hasText: " vs " }).first()).toBeAttached({
+      timeout: 20000,
+    });
+    if ((await partido.inputValue()) === "") await partido.selectOption({ index: 1 });
+    await expect(partido).not.toHaveValue("");
 
     // Nunca se llama al modelo: las dos rutas se responden aquí. No se pulsa «Confirmar».
     await page.route("**/api/admin/acta-detect", (route) => route.fulfill({ json: {} }));

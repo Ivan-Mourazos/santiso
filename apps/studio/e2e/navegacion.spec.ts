@@ -147,11 +147,12 @@ test("Equipos espera a resolver contexto antes de permitir edición", async ({ p
   const editor = page.getByRole("dialog", { name: "Crear equipo" });
   const input = editor.getByLabel("Nombre del equipo");
   await input.fill("Equipo pendiente");
-  page.once("dialog", (dialog) => dialog.dismiss());
+  const confirmar = page.getByRole("dialog", { name: "Confirmar acción" });
   await editor.getByRole("button", { name: "Cancelar" }).click();
+  await confirmar.getByRole("button", { name: "Cancelar" }).click();
   await expect(input).toHaveValue("Equipo pendiente");
-  page.once("dialog", (dialog) => dialog.accept());
   await editor.getByRole("button", { name: "Cancelar" }).click();
+  await confirmar.getByRole("button", { name: "Confirmar" }).click();
   await expect(editor).toBeHidden();
 });
 

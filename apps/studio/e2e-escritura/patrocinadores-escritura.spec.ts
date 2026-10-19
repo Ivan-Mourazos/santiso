@@ -36,8 +36,11 @@ test("alta nueva y nombre repetido que no pisa la ficha existente", async ({ pag
   await repetido.getByRole("button", { name: "Añadir", exact: true }).click();
   await expect(repetido.getByRole("alert")).toContainText("Ya existe «Autobuses Ficticio»");
 
-  page.once("dialog", (dialogo) => void dialogo.accept());
   await repetido.getByRole("button", { name: "Abrir «Autobuses Ficticio»" }).click();
+  await page
+    .getByRole("dialog", { name: "Confirmar acción" })
+    .getByRole("button", { name: "Confirmar" })
+    .click();
 
   const existente = page.getByRole("dialog", { name: "Editar «Autobuses Ficticio»" });
   await expect(existente.getByLabel("Web")).toHaveValue("https://example.test/autobuses");

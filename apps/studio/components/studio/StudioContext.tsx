@@ -32,7 +32,15 @@ type StudioValue = {
     type?: "success" | "error",
     action?: { label: string; onClick: () => void },
   ) => void;
-  showConfirm: (message: string, onConfirm: () => void | Promise<void>) => void;
+  /**
+   * Pide confirmación con el diálogo de la app. Con `trasCerrar`, la acción corre cuando el
+   * diálogo ya se cerró: para descartar un editor, así el foco vuelve a donde se abrió.
+   */
+  showConfirm: (
+    message: string,
+    onConfirm: () => void | Promise<void>,
+    opciones?: { trasCerrar?: boolean },
+  ) => void;
   register: (id: string, dirty: boolean) => void;
 };
 const StudioContext = createContext<StudioValue | null>(null);
@@ -78,7 +86,16 @@ export function StudioProvider({
   const [confirmation, setConfirmation] = useState<{
     message: string;
     action: () => void | Promise<void>;
+    trasCerrar?: boolean;
   } | null>(null);
+  // Acción confirmada que espera a que el diálogo se cierre (y devuelva el foco) para correr.
+  const trasCerrar = useRef<(() => void | Promise<void>) | null>(null);
+  useEffect(() => {
+    if (confirmation || !trasCerrar.current) return;
+    const accion = trasCerrar.current;
+    trasCerrar.current = null;
+    void accion();
+  }, [confirmation]);
   const [pending, setPending] = useState(false);
   const showToast = useCallback(
     (
@@ -94,7 +111,8 @@ export function StudioProvider({
     return () => clearTimeout(reloj);
   }, [toast]);
   const showConfirm = useCallback(
-    (message: string, action: () => void | Promise<void>) => setConfirmation({ message, action }),
+    (message: string, action: () => void | Promise<void>, opciones?: { trasCerrar?: boolean }) =>
+      setConfirmation({ message, action, trasCerrar: opciones?.trasCerrar }),
     [],
   );
   const authorize = useCallback(() => {
@@ -294,6 +312,11 @@ export function StudioProvider({
         onClose={() => setConfirmation(null)}
         onConfirm={async () => {
           if (!confirmation || pending) return;
+          if (confirmation.trasCerrar) {
+            trasCerrar.current = confirmation.action;
+            setConfirmation(null);
+            return;
+          }
           setPending(true);
           try {
             await confirmation.action();

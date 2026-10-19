@@ -62,8 +62,11 @@ test("alta, aviso de duplicado, edición y baja de un jugador", async ({ page })
   await editor.getByLabel("Nombre completo").fill("Iago Porteiro Ficticio");
   await editor.getByRole("button", { name: "Añadir jugador" }).click();
   await expect(editor.getByText(/Ya existe «Iago Porteiro Ficticio» \(2025\/26\)/)).toBeVisible();
-  page.once("dialog", (d) => d.accept());
   await editor.getByRole("button", { name: "Cancelar" }).click();
+  await page
+    .getByRole("dialog", { name: "Confirmar acción" })
+    .getByRole("button", { name: "Confirmar" })
+    .click();
   await expect(editor).toBeHidden();
   await expect(fila(page, "Iago Porteiro Ficticio")).toHaveCount(0);
 
@@ -142,6 +145,10 @@ test("un fallo al guardar conserva el borrador y bloquea cambios durante el env�
   await expect(editor.getByLabel("Nombre completo")).toHaveValue("Borrador Ficticio");
   await expect(editor.getByLabel("Cargo")).toHaveValue("Delegado");
   await expect(editor.getByRole("button", { name: "Añadir", exact: true })).toBeEnabled();
-  page.once("dialog", (dialog) => dialog.accept());
   await editor.getByRole("button", { name: "Cancelar" }).click();
+  await page
+    .getByRole("dialog", { name: "Confirmar acción" })
+    .getByRole("button", { name: "Confirmar" })
+    .click();
+  await expect(editor).toBeHidden();
 });

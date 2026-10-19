@@ -2,7 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import type { ReglaClasificacion } from "@santiso/domain";
-import { useUnsavedChanges } from "@/components/studio/StudioContext";
+import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { guardarReglas } from "@/lib/server/acciones/competiciones";
@@ -45,6 +45,7 @@ export default function DialogoZonas({
   onGuardadas,
   showToast,
 }: Props) {
+  const { showConfirm } = useStudio();
   const [inicial] = useState(() => zonas.map(aFila));
   const [filas, setFilas] = useState(inicial);
   const [pendiente, setPendiente] = useState(false);
@@ -89,7 +90,8 @@ export default function DialogoZonas({
 
   function cerrar() {
     if (pendiente) return;
-    if (sucio && !window.confirm("Hay cambios sin guardar. ¿Descartarlos?")) return;
+    if (sucio)
+      return showConfirm("Hay cambios sin guardar. ¿Descartarlos?", onCerrar, { trasCerrar: true });
     onCerrar();
   }
 

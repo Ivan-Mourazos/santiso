@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { useUnsavedChanges } from "@/components/studio/StudioContext";
+import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Field } from "@/components/ui/foundation/Fields";
@@ -18,6 +18,7 @@ interface Props {
   onGuardado: () => void;
 }
 export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: Props) {
+  const { showConfirm } = useStudio();
   const [inicial] = useState(() => borradorDeEquipo(equipo));
   const [nombre, setNombre] = useState(inicial.nombre);
   const [foto, setFoto] = useState<File | null>(null);
@@ -38,7 +39,8 @@ export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: 
   useUnsavedChanges(sucio);
   function cerrar() {
     if (operacion.current) return;
-    if (sucio && !window.confirm("Hay cambios sin guardar. ¿Descartarlos?")) return;
+    if (sucio)
+      return showConfirm("Hay cambios sin guardar. ¿Descartarlos?", onCerrar, { trasCerrar: true });
     onCerrar();
   }
   async function guardar() {

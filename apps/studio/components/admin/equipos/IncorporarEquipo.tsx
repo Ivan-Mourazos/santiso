@@ -5,7 +5,7 @@ import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Field } from "@/components/ui/foundation/Fields";
 import { filtrarEquipos, type EquipoCatalogo } from "@/lib/equipos/modelo";
 import { inscribirEquipo } from "@/lib/server/acciones/equipos";
-import { useUnsavedChanges } from "@/components/studio/StudioContext";
+import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import styles from "./Equipos.module.css";
 
 export default function IncorporarEquipo({
@@ -21,6 +21,7 @@ export default function IncorporarEquipo({
   onCerrar: () => void;
   onGuardado: () => void;
 }) {
+  const { showConfirm } = useStudio();
   const [texto, setTexto] = useState("");
   const [seleccion, setSeleccion] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +38,10 @@ export default function IncorporarEquipo({
   );
   function cerrar() {
     if (operacion.current) return;
-    if (seleccion && !window.confirm("Hay una selección sin añadir. ¿Descartarla?")) return;
+    if (seleccion)
+      return showConfirm("Hay una selección sin añadir. ¿Descartarla?", onCerrar, {
+        trasCerrar: true,
+      });
     onCerrar();
   }
   async function incorporar() {

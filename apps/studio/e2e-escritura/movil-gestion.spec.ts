@@ -48,8 +48,11 @@ test("equipo móvil guarda escudo y color y cancela otro borrador", async ({ pag
   await fila.getByRole("button", { name: `Editar a ${nombre}`, exact: true }).click();
   await expect(editor.getByLabel("Color del equipo", { exact: true })).toHaveValue("#f5c518");
   await editor.getByLabel("Nombre del equipo").fill("Descartar equipo");
-  page.once("dialog", (dialogo) => dialogo.accept());
   await editor.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Confirmar acción" })
+    .getByRole("button", { name: "Confirmar" })
+    .click();
   await page.reload();
   await page.getByRole("button", { name: "Biblioteca de Veteranos", exact: true }).click();
   await expect(fila.locator("img")).toHaveAttribute("src", src!);
@@ -101,8 +104,11 @@ test("patrocinador móvil conserva URL larga, logo y orden tras recargar", async
   expect(await nombres()).not.toEqual(antes);
   await fila.getByRole("button", { name: `Editar ${nombre}`, exact: true }).click();
   await editor.getByLabel("Web", { exact: true }).fill("https://descartar.example");
-  page.once("dialog", (dialogo) => dialogo.accept());
   await editor.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Confirmar acción" })
+    .getByRole("button", { name: "Confirmar" })
+    .click();
   await page.reload();
   // En móvil la web no se enseña en la lista (está en el editor), pero el enlace sigue ahí.
   await expect(fila.locator("a")).toHaveAttribute("href", url);
@@ -182,8 +188,11 @@ test("jugador móvil conserva foto/borrador ante fallo, guarda y cancela nueva s
   expect(src).toMatch(/^\/media\//);
   await fila.getByRole("button", { name: /^Editar a / }).click();
   await archivo.setInputFiles({ name: "descartar.png", mimeType: "image/png", buffer: PNG });
-  page.once("dialog", (dialogo) => dialogo.accept());
   await editor.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Confirmar acción" })
+    .getByRole("button", { name: "Confirmar" })
+    .click();
   await page.reload();
   await expect(fila.locator("img")).toHaveAttribute("src", src!);
 });

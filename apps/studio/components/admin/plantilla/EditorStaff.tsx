@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Field } from "@/components/ui/foundation/Fields";
-import { useUnsavedChanges } from "@/components/studio/StudioContext";
+import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import type { StaffDto } from "@/lib/dto";
 import { prepararImagen } from "@/lib/imagen-cliente";
 import {
@@ -36,6 +36,7 @@ type Errores = Partial<Record<keyof BorradorStaff, string>>;
 
 /** Alta y edición de un papel del staff. Se monta con `key` desde el padre. */
 export default function EditorStaff({ miembro, destino, onCerrar, onGuardado }: Props) {
+  const { showConfirm } = useStudio();
   const alta = miembro === null;
   const [inicial] = useState(() => borradorDeStaff(miembro));
   const [borrador, setBorrador] = useState(inicial);
@@ -62,7 +63,8 @@ export default function EditorStaff({ miembro, destino, onCerrar, onGuardado }: 
 
   function cerrar() {
     if (guardando.current) return;
-    if (sucio && !window.confirm("Hay cambios sin guardar. ¿Descartarlos?")) return;
+    if (sucio)
+      return showConfirm("Hay cambios sin guardar. ¿Descartarlos?", onCerrar, { trasCerrar: true });
     onCerrar();
   }
 

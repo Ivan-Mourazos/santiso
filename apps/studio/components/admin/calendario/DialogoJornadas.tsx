@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useUnsavedChanges } from "@/components/studio/StudioContext";
+import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Field } from "@/components/ui/foundation/Fields";
@@ -26,6 +26,7 @@ export default function DialogoJornadas({
   onCreadas,
   showToast,
 }: Props) {
+  const { showConfirm } = useStudio();
   const [numero, setNumero] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fase, setFase] = useState("");
@@ -90,7 +91,8 @@ export default function DialogoJornadas({
 
   function cerrar() {
     if (pendiente) return;
-    if (sucio && !window.confirm("Hay cambios sin guardar. ¿Descartarlos?")) return;
+    if (sucio)
+      return showConfirm("Hay cambios sin guardar. ¿Descartarlos?", onCerrar, { trasCerrar: true });
     onCerrar();
   }
 

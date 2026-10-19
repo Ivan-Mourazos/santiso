@@ -50,7 +50,10 @@ test("el editor avisa antes de pisar una ficha con el mismo nombre", async ({ pa
   await expect(editor.getByRole("alert")).toContainText("Ya existe");
   await expect(editor.getByRole("alert")).toContainText("siguen como estaban");
 
-  page.once("dialog", (d) => d.accept());
   await editor.getByRole("button", { name: "Cancelar" }).click();
+  await page
+    .getByRole("dialog", { name: "Confirmar acción" })
+    .getByRole("button", { name: "Confirmar" })
+    .click();
   await expect(editor).toBeHidden();
 });

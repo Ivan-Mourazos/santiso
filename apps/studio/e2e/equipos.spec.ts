@@ -38,11 +38,14 @@ for (const ancho of [360, 1280]) {
     await nombre.fill("Borrador sin guardar");
     expect(await editor.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
     await page.screenshot({ path: testInfo.outputPath(`editor-${ancho}.png`) });
-    page.once("dialog", (dialog) => dialog.dismiss());
+    // Descartar lo escrito se pregunta con el diálogo de la app, no con el del navegador.
+    const confirmar = page.getByRole("dialog", { name: "Confirmar acción" });
     await editor.getByRole("button", { name: "Cancelar" }).click();
+    await confirmar.getByRole("button", { name: "Cancelar" }).click();
+    await expect(confirmar).toBeHidden();
     await expect(nombre).toHaveValue("Borrador sin guardar");
-    page.once("dialog", (dialog) => dialog.accept());
     await page.keyboard.press("Escape");
+    await confirmar.getByRole("button", { name: "Confirmar" }).click();
     await expect(editor).toBeHidden();
     await expect(boton).toBeFocused();
   });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useUnsavedChanges } from "@/components/studio/StudioContext";
+import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Field } from "@/components/ui/foundation/Fields";
@@ -41,6 +41,7 @@ export default function EditorPatrocinador({
   onGuardado,
   onAbrirExistente,
 }: Props) {
+  const { showConfirm } = useStudio();
   const alta = registro === null;
   const [inicial] = useState(() => borradorDePatrocinador(registro));
   const [borrador, setBorrador] = useState(inicial);
@@ -70,7 +71,7 @@ export default function EditorPatrocinador({
 
   function cerrar() {
     if (pendiente) return;
-    if (sucio && !window.confirm("Hay cambios sin guardar. ¿Descartarlos?")) return;
+    if (sucio) return showConfirm("Hay cambios sin guardar. ¿Descartarlos?", onCerrar, { trasCerrar: true });
     onCerrar();
   }
 
@@ -118,10 +119,11 @@ export default function EditorPatrocinador({
 
   function abrirExistente() {
     if (!coincidencia) return;
-    if (!window.confirm(`Se descartará lo que has escrito y se abrirá «${coincidencia.nombre}».`)) {
-      return;
-    }
-    onAbrirExistente(coincidencia);
+    showConfirm(
+      `Se descartará lo que has escrito y se abrirá «${coincidencia.nombre}».`,
+      () => onAbrirExistente(coincidencia),
+      { trasCerrar: true },
+    );
   }
 
   return (

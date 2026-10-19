@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { useUnsavedChanges } from "@/components/studio/StudioContext";
+import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Field, Select } from "@/components/ui/foundation/Fields";
@@ -18,6 +18,7 @@ export default function ControlesCompeticion({
   categoria: string;
   onMutado: () => void;
 }) {
+  const { showConfirm } = useStudio();
   const [dialogo, setDialogo] = useState<"crear" | "borrar" | null>(null);
   // La competición elegida vive en la URL y tarda un instante en actualizarse. Mientras tanto,
   // `selectedCompetitionId` sigue siendo la anterior: se guarda aquí la pedida para mostrarla ya
@@ -45,7 +46,13 @@ export default function ControlesCompeticion({
     : contexto.competicionesEnCategoria.find((c) => c.id === contexto.selectedCompetitionId);
   function cerrar() {
     if (operacion.current) return;
-    if (sucio && !window.confirm("Hay cambios sin guardar. ¿Descartarlos?")) return;
+    if (sucio)
+      return showConfirm("Hay cambios sin guardar. ¿Descartarlos?", descartar, {
+        trasCerrar: true,
+      });
+    descartar();
+  }
+  function descartar() {
     setDialogo(null);
     setNombre("");
     setFormato("liga");

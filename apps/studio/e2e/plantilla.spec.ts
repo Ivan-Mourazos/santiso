@@ -49,14 +49,16 @@ test("cerrar el editor con cambios pide descartarlos", async ({ page }) => {
   await apodo.fill("Borrador de prueba");
 
   // Se rechaza el descarte: el editor sigue abierto y conserva lo escrito.
-  page.once("dialog", (d) => d.dismiss());
+  const confirmar = page.getByRole("dialog", { name: "Confirmar acción" });
   await editor.getByRole("button", { name: "Cancelar" }).click();
+  await confirmar.getByRole("button", { name: "Cancelar" }).click();
+  await expect(confirmar).toBeHidden();
   await expect(editor).toBeVisible();
   await expect(apodo).toHaveValue("Borrador de prueba");
 
   // Se acepta: se cierra sin guardar.
-  page.once("dialog", (d) => d.accept());
   await editor.getByRole("button", { name: "Cancelar" }).click();
+  await confirmar.getByRole("button", { name: "Confirmar" }).click();
   await expect(editor).toBeHidden();
 });
 
