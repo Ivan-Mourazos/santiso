@@ -12,7 +12,7 @@ import {
   cargarJugadoresDePartido,
 } from "@/lib/server/acciones/actas";
 import { cargarEquiposDeCategoria } from "@/lib/server/acciones/equipos";
-import type { FormState } from "./types";
+import type { FormState, FotoLoteria } from "./types";
 import type { SelectorMatch } from "./Common";
 import type { Player, CronEvent, NextMatch } from "@/lib/cartel/types";
 import { fetchCompeticiones, type CompetenciaRow } from "@/lib/lecturas-cliente";
@@ -149,6 +149,7 @@ const DEFAULT_FORM: FormState = {
   loteriaPrezo: "",
   loteriaXoga: "",
   loteriaPuntos: "",
+  loteriaDecimoFoto: "",
   loteriaBaul: false,
   loteriaBaulFoto: "",
   loteriaBaulTexto: "",
@@ -192,7 +193,8 @@ export function useCartelForm(
   const matchFileUrlsRef = useRef<Record<number, string>>({});
   const multiImg1Ref = useRef<string>("");
   const multiImg2Ref = useRef<string>("");
-  const baulFotoRef = useRef<string>("");
+  /** Fotos de la lotaría (décimo y Baúl) en memoria, por campo, para liberarlas. */
+  const fotosLoteriaRef = useRef<Partial<Record<FotoLoteria, string>>>({});
 
   useEffect(() => {
     catalogRef.current = competicionesCatalog;
@@ -251,7 +253,7 @@ export function useCartelForm(
       });
       if (multiImg1Ref.current) URL.revokeObjectURL(multiImg1Ref.current);
       if (multiImg2Ref.current) URL.revokeObjectURL(multiImg2Ref.current);
-      if (baulFotoRef.current) URL.revokeObjectURL(baulFotoRef.current);
+      Object.values(fotosLoteriaRef.current).forEach((url) => url && URL.revokeObjectURL(url));
     };
   }, []);
 
@@ -296,10 +298,8 @@ export function useCartelForm(
       URL.revokeObjectURL(multiImg2Ref.current);
       multiImg2Ref.current = "";
     }
-    if (baulFotoRef.current) {
-      URL.revokeObjectURL(baulFotoRef.current);
-      baulFotoRef.current = "";
-    }
+    Object.values(fotosLoteriaRef.current).forEach((url) => url && URL.revokeObjectURL(url));
+    fotosLoteriaRef.current = {};
   }
 
   function handleRivalSelect(nombre: string) {
@@ -499,25 +499,20 @@ export function useCartelForm(
     set(key, url);
   }
 
-  /** Foto de la cesta del Baúl: en memoria (`blob:`) hasta exportar, como las del anuncio. */
-  function handleBaulFile(file: File | null) {
-    if (baulFotoRef.current) {
-      URL.revokeObjectURL(baulFotoRef.current);
-      baulFotoRef.current = "";
-    }
-    if (!file) {
-      set("loteriaBaulFoto", "");
-      return;
-    }
-    baulFotoRef.current = URL.createObjectURL(file);
-    set("loteriaBaulFoto", baulFotoRef.current);
+  /** Foto del décimo o de la cesta del Baúl: en memoria (`blob:`) hasta exportar. */
+  function handleLoteriaFile(campo: FotoLoteria, file: File | null) {
+    const anterior = fotosLoteriaRef.current[campo];
+    if (anterior) URL.revokeObjectURL(anterior);
+    const url = file ? URL.createObjectURL(file) : "";
+    fotosLoteriaRef.current[campo] = url;
+    set(campo, url);
   }
 
   return {
     form,
     set,
     errorDatos,
-    handleBaulFile,
+    handleLoteriaFile,
     equipos,
     setEquipos,
     jugadores,

@@ -96,6 +96,8 @@ export interface FormState {
   loteriaPrezo: string;
   loteriaXoga: string;
   loteriaPuntos: string;
+  /** Foto o escaneo del décimo de verdad: si la hay, va en vez del dibujado. */
+  loteriaDecimoFoto: string;
   /** Sorteo do Baúl: no todos los años lo hay. */
   loteriaBaul: boolean;
   loteriaBaulFoto: string;
@@ -108,6 +110,9 @@ export interface FormState {
 
   showAssets: boolean;
 }
+
+/** Campos del formulario con una foto de la lotaría subida a mano. */
+export type FotoLoteria = "loteriaDecimoFoto" | "loteriaBaulFoto";
 
 export interface AssetUrls {
   xunta: string;

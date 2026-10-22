@@ -74,7 +74,7 @@ export default function GeneradorCartel({
     handleRivalFile,
     handleJugadorFile,
     handleMultiusosFile,
-    handleBaulFile,
+    handleLoteriaFile,
     updatePlayer,
     swapPlayers,
     addEvent,
@@ -259,7 +259,7 @@ export default function GeneradorCartel({
           )}
           {tipo === "comunicado" && <FormComunicado form={form} set={set} />}
           {tipo === "loteria" && (
-            <FormLoteria form={form} set={set} handleBaulFile={handleBaulFile} />
+            <FormLoteria form={form} set={set} handleLoteriaFile={handleLoteriaFile} />
           )}
 
           <PlegableMovil titulo="Más opciones">

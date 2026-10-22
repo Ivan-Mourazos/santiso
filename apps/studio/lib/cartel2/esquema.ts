@@ -318,6 +318,7 @@ const loteria = z.object({
     prezo: importe,
     xoga: importe,
     puntos: texto(400),
+    decimoFoto: imagen.nullable(),
     escudoClub: imagen.nullable(),
     baul: z.object({ foto: imagen.nullable(), participar: texto(400) }).nullable(),
   }),

@@ -7,15 +7,47 @@ import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
 import { Toggle } from "./Common";
 import styles from "./Formularios.module.css";
-import type { FormState } from "./types";
+import type { FormState, FotoLoteria } from "./types";
 
 interface Props {
   form: FormState;
   set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
-  handleBaulFile: (file: File | null) => void;
+  handleLoteriaFile: (campo: FotoLoteria, file: File | null) => void;
 }
 
-export const FormLoteria: React.FC<Props> = ({ form, set, handleBaulFile }) => (
+/** Botón para subir (o quitar) una de las fotos de la lotaría. */
+const SubirFoto: React.FC<{
+  etiqueta: string;
+  texto: string;
+  url: string;
+  onFile: (file: File | null) => void;
+}> = ({ etiqueta, texto, url, onFile }) => (
+  <div className={styles.campo}>
+    <span className={styles.etiqueta}>{etiqueta}</span>
+    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <label className="file-input-label" style={{ flex: 1, margin: 0 }}>
+        {url ? "Cambiar la foto" : texto}
+        <input
+          type="file"
+          className="hidden-input"
+          accept="image/*"
+          onChange={(e) => {
+            const fichero = e.target.files?.[0];
+            e.target.value = "";
+            if (fichero) onFile(fichero);
+          }}
+        />
+      </label>
+      {url && (
+        <Button size="sm" variant="danger" onClick={() => onFile(null)} title="Quitar">
+          ✕
+        </Button>
+      )}
+    </div>
+  </div>
+);
+
+export const FormLoteria: React.FC<Props> = ({ form, set, handleLoteriaFile }) => (
   <>
     <Field
       label="Título"
@@ -51,6 +83,12 @@ export const FormLoteria: React.FC<Props> = ({ form, set, handleBaulFile }) => (
       value={form.loteriaNumeros}
       onChange={(e) => set("loteriaNumeros", e.target.value)}
     />
+    <SubirFoto
+      etiqueta="Foto del décimo"
+      texto="Subir foto o escaneo del décimo"
+      url={form.loteriaDecimoFoto}
+      onFile={(f) => handleLoteriaFile("loteriaDecimoFoto", f)}
+    />
     <div className={styles.pareja}>
       <Field
         label="Precio total (€)"
@@ -85,29 +123,12 @@ export const FormLoteria: React.FC<Props> = ({ form, set, handleBaulFile }) => (
     </div>
     {form.loteriaBaul && (
       <>
-        <div className={styles.campo}>
-          <span className={styles.etiqueta}>Foto del baúl</span>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <label className="file-input-label" style={{ flex: 1, margin: 0 }}>
-              {form.loteriaBaulFoto ? "Cambiar la foto" : "Subir la foto del baúl"}
-              <input
-                type="file"
-                className="hidden-input"
-                accept="image/*"
-                onChange={(e) => {
-                  const fichero = e.target.files?.[0];
-                  e.target.value = "";
-                  if (fichero) handleBaulFile(fichero);
-                }}
-              />
-            </label>
-            {form.loteriaBaulFoto && (
-              <Button size="sm" variant="danger" onClick={() => handleBaulFile(null)} title="Quitar">
-                ✕
-              </Button>
-            )}
-          </div>
-        </div>
+        <SubirFoto
+          etiqueta="Foto del baúl"
+          texto="Subir la foto del baúl"
+          url={form.loteriaBaulFoto}
+          onFile={(f) => handleLoteriaFile("loteriaBaulFoto", f)}
+        />
         <Textarea
           label="Cómo participar"
           hint="Una línea por cosa. Si acaba en «:», sale como apartado en amarillo."

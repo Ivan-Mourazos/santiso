@@ -144,6 +144,7 @@ function formulario(cambios: Partial<FormState> = {}): FormState {
     loteriaPrezo: "",
     loteriaXoga: "",
     loteriaPuntos: "",
+    loteriaDecimoFoto: "",
     loteriaBaul: false,
     loteriaBaulFoto: "",
     loteriaBaulTexto: "",
@@ -426,6 +427,7 @@ describe("peticionDeFormulario", () => {
       "loteria",
       formulario({
         loteriaNumeros: "14712",
+        loteriaDecimoFoto: "data:image/png;base64,AAAA",
         loteriaBaul: true,
         loteriaBaulFoto: "/media/baul.webp",
         loteriaBaulTexto: " Rifas individuais:\nXogadores ",
@@ -434,6 +436,7 @@ describe("peticionDeFormulario", () => {
       opciones,
     );
     if (p.plantilla !== "loteria") throw new Error("plantilla");
+    expect(p.datos.decimoFoto).toBe("data:image/png;base64,AAAA");
     expect(p.datos.baul).toEqual({
       foto: "/media/baul.webp",
       participar: "Rifas individuais:\nXogadores",

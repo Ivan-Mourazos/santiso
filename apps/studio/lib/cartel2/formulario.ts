@@ -408,6 +408,7 @@ export function peticionDeFormulario(
           puntos: form.loteriaPuntos.trim(),
           // Sin patrocinadores ni logos de RFGF o Xunta (Iván, 22/10/2026): solo el escudo.
           escudoClub: escudoClubDe(recursos) || null,
+          decimoFoto: form.loteriaDecimoFoto || null,
           baul: form.loteriaBaul
             ? { foto: form.loteriaBaulFoto || null, participar: form.loteriaBaulTexto.trim() }
             : null,

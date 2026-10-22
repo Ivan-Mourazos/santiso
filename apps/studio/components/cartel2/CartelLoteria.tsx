@@ -50,17 +50,33 @@ export function CartelLoteria({ datos }: { datos: DatosLoteria }) {
           LOTARÍA NACIONAL
         </div>
       )}
-      <div className={`${s.decimos} ${numeros.length === 2 ? s.dous : ""}`}>
-        {numeros.map((n, i) => (
-          <div key={i} className={s.decimo} data-lectura-bloque>
-            <div className={s.numeroEtiqueta}>{sorteo.etiqueta}</div>
-            <div className={`${b.display} ${s.numero}`}>{n}</div>
-            <div className={s.sorteo}>
-              {sorteo.dia.toUpperCase()} DE {anio}
-            </div>
+      {datos.decimoFoto ? (
+        // El décimo de verdad, fotografiado o escaneado; el número, grande debajo para leerlo.
+        <div className={s.conFotoDecimo}>
+          <div className={s.decimoFoto}>
+            <img src={urlFoto(datos.decimoFoto)} alt="" />
           </div>
-        ))}
-      </div>
+          <div className={s.numeroFoto} data-lectura-bloque>
+            <span className={s.numeroFotoEtiqueta}>NÚMERO</span>
+            <span className={`${b.display} ${s.numeroFotoCifras}`}>{numeros.join(" · ")}</span>
+            <span className={s.numeroFotoSorteo}>
+              {sorteo.dia.toUpperCase()} DE {anio}
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className={`${s.decimos} ${numeros.length === 2 ? s.dous : ""}`}>
+          {numeros.map((n, i) => (
+            <div key={i} className={s.decimo} data-lectura-bloque>
+              <div className={s.numeroEtiqueta}>{sorteo.etiqueta}</div>
+              <div className={`${b.display} ${s.numero}`}>{n}</div>
+              <div className={s.sorteo}>
+                {sorteo.dia.toUpperCase()} DE {anio}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {datos.prezo && (
         <div className={s.prezo} data-lectura-bloque>
           <span className={`${b.display} ${s.importe}`}>{datos.prezo} €</span>

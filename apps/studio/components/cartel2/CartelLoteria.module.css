@@ -168,6 +168,85 @@
   letter-spacing: 0.1em;
 }
 
+/* El décimo de verdad: la foto algo girada y con sombra, como si estuviera encima del cartel. */
+.conFotoDecimo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.decimoFoto {
+  display: flex;
+  justify-content: center;
+}
+
+.decimoFoto img {
+  display: block;
+  max-width: 780px;
+  max-height: 440px;
+  border-radius: 10px;
+  transform: rotate(-2.5deg);
+  box-shadow:
+    0 2px 4px rgb(0 0 0 / 40%),
+    0 30px 60px rgb(0 0 0 / 65%);
+}
+
+.numeroFoto {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  column-gap: 22px;
+}
+
+.numeroFotoEtiqueta {
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: 0.24em;
+  color: var(--amarillo);
+}
+
+.numeroFotoCifras {
+  font-size: 96px;
+  line-height: 1.52;
+  letter-spacing: 0.04em;
+  color: var(--amarillo);
+}
+
+.numeroFotoSorteo {
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: 0.14em;
+  color: rgb(255 255 255 / 80%);
+}
+
+.conBaul .decimoFoto img {
+  max-width: 100%;
+  max-height: 220px;
+  transform: rotate(-2deg);
+}
+
+.conBaul .conFotoDecimo {
+  gap: 10px;
+}
+
+.conBaul .puntos li {
+  font-size: 30px;
+}
+
+.conBaul .numeroFoto {
+  justify-content: flex-start;
+}
+
+.conBaul .numeroFotoCifras {
+  font-size: 68px;
+}
+
+.conBaul .numeroFotoSorteo {
+  font-size: 22px;
+}
+
 /* ─── Precio y puntos de venda ─────────────────────────────────────────────────────────── */
 
 .prezo {

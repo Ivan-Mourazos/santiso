@@ -303,6 +303,8 @@ export interface DatosLoteria {
   xoga: string;
   /** Onde mercala: unha liña por sitio. */
   puntos: string;
+  /** Foto o escaneo del décimo de verdad; sin ella, se dibuja uno amarillo. */
+  decimoFoto: string | null;
   escudoClub: string | null;
   /** Sorteo do Baúl, si lo hay ese año: foto de la cesta y cómo participar (una línea por paso). */
   baul: { foto: string | null; participar: string } | null;
