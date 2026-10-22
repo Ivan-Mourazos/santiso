@@ -293,6 +293,7 @@ function textoLoteria(f: FormState): string {
       .filter(Boolean);
   const puntos = lineas(f.loteriaPuntos);
   if (puntos.length) linhas.push("", "📍 Puntos de venda:", ...puntos.map((p) => `· ${p}`));
+  if (f.loteriaNota.trim()) linhas.push(f.loteriaNota.trim());
   if (f.loteriaBaul) {
     linhas.push("", "🧺 SORTEO DO BAÚL");
     linhas.push(...lineas(f.loteriaBaulTexto).map((l) => (l.endsWith(":") ? `\n${l}` : l)));

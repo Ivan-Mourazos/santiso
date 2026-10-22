@@ -42,6 +42,12 @@ export function CartelLoteria({ datos }: { datos: DatosLoteria }) {
   const puntos = lineas(datos.puntos);
   const baul = datos.baul;
   const titulo = datos.titulo || `${sorteo.etiqueta} ${anio}`;
+  // Sin título propio, el sorteo ya va en el título: el subtítulo solo dice el día.
+  const subtitulo =
+    datos.subtitulo ||
+    (datos.titulo
+      ? `${sorteo.etiqueta} ${anio} · Sorteo do ${sorteo.dia}`
+      : `Sorteo do ${sorteo.dia}`);
 
   const loteria = (
     <section className={s.loteria}>
@@ -59,9 +65,6 @@ export function CartelLoteria({ datos }: { datos: DatosLoteria }) {
           <div className={s.numeroFoto} data-lectura-bloque>
             <span className={s.numeroFotoEtiqueta}>NÚMERO</span>
             <span className={`${b.display} ${s.numeroFotoCifras}`}>{numeros.join(" · ")}</span>
-            <span className={s.numeroFotoSorteo}>
-              {sorteo.dia.toUpperCase()} DE {anio}
-            </span>
           </div>
         </div>
       ) : (
@@ -91,7 +94,13 @@ export function CartelLoteria({ datos }: { datos: DatosLoteria }) {
               <li key={p}>{p}</li>
             ))}
           </ul>
+          {datos.nota && <p className={s.nota}>{datos.nota}</p>}
         </div>
+      )}
+      {puntos.length === 0 && datos.nota && (
+        <p className={s.nota} data-lectura-bloque>
+          {datos.nota}
+        </p>
       )}
     </section>
   );
@@ -112,6 +121,7 @@ export function CartelLoteria({ datos }: { datos: DatosLoteria }) {
             <h1 className={`${b.display} ${s.titulo}`} data-lectura-columna>
               {titulo.toUpperCase()}
             </h1>
+            <div className={s.subtitulo}>{subtitulo.toUpperCase()}</div>
           </div>
         </header>
 

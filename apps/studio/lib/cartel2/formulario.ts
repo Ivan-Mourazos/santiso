@@ -403,9 +403,11 @@ export function peticionDeFormulario(
           anio: form.loteriaAnio,
           numeros: numerosLoteria(form.loteriaNumeros),
           titulo: form.loteriaTitulo.trim(),
+          subtitulo: form.loteriaSubtitulo.trim(),
           prezo: importeLoteria(form.loteriaPrezo),
           xoga: importeLoteria(form.loteriaXoga),
           puntos: form.loteriaPuntos.trim(),
+          nota: form.loteriaNota.trim(),
           // Sin patrocinadores ni logos de RFGF o Xunta (Iván, 22/10/2026): solo el escudo.
           escudoClub: escudoClubDe(recursos) || null,
           decimoFoto: form.loteriaDecimoFoto || null,

@@ -93,9 +93,13 @@ export interface FormState {
   /** Uno o dos números de cinco cifras, separados por coma o espacio. */
   loteriaNumeros: string;
   loteriaTitulo: string;
+  /** Línea bajo el título; vacía, «Lotaría de Nadal 2026 do club». */
+  loteriaSubtitulo: string;
   loteriaPrezo: string;
   loteriaXoga: string;
   loteriaPuntos: string;
+  /** Otras formas de comprarla, bajo los puntos de venda. */
+  loteriaNota: string;
   /** Foto o escaneo del décimo de verdad: si la hay, va en vez del dibujado. */
   loteriaDecimoFoto: string;
   /** Sorteo do Baúl: no todos los años lo hay. */

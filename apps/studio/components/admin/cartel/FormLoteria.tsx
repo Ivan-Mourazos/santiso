@@ -55,6 +55,12 @@ export const FormLoteria: React.FC<Props> = ({ form, set, handleLoteriaFile }) =
       value={form.loteriaTitulo}
       onChange={(e) => set("loteriaTitulo", e.target.value)}
     />
+    <Field
+      label="Subtítulo"
+      hint="Vacío, sale el sorteo y su día: «Lotaría de Nadal 2026 · Sorteo do 22 de decembro»."
+      value={form.loteriaSubtitulo}
+      onChange={(e) => set("loteriaSubtitulo", e.target.value)}
+    />
     <div className={styles.pareja}>
       <Select
         label="Sorteo"
@@ -113,6 +119,13 @@ export const FormLoteria: React.FC<Props> = ({ form, set, handleLoteriaFile }) =
       rows={6}
       value={form.loteriaPuntos}
       onChange={(e) => set("loteriaPuntos", e.target.value)}
+    />
+    <Textarea
+      label="Otras formas de comprarla"
+      hint="Sale debajo de los puntos de venda."
+      rows={2}
+      value={form.loteriaNota}
+      onChange={(e) => set("loteriaNota", e.target.value)}
     />
     <div className={styles.interruptores}>
       <Toggle

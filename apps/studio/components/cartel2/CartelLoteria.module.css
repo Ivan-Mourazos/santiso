@@ -53,6 +53,23 @@
   overflow-wrap: anywhere;
 }
 
+.subtitulo {
+  margin-top: 2px;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: 0.12em;
+  color: #fff;
+}
+
+.nota {
+  margin: 14px 0 0;
+  font-weight: 600;
+  font-style: italic;
+  font-size: 28px;
+  line-height: 1.3;
+  color: rgb(255 255 255 / 78%);
+}
+
 .cuerpo {
   flex: 1;
   min-height: 0;
@@ -187,13 +204,11 @@
   width: 680px;
   max-width: 100%;
   height: auto;
-  max-height: 440px;
+  max-height: 340px;
   object-fit: contain;
-  border-radius: 10px;
   transform: rotate(-2.5deg);
-  box-shadow:
-    0 2px 4px rgb(0 0 0 / 40%),
-    0 30px 60px rgb(0 0 0 / 65%);
+  /* Sombra de lo que se pinta, no de la caja: con `contain` la caja es más ancha que la foto. */
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 40%)) drop-shadow(0 26px 34px rgb(0 0 0 / 60%));
 }
 
 .numeroFoto {
@@ -212,22 +227,31 @@
 }
 
 .numeroFotoCifras {
-  font-size: 96px;
+  font-size: 88px;
   line-height: 1.52;
   letter-spacing: 0.04em;
   color: var(--amarillo);
 }
 
-.numeroFotoSorteo {
-  font-weight: 800;
+.conBaul .loteria {
+  gap: 16px;
+}
+
+.conBaul .importe {
+  font-size: 76px;
+}
+
+.conBaul .detalle {
   font-size: 28px;
-  letter-spacing: 0.14em;
-  color: rgb(255 255 255 / 80%);
+}
+
+.conBaul .nota {
+  font-size: 25px;
 }
 
 .conBaul .decimoFoto img {
   width: 100%;
-  max-height: 240px;
+  max-height: 200px;
   transform: rotate(-2deg);
 }
 
@@ -236,7 +260,7 @@
 }
 
 .conBaul .puntos li {
-  font-size: 30px;
+  font-size: 28px;
 }
 
 .conBaul .numeroFoto {
@@ -244,11 +268,7 @@
 }
 
 .conBaul .numeroFotoCifras {
-  font-size: 68px;
-}
-
-.conBaul .numeroFotoSorteo {
-  font-size: 22px;
+  font-size: 60px;
 }
 
 /* ─── Precio y puntos de venda ─────────────────────────────────────────────────────────── */

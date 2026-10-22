@@ -298,11 +298,15 @@ export interface DatosLoteria {
   /** De 1 a 2 números de cinco cifras. */
   numeros: string[];
   titulo: string;
+  /** Bajo el título; vacío, se pone el sorteo y el año. */
+  subtitulo: string;
   /** Importes tal cal se escriben: «5», «2,50». Vacíos, non se pintan. */
   prezo: string;
   xoga: string;
   /** Onde mercala: unha liña por sitio. */
   puntos: string;
+  /** Otras formas de comprarla, bajo los puntos de venda. */
+  nota: string;
   /** Foto o escaneo del décimo de verdad; sin ella, se dibuja uno amarillo. */
   decimoFoto: string | null;
   escudoClub: string | null;

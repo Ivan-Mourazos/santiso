@@ -144,12 +144,16 @@ const DEFAULT_FORM: FormState = {
   comunicadoFirma: "A Directiva",
   loteriaSorteo: "nadal",
   loteriaAnio: new Date().getFullYear(),
-  loteriaNumeros: "",
+  loteriaNumeros: "14712",
   // Iván, 22/10/2026: el título anuncia que ya está a la venta.
   loteriaTitulo: "Xa está dispoñible",
-  loteriaPrezo: "",
-  loteriaXoga: "",
-  loteriaPuntos: "",
+  loteriaSubtitulo: "",
+  // Precios y puntos de venda de la tempada 2026 (Iván, 22/10/2026): se cambian en el formulario.
+  loteriaPrezo: "22",
+  loteriaXoga: "20",
+  loteriaPuntos: "Cafetaría Solaina\nParrillada Rúa\nCasa Suárez\nMesón Visantoña\nA Lareira",
+  loteriaNota:
+    "Tamén no campo os días de partido ou contactando con calquera xogador ou directivo do club.",
   loteriaDecimoFoto: "",
   loteriaBaul: false,
   loteriaBaulFoto: "",
