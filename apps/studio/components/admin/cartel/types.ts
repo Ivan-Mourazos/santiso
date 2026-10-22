@@ -15,6 +15,7 @@ export const TEMPLATES = [
   { id: "clasificacion", label: "Clasificación", emoji: "📈" },
   { id: "fichaxe", label: "Fichaje", emoji: "✍️" },
   { id: "comunicado", label: "Comunicado", emoji: "📢" },
+  { id: "loteria", label: "Lotaría", emoji: "🍀" },
 ] as const;
 
 export type TemplateId = (typeof TEMPLATES)[number]["id"];
@@ -86,6 +87,15 @@ export interface FormState {
   comunicadoTexto: string;
   comunicadoFecha: string;
   comunicadoFirma: string;
+  // Lotaría do club
+  loteriaSorteo: "nadal" | "neno";
+  loteriaAnio: number;
+  /** Uno o dos números de cinco cifras, separados por coma o espacio. */
+  loteriaNumeros: string;
+  loteriaTitulo: string;
+  loteriaPrezo: string;
+  loteriaXoga: string;
+  loteriaPuntos: string;
 
   // Clasificación
   clasificacionTipo: "liga" | "copa";

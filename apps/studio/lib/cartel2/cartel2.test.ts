@@ -137,6 +137,13 @@ function formulario(cambios: Partial<FormState> = {}): FormState {
     comunicadoTexto: "",
     comunicadoFecha: "",
     comunicadoFirma: "A Directiva",
+    loteriaSorteo: "nadal",
+    loteriaAnio: 2026,
+    loteriaNumeros: "",
+    loteriaTitulo: "",
+    loteriaPrezo: "",
+    loteriaXoga: "",
+    loteriaPuntos: "",
     showAssets: true,
     ...cambios,
   } as FormState;
@@ -377,6 +384,32 @@ describe("peticionDeFormulario", () => {
     expect(c.datos).not.toHaveProperty("institucionales");
   });
 
+  it("lotaría: números de cinco cifras, importes limpios, sin logos de la competición", () => {
+    const p = peticionDeFormulario(
+      "loteria",
+      formulario({
+        loteriaNumeros: "12.345, 678, 67890, 11111",
+        loteriaPrezo: "5 €",
+        loteriaXoga: "2.5",
+        loteriaPuntos: "Bar do campo\nXogadores",
+      }),
+      recursos,
+      opciones,
+    );
+    if (p.plantilla !== "loteria") throw new Error("plantilla");
+    expect(p.datos).toMatchObject({ numeros: ["12345", "67890"], prezo: "5", xoga: "2,50" });
+    expect(p.datos.patrocinadores).toEqual(recursos.patrocinadores);
+    expect(p.datos).not.toHaveProperty("institucionales");
+    expect(leerPeticion(JSON.parse(JSON.stringify(p)))).not.toBeNull();
+    const texto = textoInstagram(
+      "loteria",
+      formulario({ loteriaNumeros: "12345", loteriaPrezo: "5", loteriaPuntos: "Bar do campo" }),
+    );
+    expect(texto).toContain("LOTARÍA DE NADAL 2026");
+    expect(texto).toContain("número 12345");
+    expect(texto).toContain("· Bar do campo");
+  });
+
   it("clasificación: marca la fila del Santiso", () => {
     const p = peticionDeFormulario("clasificacion", formulario(), recursos, opciones);
     if (p.plantilla !== "clasificacion" || p.datos.tipo !== "liga") throw new Error("plantilla");
@@ -562,6 +595,7 @@ describe("leerPeticion", () => {
       "clasificacion",
       "fichaxe",
       "comunicado",
+      "loteria",
     ] as const;
     const plantillas = tipos.map((t) => {
       const p = peticionDeFormulario(t, formulario(), recursos, opciones);

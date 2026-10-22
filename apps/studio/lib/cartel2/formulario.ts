@@ -56,6 +56,21 @@ export function escudoClubDe(recursos: RecursosCartel, categoria?: string) {
   return (categoria && recursos.escudosClub[categoria]) || recursos.escudosClub.Senior || "";
 }
 
+/** «12345, 67.890» → ["12345", "67890"]: solo los de cinco cifras, como mucho dos. */
+export function numerosLoteria(texto: string) {
+  return (texto.replace(/\./g, "").match(/\d+/g) ?? [])
+    .filter((n) => n.length === 5)
+    .slice(0, 2);
+}
+
+/** «5 €», «2.5», «2,50» → «5», «2,50», «2,50»; lo que no es un importe, vacío. */
+export function importeLoteria(texto: string) {
+  const limpio = texto.replace(/[€\s]/g, "").replace(".", ",");
+  if (!/^\d{1,4}(,\d{1,2})?$/.test(limpio)) return "";
+  const [enteros, centimos] = limpio.split(",");
+  return centimos ? `${enteros},${centimos.padEnd(2, "0")}` : enteros!;
+}
+
 export function nombreClub(categoria: string) {
   return categoria === "Veteranos" ? "UD Santiso FC Solaina" : "UD Santiso FC";
 }
@@ -378,6 +393,22 @@ export function peticionDeFormulario(
           fecha: form.comunicadoFecha,
           firma: form.comunicadoFirma.trim(),
           escudoClub: escudoClubDe(recursos) || null,
+        },
+      };
+    case "loteria":
+      return {
+        plantilla: "loteria",
+        datos: {
+          sorteo: form.loteriaSorteo,
+          anio: form.loteriaAnio,
+          numeros: numerosLoteria(form.loteriaNumeros),
+          titulo: form.loteriaTitulo.trim(),
+          prezo: importeLoteria(form.loteriaPrezo),
+          xoga: importeLoteria(form.loteriaXoga),
+          puntos: form.loteriaPuntos.trim(),
+          escudoClub: escudoClubDe(recursos) || null,
+          // Sin RFGF ni Xunta: no es cosa de la competición. Los patrocinadores sí.
+          patrocinadores: logos.patrocinadores,
         },
       };
     case "clasificacion": {

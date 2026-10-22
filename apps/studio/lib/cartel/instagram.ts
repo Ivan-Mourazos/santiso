@@ -5,6 +5,7 @@
  */
 import type { FormState, TemplateId } from "@/components/admin/cartel/types";
 import type { CronEvent, FilaCartelClasificacion, Player } from "./types";
+import { importeLoteria, numerosLoteria } from "@/lib/cartel2/formulario";
 
 const DIAS = ["domingo", "luns", "martes", "mércores", "xoves", "venres", "sábado"];
 const MESES = [
@@ -265,6 +266,27 @@ function textoClasificacion(f: FormState): string {
   return linhas.join("\n");
 }
 
+function textoLoteria(f: FormState): string {
+  const numeros = numerosLoteria(f.loteriaNumeros);
+  if (numeros.length === 0) return "";
+  const nadal = f.loteriaSorteo === "nadal";
+  const prezo = importeLoteria(f.loteriaPrezo);
+  const xoga = importeLoteria(f.loteriaXoga);
+  const linhas = [
+    nadal ? `🍀 LOTARÍA DE NADAL ${f.loteriaAnio}` : `🍀 SORTEO DO NENO ${f.loteriaAnio + 1}`,
+    "",
+    `Xa está dispoñible a lotaría do club: ${numeros.length === 2 ? "números" : "número"} ${numeros.join(" e ")}.`,
+  ];
+  if (prezo) linhas.push(`Papeleta de ${prezo} €${xoga ? ` (xoga ${xoga} €)` : ""}.`);
+  const puntos = f.loteriaPuntos
+    .split("\n")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (puntos.length) linhas.push("", "Onde mercala:", ...puntos.map((p) => `· ${p}`));
+  linhas.push("", "Moita sorte a todos! 💛🖤", "", "#UDSantiso #Lotaria");
+  return linhas.join("\n");
+}
+
 /** Texto para el pie de la publicación del cartel; vacío si aún no hay datos con qué hacerlo. */
 export function textoInstagram(tipo: TemplateId, f: FormState): string {
   switch (tipo) {
@@ -290,6 +312,8 @@ export function textoInstagram(tipo: TemplateId, f: FormState): string {
         .join("\n");
       return [`✍️ ${etiqueta[f.fichaxeTipo]}`, cuerpo, "#UDSantiso"].filter(Boolean).join("\n\n");
     }
+    case "loteria":
+      return textoLoteria(f);
     case "comunicado":
       return [f.comunicadoTitulo.trim().toUpperCase(), f.comunicadoTexto.trim(), "#UDSantiso"]
         .filter(Boolean)

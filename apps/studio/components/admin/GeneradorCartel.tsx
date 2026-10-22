@@ -28,6 +28,7 @@ import { FormMultiusos } from "./cartel/FormMultiusos";
 import { FormClasificacion } from "./cartel/FormClasificacion";
 import { FormComunicado } from "./cartel/FormComunicado";
 import { FormFichaxe } from "./cartel/FormFichaxe";
+import { FormLoteria } from "./cartel/FormLoteria";
 import { PaqueteAxenda } from "./cartel/PaqueteAxenda";
 import { PlegableMovil } from "./cartel/PlegableMovil";
 import { Select } from "@/components/ui/foundation/Fields";
@@ -256,6 +257,7 @@ export default function GeneradorCartel({
             />
           )}
           {tipo === "comunicado" && <FormComunicado form={form} set={set} />}
+          {tipo === "loteria" && <FormLoteria form={form} set={set} />}
 
           <PlegableMovil titulo="Más opciones">
             {/* Casi todo se publica en 4:5: la historia queda aquí, para la rara vez que haga falta. */}
