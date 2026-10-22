@@ -51,7 +51,7 @@ export const FormLoteria: React.FC<Props> = ({ form, set, handleLoteriaFile }) =
   <>
     <Field
       label="Título"
-      placeholder="O Nadal do Santiso"
+      placeholder="Xa está dispoñible"
       value={form.loteriaTitulo}
       onChange={(e) => set("loteriaTitulo", e.target.value)}
     />

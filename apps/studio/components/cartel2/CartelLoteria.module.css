@@ -183,8 +183,12 @@
 
 .decimoFoto img {
   display: block;
-  max-width: 780px;
+  /* Las fotos de móvil o el escaneo pueden venir pequeños: se llevan al ancho de la columna. */
+  width: 680px;
+  max-width: 100%;
+  height: auto;
   max-height: 440px;
+  object-fit: contain;
   border-radius: 10px;
   transform: rotate(-2.5deg);
   box-shadow:
@@ -222,8 +226,8 @@
 }
 
 .conBaul .decimoFoto img {
-  max-width: 100%;
-  max-height: 220px;
+  width: 100%;
+  max-height: 240px;
   transform: rotate(-2deg);
 }
 

@@ -145,7 +145,8 @@ const DEFAULT_FORM: FormState = {
   loteriaSorteo: "nadal",
   loteriaAnio: new Date().getFullYear(),
   loteriaNumeros: "",
-  loteriaTitulo: "O Nadal do Santiso",
+  // Iván, 22/10/2026: el título anuncia que ya está a la venta.
+  loteriaTitulo: "Xa está dispoñible",
   loteriaPrezo: "",
   loteriaXoga: "",
   loteriaPuntos: "",

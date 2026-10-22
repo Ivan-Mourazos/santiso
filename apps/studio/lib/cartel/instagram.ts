@@ -273,9 +273,8 @@ function textoLoteria(f: FormState): string {
   const prezo = importeLoteria(f.loteriaPrezo);
   const xoga = importeLoteria(f.loteriaXoga);
   const sorteo = nadal ? `LOTARÍA DE NADAL ${f.loteriaAnio}` : `SORTEO DO NENO ${f.loteriaAnio + 1}`;
-  const titulo = f.loteriaTitulo.trim().toUpperCase();
   const linhas = [
-    `🍀 ${titulo || sorteo}`,
+    `🍀 ${sorteo}`,
     "",
     `Xa está dispoñible a lotaría ${nadal ? "de Nadal" : "do Neno"} do club: ${numeros.length === 2 ? "números" : "número"} ${numeros.join(" e ")}.`,
   ];
