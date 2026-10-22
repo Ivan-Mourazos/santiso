@@ -272,18 +272,33 @@ function textoLoteria(f: FormState): string {
   const nadal = f.loteriaSorteo === "nadal";
   const prezo = importeLoteria(f.loteriaPrezo);
   const xoga = importeLoteria(f.loteriaXoga);
+  const sorteo = nadal ? `LOTARÍA DE NADAL ${f.loteriaAnio}` : `SORTEO DO NENO ${f.loteriaAnio + 1}`;
+  const titulo = f.loteriaTitulo.trim().toUpperCase();
   const linhas = [
-    nadal ? `🍀 LOTARÍA DE NADAL ${f.loteriaAnio}` : `🍀 SORTEO DO NENO ${f.loteriaAnio + 1}`,
+    `🍀 ${titulo || sorteo}`,
     "",
-    `Xa está dispoñible a lotaría do club: ${numeros.length === 2 ? "números" : "número"} ${numeros.join(" e ")}.`,
+    `Xa está dispoñible a lotaría ${nadal ? "de Nadal" : "do Neno"} do club: ${numeros.length === 2 ? "números" : "número"} ${numeros.join(" e ")}.`,
   ];
-  if (prezo) linhas.push(`Papeleta de ${prezo} €${xoga ? ` (xoga ${xoga} €)` : ""}.`);
-  const puntos = f.loteriaPuntos
-    .split("\n")
-    .map((p) => p.trim())
-    .filter(Boolean);
-  if (puntos.length) linhas.push("", "Onde mercala:", ...puntos.map((p) => `· ${p}`));
-  linhas.push("", "Moita sorte a todos! 💛🖤", "", "#UDSantiso #Lotaria");
+  if (prezo) {
+    const resto = xoga ? Number(prezo.replace(",", ".")) - Number(xoga.replace(",", ".")) : 0;
+    linhas.push(
+      resto > 0
+        ? `Prezo: ${xoga} € ${xoga === "20" ? "décimo" : "xogados"} + ${String(resto).replace(".", ",")} € donativo.`
+        : `Prezo: ${prezo} €.`,
+    );
+  }
+  const lineas = (t: string) =>
+    t
+      .split("\n")
+      .map((p) => p.trim())
+      .filter(Boolean);
+  const puntos = lineas(f.loteriaPuntos);
+  if (puntos.length) linhas.push("", "📍 Puntos de venda:", ...puntos.map((p) => `· ${p}`));
+  if (f.loteriaBaul) {
+    linhas.push("", "🧺 SORTEO DO BAÚL");
+    linhas.push(...lineas(f.loteriaBaulTexto).map((l) => (l.endsWith(":") ? `\n${l}` : l)));
+  }
+  linhas.push("", "Grazas polo voso apoio! 💛🖤", "", "#UDSantiso #Lotaria");
   return linhas.join("\n");
 }
 

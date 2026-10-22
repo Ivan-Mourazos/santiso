@@ -144,6 +144,9 @@ function formulario(cambios: Partial<FormState> = {}): FormState {
     loteriaPrezo: "",
     loteriaXoga: "",
     loteriaPuntos: "",
+    loteriaBaul: false,
+    loteriaBaulFoto: "",
+    loteriaBaulTexto: "",
     showAssets: true,
     ...cambios,
   } as FormState;
@@ -400,14 +403,42 @@ describe("peticionDeFormulario", () => {
     expect(p.datos).toMatchObject({ numeros: ["12345", "67890"], prezo: "5", xoga: "2,50" });
     expect(p.datos).not.toHaveProperty("patrocinadores");
     expect(p.datos).not.toHaveProperty("institucionales");
+    expect(p.datos.baul).toBeNull();
     expect(leerPeticion(JSON.parse(JSON.stringify(p)))).not.toBeNull();
     const texto = textoInstagram(
       "loteria",
-      formulario({ loteriaNumeros: "12345", loteriaPrezo: "5", loteriaPuntos: "Bar do campo" }),
+      formulario({
+        loteriaNumeros: "14712",
+        loteriaPrezo: "22",
+        loteriaXoga: "20",
+        loteriaPuntos: "Casa Suárez",
+      }),
     );
     expect(texto).toContain("LOTARÍA DE NADAL 2026");
-    expect(texto).toContain("número 12345");
-    expect(texto).toContain("· Bar do campo");
+    expect(texto).toContain("número 14712");
+    expect(texto).toContain("20 € décimo + 2 € donativo");
+    expect(texto).toContain("· Casa Suárez");
+    expect(texto).not.toContain("BAÚL");
+  });
+
+  it("lotaría con Baúl: foto y cómo participar; sin Baúl no va nada", () => {
+    const p = peticionDeFormulario(
+      "loteria",
+      formulario({
+        loteriaNumeros: "14712",
+        loteriaBaul: true,
+        loteriaBaulFoto: "/media/baul.webp",
+        loteriaBaulTexto: " Rifas individuais:\nXogadores ",
+      }),
+      recursos,
+      opciones,
+    );
+    if (p.plantilla !== "loteria") throw new Error("plantilla");
+    expect(p.datos.baul).toEqual({
+      foto: "/media/baul.webp",
+      participar: "Rifas individuais:\nXogadores",
+    });
+    expect(leerPeticion(JSON.parse(JSON.stringify(p)))).not.toBeNull();
   });
 
   it("clasificación: marca la fila del Santiso", () => {

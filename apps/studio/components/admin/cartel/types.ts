@@ -96,6 +96,10 @@ export interface FormState {
   loteriaPrezo: string;
   loteriaXoga: string;
   loteriaPuntos: string;
+  /** Sorteo do Baúl: no todos los años lo hay. */
+  loteriaBaul: boolean;
+  loteriaBaulFoto: string;
+  loteriaBaulTexto: string;
 
   // Clasificación
   clasificacionTipo: "liga" | "copa";

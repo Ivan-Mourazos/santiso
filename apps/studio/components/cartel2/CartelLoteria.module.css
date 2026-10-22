@@ -1,14 +1,18 @@
 /*
- * Lotaría (1080 × 1350), sobre `Base` (variante club). Columna de 64 a 1016: cabecera con el
- * escudo, título opcional, el décimo (o dos) y, abajo, papeleta y dónde mercala, de 64 a 1278.
- * Sin patrocinadores ni logos. El décimo es amarillo fundido, con las muescas de un boleto.
+ * O Nadal do Santiso (1080 × 1350), sobre `Base` (variante club). Columna de 64 a 1016, de 64 a
+ * 1290: cabecera con el escudo y el título, cuerpo y, al pie, «Grazas polo voso apoio». Sin
+ * patrocinadores ni logos. Con Baúl, el cuerpo va a dos columnas: lotaría a la izquierda y el
+ * Baúl a la derecha. El décimo es amarillo fundido, con las muescas de un boleto.
+ *
+ * Anton pinta su caja a 1,5 em y el control de lectura la quiere entera dentro de la línea: de
+ * ahí el `line-height: 1.52` y los márgenes negativos que recogen el aire de arriba y abajo.
  */
 
 .contenido {
   position: absolute;
   z-index: 6;
-  top: 64px;
-  bottom: 72px;
+  top: 56px;
+  bottom: 56px;
   left: 64px;
   right: 64px;
   display: flex;
@@ -22,10 +26,15 @@
 }
 
 .escudo {
-  width: 120px;
-  height: 120px;
+  flex: none;
+  width: 130px;
+  height: 130px;
   object-fit: contain;
   filter: drop-shadow(0 6px 22px rgb(0 0 0 / 55%));
+}
+
+.cabeceraTexto {
+  min-width: 0;
 }
 
 .club {
@@ -35,95 +44,34 @@
   color: rgb(255 255 255 / 72%);
 }
 
-.etiqueta {
-  /* Anton pinta su caja a 1,5 em: el control de lectura la quiere entera dentro de la línea. */
-  margin-top: -2px;
-  font-family: var(--display);
-  font-size: 64px;
-  line-height: 1.52;
-  color: var(--amarillo);
-}
-
 .titulo {
-  margin: 8px 0 -20px;
+  margin: -6px 0 0;
   font-weight: 400;
   font-size: 84px;
-  /* Las mayúsculas con tilde (Á, Ú) necesitan aire entre líneas. */
   line-height: 1.52;
-  letter-spacing: -0.01em;
-  text-shadow: 0 8px 36px rgb(0 0 0 / 60%);
+  color: var(--amarillo);
   overflow-wrap: anywhere;
 }
 
-.decimos {
+.cuerpo {
   flex: 1;
   min-height: 0;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 28px;
-  padding: 30px 0;
+  gap: 40px;
+  padding: 26px 0;
 }
 
-/* El boleto: amarillo de la equipación que se funde a oro, con una muesca a cada lado. */
-.decimo {
-  position: relative;
-  padding: 26px 70px 30px;
-  color: var(--negro);
-  text-align: center;
-  background:
-    radial-gradient(90% 120% at 18% 0%, #ffe066, transparent 60%),
-    linear-gradient(160deg, #f5c518, #d49a06);
-  border-radius: 22px;
-  mask:
-    radial-gradient(circle 34px at 0 50%, transparent 97%, #000) left / 51% 100% no-repeat,
-    radial-gradient(circle 34px at 100% 50%, transparent 97%, #000) right / 51% 100% no-repeat;
-  filter: drop-shadow(0 24px 50px rgb(0 0 0 / 55%));
-}
-
-.numeroEtiqueta {
-  font-weight: 800;
-  font-size: 26px;
-  letter-spacing: 0.4em;
-  color: rgb(11 11 12 / 70%);
-}
-
-.numero {
-  /* Caja de 1,5 em (ver `.etiqueta`); los márgenes negativos recogen el aire de arriba y abajo. */
-  margin: -0.2em -0.08em -0.22em 0;
-  font-size: 210px;
-  line-height: 1.52;
-  letter-spacing: 0.08em;
-}
-
-.sorteo {
-  margin-top: 12px;
-  padding-top: 14px;
-  border-top: 2px solid rgb(11 11 12 / 25%);
-  font-weight: 800;
-  font-size: 28px;
-  letter-spacing: 0.16em;
-}
-
-/* Dos números: los dos boletos más bajos para que quepa todo. */
-.dous .decimo {
-  padding: 18px 70px 22px;
-}
-
-.dous .numero {
-  font-size: 140px;
-}
-
-.dous .sorteo {
-  margin-top: 6px;
-  padding-top: 10px;
-  font-size: 24px;
-}
-
-.datos {
+.loteria {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  gap: 56px;
-  align-items: flex-start;
+  flex-direction: column;
+  justify-content: space-evenly;
+  gap: 26px;
+}
+
+.conBaul .loteria {
+  justify-content: space-between;
 }
 
 .rotulo {
@@ -131,8 +79,8 @@
   align-items: center;
   gap: 16px;
   font-weight: 800;
-  font-size: 26px;
-  letter-spacing: 0.24em;
+  font-size: 28px;
+  letter-spacing: 0.22em;
   color: var(--amarillo);
 }
 
@@ -143,26 +91,108 @@
   background: linear-gradient(90deg, var(--amarillo), transparent);
 }
 
+/* ─── El décimo ───────────────────────────────────────────────────────────────────────── */
+
+.decimos {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* El boleto: amarillo de la equipación que se funde a oro, con una muesca a cada lado. */
+.decimo {
+  padding: 24px 64px 26px;
+  color: var(--negro);
+  text-align: center;
+  background:
+    radial-gradient(90% 120% at 18% 0%, #ffe066, transparent 60%),
+    linear-gradient(160deg, #f5c518, #d49a06);
+  border-radius: 22px;
+  mask:
+    radial-gradient(circle 32px at 0 50%, transparent 97%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle 32px at 100% 50%, transparent 97%, #000) right / 51% 100% no-repeat;
+  filter: drop-shadow(0 24px 50px rgb(0 0 0 / 55%));
+}
+
+.numeroEtiqueta {
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 0.3em;
+  color: rgb(11 11 12 / 72%);
+}
+
+.numero {
+  margin: -0.2em -0.08em -0.22em 0;
+  font-size: 210px;
+  line-height: 1.52;
+  letter-spacing: 0.08em;
+}
+
+.sorteo {
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 2px solid rgb(11 11 12 / 25%);
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: 0.16em;
+}
+
+.dous .numero {
+  font-size: 130px;
+}
+
+.dous .decimo {
+  padding: 16px 64px 18px;
+}
+
+/* Con Baúl la columna es la mitad: el décimo, más pequeño. */
+.conBaul .decimo {
+  padding: 18px 44px 20px;
+}
+
+.conBaul .numeroEtiqueta {
+  font-size: 20px;
+  letter-spacing: 0.2em;
+}
+
+.conBaul .numero {
+  font-size: 118px;
+}
+
+.conBaul .dous .numero {
+  font-size: 84px;
+}
+
+.conBaul .sorteo {
+  font-size: 21px;
+  letter-spacing: 0.1em;
+}
+
+/* ─── Precio y puntos de venda ─────────────────────────────────────────────────────────── */
+
 .prezo {
-  flex: 0 0 auto;
-  min-width: 300px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  column-gap: 22px;
+}
+
+.conBaul .prezo {
+  justify-content: flex-start;
 }
 
 .importe {
-  margin: -14px 0 -20px;
   font-size: 96px;
   line-height: 1.52;
+  color: #fff;
 }
 
 .detalle {
-  font-weight: 600;
-  font-size: 30px;
-  color: rgb(255 255 255 / 85%);
-}
-
-.puntos {
-  flex: 1;
-  min-width: 0;
+  font-weight: 800;
+  font-size: 32px;
+  letter-spacing: 0.04em;
+  color: var(--amarillo);
 }
 
 .puntos ul {
@@ -171,9 +201,72 @@
   list-style: none;
 }
 
+.dosColumnas {
+  columns: 2;
+  column-gap: 40px;
+}
+
 .puntos li {
+  break-inside: avoid;
   font-weight: 600;
-  font-size: 34px;
+  font-size: 32px;
+  line-height: 1.35;
+  color: rgb(255 255 255 / 92%);
+}
+
+/* ─── Baúl ──────────────────────────────────────────────────────────────────────────────── */
+
+.baul {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* Sin foto de la cesta, el texto del Baúl se centra en vez de dejar media columna vacía. */
+.sinFoto {
+  justify-content: center;
+}
+
+.foto {
+  flex: 1;
+  min-height: 220px;
+  overflow: hidden;
+  border-radius: 22px;
+  box-shadow: 0 24px 50px rgb(0 0 0 / 55%);
+}
+
+.foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.participar h2 {
+  margin: 16px 0 2px;
+  font-weight: 800;
+  font-size: 27px;
+  letter-spacing: 0.08em;
+  color: var(--amarillo);
+}
+
+.participar p {
+  margin: 0;
+  font-weight: 600;
+  font-size: 29px;
   line-height: 1.3;
   color: rgb(255 255 255 / 92%);
+}
+
+/* ─── Pie ──────────────────────────────────────────────────────────────────────────────── */
+
+.grazas {
+  padding-top: 18px;
+  border-top: 1px solid rgb(255 255 255 / 18%);
+  text-align: center;
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: 0.3em;
+  color: rgb(255 255 255 / 80%);
 }

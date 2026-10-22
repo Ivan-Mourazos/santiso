@@ -304,6 +304,8 @@ export interface DatosLoteria {
   /** Onde mercala: unha liña por sitio. */
   puntos: string;
   escudoClub: string | null;
+  /** Sorteo do Baúl, si lo hay ese año: foto de la cesta y cómo participar (una línea por paso). */
+  baul: { foto: string | null; participar: string } | null;
 }
 
 export interface FilaTabla {

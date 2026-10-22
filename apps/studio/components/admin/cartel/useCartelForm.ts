@@ -145,10 +145,13 @@ const DEFAULT_FORM: FormState = {
   loteriaSorteo: "nadal",
   loteriaAnio: new Date().getFullYear(),
   loteriaNumeros: "",
-  loteriaTitulo: "",
+  loteriaTitulo: "O Nadal do Santiso",
   loteriaPrezo: "",
   loteriaXoga: "",
   loteriaPuntos: "",
+  loteriaBaul: false,
+  loteriaBaulFoto: "",
+  loteriaBaulTexto: "",
   clasificacionTipo: "liga",
   clasificacionNombre: "",
   clasificacionData: [],
@@ -189,6 +192,7 @@ export function useCartelForm(
   const matchFileUrlsRef = useRef<Record<number, string>>({});
   const multiImg1Ref = useRef<string>("");
   const multiImg2Ref = useRef<string>("");
+  const baulFotoRef = useRef<string>("");
 
   useEffect(() => {
     catalogRef.current = competicionesCatalog;
@@ -247,6 +251,7 @@ export function useCartelForm(
       });
       if (multiImg1Ref.current) URL.revokeObjectURL(multiImg1Ref.current);
       if (multiImg2Ref.current) URL.revokeObjectURL(multiImg2Ref.current);
+      if (baulFotoRef.current) URL.revokeObjectURL(baulFotoRef.current);
     };
   }, []);
 
@@ -290,6 +295,10 @@ export function useCartelForm(
     if (multiImg2Ref.current) {
       URL.revokeObjectURL(multiImg2Ref.current);
       multiImg2Ref.current = "";
+    }
+    if (baulFotoRef.current) {
+      URL.revokeObjectURL(baulFotoRef.current);
+      baulFotoRef.current = "";
     }
   }
 
@@ -490,10 +499,25 @@ export function useCartelForm(
     set(key, url);
   }
 
+  /** Foto de la cesta del Baúl: en memoria (`blob:`) hasta exportar, como las del anuncio. */
+  function handleBaulFile(file: File | null) {
+    if (baulFotoRef.current) {
+      URL.revokeObjectURL(baulFotoRef.current);
+      baulFotoRef.current = "";
+    }
+    if (!file) {
+      set("loteriaBaulFoto", "");
+      return;
+    }
+    baulFotoRef.current = URL.createObjectURL(file);
+    set("loteriaBaulFoto", baulFotoRef.current);
+  }
+
   return {
     form,
     set,
     errorDatos,
+    handleBaulFile,
     equipos,
     setEquipos,
     jugadores,

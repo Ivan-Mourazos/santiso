@@ -1,19 +1,28 @@
 /**
- * Formulario de la lotaría do club: sorteo, número(s), papeleta y dónde comprarla. Sin
- * patrocinadores ni logos: solo el escudo del club.
+ * Formulario de O Nadal do Santiso: la lotaría (sorteo, número, precio y puntos de venda) y,
+ * si ese año lo hay, el sorteo do Baúl. Sin patrocinadores ni logos: solo el escudo del club.
  */
 import React from "react";
+import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
+import { Toggle } from "./Common";
 import styles from "./Formularios.module.css";
 import type { FormState } from "./types";
 
 interface Props {
   form: FormState;
   set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
+  handleBaulFile: (file: File | null) => void;
 }
 
-export const FormLoteria: React.FC<Props> = ({ form, set }) => (
+export const FormLoteria: React.FC<Props> = ({ form, set, handleBaulFile }) => (
   <>
+    <Field
+      label="Título"
+      placeholder="O Nadal do Santiso"
+      value={form.loteriaTitulo}
+      onChange={(e) => set("loteriaTitulo", e.target.value)}
+    />
     <div className={styles.pareja}>
       <Select
         label="Sorteo"
@@ -37,40 +46,79 @@ export const FormLoteria: React.FC<Props> = ({ form, set }) => (
     <Field
       label="Número"
       hint="Cinco cifras. Si el club juega dos, sepáralos con una coma."
-      placeholder="12345"
+      placeholder="14712"
       inputMode="numeric"
       value={form.loteriaNumeros}
       onChange={(e) => set("loteriaNumeros", e.target.value)}
     />
-    <Field
-      label="Título (opcional)"
-      placeholder="Xa tes a túa?"
-      value={form.loteriaTitulo}
-      onChange={(e) => set("loteriaTitulo", e.target.value)}
-    />
     <div className={styles.pareja}>
       <Field
-        label="Precio papeleta (€)"
-        placeholder="5"
+        label="Precio total (€)"
+        placeholder="22"
         inputMode="decimal"
         value={form.loteriaPrezo}
         onChange={(e) => set("loteriaPrezo", e.target.value)}
       />
       <Field
         label="Juega (€)"
-        placeholder="4"
+        hint="El resto sale como donativo."
+        placeholder="20"
         inputMode="decimal"
         value={form.loteriaXoga}
         onChange={(e) => set("loteriaXoga", e.target.value)}
       />
     </div>
     <Textarea
-      label="Dónde comprarla"
+      label="Puntos de venda"
       hint="Un sitio por línea."
-      placeholder={"Bar do campo\nCalquera xogador do club"}
-      rows={4}
+      placeholder={"A Barbería de Iago\nCafetaría Solaina\nCampo de fútbol (días de partido)"}
+      rows={6}
       value={form.loteriaPuntos}
       onChange={(e) => set("loteriaPuntos", e.target.value)}
     />
+    <div className={styles.interruptores}>
+      <Toggle
+        label="Sorteo do Baúl"
+        active={form.loteriaBaul}
+        onClick={() => set("loteriaBaul", !form.loteriaBaul)}
+      />
+    </div>
+    {form.loteriaBaul && (
+      <>
+        <div className={styles.campo}>
+          <span className={styles.etiqueta}>Foto del baúl</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <label className="file-input-label" style={{ flex: 1, margin: 0 }}>
+              {form.loteriaBaulFoto ? "Cambiar la foto" : "Subir la foto del baúl"}
+              <input
+                type="file"
+                className="hidden-input"
+                accept="image/*"
+                onChange={(e) => {
+                  const fichero = e.target.files?.[0];
+                  e.target.value = "";
+                  if (fichero) handleBaulFile(fichero);
+                }}
+              />
+            </label>
+            {form.loteriaBaulFoto && (
+              <Button size="sm" variant="danger" onClick={() => handleBaulFile(null)} title="Quitar">
+                ✕
+              </Button>
+            )}
+          </div>
+        </div>
+        <Textarea
+          label="Cómo participar"
+          hint="Una línea por cosa. Si acaba en «:», sale como apartado en amarillo."
+          placeholder={
+            "Rifas individuais:\nÁ venda a través de tod@s @s xogadores/as do club.\nAsina o teu número:\nCadros de firmas en Cafetaría Solaina e Casa Suárez."
+          }
+          rows={6}
+          value={form.loteriaBaulTexto}
+          onChange={(e) => set("loteriaBaulTexto", e.target.value)}
+        />
+      </>
+    )}
   </>
 );
