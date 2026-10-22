@@ -1,6 +1,6 @@
 /**
- * Formulario de la lotaría do club: sorteo, número(s), papeleta y dónde comprarla. Lleva los
- * patrocinadores, pero no los logos de la RFGF ni de la Xunta.
+ * Formulario de la lotaría do club: sorteo, número(s), papeleta y dónde comprarla. Sin
+ * patrocinadores ni logos: solo el escudo del club.
  */
 import React from "react";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";

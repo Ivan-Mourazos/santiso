@@ -406,9 +406,8 @@ export function peticionDeFormulario(
           prezo: importeLoteria(form.loteriaPrezo),
           xoga: importeLoteria(form.loteriaXoga),
           puntos: form.loteriaPuntos.trim(),
+          // Sin patrocinadores ni logos de RFGF o Xunta (Iván, 22/10/2026): solo el escudo.
           escudoClub: escudoClubDe(recursos) || null,
-          // Sin RFGF ni Xunta: no es cosa de la competición. Los patrocinadores sí.
-          patrocinadores: logos.patrocinadores,
         },
       };
     case "clasificacion": {

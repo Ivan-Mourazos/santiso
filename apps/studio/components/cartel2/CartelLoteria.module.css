@@ -1,14 +1,14 @@
 /*
  * Lotaría (1080 × 1350), sobre `Base` (variante club). Columna de 64 a 1016: cabecera con el
- * escudo, título opcional, el décimo (o dos) y, abajo, papeleta y dónde mercala, de 64 a 1180 ·
- * patrocinadores 1200–1310. El décimo es amarillo fundido, con las muescas de un boleto.
+ * escudo, título opcional, el décimo (o dos) y, abajo, papeleta y dónde mercala, de 64 a 1278.
+ * Sin patrocinadores ni logos. El décimo es amarillo fundido, con las muescas de un boleto.
  */
 
 .contenido {
   position: absolute;
   z-index: 6;
   top: 64px;
-  bottom: 190px;
+  bottom: 72px;
   left: 64px;
   right: 64px;
   display: flex;

@@ -324,8 +324,8 @@ export default function GeneradorCartel({
             showToast={showToast}
             guardado={guardado}
           />
-          {/* Fichajes y comunicados van sin logos: no hay nada que explicar. */}
-          {tipo !== "fichaxe" && tipo !== "comunicado" && (
+          {/* Fichajes, comunicados y lotaría van sin logos: no hay nada que explicar. */}
+          {tipo !== "fichaxe" && tipo !== "comunicado" && tipo !== "loteria" && (
           <PlegableMovil titulo="Logos y patrocinadores">
             <div className={styles.pie}>
               <p>

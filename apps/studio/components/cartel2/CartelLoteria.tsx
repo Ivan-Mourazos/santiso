@@ -15,7 +15,7 @@ function donativo(prezo: string, xoga: string) {
 
 /**
  * Lotaría do club: el décimo (o los dos) en amarillo como protagonista, con el sorteo, la
- * papeleta y dónde comprarla. Fondo del club y patrocinadores, sin logos de la competición.
+ * papeleta y dónde comprarla. Fondo del club, sin patrocinadores ni otros logos.
  */
 export function CartelLoteria({ datos }: { datos: DatosLoteria }) {
   const sorteo = SORTEOS_LOTERIA[datos.sorteo];
@@ -34,7 +34,7 @@ export function CartelLoteria({ datos }: { datos: DatosLoteria }) {
       variante="club"
       izquierda={{ escudo: datos.escudoClub, propio: true, color: "#f5c518" }}
       institucionales={[]}
-      patrocinadores={datos.patrocinadores}
+      patrocinadores={[]}
     >
       <div className={s.contenido}>
         <header className={s.cabecera} data-lectura-bloque>

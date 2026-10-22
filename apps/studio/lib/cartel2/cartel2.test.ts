@@ -384,7 +384,7 @@ describe("peticionDeFormulario", () => {
     expect(c.datos).not.toHaveProperty("institucionales");
   });
 
-  it("lotaría: números de cinco cifras, importes limpios, sin logos de la competición", () => {
+  it("lotaría: números de cinco cifras, importes limpios, sin patrocinadores ni logos", () => {
     const p = peticionDeFormulario(
       "loteria",
       formulario({
@@ -398,7 +398,7 @@ describe("peticionDeFormulario", () => {
     );
     if (p.plantilla !== "loteria") throw new Error("plantilla");
     expect(p.datos).toMatchObject({ numeros: ["12345", "67890"], prezo: "5", xoga: "2,50" });
-    expect(p.datos.patrocinadores).toEqual(recursos.patrocinadores);
+    expect(p.datos).not.toHaveProperty("patrocinadores");
     expect(p.datos).not.toHaveProperty("institucionales");
     expect(leerPeticion(JSON.parse(JSON.stringify(p)))).not.toBeNull();
     const texto = textoInstagram(

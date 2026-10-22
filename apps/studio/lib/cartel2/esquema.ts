@@ -319,7 +319,6 @@ const loteria = z.object({
     xoga: importe,
     puntos: texto(400),
     escudoClub: imagen.nullable(),
-    patrocinadores: logos.patrocinadores,
   }),
 });
 

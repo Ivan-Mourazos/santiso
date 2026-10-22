@@ -290,7 +290,7 @@ export const SORTEOS_LOTERIA = {
 } as const;
 export type SorteoLoteria = keyof typeof SORTEOS_LOTERIA;
 
-/** Lotaría del club: número (o dous), papeleta, cánto xoga e onde mercala. */
+/** Lotaría del club: número (o dous), papeleta, cánto xoga e onde mercala. Sin logos. */
 export interface DatosLoteria {
   sorteo: SorteoLoteria;
   /** Ano do sorteo (o do Neno xa é o seguinte ao da tempada). */
@@ -304,7 +304,6 @@ export interface DatosLoteria {
   /** Onde mercala: unha liña por sitio. */
   puntos: string;
   escudoClub: string | null;
-  patrocinadores: string[];
 }
 
 export interface FilaTabla {
