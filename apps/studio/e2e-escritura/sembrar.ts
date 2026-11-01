@@ -714,6 +714,8 @@ async function sembrar() {
   ]);
   await db.insert(schema.rfgfAnterioresCifras).values({
     peticionId: "otros-leido",
+    equipo: "RIVAL FEDERATIVO Juvenil B",
+    codEquipo: "5120",
     codGrupo: "otros-30",
     estado: "leido",
     cifras: {

@@ -204,6 +204,13 @@
       "when": 1793559487604,
       "tag": "0028_clasificaciones-historicas",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "6",
+      "when": 1793560476036,
+      "tag": "0029_codigo-de-equipo",
+      "breakpoints": true
     }
   ]
 }

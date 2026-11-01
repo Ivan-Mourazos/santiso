@@ -677,3 +677,23 @@ it("clasificaciones históricas: una por grupo, JSON, estados y borrado en casca
   await db.delete(s.rfgfGruposHistoricos).where(eq(s.rfgfGruposHistoricos.codGrupo, "300"));
   expect(await db.select().from(s.rfgfHistoricoClasificaciones)).toEqual([]);
 });
+
+it("código equipo compatible con peticiones anteriores y caché única por equipo", async () => {
+  const { db } = conexion;
+  await db.insert(s.rfgfAnterioresEquipo).values({
+    codigo: "5120",
+    grupos: [
+      {
+        temporada: "2023-2024",
+        codGrupo: "30",
+        codCompeticion: "20",
+        competicion: "Liga",
+        grupo: "1",
+        codEquipo: "5120",
+      },
+    ],
+  });
+  await rechaza(db.insert(s.rfgfAnterioresEquipo).values({ codigo: "5120" }));
+  await rechaza(db.update(s.rfgfAnterioresEquipo).set({ estado: "inventado" as never }));
+  expect((await db.select().from(s.rfgfAnterioresEquipo))[0]!.grupos![0]!.codEquipo).toBe("5120");
+});

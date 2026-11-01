@@ -6,6 +6,7 @@ import {
   avanzarAnterioresSinCandado,
   reconciliarAnteriores,
   elegirClubAnterior,
+  elegirEquipoAnterior,
   otrosClubesDeJugador,
 } from "./anteriores";
 import { avanzarHistorico } from "./historico";
@@ -174,4 +175,175 @@ it("años del siglo pasado y temporadas ausentes del selector no gastan más pá
   expect(filas.find((f) => f.temporada === "1999-2000")!.estado).toBe("sin_datos");
   expect(filas.every((f) => f.estado === "sin_datos")).toBe(true);
   expect(await avanzarAnterioresSinCandado(d, ahora, 2)).toBe(0);
+});
+
+const paginaEquipo = (temporada = "2023-2024", competicion = "LIGA") =>
+  `<h4>${temporada}</h4><table><tr><td><a href="NFG_VisCompeticiones_Vis?codcompeticion=20">${competicion}</a></td><td><a href="NFG_VisGrupos_Vis?codgrupo=30">Grupo</a></td></tr></table>`;
+
+it.each(["sin_club", "sin_datos", "error"] as const)(
+  "código manual reactiva %s y se conserva sin reescribir historial",
+  async (estado) => {
+    const historial = ["23/24: Desconocido"];
+    const p = await persona(historial);
+    await reconciliarAnteriores();
+    const [peticion] = await otrosClubesDeJugador(p.id);
+    await c.db.update(s.rfgfAnterioresPeticiones).set({ estado, intentos: 3, aviso: "fallo" });
+    await elegirEquipoAnterior(peticion!.id, "5120");
+    await reconciliarAnteriores();
+    expect((await otrosClubesDeJugador(p.id))[0]).toMatchObject({
+      equipoCodigo: "5120",
+      estado: "pendiente",
+      intentos: 0,
+      aviso: "",
+      clubCodigo: null,
+    });
+    expect((await c.db.select().from(s.jugadores))[0]!.historial).toEqual(historial);
+  },
+);
+it.each(["", "abc", "12a", "-1", "1.2", "1234567890123", " 12"])(
+  "rechaza código inválido %s",
+  async (codigo) => {
+    await expect(elegirEquipoAnterior("cualquiera", codigo)).rejects.toThrow(
+      "Código de equipo inválido",
+    );
+  },
+);
+it("equipo comparte página entre temporadas y jugadores, filtra temporada y no depende del club", async () => {
+  const p = await persona(["23/24: Desconocido", "22/23: Desconocido"]);
+  const otro = await persona(["23/24: Desconocido"], "102");
+  await reconciliarAnteriores();
+  for (const fila of await c.db.select().from(s.rfgfAnterioresPeticiones))
+    await elegirEquipoAnterior(fila.id, "1");
+  const d = descargador();
+  vi.mocked(d.html).mockImplementation(async (url) =>
+    url.includes("VisCompeticiones_Equipo")
+      ? paginaEquipo()
+      : url.includes("CmpJornada")
+        ? jornada
+        : estadisticas(),
+  );
+  for (let i = 0; i < 4; i++)
+    expect(await avanzarAnterioresSinCandado(d, ahora, 2)).toBeLessThanOrEqual(2);
+  expect(
+    vi.mocked(d.html).mock.calls.filter(([u]) => u.includes("VisCompeticiones_Equipo")),
+  ).toHaveLength(1);
+  expect(
+    vi.mocked(d.html).mock.calls.find(([u]) => u.includes("VisCompeticiones_Equipo"))![0],
+  ).toContain("codtemporada=22");
+  expect(vi.mocked(d.html).mock.calls.some(([u]) => u.includes("VisCompeticiones_Club"))).toBe(
+    false,
+  );
+  expect((await otrosClubesDeJugador(p.id)).find((f) => f.temporada === "2022-2023")).toMatchObject(
+    { estado: "sin_datos", aviso: "Ese equipo no jugó esa temporada" },
+  );
+  expect((await otrosClubesDeJugador(otro.id))[0]!.resultados[0]!.equipo).toBe("Local");
+});
+it.each([
+  ["S.D. FEDERATIVO Juvenil B", "CLUB FEDERATIVO", "S.D. FEDERATIVO Juvenil B"],
+  ["", "CLUB FEDERATIVO", "CLUB FEDERATIVO"],
+  ["", "", "Local"],
+])(
+  "nombre respeta prioridad estadísticas, tabla, partido: %s / %s",
+  async (oficial, club, esperado) => {
+    const p = await persona(["23/24: Bastavales U.D."]);
+    const d = descargador();
+    vi.mocked(d.html).mockImplementation(async (url) =>
+      url.includes("VisCompeticiones_Club")
+        ? tabla.replace(">Club<", `>${club}<`)
+        : url.includes("CmpJornada")
+          ? jornada
+          : estadisticas().replace("Equipo: | |", `Equipo: | ${oficial} |`),
+    );
+    for (let i = 0; i < 2; i++) await avanzarAnterioresSinCandado(d, ahora, 2);
+    expect((await otrosClubesDeJugador(p.id))[0]!.resultados[0]!.equipo).toBe(esperado);
+    expect((await c.db.select().from(s.rfgfAnterioresCifras))[0]!.equipo).toBe(esperado);
+  },
+);
+it("dos equipos del mismo club conservan dos filas federativas", async () => {
+  const p = await persona(["23/24: Bastavales U.D."]);
+  const d = descargador();
+  vi.mocked(d.html).mockImplementation(async (url) =>
+    url.includes("VisCompeticiones_Club")
+      ? tabla.replace(
+          "</table>",
+          tabla
+            .match(/<tr><td>[\s\S]*?<\/tr>/u)![0]
+            .replace("codequipo=1", "codequipo=2")
+            .replace(">Club<", ">CLUB B<")
+            .replace("codgrupo=30", "codgrupo=31") + "</table>",
+        )
+      : url.includes("CmpJornada")
+        ? jornada
+        : estadisticas(),
+  );
+  for (let i = 0; i < 3; i++) await avanzarAnterioresSinCandado(d, ahora, 2);
+  expect((await otrosClubesDeJugador(p.id))[0]!.resultados.map((r) => r.equipo)).toEqual([
+    "Club",
+    "CLUB B",
+  ]);
+});
+it("equipo falla tres veces, se reactiva y reutiliza grupos y cifras leídos", async () => {
+  const p = await persona(["23/24: Desconocido"]);
+  await reconciliarAnteriores();
+  const [fila] = await otrosClubesDeJugador(p.id);
+  await elegirEquipoAnterior(fila!.id, "1");
+  const d = descargador();
+  vi.mocked(d.html).mockRejectedValue(Error("Sin red"));
+  for (let i = 0; i < 3; i++) expect(await avanzarAnterioresSinCandado(d, ahora, 2)).toBe(1);
+  expect((await otrosClubesDeJugador(p.id))[0]!.estado).toBe("error");
+  await elegirEquipoAnterior(fila!.id, "1");
+  vi.mocked(d.html).mockImplementation(async (url) =>
+    url.includes("VisCompeticiones_Equipo")
+      ? paginaEquipo()
+      : url.includes("CmpJornada")
+        ? jornada
+        : estadisticas(),
+  );
+  for (let i = 0; i < 2; i++) await avanzarAnterioresSinCandado(d, ahora, 2);
+  expect((await otrosClubesDeJugador(p.id))[0]!.estado).toBe("leido");
+});
+it.each([true, false])("filtra femenino y sala salvo único grupo: %s", async (alternativa) => {
+  const p = await persona(["23/24: Desconocido"]);
+  await reconciliarAnteriores();
+  const [fila] = await otrosClubesDeJugador(p.id);
+  await elegirEquipoAnterior(fila!.id, "1");
+  const d = descargador();
+  vi.mocked(d.html).mockImplementation(async (url) =>
+    url.includes("VisCompeticiones_Equipo")
+      ? paginaEquipo("2023-2024", "FUTBOL SALA") +
+        (alternativa ? paginaEquipo().replace("codgrupo=30", "codgrupo=31") : "")
+      : url.includes("CmpJornada")
+        ? jornada
+        : estadisticas(),
+  );
+  for (let i = 0; i < 3; i++) await avanzarAnterioresSinCandado(d, ahora, 2);
+  expect((await otrosClubesDeJugador(p.id))[0]!.resultados.map((r) => r.codGrupo)).toEqual([
+    alternativa ? "31" : "30",
+  ]);
+});
+
+it("código manual reutiliza grupo y cifras leídos aunque la petición terminara en error", async () => {
+  const p = await persona(["23/24: Bastavales U.D."]);
+  const d = descargador();
+  for (let i = 0; i < 2; i++) await avanzarAnterioresSinCandado(d, ahora, 2);
+  const [fila] = await otrosClubesDeJugador(p.id);
+  await c.db.update(s.rfgfAnterioresPeticiones).set({ estado: "error", intentos: 3 });
+  await elegirEquipoAnterior(fila!.id, "1");
+  vi.mocked(d.html).mockClear().mockResolvedValue(paginaEquipo());
+  expect(await avanzarAnterioresSinCandado(d, ahora, 2)).toBe(1);
+  expect(d.html).toHaveBeenCalledTimes(1);
+  expect((await otrosClubesDeJugador(p.id))[0]!.estado).toBe("leido");
+});
+it("si no aparece equipo ni en cifras, tabla o jornada usa club", async () => {
+  const p = await persona(["23/24: Bastavales U.D."]);
+  const d = descargador();
+  vi.mocked(d.html).mockImplementation(async (url) =>
+    url.includes("VisCompeticiones_Club")
+      ? tabla.replace(">Club<", "><").replace("codequipo=1", "codequipo=9")
+      : url.includes("CmpJornada")
+        ? jornada
+        : estadisticas(),
+  );
+  for (let i = 0; i < 2; i++) await avanzarAnterioresSinCandado(d, ahora, 2);
+  expect((await otrosClubesDeJugador(p.id))[0]!.resultados[0]!.equipo).toBe("Bastavales U.D.");
 });

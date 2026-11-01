@@ -1,5 +1,6 @@
 import {
   codigoDeTemporada,
+  gruposDeEquipoHtml,
   competicionesDeClubHtml,
   parsearEstadisticasJugador,
   partidosConCodigos,
@@ -13,13 +14,13 @@ import {
   normalizarNombreCompeticion,
 } from "@santiso/domain";
 
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import { filasDeHistorial } from "@/lib/plantilla/historial";
 
 import { emparejarClubes } from "@/lib/rfgf/clubes";
 
-import { urlEstadisticasJugador, urlJornada } from "@/lib/rfgf/enlace";
+import { urlCompeticionesDeEquipo, urlEstadisticasJugador, urlJornada } from "@/lib/rfgf/enlace";
 
 import { obtenerDb } from "@/lib/server/db";
 
@@ -143,6 +144,53 @@ export async function elegirClubAnterior(id: string, codigo: string) {
     .where(eq(s.rfgfAnterioresPeticiones.id, id));
 }
 
+/** Elección local independiente del club. Conserva cachés ya leídas. */
+export async function elegirEquipoAnterior(id: string, codigo: string) {
+  if (!/^\d{1,12}$/u.test(codigo)) throw new Error("Código de equipo inválido.");
+  const { db } = await obtenerDb();
+  await db.transaction(async (tx) => {
+    const [p] = await tx
+      .select()
+      .from(s.rfgfAnterioresPeticiones)
+      .where(eq(s.rfgfAnterioresPeticiones.id, id));
+    if (!p || p.estado === "leido") throw new Error("Esa petición ya no necesita elegir equipo.");
+    await tx
+      .update(s.rfgfAnterioresPeticiones)
+      .set({ equipoCodigo: codigo, estado: "pendiente", intentos: 0, aviso: "" })
+      .where(eq(s.rfgfAnterioresPeticiones.id, id));
+    await tx
+      .update(s.rfgfAnterioresEquipo)
+      .set({ estado: "pendiente", intentos: 0, aviso: "" })
+      .where(
+        and(eq(s.rfgfAnterioresEquipo.codigo, codigo), eq(s.rfgfAnterioresEquipo.estado, "error")),
+      );
+    const cifras = await tx
+      .select()
+      .from(s.rfgfAnterioresCifras)
+      .where(eq(s.rfgfAnterioresCifras.peticionId, id));
+    for (const c of cifras) {
+      await tx
+        .update(s.rfgfAnterioresGrupo)
+        .set({ estado: "pendiente", intentos: 0, aviso: "", jornada: 1 })
+        .where(
+          and(
+            eq(s.rfgfAnterioresGrupo.codGrupo, c.codGrupo),
+            inArray(s.rfgfAnterioresGrupo.estado, ["error", "sin_datos"]),
+          ),
+        );
+      await tx
+        .update(s.rfgfAnterioresCifras)
+        .set({ estado: "pendiente", intentos: 0, aviso: "" })
+        .where(
+          and(
+            eq(s.rfgfAnterioresCifras.id, c.id),
+            inArray(s.rfgfAnterioresCifras.estado, ["error", "sin_datos"]),
+          ),
+        );
+    }
+  });
+}
+
 /** Dentro del candado del histórico. Cada intento gasta página; un fallo espera otro tic. */
 
 export async function avanzarAnterioresSinCandado(d: DescargadorRfgf, ahora: Date, maximo: number) {
@@ -167,82 +215,144 @@ export async function avanzarAnterioresSinCandado(d: DescargadorRfgf, ahora: Dat
   const pendientes = await db
     .select()
     .from(s.rfgfAnterioresPeticiones)
-    .where(
-      and(
-        eq(s.rfgfAnterioresPeticiones.estado, "pendiente"),
-        isNotNull(s.rfgfAnterioresPeticiones.clubCodigo),
-      ),
-    );
+    .where(eq(s.rfgfAnterioresPeticiones.estado, "pendiente"));
 
   for (const p of pendientes) {
-    const id = claveClub(p.clubCodigo!, p.temporada);
-
-    await db
-      .insert(s.rfgfAnterioresClub)
-      .values({ id, clubCodigo: p.clubCodigo!, temporada: p.temporada })
-      .onConflictDoNothing();
-
-    let [club] = await db
-      .select()
-      .from(s.rfgfAnterioresClub)
-      .where(eq(s.rfgfAnterioresClub.id, id));
-
-    if (club!.estado === "pendiente" && paginas < maximo && !vistos.has(id)) {
-      vistos.add(id);
-      paginas++;
-
-      try {
-        const url = new URL("https://www.futgal.es/pnfg/NPcd/NFG_VisCompeticiones_Club");
-
-        url.search = new URLSearchParams({
-          cod_primaria: "1000123",
-          codclub: p.clubCodigo!,
-          codtemporada: codigoDeTemporada(p.temporada)!,
-        }).toString();
-
-        const resultado = competicionesDeClubHtml(await d.html(url.toString()));
-
-        const grupos =
-          resultado.grupos?.map((g) => ({
-            ...g,
-            competicion: normalizarNombreCompeticion(g.competicion),
-          })) ?? [];
-
-        const sinTemporada =
-          resultado.temporadas.length > 0 &&
-          !resultado.temporadas.some((t) => t.temporada === p.temporada);
-
+    let grupos: s.GrupoAnterior[] = [];
+    if (p.equipoCodigo) {
+      const codigo = p.equipoCodigo;
+      await db.insert(s.rfgfAnterioresEquipo).values({ codigo }).onConflictDoNothing();
+      let [equipo] = await db
+        .select()
+        .from(s.rfgfAnterioresEquipo)
+        .where(eq(s.rfgfAnterioresEquipo.codigo, codigo));
+      const clave = `equipo:${codigo}`;
+      if (equipo!.estado === "pendiente" && paginas < maximo && !vistos.has(clave)) {
+        vistos.add(clave);
+        paginas++;
+        try {
+          const [actual] = await db
+            .select()
+            .from(s.temporadas)
+            .where(eq(s.temporadas.activa, true));
+          const inicio = actual?.nombre.slice(0, 4) ?? String(ahora.getFullYear());
+          const codTemporada = codigoDeTemporada(`${inicio}-${Number(inicio) + 1}`)!;
+          const lista = gruposDeEquipoHtml(
+            await d.html(urlCompeticionesDeEquipo(codigo, codTemporada)),
+          );
+          await db
+            .update(s.rfgfAnterioresEquipo)
+            .set({
+              grupos: lista.map((g) => ({ ...g, codEquipo: codigo })),
+              estado: "leido",
+              aviso: "",
+              actualizadoEn,
+            })
+            .where(eq(s.rfgfAnterioresEquipo.codigo, codigo));
+        } catch (error) {
+          await db
+            .update(s.rfgfAnterioresEquipo)
+            .set(fallo(equipo!.intentos, error))
+            .where(eq(s.rfgfAnterioresEquipo.codigo, codigo));
+        }
+        [equipo] = await db
+          .select()
+          .from(s.rfgfAnterioresEquipo)
+          .where(eq(s.rfgfAnterioresEquipo.codigo, codigo));
+      }
+      if (equipo!.estado === "error") {
         await db
-          .update(s.rfgfAnterioresClub)
-          .set({
-            grupos: sinTemporada ? [] : grupos,
-            estado: sinTemporada || !grupos.length ? "sin_datos" : "leido",
-
-            aviso: resultado.grupos === null ? "El club no publica tabla de competiciones." : "",
-            actualizadoEn,
-          })
-          .where(eq(s.rfgfAnterioresClub.id, id));
-      } catch (error) {
+          .update(s.rfgfAnterioresPeticiones)
+          .set({ estado: "error", aviso: equipo!.aviso, actualizadoEn })
+          .where(eq(s.rfgfAnterioresPeticiones.id, p.id));
+        continue;
+      }
+      if (equipo!.estado !== "leido") continue;
+      const lista = equipo!.grupos?.filter((g) => g.temporada === p.temporada) ?? [];
+      const preferidos = lista.filter((g) => !/FEMENIN|L\.\s*G\.\s*F\.|SALA/iu.test(g.competicion));
+      grupos = preferidos.length ? preferidos : lista;
+      if (!grupos.length) {
         await db
-          .update(s.rfgfAnterioresClub)
-          .set(fallo(club!.intentos, error))
+          .update(s.rfgfAnterioresPeticiones)
+          .set({ estado: "sin_datos", aviso: "Ese equipo no jugó esa temporada", actualizadoEn })
+          .where(eq(s.rfgfAnterioresPeticiones.id, p.id));
+        continue;
+      }
+    } else {
+      if (!p.clubCodigo) continue;
+      const id = claveClub(p.clubCodigo, p.temporada);
+
+      await db
+        .insert(s.rfgfAnterioresClub)
+        .values({ id, clubCodigo: p.clubCodigo!, temporada: p.temporada })
+        .onConflictDoNothing();
+
+      let [club] = await db
+        .select()
+        .from(s.rfgfAnterioresClub)
+        .where(eq(s.rfgfAnterioresClub.id, id));
+
+      if (club!.estado === "pendiente" && paginas < maximo && !vistos.has(id)) {
+        vistos.add(id);
+        paginas++;
+
+        try {
+          const url = new URL("https://www.futgal.es/pnfg/NPcd/NFG_VisCompeticiones_Club");
+
+          url.search = new URLSearchParams({
+            cod_primaria: "1000123",
+            codclub: p.clubCodigo!,
+            codtemporada: codigoDeTemporada(p.temporada)!,
+          }).toString();
+
+          const resultado = competicionesDeClubHtml(await d.html(url.toString()));
+
+          const grupos =
+            resultado.grupos?.map((g) => ({
+              ...g,
+              competicion: normalizarNombreCompeticion(g.competicion),
+            })) ?? [];
+
+          const sinTemporada =
+            resultado.temporadas.length > 0 &&
+            !resultado.temporadas.some((t) => t.temporada === p.temporada);
+
+          await db
+            .update(s.rfgfAnterioresClub)
+            .set({
+              grupos: sinTemporada ? [] : grupos,
+              estado: sinTemporada || !grupos.length ? "sin_datos" : "leido",
+
+              aviso: resultado.grupos === null ? "El club no publica tabla de competiciones." : "",
+              actualizadoEn,
+            })
+            .where(eq(s.rfgfAnterioresClub.id, id));
+        } catch (error) {
+          await db
+            .update(s.rfgfAnterioresClub)
+            .set(fallo(club!.intentos, error))
+            .where(eq(s.rfgfAnterioresClub.id, id));
+        }
+
+        [club] = await db
+          .select()
+          .from(s.rfgfAnterioresClub)
           .where(eq(s.rfgfAnterioresClub.id, id));
       }
 
-      [club] = await db.select().from(s.rfgfAnterioresClub).where(eq(s.rfgfAnterioresClub.id, id));
+      if (club!.estado === "sin_datos" || club!.estado === "error") {
+        await db
+          .update(s.rfgfAnterioresPeticiones)
+          .set({ estado: club!.estado, aviso: club!.aviso, actualizadoEn })
+          .where(eq(s.rfgfAnterioresPeticiones.id, p.id));
+        continue;
+      }
+
+      if (club!.estado !== "leido") continue;
+
+      grupos = club!.grupos ?? [];
     }
-
-    if (club!.estado === "sin_datos" || club!.estado === "error") {
-      await db
-        .update(s.rfgfAnterioresPeticiones)
-        .set({ estado: club!.estado, aviso: club!.aviso, actualizadoEn })
-        .where(eq(s.rfgfAnterioresPeticiones.id, p.id));
-      continue;
-    }
-
-    if (club!.estado !== "leido") continue;
-
-    for (const g of club!.grupos ?? []) {
+    for (const g of grupos) {
       await db
         .insert(s.rfgfAnterioresGrupo)
         .values({ codGrupo: g.codGrupo, temporada: p.temporada, codCompeticion: g.codCompeticion })
@@ -277,6 +387,7 @@ export async function avanzarAnterioresSinCandado(d: DescargadorRfgf, ahora: Dat
           await db
             .update(s.rfgfAnterioresGrupo)
             .set({
+              partidos,
               codActa: partidos[0]?.codActa ?? null,
               jornada: grupo!.jornada + 1,
 
@@ -299,7 +410,7 @@ export async function avanzarAnterioresSinCandado(d: DescargadorRfgf, ahora: Dat
 
       await db
         .insert(s.rfgfAnterioresCifras)
-        .values({ peticionId: p.id, codGrupo: g.codGrupo })
+        .values({ peticionId: p.id, codGrupo: g.codGrupo, codEquipo: g.codEquipo })
         .onConflictDoNothing();
 
       const [c] = await db
@@ -331,6 +442,18 @@ export async function avanzarAnterioresSinCandado(d: DescargadorRfgf, ahora: Dat
           await db
             .update(s.rfgfAnterioresCifras)
             .set({
+              equipo:
+                cifras.equipo ||
+                g.equipo ||
+                grupo!.partidos?.flatMap((partido) =>
+                  partido.codLocal === g.codEquipo
+                    ? [partido.local]
+                    : partido.codVisitante === g.codEquipo
+                      ? [partido.visitante]
+                      : [],
+                )[0] ||
+                p.club,
+              codEquipo: g.codEquipo,
               cifras: {
                 convocados: cifras.convocados,
                 titular: cifras.titular,
@@ -360,15 +483,16 @@ export async function avanzarAnterioresSinCandado(d: DescargadorRfgf, ahora: Dat
       .from(s.rfgfAnterioresCifras)
       .where(eq(s.rfgfAnterioresCifras.peticionId, p.id));
 
-    if (cifras.length && cifras.every((c) => c.estado !== "pendiente")) {
-      const error = cifras.find((c) => c.estado === "error");
+    const vigentes = cifras.filter((c) => grupos.some((g) => g.codGrupo === c.codGrupo));
+    if (vigentes.length && vigentes.every((c) => c.estado !== "pendiente")) {
+      const error = vigentes.find((c) => c.estado === "error");
 
       await db
         .update(s.rfgfAnterioresPeticiones)
         .set({
           estado: error
             ? "error"
-            : cifras.some((c) => c.cifras && c.cifras.convocados > 0)
+            : vigentes.some((c) => c.cifras && c.cifras.convocados > 0)
               ? "leido"
               : "sin_datos",
           aviso: error?.aviso ?? "",
@@ -398,6 +522,8 @@ export async function otrosClubesDeJugador(jugadorId: string) {
       peticionId: s.rfgfAnterioresCifras.peticionId,
       codGrupo: s.rfgfAnterioresCifras.codGrupo,
       cifras: s.rfgfAnterioresCifras.cifras,
+      equipo: s.rfgfAnterioresCifras.equipo,
+      codEquipo: s.rfgfAnterioresCifras.codEquipo,
     })
 
     .from(s.rfgfAnterioresCifras)
@@ -408,6 +534,13 @@ export async function otrosClubesDeJugador(jugadorId: string) {
     .where(eq(s.rfgfAnterioresPeticiones.jugadorId, jugadorId));
 
   const caches = await db.select().from(s.rfgfAnterioresClub);
+  const equipos = await db.select().from(s.rfgfAnterioresEquipo);
+  const gruposDe = (p: (typeof peticiones)[number]) =>
+    p.equipoCodigo
+      ? equipos
+          .find((e) => e.codigo === p.equipoCodigo)
+          ?.grupos?.filter((g) => g.temporada === p.temporada)
+      : caches.find((cache) => cache.id === claveClub(p.clubCodigo!, p.temporada))?.grupos;
 
   return peticiones
     .sort((a, b) => b.temporada.localeCompare(a.temporada))
@@ -419,14 +552,22 @@ export async function otrosClubesDeJugador(jugadorId: string) {
       candidatos: clubes.filter((c) => p.candidatos.includes(c.codigo)),
 
       resultados: resultados
-        .filter((c) => c.peticionId === p.id && c.cifras && c.cifras.convocados > 0)
+        .filter(
+          (c) =>
+            c.peticionId === p.id &&
+            c.cifras &&
+            c.cifras.convocados > 0 &&
+            (!p.equipoCodigo || gruposDe(p)?.some((g) => g.codGrupo === c.codGrupo)),
+        )
         .map((c) => ({
           ...c,
 
-          competicion:
-            caches
-              .find((cache) => cache.id === claveClub(p.clubCodigo!, p.temporada))
-              ?.grupos?.find((g) => g.codGrupo === c.codGrupo)?.competicion ?? "",
+          equipo:
+            c.equipo ||
+            gruposDe(p)?.find((g) => g.codGrupo === c.codGrupo)?.equipo ||
+            clubes.find((club) => club.codigo === p.clubCodigo)?.nombre ||
+            p.club,
+          competicion: gruposDe(p)?.find((g) => g.codGrupo === c.codGrupo)?.competicion ?? "",
         })),
     }));
 }

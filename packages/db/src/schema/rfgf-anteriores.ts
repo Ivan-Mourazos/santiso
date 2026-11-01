@@ -17,6 +17,8 @@ const progreso = () => ({
 });
 
 export interface GrupoAnterior {
+  codEquipo?: string;
+  equipo?: string;
   codGrupo: string;
   codCompeticion: string;
   competicion: string;
@@ -49,6 +51,15 @@ export const rfgfAnterioresGrupo = sqliteTable(
     temporada: text("temporada").notNull(),
     codCompeticion: text("cod_competicion").notNull(),
 
+    partidos: text("partidos", { mode: "json" }).$type<
+      {
+        codLocal: string;
+        local: string;
+        codVisitante: string;
+        visitante: string;
+        codActa: string;
+      }[]
+    >(),
     codActa: text("cod_acta"),
     jornada: integer("jornada").notNull().default(1),
     ...progreso(),
@@ -71,6 +82,7 @@ export const rfgfAnterioresPeticiones = sqliteTable(
 
     codigo: text("codigo").notNull(),
     clubCodigo: text("club_codigo"),
+    equipoCodigo: text("equipo_codigo"),
     manual: integer("manual", { mode: "boolean" }).notNull().default(false),
 
     candidatos: text("candidatos", { mode: "json" }).$type<string[]>().notNull().default([]),
@@ -95,6 +107,8 @@ export const rfgfAnterioresCifras = sqliteTable(
       .notNull()
       .references(() => rfgfAnterioresGrupo.codGrupo),
 
+    equipo: text("equipo"),
+    codEquipo: text("cod_equipo"),
     cifras: text("cifras", { mode: "json" }).$type<typeof rfgfHistorico.$inferSelect.cifras>(),
 
     ...progreso(),
@@ -104,4 +118,16 @@ export const rfgfAnterioresCifras = sqliteTable(
     uniqueIndex("anteriores_cifras_idx").on(t.peticionId, t.codGrupo),
     checkEnum("anteriores_cifras_estado_ck", "estado", ESTADOS_ANTERIORES),
   ],
+);
+
+/** Todas las temporadas en una sola página por equipo. */
+export const rfgfAnterioresEquipo = sqliteTable(
+  "rfgf_anteriores_equipo",
+  {
+    codigo: text("codigo").primaryKey(),
+    grupos: text("grupos", { mode: "json" }).$type<(GrupoAnterior & { temporada: string })[]>(),
+    ...progreso(),
+    ...marcasTiempo(),
+  },
+  () => [checkEnum("anteriores_equipo_estado_ck", "estado", ESTADOS_ANTERIORES)],
 );

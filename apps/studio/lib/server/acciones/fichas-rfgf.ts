@@ -59,3 +59,15 @@ export async function elegirClubDeHistorial(id: string, codigo: string): Promise
     await elegirClubAnterior(id, codigo);
   });
 }
+
+export async function elegirEquipoDeHistorial(
+  id: string,
+  codigo: string,
+): Promise<Resultado<void>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudo elegir el equipo.", async () => {
+    const { elegirEquipoAnterior } = await import("@/lib/server/rfgf/anteriores");
+    await elegirEquipoAnterior(id, codigo);
+  });
+}
