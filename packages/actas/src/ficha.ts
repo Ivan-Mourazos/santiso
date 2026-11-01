@@ -42,16 +42,17 @@ export function parsearFicha(
     .map((i) => ({ ...i, texto: i.texto.replace(/\s+/g, " ").trim() }))
     .filter((i) => i.texto);
   ancla(items, "Ficha del Partido");
+  const jornadaItem = exigir(
+    items.find((i) => /^Jornada \d+$/.test(i.texto)),
+    "Jornada no encontrada",
+  );
+  // El nombre cambia cada temporada («TERCERA GALICIA», «COPA DO SAR»…): va a la izquierda de la
+  // jornada, en su mismo renglón.
   const competicion = exigir(
-    items.find((i) => /^(VETERANOS -|VETERANOS COPA|COPA\b|TERCERA FUTGAL)/.test(i.texto)),
+    items.find((i) => i.x < jornadaItem.x && Math.abs(i.y - jornadaItem.y) < 0.004),
     "Categoría o formato no soportado",
   ).texto;
-  const jornada = Number(
-    exigir(
-      items.find((i) => /^Jornada \d+$/.test(i.texto)),
-      "Jornada no encontrada",
-    ).texto.slice(8),
-  );
+  const jornada = Number(jornadaItem.texto.slice(8));
   const temporada = exigir(
     items.find((i) => /^Temporada \d{4}-\d{4}$/.test(i.texto)),
     "Temporada no encontrada",

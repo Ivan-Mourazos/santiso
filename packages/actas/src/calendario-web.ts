@@ -47,12 +47,17 @@ function fechaIso(fecha: string): string {
 
 /** «Jornada 3 (18-10-2026)» o «FASE PREVIA , 31-10-2026». `null` si no es cabecera de ronda. */
 function cabecera(linea: string): { numero: number | null; fase?: string; fecha: string } | null {
-  const m = /^(.+?)[\s,(]+(\d{2}-\d{2}-\d{4})\)?$/u.exec(linea);
+  const m = /^(.+?)[\s,(]+(\d{2}-\d{2}-\d{4})\)?(?:\s*\((Ida|Vuelta)\))?$/iu.exec(linea);
   if (!m) return null;
   const jornada = /^Jornada\s+(\d+)$/iu.exec(m[1]!);
   return jornada
     ? { numero: Number(jornada[1]), fecha: fechaIso(m[2]!) }
-    : { numero: null, fase: fase(m[1]!), fecha: fechaIso(m[2]!) };
+    : {
+        numero: null,
+        // Una eliminatoria a doble partido sale como dos rondas: «Final ida» y «Final vuelta».
+        fase: fase(m[3] ? `${m[1]} ${m[3]}` : m[1]!),
+        fecha: fechaIso(m[2]!),
+      };
 }
 
 /** Rondas en orden de página: su posición es el número con el que la federación las pide. */

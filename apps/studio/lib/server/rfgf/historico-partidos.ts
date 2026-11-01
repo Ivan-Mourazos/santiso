@@ -2,10 +2,10 @@ import "server-only";
 
 import {
   codigoDeTemporada,
-  parsearCalendarioPdf,
   parsearFichaPdf,
   parsearJornadaPdf,
   partidosConCodigos,
+  type Calendario,
   type Ficha,
 } from "@santiso/actas";
 import { schema } from "@santiso/db";
@@ -13,13 +13,13 @@ import { claveEquipo, esEquipoPropio, normalizarNombreEquipo } from "@santiso/do
 import { and, asc, eq, inArray, isNotNull, notInArray, sql } from "drizzle-orm";
 import {
   urlActaPdf,
-  urlCalendarioPdf,
   urlJornada,
   urlJornadaPdf,
   type GrupoRfgf,
 } from "@/lib/rfgf/enlace";
 import { obtenerDb } from "@/lib/server/db";
 import { alineacionesDeFicha, eventosDeFicha } from "@/lib/liga/eventos";
+import { CalendarioIlegible, leerCalendarioFederacion } from "./calendario";
 import type { DescargadorRfgf } from "./descargador";
 
 type Grupo = typeof schema.rfgfGruposHistoricos.$inferSelect;
@@ -126,11 +126,19 @@ export async function partidosHistoricos(codGrupo: string) {
 
 async function descubrirPartidos(grupo: Grupo, descargador: DescargadorRfgf, ahora: string) {
   const { db } = await obtenerDb();
-  // Descargar fuera del bloque de parser: los fallos de transporte sí se reintentan.
-  const bytes = await descargador.pdf(urlCalendarioPdf(enlaceGrupo(grupo)));
+  // PDF si es una liga limpia y, si no, la web. Un fallo de red se sale de aquí y se reintenta;
+  // solo cuenta como no compatible lo que llegó y no se supo leer.
+  let calendario: Calendario | null = null;
+  let ilegible = "";
+  try {
+    calendario = await leerCalendarioFederacion(enlaceGrupo(grupo), descargador);
+  } catch (error) {
+    if (!(error instanceof CalendarioIlegible)) throw error;
+    ilegible = error.message;
+  }
   let valores: (typeof tabla.$inferInsert)[];
   try {
-    const calendario = await parsearCalendarioPdf(bytes);
+    if (!calendario) throw new Error(ilegible);
     if (calendario.temporada !== grupo.temporada)
       throw new Error("El calendario corresponde a otra temporada.");
     // El código de catálogo del PDF no es el codequipo del HTML: se reconoce por nombre.

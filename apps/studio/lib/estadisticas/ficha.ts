@@ -72,7 +72,7 @@ export interface TemporadaAnterior {
   convocados: number;
   titular: number;
   jugados: number;
-  goles: number;
+  goles: number | null;
   amarillas: number;
   rojas: number;
 }
@@ -86,7 +86,7 @@ export interface CifrasOficiales {
   convocados: number;
   titular: number;
   jugados: number;
-  goles: number;
+  goles: number | null;
   amarillas: number;
   rojas: number;
 }
@@ -100,13 +100,13 @@ export function diferenciasConOficial(
   oficial: CifrasOficiales,
 ): string[] {
   // Las tarjetas no se comparan: la federación cuenta aparte la doble amarilla.
-  const pares: [string, number, number][] = [
+  const pares: [string, number, number | null][] = [
     ["convocatorias", propias.convocados, oficial.convocados],
     ["titularidades", propias.titularidades, oficial.titular],
     ["goles", propias.goles, oficial.goles],
   ];
   return pares
-    .filter(([, aqui, alli]) => aqui !== alli)
+    .filter(([, aqui, alli]) => alli !== null && aqui !== alli)
     .map(([que, aqui, alli]) => `${que}: ${alli} en la federación y ${aqui} aquí`);
 }
 

@@ -49,6 +49,20 @@ describe("calendario de la página web de la federación", () => {
     expect(calendario.jornadas[0]!.fechaNominal).toBe("2026-09-27");
   });
 
+  it("una eliminatoria a doble partido son dos rondas, y Descansa no es un equipo", () => {
+    const calendario = parsearCalendarioWeb(
+      pagina(
+        ronda("Final , 31-05-2026 (Ida)", [fila("ALFA", "BETA"), fila("Descansa", "GAMA")]) +
+          ronda("Final , 07-06-2026 (Vuelta)", [fila("BETA", "ALFA")]),
+      ),
+    );
+    expect(calendario.jornadas.map((j) => [j.numero, j.fase, j.partidos.length])).toEqual([
+      [1, "Final ida", 1],
+      [2, "Final vuelta", 1],
+    ]);
+    expect(calendario.equipos.map((e) => e.nombre)).toEqual(["ALFA", "BETA"]);
+  });
+
   it("rechaza lo que no es un calendario y uno sin ningún partido", () => {
     expect(() => parsearCalendarioWeb("<html>nada</html>")).toThrow(/no es el calendario/);
     expect(() => parsearCalendarioWeb(pagina(ronda("Final , 12-06-2027", [])))).toThrow(

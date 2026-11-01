@@ -122,7 +122,7 @@ export const rfgfJugadores = sqliteTable(
       amarillas: number;
       doblesAmarillas: number;
       rojas: number;
-      goles: number;
+      goles: number | null;
     }>(),
     /** Cuándo se leyeron esas cifras, ISO. */
     leidoEn: text("leido_en"),
@@ -209,7 +209,7 @@ export const rfgfHistorico = sqliteTable(
       amarillas: number;
       doblesAmarillas: number;
       rojas: number;
-      goles: number;
+      goles: number | null;
     }>(),
     leidoEn: text("leido_en"),
     ...marcasTiempo(),

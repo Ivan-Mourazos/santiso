@@ -78,6 +78,9 @@ export async function estadoDeCompeticion(competicionId: string): Promise<Estado
   };
 }
 
+/** La federación respondió, pero lo que publica no se sabe leer: reintentar no lo arregla. */
+export class CalendarioIlegible extends Error {}
+
 const claveCatalogo = (nombre: string) => nombre.normalize("NFC").replace(/\s/gu, "");
 
 /**
@@ -89,12 +92,24 @@ export async function leerCalendarioFederacion(
   grupo: GrupoRfgf,
   descargador: DescargadorRfgf,
 ): Promise<Calendario> {
-  const pdf = await descargador.pdf(urlCalendarioPdf(grupo)).catch(() => null);
+  let falloPdf: unknown = null;
+  const pdf = await descargador.pdf(urlCalendarioPdf(grupo)).catch((error: unknown) => {
+    falloPdf = error;
+    return null;
+  });
   if (pdf) {
     const liga = await parsearCalendarioPdf(pdf).catch(() => null);
     if (liga) return liga;
   }
-  const web = parsearCalendarioWeb(await descargador.html(urlCalendarioWeb(grupo)));
+  const html = await descargador.html(urlCalendarioWeb(grupo));
+  let web: Calendario;
+  try {
+    web = parsearCalendarioWeb(html);
+  } catch (error) {
+    // Si tampoco llegó el PDF, puede ser una caída pasajera: no se da por ilegible.
+    if (falloPdf) throw falloPdf;
+    throw new CalendarioIlegible(error instanceof Error ? error.message : "formato desconocido");
+  }
   const catalogo = pdf ? await catalogoDeCalendarioPdf(pdf).catch(() => []) : [];
   const codigos = new Map(catalogo.map((e) => [claveCatalogo(e.nombre), e.codigoFederativo]));
   // Los partidos comparten estos objetos con `equipos`: basta con ponerles el código una vez.

@@ -8,7 +8,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { Calendario, Ficha } from "@santiso/actas";
 import type { DescargadorRfgf } from "./descargador";
 
-const simulacion = vi.hoisted(() => ({ calendario: null as Calendario | null }));
+const simulacion = vi.hoisted(() => ({ calendario: null as Calendario | null, web: "" }));
 vi.mock("@santiso/actas", async (original) => ({
   ...(await original<typeof import("@santiso/actas")>()),
   parsearCalendarioPdf: async () => {
@@ -39,6 +39,7 @@ beforeEach(async () => {
   archivo = await import("./historico-partidos");
   historico = await import("./historico");
   const equipo = (nombre: string) => ({ nombre, codigoFederativo: "0001" });
+  simulacion.web = "";
   simulacion.calendario = {
     competicion: fichas[0]!.competicion,
     temporada: "2025-2026",
@@ -87,6 +88,7 @@ function descargador(): DescargadorRfgf & { llamadas: string[] } {
     llamadas,
     html: vi.fn(async (url: string) => {
       llamadas.push(url);
+      if (url.includes("NFG_VisCalendario")) return simulacion.web;
       const n = Number(new URL(url).searchParams.get("CodJornada"));
       const f = fichas.find((f) => f.jornada === n)!;
       return `<a href="NFG_VisEquipos?Codigo_Equipo=12">${f.local.nombre}</a>
@@ -259,13 +261,47 @@ it("calendario incompatible deja aviso y permite avanzar otro grupo", async () =
   await archivo.pedirPartidosHistoricos("300", AHORA);
   await archivo.pedirPartidosHistoricos("301", AHORA);
   simulacion.calendario = null;
+  simulacion.web = "<html>nada legible</html>";
   const d = descargador();
   await tic(d);
   const grupos = await historico.estadoHistorico();
   expect(grupos.every((g) => g.archivoPartidos.estado === "no_compatible")).toBe(true);
   expect(grupos.every((g) => g.archivoPartidos.aviso.includes("no soportado"))).toBe(true);
-  expect(d.llamadas).toHaveLength(2);
+  // Cada grupo: su PDF y, como no era una liga, su página web.
+  expect(d.llamadas).toHaveLength(4);
   expect(await conexion.db.select().from(s.rfgfHistoricoPartidos)).toEqual([]);
+});
+
+it("si el PDF no es una liga, saca de la web las rondas y los partidos del Santiso", async () => {
+  await archivo.pedirPartidosHistoricos("300", AHORA);
+  simulacion.calendario = null;
+  const fila = (local: string, visitante: string) =>
+    `<tr><td width="47%" align=right>${local}</td><td width="6%"></td><td width="47%" align=left>${visitante}</td></tr>`;
+  simulacion.web = `<h4>COPA DO SAR<br><br>Temporada 2025-2026</h4>
+    <table><tr><th colspan=4>Octavos , 06-12-2025</th></tr>${fila("U.D. SANTISO F.C.", "RIVAL")}${fila("OTRO", "OUTRO")}</table>
+    <table><tr><th colspan=4>Cuartos , 11-02-2026</th></tr>${fila("RIVAL DOS", "U.D. SANTISO F.C.")}</table>
+    <table><tr><th colspan=4>Final , 09-06-2026</th></tr>${fila("Equipo Casa (No asignado)", "Equipo Fuera (No asignado)")}</table>`;
+  await tic(descargador());
+  const partidos = await conexion.db.select().from(s.rfgfHistoricoPartidos);
+  expect(partidos.map((p) => [p.jornada, p.santisoLocal]).sort()).toEqual([
+    [1, true],
+    [2, false],
+  ]);
+  expect((await historico.estadoHistorico())[0]?.archivoPartidos.estado).toBe("en_curso");
+});
+
+it("un fallo de red al traer el calendario no lo marca como no compatible", async () => {
+  await archivo.pedirPartidosHistoricos("300", AHORA);
+  simulacion.calendario = null;
+  const d = descargador();
+  d.pdf = vi.fn(async () => {
+    throw new Error("La federación respondió 503.");
+  });
+  d.html = vi.fn(async () => {
+    throw new Error("La federación respondió 503.");
+  });
+  await tic(d);
+  expect((await historico.estadoHistorico())[0]?.archivoPartidos.estado).toBe("en_cola");
 });
 
 it("sin acta usa PDF de jornada y nunca toma el marcador del HTML", async () => {
@@ -399,7 +435,8 @@ it("fallo de calendario rota entre grupos y se reintenta después, sin tocar gru
     return pdf(url);
   };
   await tic(d, 0);
-  expect(d.llamadas).toHaveLength(2);
+  // El grupo que falla prueba también la web; el otro lee su PDF.
+  expect(d.llamadas).toHaveLength(3);
   expect((await archivo.partidosHistoricos("301")).resumen.total).toBe(2);
   await tic(d, 1);
   expect((await archivo.partidosHistoricos("300")).resumen.total).toBe(2);

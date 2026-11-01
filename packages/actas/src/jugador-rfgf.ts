@@ -24,7 +24,8 @@ export interface EstadisticasOficiales {
   amarillas: number;
   doblesAmarillas: number;
   rojas: number;
-  goles: number;
+  /** `null` si la federación no publica goles en esa competición (alguna eliminatoria). */
+  goles: number | null;
 }
 
 const ENTIDADES: Record<string, string> = {
@@ -93,7 +94,6 @@ export function parsearEstadisticasJugador(html: string): EstadisticasOficiales 
   if (!cabecera) throw new Error("La página no es la de estadísticas de un jugador.");
   // «Total» sale dos veces: primero el de sanciones y luego el de goles.
   const goles = /Goles \| Total \|\s*(\d+)/iu.exec(plano);
-  if (!goles) throw new Error("La página del jugador no trae sus goles.");
   return {
     nombre: cabecera[1]!.trim(),
     equipo: cabecera[2]!.trim(),
@@ -106,6 +106,6 @@ export function parsearEstadisticasJugador(html: string): EstadisticasOficiales 
     amarillas: cifra(plano, /\| Tarjeta amarilla/u),
     doblesAmarillas: cifra(plano, /Doble tarjeta amarilla/u),
     rojas: cifra(plano, /Tarjeta roja/u),
-    goles: Number(goles[1]),
+    goles: goles ? Number(goles[1]) : null,
   };
 }

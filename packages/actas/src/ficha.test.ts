@@ -27,6 +27,13 @@ describe("fichas de veteranos por coordenadas", () => {
       expect(f).not.toHaveProperty("minutosJugados");
     },
   );
+  it("acepta cualquier competición: su nombre es lo que va en el renglón de la jornada", () => {
+    const jornada = j1.find((i) => i.texto === "Jornada 1")!;
+    const items = j1.map((i) =>
+      i.x < jornada.x && Math.abs(i.y - jornada.y) < 0.004 ? { ...i, texto: "COPA DO SAR" } : i,
+    );
+    expect(parsearFicha(items).competicion).toBe("COPA DO SAR");
+  });
   it("conserva goles repetidos y no deduce penaltis", () => {
     const f = parsearFicha(j2);
     expect(f.goles.filter((g) => g.autor === f.goles[2]?.autor)).toHaveLength(4);

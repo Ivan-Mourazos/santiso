@@ -21,9 +21,9 @@ export function Resultado({ r }: { r: ResultadoSantiso | null }) {
 
 /** Las cifras oficiales de la federación en cuadros, las que más importan primero. */
 export function CuadrosCifras({ cifras }: { cifras: CifrasRfgf }) {
-  const cuadros: [string, number, boolean?][] = [
+  const cuadros: [string, number | string, boolean?][] = [
     ["Jugados", cifras.jugados, true],
-    ["Goles", cifras.goles, true],
+    ["Goles", cifras.goles ?? "—", true],
     ["Titular", cifras.titular],
     ["Suplente", cifras.suplente],
     ["Convocado", cifras.convocados],

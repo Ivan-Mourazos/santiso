@@ -178,7 +178,7 @@ export default function FichaJugadorPantalla({ jugadorId }: { jugadorId: string 
                         <>
                           <td>{g.cifras.jugados}</td>
                           <td>{g.cifras.titular}</td>
-                          <td>{g.cifras.goles}</td>
+                          <td>{g.cifras.goles ?? "—"}</td>
                           <td>{g.cifras.amarillas + g.cifras.doblesAmarillas}</td>
                           <td>{g.cifras.rojas}</td>
                         </>

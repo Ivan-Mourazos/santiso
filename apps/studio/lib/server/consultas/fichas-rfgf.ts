@@ -25,7 +25,7 @@ export interface CifrasRfgf {
   amarillas: number;
   doblesAmarillas: number;
   rojas: number;
-  goles: number;
+  goles: number | null;
 }
 
 const CERO: CifrasRfgf = {
@@ -42,8 +42,10 @@ const CERO: CifrasRfgf = {
 /** Suma de cifras: para los totales por temporada y de toda la carrera. */
 export function sumarCifras(lista: readonly CifrasRfgf[]): CifrasRfgf {
   const total = { ...CERO };
+  // Donde la federación no publica goles no suma nada: el total queda por lo bajo, no inventado.
   for (const cifras of lista)
-    for (const clave of Object.keys(CERO) as (keyof CifrasRfgf)[]) total[clave] += cifras[clave];
+    for (const clave of Object.keys(CERO) as (keyof CifrasRfgf)[])
+      total[clave] = (total[clave] ?? 0) + (cifras[clave] ?? 0);
   return total;
 }
 

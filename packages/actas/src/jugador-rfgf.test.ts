@@ -34,6 +34,11 @@ describe("jugadores en la web de la federación", () => {
     ]);
   });
 
+  it("sin bloque de goles (alguna eliminatoria) no da error ni inventa un cero", () => {
+    const sinGoles = JUGADOR.replace(/<h5>Goles<\/h5>.*?<\/table>/su, "");
+    expect(parsearEstadisticasJugador(sinGoles).goles).toBeNull();
+  });
+
   it("lee las cifras de un jugador sin confundir el total de sanciones con el de goles", () => {
     expect(parsearEstadisticasJugador(JUGADOR)).toEqual({
       nombre: "GARDAMETA CATRO, ANXO",
