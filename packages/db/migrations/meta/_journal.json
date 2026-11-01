@@ -183,6 +183,27 @@
       "when": 1793555547658,
       "tag": "0025_asistencia-entrenamientos",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1793558753614,
+      "tag": "0026_equipos-anteriores",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1793559478488,
+      "tag": "0027_parar-actas-historicas",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1793559487604,
+      "tag": "0028_clasificaciones-historicas",
+      "breakpoints": true
     }
   ]
 }

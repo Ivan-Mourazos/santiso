@@ -90,14 +90,17 @@ export function parsearEstadisticasJugador(html: string): EstadisticasOficiales 
     .replace(/(\s*\|\s*)+/gu, " | ")
     .trim();
   const cabecera =
-    /Generar PDF \| (.+?) \| Equipo: \| (.+?) \| (.+?) \| Temporada (\d{4}-\d{4})/iu.exec(plano);
+    /Generar PDF \| (.+?) \| Equipo: \| (?:(.*?) \| )?(.+?) \| Temporada (\d{4}-\d{4})/iu.exec(
+      plano,
+    );
   if (!cabecera) throw new Error("La página no es la de estadísticas de un jugador.");
   // «Total» sale dos veces: primero el de sanciones y luego el de goles.
+  const sinEquipo = /^GRUPO\b/iu.test(cabecera[3]!);
   const goles = /Goles \| Total \|\s*(\d+)/iu.exec(plano);
   return {
     nombre: cabecera[1]!.trim(),
-    equipo: cabecera[2]!.trim(),
-    competicion: cabecera[3]!.trim(),
+    equipo: sinEquipo ? "" : (cabecera[2] ?? "").trim(),
+    competicion: sinEquipo ? `${cabecera[2]} | ${cabecera[3]}` : cabecera[3]!.trim(),
     temporada: cabecera[4]!,
     convocados: cifra(plano, /Convocados/u),
     titular: cifra(plano, /Titular/u),

@@ -13,3 +13,7 @@ export * from "./liga";
 export * from "./carteles";
 
 export * from "./entrenamientos";
+
+export * from "./rfgf-anteriores";
+
+export * from "./rfgf-historico-clasificaciones";

@@ -1,3 +1,5 @@
+// Clasificaciones se ejercitan con su presupuesto real en historico-clasificaciones.test.ts.
+vi.mock("./historico-clasificaciones", () => ({ avanzarClasificacionesSinCandado: async () => 0 }));
 import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -140,7 +142,12 @@ async function preparar({ santiso = true, sinJugador = false } = {}) {
     .insert(s.equipos)
     .values([
       { nombre: "Equipo Local", clave: "equipo local", categoria: "Senior" },
-      { nombre: "Equipo Visitante", clave: "equipo visitante", categoria: "Senior", esPropio: santiso },
+      {
+        nombre: "Equipo Visitante",
+        clave: "equipo visitante",
+        categoria: "Senior",
+        esPropio: santiso,
+      },
     ])
     .returning();
   const [jornada] = await db
@@ -156,7 +163,9 @@ async function preparar({ santiso = true, sinJugador = false } = {}) {
       fecha: "2025-09-14T12:00",
     })
     .returning();
-  const numeros = Array.from({ length: 16 }, (_, i) => 20 + i).filter((n) => !(sinJugador && n === 27));
+  const numeros = Array.from({ length: 16 }, (_, i) => 20 + i).filter(
+    (n) => !(sinJugador && n === 27),
+  );
   const personas = await db
     .insert(s.jugadores)
     .values(numeros.map((n) => ({ nombre: `Persona Apellido ${n}` })))
@@ -239,7 +248,9 @@ it("si no reconoce a un jugador guarda el marcador, no el acta, y deja el PDF pa
   expect(partido).toMatchObject({ golesLocal: 8, golesVisitante: 2 });
   expect(await db.select().from(s.partidoParticipaciones)).toHaveLength(0);
   expect(await db.select().from(s.partidoEventos)).toHaveLength(0);
-  expect(await db.select().from(s.rfgfActas)).toMatchObject([{ codActa: "901", estado: "revisar" }]);
+  expect(await db.select().from(s.rfgfActas)).toMatchObject([
+    { codActa: "901", estado: "revisar" },
+  ]);
   expect(existsSync(path.join(process.env.SANTISO_DATA_DIR!, "rfgf", "901.pdf"))).toBe(true);
 
   // Un acta por revisar no se descarga otra vez en cada pasada.
@@ -259,7 +270,9 @@ it("de un partido ajeno solo guarda el resultado", async () => {
   const [partido] = await db.select().from(s.partidos).where(eq(s.partidos.id, partidoId));
   expect(partido).toMatchObject({ golesLocal: 8, golesVisitante: 2, estado: "finalizado" });
   expect(await db.select().from(s.partidoParticipaciones)).toHaveLength(0);
-  expect(await db.select().from(s.rfgfActas)).toMatchObject([{ codActa: "902", estado: "resultado" }]);
+  expect(await db.select().from(s.rfgfActas)).toMatchObject([
+    { codActa: "902", estado: "resultado" },
+  ]);
 });
 
 it("sin acta cerrada o antes de la hora del partido no descarga nada", async () => {
@@ -303,7 +316,9 @@ it("un fallo de la federación queda anotado y se reintenta en la siguiente pasa
   const segunda = await sincronizarCompeticion(competicionId, conFallo, AHORA);
   expect(segunda).toMatchObject({ actas: 1, errores: [] });
   expect(pedidas.pdf).toHaveLength(1);
-  expect(await db.select().from(s.rfgfActas)).toMatchObject([{ codActa: "904", estado: "guardada" }]);
+  expect(await db.select().from(s.rfgfActas)).toMatchObject([
+    { codActa: "904", estado: "guardada" },
+  ]);
 });
 
 it("del PDF de jornada salen los marcadores; el acta se pide una vez para goles y tarjetas", async () => {
@@ -420,7 +435,10 @@ it("la federación manda siempre: lo cambiado a mano vuelve a lo que ella public
   // Ponerle campo a un partido que no lo tenía es rellenar: no es un cambio del que avisar.
   expect(await db.select().from(s.rfgfPartidos)).toMatchObject([{ cambio: "", cambioEn: null }]);
   // A mano, a las 19:00.
-  await db.update(s.partidos).set({ fecha: "2025-09-21T19:00" }).where(eq(s.partidos.id, porJugarId));
+  await db
+    .update(s.partidos)
+    .set({ fecha: "2025-09-21T19:00" })
+    .where(eq(s.partidos.id, porJugarId));
 
   const masTarde = new Date(AHORA.getTime() + 4 * 3_600_000);
   const otraVez = await sincronizarCompeticion(
@@ -525,7 +543,12 @@ it("si la federación corrige el árbitro, se cambia el guardado", async () => {
   const { s, db, competicionId, partidoId, sincronizarCompeticion } = await conPartidoPorJugar();
   await db
     .update(s.partidos)
-    .set({ arbitro: "Arbitro Equivocado", golesLocal: null, golesVisitante: null, estado: "programado" })
+    .set({
+      arbitro: "Arbitro Equivocado",
+      golesLocal: null,
+      golesVisitante: null,
+      estado: "programado",
+    })
     .where(eq(s.partidos.id, partidoId));
   const { descargador } = descargadorDe("", [
     "EQUIPO LOCAL",
@@ -617,7 +640,6 @@ it("compara la clasificación con la oficial y deja dicho en qué no cuadra", as
   const [despues] = await db.select().from(s.rfgfCompeticiones);
   expect(despues?.clasificacion?.diferencias).toEqual([]);
 });
-
 
 it("apunta a los jugadores del club con su código y trae sus cifras oficiales", async () => {
   const { s, competicionId, sincronizarCompeticion, leer } = await preparar();
@@ -728,8 +750,7 @@ it("en una copa añade los cruces que se van sorteando, con su equipo nuevo", as
     .update(s.competiciones)
     .set({ formato: "eliminatoria" })
     .where(eq(s.competiciones.id, competicionId));
-  const celda = (lado: string, nombre: string) =>
-    `<td width="47%" align=${lado}> ${nombre} </td>`;
+  const celda = (lado: string, nombre: string) => `<td width="47%" align=${lado}> ${nombre} </td>`;
   const calendario = `<h4>COPA<br><br>Temporada 2025-2026</h4><table><tr><th colspan=4>Final , 30-05-2026</th></tr>
     <tr>${celda("right", "EQUIPO LOCAL")}<td width="6%"></td>${celda("left", "EQUIPO SORTEADO")}</tr></table>`;
   const { descargador } = descargadorDe(calendario);

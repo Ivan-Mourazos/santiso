@@ -603,3 +603,77 @@ describe("entrenamientos y asistencia", () => {
     expect(await db.select().from(s.asistencias)).toHaveLength(0);
   });
 });
+
+it("otros clubes: unicidad, estados válidos, goles null y cascada desde jugador", async () => {
+  const { db } = conexion;
+  const [j] = await db.insert(s.jugadores).values({ nombre: "Jugador anterior" }).returning();
+  const valores = {
+    jugadorId: j!.id,
+    linea: "23/24: Club",
+    temporada: "2023-2024",
+    club: "Club",
+    codigo: "1",
+  };
+  const [p] = await db.insert(s.rfgfAnterioresPeticiones).values(valores).returning();
+  await rechaza(db.insert(s.rfgfAnterioresPeticiones).values(valores));
+  await rechaza(
+    db
+      .insert(s.rfgfAnterioresPeticiones)
+      .values({ ...valores, linea: "otra", estado: "inventado" as never }),
+  );
+  await db
+    .insert(s.rfgfAnterioresGrupo)
+    .values({ codGrupo: "1", temporada: "2023-2024", codCompeticion: "2" });
+  await db.insert(s.rfgfAnterioresCifras).values({
+    peticionId: p!.id,
+    codGrupo: "1",
+    cifras: {
+      convocados: 1,
+      titular: 1,
+      suplente: 0,
+      jugados: 1,
+      amarillas: 0,
+      doblesAmarillas: 0,
+      rojas: 0,
+      goles: null,
+    },
+  });
+  expect((await db.select().from(s.rfgfAnterioresCifras))[0]!.cifras!.goles).toBeNull();
+  await db.delete(s.jugadores).where(eq(s.jugadores.id, j!.id));
+  expect(await db.select().from(s.rfgfAnterioresCifras)).toEqual([]);
+  expect(await db.select().from(s.rfgfAnterioresPeticiones)).toEqual([]);
+});
+
+it("clasificaciones históricas: una por grupo, JSON, estados y borrado en cascada", async () => {
+  const { db } = conexion;
+  await db.insert(s.rfgfGruposHistoricos).values({
+    codGrupo: "300",
+    categoria: "Senior",
+    temporada: "2023-2024",
+    competicion: "Liga",
+    grupo: "1",
+    codCompeticion: "30",
+    codEquipo: "12",
+  });
+  const fila = {
+    posicion: 6,
+    equipo: "U.D. Santiso",
+    puntos: 34,
+    jugados: 26,
+    ganados: 10,
+    empatados: 4,
+    perdidos: 12,
+    golesFavor: 31,
+    golesContra: 35,
+    sancion: 0,
+  };
+  await db
+    .insert(s.rfgfHistoricoClasificaciones)
+    .values({ codGrupo: "300", formato: "liga", jornada: 26, filas: [fila], estado: "leido" });
+  expect((await db.select().from(s.rfgfHistoricoClasificaciones))[0]!.filas).toEqual([fila]);
+  await rechaza(db.insert(s.rfgfHistoricoClasificaciones).values({ codGrupo: "300" }));
+  await rechaza(db.update(s.rfgfHistoricoClasificaciones).set({ estado: "inventado" as never }));
+  await rechaza(db.update(s.rfgfHistoricoClasificaciones).set({ formato: "inventado" as never }));
+  await db.delete(s.rfgfGruposHistoricos).where(eq(s.rfgfGruposHistoricos.codGrupo, "300"));
+  expect(await db.select().from(s.rfgfHistoricoClasificaciones)).toEqual([]);
+});

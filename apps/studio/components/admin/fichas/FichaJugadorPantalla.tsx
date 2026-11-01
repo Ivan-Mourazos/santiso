@@ -1,4 +1,5 @@
 "use client";
+import OtrosClubes from "./OtrosClubes";
 /* eslint-disable @next/next/no-img-element -- fotos de la media local */
 import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
@@ -240,6 +241,8 @@ export default function FichaJugadorPantalla({ jugadorId }: { jugadorId: string 
           )}
         </section>
       ))}
+
+      <OtrosClubes filas={f.otrosClubes} admin={admin} recargar={() => cargar(jugadorId!)} />
 
       {(f.clubesVistos.length > 0 || j.historial.length > 0) && (
         <section className={styles.bloque} aria-label="Otros equipos">

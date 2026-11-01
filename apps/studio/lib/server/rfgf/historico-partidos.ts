@@ -11,12 +11,7 @@ import {
 import { schema } from "@santiso/db";
 import { claveEquipo, esEquipoPropio, normalizarNombreEquipo } from "@santiso/domain";
 import { and, asc, eq, inArray, isNotNull, notInArray, sql } from "drizzle-orm";
-import {
-  urlActaPdf,
-  urlJornada,
-  urlJornadaPdf,
-  type GrupoRfgf,
-} from "@/lib/rfgf/enlace";
+import { urlActaPdf, urlJornada, urlJornadaPdf, type GrupoRfgf } from "@/lib/rfgf/enlace";
 import { obtenerDb } from "@/lib/server/db";
 import { alineacionesDeFicha, eventosDeFicha } from "@/lib/liga/eventos";
 import { CalendarioIlegible, leerCalendarioFederacion } from "./calendario";
@@ -30,7 +25,7 @@ const mensaje = (error: unknown) => (error instanceof Error ? error.message : "F
 const terminado = (p: Partido) =>
   p.estado === "listo" || (p.estado === "sin_acta" && p.resultadoEn !== null);
 
-function enlaceGrupo(grupo: Grupo): GrupoRfgf {
+export function enlaceGrupo(grupo: Grupo): GrupoRfgf {
   const codTemporada = codigoDeTemporada(grupo.temporada);
   if (!codTemporada || !/^\d+$/u.test(grupo.codGrupo) || !/^\d+$/u.test(grupo.codCompeticion))
     throw new Error("Códigos o temporada del grupo no soportados.");
@@ -294,7 +289,8 @@ async function leerPartido(p: Partido, grupo: Grupo, descargador: DescargadorRfg
           .where(filtro);
         return;
       }
-      if (jornada.numero !== null && jornada.numero !== p.jornada) throw new Error("El PDF corresponde a otra jornada.");
+      if (jornada.numero !== null && jornada.numero !== p.jornada)
+        throw new Error("El PDF corresponde a otra jornada.");
       const candidatos = jornada.partidos.filter(
         (c) => misma(c.local, p.local, grupo) && misma(c.visitante, p.visitante, grupo),
       );

@@ -1,4 +1,5 @@
 "use client";
+import ClasificacionesHistoricas from "./ClasificacionesHistoricas";
 import { sinConexion } from "@/lib/resultado";
 import { useCallback, useEffect, useState } from "react";
 import { useStudio } from "@/components/studio/StudioContext";
@@ -63,6 +64,7 @@ export default function Archivo({ categoria }: { categoria: string }) {
 
   return (
     <div className={styles.ficha}>
+      <ClasificacionesHistoricas temporadas={temporadas} />
       {temporadas.map((t, i) => (
         <details key={t.temporada} className={styles.temporada} open={i === 0}>
           <summary>
@@ -126,6 +128,19 @@ export default function Archivo({ categoria }: { categoria: string }) {
                   </div>
                 ) : (
                   <p className={styles.nota}>Sin partidos traídos todavía.</p>
+                )}
+                {admin && g.partidos.length > 0 && g.archivo.estado === "no_pedido" && (
+                  <div className={styles.acciones}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      pending={pidiendo === g.codGrupo}
+                      pendingLabel="Pidiendo…"
+                      onClick={() => void pedir(g)}
+                    >
+                      Traer partidos
+                    </Button>
+                  </div>
                 )}
               </section>
             ))}

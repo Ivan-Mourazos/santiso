@@ -1,3 +1,5 @@
+// Clasificaciones se ejercitan con su presupuesto real en historico-clasificaciones.test.ts.
+vi.mock("./historico-clasificaciones", () => ({ avanzarClasificacionesSinCandado: async () => 0 }));
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { schema as s, type ConexionDb } from "@santiso/db";
@@ -449,4 +451,63 @@ it("fallo de calendario rota entre grupos y se reintenta después, sin tocar gru
     .from(s.rfgfGruposHistoricos)
     .where(eq(s.rfgfGruposHistoricos.codGrupo, "300"));
   expect(grupo?.partidosIntentos).toBe(2);
+});
+
+it("migración de parada conserva archivo y permite reanudar sin repetir calendario", async () => {
+  const d = descargador();
+  await archivo.pedirPartidosHistoricos("300", AHORA);
+  await archivo.avanzarPartidosHistoricosSinCandado(d, AHORA, 1);
+  const anteriores = await conexion.db.select().from(s.rfgfHistoricoPartidos);
+  const primero = anteriores[0]!;
+  await conexion.db
+    .update(s.rfgfHistoricoPartidos)
+    .set({ estado: "listo", golesLocal: 2, golesVisitante: 0 })
+    .where(eq(s.rfgfHistoricoPartidos.id, primero.id));
+  await conexion.db
+    .insert(s.rfgfHistoricoEventos)
+    .values({
+      partidoId: primero.id,
+      lado: "local",
+      persona: "Xan Ficticio",
+      personaClave: "xan ficticio",
+      tipo: "gol",
+    });
+  await conexion.db
+    .insert(s.rfgfHistoricoAlineaciones)
+    .values({
+      partidoId: primero.id,
+      lado: "local",
+      persona: "Xan Ficticio",
+      personaClave: "xan ficticio",
+      titular: true,
+    });
+  const eventos = await conexion.db.select().from(s.rfgfHistoricoEventos);
+  const alineaciones = await conexion.db.select().from(s.rfgfHistoricoAlineaciones);
+  const sqlParada = readFileSync(
+    path.resolve(
+      __dirname,
+      "../../../../../packages/db/migrations/0027_parar-actas-historicas.sql",
+    ),
+    "utf8",
+  );
+  await conexion.cliente.execute(sqlParada);
+  const [parado] = await conexion.db.select().from(s.rfgfGruposHistoricos);
+  expect(parado).toMatchObject({ partidosEstado: "no_pedido", partidosPedidosEn: null });
+  expect(parado!.partidosCalendarioEn).not.toBeNull();
+  expect(await archivo.avanzarPartidosHistoricosSinCandado(d, AHORA, 2)).toBe(0);
+  const llamadas = d.llamadas.length;
+  await archivo.pedirPartidosHistoricos("300", AHORA);
+  await archivo.avanzarPartidosHistoricosSinCandado(d, AHORA, 1);
+  expect(d.llamadas.slice(llamadas).some((u) => u.includes("Calendario"))).toBe(false);
+  expect(await conexion.db.select().from(s.rfgfHistoricoPartidos)).toHaveLength(anteriores.length);
+  expect(
+    (
+      await conexion.db
+        .select()
+        .from(s.rfgfHistoricoPartidos)
+        .where(eq(s.rfgfHistoricoPartidos.id, primero.id))
+    )[0],
+  ).toMatchObject({ estado: "listo", golesLocal: 2, golesVisitante: 0 });
+  expect(await conexion.db.select().from(s.rfgfHistoricoEventos)).toEqual(eventos);
+  expect(await conexion.db.select().from(s.rfgfHistoricoAlineaciones)).toEqual(alineaciones);
 });

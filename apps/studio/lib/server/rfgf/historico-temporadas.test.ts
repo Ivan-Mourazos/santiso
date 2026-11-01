@@ -1,3 +1,5 @@
+// Clasificaciones se ejercitan con su presupuesto real en historico-clasificaciones.test.ts.
+vi.mock("./historico-clasificaciones", () => ({ avanzarClasificacionesSinCandado: async () => 0 }));
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { schema as s, type ConexionDb } from "@santiso/db";

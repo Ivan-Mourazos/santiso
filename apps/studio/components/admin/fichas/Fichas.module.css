@@ -364,3 +364,63 @@
   position: absolute;
   inset: -6px 0;
 }
+
+.lista li.otroClub {
+  grid-template-columns: minmax(0, 1fr);
+  overflow-wrap: anywhere;
+}
+.elegirClub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+.elegirClub form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+.elegirClub input {
+  min-width: 0;
+  width: 160px;
+  max-width: 100%;
+}
+
+.tituloClasificacion {
+  margin: 0;
+  font: 900 var(--ui-text-xl) var(--ui-font-title);
+}
+.resumenClasificacion,
+.clasificacionHistorica {
+  margin: 0;
+  min-width: 0;
+  padding: var(--ui-space-3);
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+  overflow-wrap: anywhere;
+}
+.clasificacionHistorica summary {
+  cursor: pointer;
+}
+.clasificacionHistorica summary span {
+  display: block;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+  margin-top: 6px;
+}
+.clasificacionHistorica .tablaCaja {
+  max-width: 100%;
+  margin-top: var(--ui-space-3);
+}
+.tablaClasificacion caption {
+  text-align: left;
+  padding: 8px;
+  color: var(--ui-muted);
+}
+.tablaClasificacion tr[data-propio="true"] {
+  background: var(--ui-raised);
+  color: var(--ui-accent);
+  font-weight: 800;
+}

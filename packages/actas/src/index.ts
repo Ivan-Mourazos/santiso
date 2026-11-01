@@ -27,3 +27,7 @@ export { jugadoresDeActaHtml, parsearEstadisticasJugador } from "./jugador-rfgf"
 export type { EstadisticasOficiales, JugadorDeActa } from "./jugador-rfgf";
 export { codigoDeTemporada, gruposDeEquipoHtml, partidosConCodigos } from "./equipo-rfgf";
 export type { GrupoDeEquipo, PartidoConCodigos } from "./equipo-rfgf";
+
+export { competicionesDeClubHtml } from "./equipo-rfgf";
+
+export { ClasificacionVacia } from "./clasificacion";

@@ -1,3 +1,5 @@
+import { avanzarClasificacionesSinCandado } from "./historico-clasificaciones";
+import { avanzarAnterioresSinCandado } from "./anteriores";
 import {
   codigoDeTemporada,
   gruposDeEquipoHtml,
@@ -387,10 +389,22 @@ export async function avanzarHistorico(
       const limite = Number.isFinite(maximo) ? Math.max(0, Math.min(2, Math.floor(maximo))) : 2;
       // Alterna prioridad por tic para que ninguna cola espere a que se agote la otra.
       // El presupuesto sigue siendo dos páginas en total, bajo la misma reserva.
+      const anteriores = await avanzarAnterioresSinCandado(descargador, ahora, limite);
+      if (anteriores >= limite) return anteriores;
+      const clasificaciones = await avanzarClasificacionesSinCandado(
+        descargador,
+        ahora,
+        limite - anteriores,
+      );
+      const prioridad = anteriores + clasificaciones;
+      if (prioridad >= limite) return prioridad;
+      const restante = limite - prioridad;
       const archivoPrimero = Math.floor(ahora.getTime() / 600_000) % 2 === 0;
-      let paginas = archivoPrimero
-        ? await avanzarPartidosHistoricosSinCandado(descargador, ahora, limite)
-        : await avanzarSinCandado(descargador, ahora, limite, opciones);
+      let paginas =
+        prioridad +
+        (archivoPrimero
+          ? await avanzarPartidosHistoricosSinCandado(descargador, ahora, restante)
+          : await avanzarSinCandado(descargador, ahora, restante, opciones));
       if (paginas < limite)
         paginas += archivoPrimero
           ? await avanzarSinCandado(descargador, ahora, limite - paginas, opciones)

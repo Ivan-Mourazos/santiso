@@ -1,3 +1,5 @@
+// Clasificaciones se ejercitan con su presupuesto real en historico-clasificaciones.test.ts.
+vi.mock("./historico-clasificaciones", () => ({ avanzarClasificacionesSinCandado: async () => 0 }));
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -423,16 +425,14 @@ it("jornada pedida a mano corrige resultado publicado y reintenta actas con avis
     .update(s.partidos)
     .set({ golesLocal: 1, golesVisitante: 0, estado: "finalizado" })
     .where(eq(s.partidos.id, id));
-  await db
-    .insert(s.rfgfActas)
-    .values({
-      codActa: "900",
-      competicionId,
-      partidoId: id,
-      estado: "resultado",
-      eventos: true,
-      aviso: "Faltaban eventos",
-    });
+  await db.insert(s.rfgfActas).values({
+    codActa: "900",
+    competicionId,
+    partidoId: id,
+    estado: "resultado",
+    eventos: true,
+    aviso: "Faltaban eventos",
+  });
   const { traerJornada } = await import("./demanda");
   const { descargador, urls } = descargadorDe();
   await traerJornada(competicionId, 1, descargador, AHORA);
@@ -460,16 +460,14 @@ it("acta propia vuelve a guardar convocatoria y eventos sin duplicarlos", async 
     .insert(s.jugadores)
     .values(Array.from({ length: 16 }, (_, i) => ({ nombre: `Persona Apellido ${20 + i}` })))
     .returning();
-  await db
-    .insert(s.jugadoresTemporada)
-    .values(
-      personas.map((p, i) => ({
-        jugadorId: p.id,
-        temporadaId,
-        categoria: "Senior" as const,
-        dorsal: i + 1,
-      })),
-    );
+  await db.insert(s.jugadoresTemporada).values(
+    personas.map((p, i) => ({
+      jugadorId: p.id,
+      temporadaId,
+      categoria: "Senior" as const,
+      dorsal: i + 1,
+    })),
+  );
   const { traerActa } = await import("./demanda");
   const { descargador, urls } = descargadorDe();
   expect(await traerActa(competicionId, partidos[0]!.id, descargador, AHORA)).toMatchObject({
@@ -496,25 +494,21 @@ it("cifras trae cuatro jugadores por petición y mantiene la fecha de comprobaci
     .update(s.partidos)
     .set({ golesLocal: 8, golesVisitante: 2, estado: "finalizado" })
     .where(eq(s.partidos.id, partidos[0]!.id));
-  await db
-    .insert(s.rfgfActas)
-    .values({
-      codActa: "900",
+  await db.insert(s.rfgfActas).values({
+    codActa: "900",
+    competicionId,
+    partidoId: partidos[0]!.id,
+    estado: "guardada",
+    eventos: true,
+  });
+  await db.insert(s.rfgfJugadores).values(
+    [1, 2, 3, 4, 5, 6].map((n) => ({
+      codigo: String(n),
+      nombre: "PERSONA PRUEBA",
       competicionId,
-      partidoId: partidos[0]!.id,
-      estado: "guardada",
-      eventos: true,
-    });
-  await db
-    .insert(s.rfgfJugadores)
-    .values(
-      [1, 2, 3, 4, 5, 6].map((n) => ({
-        codigo: String(n),
-        nombre: "PERSONA PRUEBA",
-        competicionId,
-        codActa: "900",
-      })),
-    );
+      codActa: "900",
+    })),
+  );
   const urls: string[] = [];
   const html = `<a>Generar PDF</a><h4>PERSONA PRUEBA</h4><span>Equipo:</span><b>EQUIPO VISITANTE</b><b>LIGA</b><strong>Temporada 2026-2027</strong><td>Convocados</td><td>1</td><td>Titular</td><td>1</td><td>Suplente</td><td>0</td><td>Jugados</td><td>1</td><td>Tarjeta amarilla</td><td>0</td><td>Doble tarjeta amarilla</td><td>0</td><td>Tarjeta roja</td><td>0</td><h5>Goles</h5><td>Total</td><td>0</td>`;
   const descargador: DescargadorRfgf = {
@@ -563,15 +557,13 @@ it("candado se libera tras entrada inválida y fallo de descarga", async () => {
 it("histórico no deja que categoría sin jugadores bloquee otra, ni excede presupuesto al descubrir", async () => {
   const { db, s, competicionId } = await preparar();
   const [jugador] = await db.insert(s.jugadores).values({ nombre: "Persona Prueba" }).returning();
-  await db
-    .insert(s.rfgfJugadores)
-    .values({
-      codigo: "1",
-      jugadorId: jugador!.id,
-      nombre: "PERSONA",
-      competicionId,
-      codActa: "900",
-    });
+  await db.insert(s.rfgfJugadores).values({
+    codigo: "1",
+    jugadorId: jugador!.id,
+    nombre: "PERSONA",
+    competicionId,
+    codActa: "900",
+  });
   await db.insert(s.rfgfGruposHistoricos).values([
     {
       codGrupo: "100",
@@ -605,15 +597,13 @@ it("clasificación explica sanción conocida y reconoce causas desconocidas", as
     .update(s.partidos)
     .set({ golesLocal: 8, golesVisitante: 2, estado: "finalizado" })
     .where(eq(s.partidos.id, partidos[0]!.id));
-  await db
-    .insert(s.rfgfActas)
-    .values({
-      codActa: "900",
-      competicionId,
-      partidoId: partidos[0]!.id,
-      estado: "resultado",
-      eventos: true,
-    });
+  await db.insert(s.rfgfActas).values({
+    codActa: "900",
+    competicionId,
+    partidoId: partidos[0]!.id,
+    estado: "resultado",
+    eventos: true,
+  });
   simulacion.oficial = [
     { ...oficial("EQUIPO LOCAL", 1, 8, 2), sancion: 2 },
     oficial("EQUIPO VISITANTE", 1, 2, 8),
@@ -629,42 +619,36 @@ it("clasificación explica sanción conocida y reconoce causas desconocidas", as
 it("histórico sigue descubriendo categorías aunque haya jugadores de otro grupo que siempre fallen", async () => {
   const { db, s, competicionId, temporadaId } = await preparar();
   const [jugador] = await db.insert(s.jugadores).values({ nombre: "Persona Prueba" }).returning();
-  await db
-    .insert(s.rfgfJugadores)
-    .values({
-      codigo: "1",
-      jugadorId: jugador!.id,
-      nombre: "PERSONA",
-      competicionId,
-      codActa: "900",
-    });
-  await db
-    .insert(s.rfgfGruposHistoricos)
-    .values({
-      codGrupo: "100",
-      categoria: "Senior",
-      temporada: "2025-2026",
-      competicion: "Eliminatorias",
-      grupo: "Uno",
-      codCompeticion: "10",
-      codEquipo: "1",
-      codActa: "800",
-      estado: "listo",
-    });
+  await db.insert(s.rfgfJugadores).values({
+    codigo: "1",
+    jugadorId: jugador!.id,
+    nombre: "PERSONA",
+    competicionId,
+    codActa: "900",
+  });
+  await db.insert(s.rfgfGruposHistoricos).values({
+    codGrupo: "100",
+    categoria: "Senior",
+    temporada: "2025-2026",
+    competicion: "Eliminatorias",
+    grupo: "Uno",
+    codCompeticion: "10",
+    codEquipo: "1",
+    codActa: "800",
+    estado: "listo",
+  });
   await db.insert(s.rfgfHistorico).values({ codGrupo: "100", jugadorId: jugador!.id, codigo: "1" });
   const [veteranos] = await db
     .insert(s.competiciones)
     .values({ temporadaId, nombre: "Liga veteranos", categoria: "Veteranos" })
     .returning();
   await db.insert(s.rfgfCompeticiones).values({ competicionId: veteranos!.id, enlace: ENLACE });
-  await db
-    .insert(s.equipos)
-    .values({
-      nombre: "Equipo Local",
-      clave: "local veteranos",
-      categoria: "Veteranos",
-      esPropio: true,
-    });
+  await db.insert(s.equipos).values({
+    nombre: "Equipo Local",
+    clave: "local veteranos",
+    categoria: "Veteranos",
+    esPropio: true,
+  });
   const urls: string[] = [];
   const descargador: DescargadorRfgf = {
     html: async (url) => {

@@ -663,6 +663,105 @@ async function sembrar() {
     })),
   );
 
+  // Otros clubes: cifras oficiales aisladas de los totales del Santiso.
+  await db.insert(schema.jugadores).values({
+    id: "jugador-otros-clubes",
+    nombre: "Xan Otros Clubes Ficticio",
+    historial: ["23/24: C.D. Rival Ficticio", "22/23: Rival Ficticio"],
+  });
+  await db.insert(schema.rfgfAnterioresClub).values({
+    id: "9001:2023-2024",
+    clubCodigo: "9001",
+    temporada: "2023-2024",
+    estado: "leido",
+    grupos: [
+      {
+        codGrupo: "otros-30",
+        codCompeticion: "otros-20",
+        competicion: "Primera Ficticia",
+        grupo: "Grupo 1",
+      },
+    ],
+  });
+  await db.insert(schema.rfgfAnterioresGrupo).values({
+    codGrupo: "otros-30",
+    codCompeticion: "otros-20",
+    temporada: "2023-2024",
+    estado: "leido",
+    codActa: "otros-99",
+  });
+  await db.insert(schema.rfgfAnterioresPeticiones).values([
+    {
+      id: "otros-leido",
+      jugadorId: "jugador-otros-clubes",
+      linea: "23/24: C.D. Rival Ficticio",
+      temporada: "2023-2024",
+      club: "C.D. Rival Ficticio",
+      clubCodigo: "9001",
+      codigo: "otros-101",
+      estado: "leido",
+    },
+    {
+      id: "otros-elegir",
+      jugadorId: "jugador-otros-clubes",
+      linea: "22/23: Rival Ficticio",
+      temporada: "2022-2023",
+      club: "Rival Ficticio",
+      codigo: "otros-101",
+      estado: "sin_club",
+      candidatos: ["9001", "9002"],
+    },
+  ]);
+  await db.insert(schema.rfgfAnterioresCifras).values({
+    peticionId: "otros-leido",
+    codGrupo: "otros-30",
+    estado: "leido",
+    cifras: {
+      convocados: 12,
+      titular: 10,
+      suplente: 2,
+      jugados: 11,
+      goles: null,
+      amarillas: 2,
+      doblesAmarillas: 1,
+      rojas: 0,
+    },
+  });
+  // Clasificaciones históricas, sin descargar actas ni estadísticas de rivales.
+  await db.insert(schema.rfgfGruposHistoricos).values([
+    {
+      ...grupoHistorico,
+      codGrupo: "9010",
+      temporada: "2023-2024",
+      grupo: "Copa",
+      competicion: "Copa do Sar",
+    },
+    {
+      ...grupoHistorico,
+      codGrupo: "9011",
+      temporada: "2024-2025",
+      grupo: "1",
+      competicion: "Liga Veterana Ficticia",
+      categoria: "Veteranos",
+    },
+  ]);
+  const filasClasificacion = Array.from({ length: 12 }, (_, i) => ({
+    posicion: i + 1,
+    equipo: i === 5 ? "U.D. Santiso" : `Rival Ficticio ${i + 1}`,
+    puntos: i === 5 ? 34 : 60 - i * 4,
+    jugados: 26,
+    ganados: 10,
+    empatados: 4,
+    perdidos: 12,
+    golesFavor: 31,
+    golesContra: 35,
+    sancion: 0,
+  }));
+  await db.insert(schema.rfgfHistoricoClasificaciones).values([
+    { codGrupo: "9001", formato: "liga", jornada: 26, filas: filasClasificacion, estado: "leido" },
+    { codGrupo: "9010", formato: "copa", jornada: 2, ronda: "Octavos", estado: "leido" },
+    { codGrupo: "9011", formato: "liga", jornada: 22, filas: filasClasificacion, estado: "leido" },
+  ]);
   cerrar();
   console.log(`Datos de prueba en ${DIR_ESCRITURA}`);
 }

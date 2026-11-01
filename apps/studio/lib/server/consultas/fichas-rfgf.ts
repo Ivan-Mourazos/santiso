@@ -1,3 +1,4 @@
+import { otrosClubesDeJugador } from "@/lib/server/rfgf/anteriores";
 import "server-only";
 
 import { schema } from "@santiso/db";
@@ -542,6 +543,7 @@ export interface FichaCompletaDeJugador {
   porLeer: number;
   /** Otros equipos en los que se le ha visto en actas, de lo más reciente a lo más antiguo. */
   clubesVistos: ClubVisto[];
+  otrosClubes: Awaited<ReturnType<typeof otrosClubesDeJugador>>;
 }
 
 /**
@@ -703,6 +705,7 @@ export async function fichaCompletaDeJugador(
     total: sumarCifras(grupos.flatMap((g) => (g.cifras ? [g.cifras] : []))),
     porLeer: grupos.filter((g) => !g.leidoEn).length,
     clubesVistos,
+    otrosClubes: await otrosClubesDeJugador(jugadorId),
   };
 }
 
@@ -847,6 +850,7 @@ export interface GrupoDeArchivo {
   /** El archivo de partidos: si se pidió y cómo va. */
   archivo: ReturnType<typeof resumenPartidosHistoricos>;
   partidos: PartidoDeArchivo[];
+  clasificacion: typeof schema.rfgfHistoricoClasificaciones.$inferSelect | null;
 }
 
 export interface TemporadaDeArchivo {
@@ -889,6 +893,7 @@ export async function archivoHistorico(): Promise<ArchivoHistorico> {
       asc(schema.rfgfHistoricoPartidos.fechaNominal),
     );
 
+  const clasificaciones = await db.select().from(schema.rfgfHistoricoClasificaciones);
   const porTemporada = new Map<string, GrupoDeArchivo[]>();
   for (const grupo of grupos) {
     const suyos = partidos.filter((p) => p.codGrupo === grupo.codGrupo);
@@ -915,6 +920,7 @@ export async function archivoHistorico(): Promise<ArchivoHistorico> {
       jugadores: Number(cuenta?.jugadores ?? 0),
       conCifras: Number(cuenta?.conCifras ?? 0),
       archivo: resumenPartidosHistoricos(grupo, suyos),
+      clasificacion: clasificaciones.find((c) => c.codGrupo === grupo.codGrupo) ?? null,
       partidos: suyos.map((p) => ({
         id: p.id,
         jornada: p.jornada,

@@ -60,3 +60,10 @@ describe("jugadores en la web de la federación", () => {
     expect(() => parsearEstadisticasJugador("<html>Calendario</html>")).toThrow(/no es la de/);
   });
 });
+
+it("admite equipo vacío de otro club manteniendo competición y cifras", () => {
+  const r = parsearEstadisticasJugador(JUGADOR.replace("U.D. VISITANTE&nbsp;", ""));
+  expect(r.equipo).toBe("");
+  expect(r.competicion).toBe("TERCERA FUTGAL, SANTIAGO | GRUPO 3");
+  expect(r.jugados).toBe(5);
+});

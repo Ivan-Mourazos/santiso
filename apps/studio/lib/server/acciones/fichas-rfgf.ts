@@ -50,3 +50,12 @@ export async function traerTemporadasJugador(
     traerTemporadasDeJugador(jugadorId, crearDescargador()),
   );
 }
+
+export async function elegirClubDeHistorial(id: string, codigo: string): Promise<Resultado<void>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudo elegir el club.", async () => {
+    const { elegirClubAnterior } = await import("@/lib/server/rfgf/anteriores");
+    await elegirClubAnterior(id, codigo);
+  });
+}

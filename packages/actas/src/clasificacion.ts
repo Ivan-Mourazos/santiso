@@ -28,6 +28,8 @@ const limpiar = (texto: string) => texto.normalize("NFC").replace(/\s+/gu, " ").
 // en contra, la racha (una letra por partido) y los puntos de sanción.
 const FILA = /^(\d{1,2}) (.+?) (-?\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+)((?: [GEP])*) (\d+)$/u;
 
+export class ClasificacionVacia extends Error {}
+
 /**
  * Lee el texto del PDF de clasificación de la federación («Generar PDF» en la página de la
  * clasificación). Primero trae los resultados de la jornada; la tabla empieza tras la cabecera
@@ -59,7 +61,8 @@ export function parsearClasificacion(texto: string): ClasificacionOficial {
       sancion: Number(sancion),
     });
   }
-  if (filas.length === 0) throw new Error("La clasificación de la federación no trae equipos.");
+  if (filas.length === 0)
+    throw new ClasificacionVacia("La clasificación de la federación no trae equipos.");
   return {
     competicion: limpiar((lineas[cabecera - 1] ?? "").replace(/\s*Temporada\s+.*$/iu, "")),
     jornada: Number(/\d+/u.exec(lineas[cabecera]!)![0]),
