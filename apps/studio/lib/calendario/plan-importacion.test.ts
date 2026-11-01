@@ -1,4 +1,4 @@
-import type { Calendario, JornadaCalendario } from "@santiso/actas";
+import type { Calendario, EquipoCalendario, JornadaCalendario } from "@santiso/actas";
 import { describe, expect, it } from "vitest";
 import { planDeImportacion, type EstadoBd } from "./plan-importacion";
 
@@ -236,6 +236,8 @@ describe("resumen", () => {
       }),
     );
     expect(plan.resumen).toEqual({
+      equiposNuevos: 0,
+      equiposExistentes: 3,
       jornadasNuevas: 1,
       crucesNuevos: 1,
       crucesExistentes: 1,
@@ -304,5 +306,95 @@ describe("contra los calendarios reales del parser", () => {
     expect(plan.sinResolver).toEqual([]);
     // Nadie se enfrenta a sí mismo: el CHECK de la tabla lo rechazaría.
     expect(plan.cruces.every((c) => c.localId !== c.visitanteId)).toBe(true);
+  });
+});
+
+describe("con la categoría, los equipos que faltan se dan de alta", () => {
+  const conCodigos = (cruces: [EquipoCalendario, EquipoCalendario][]): Calendario => ({
+    competicion: "COPA",
+    temporada: "2026-2027",
+    equipos: cruces.flat(),
+    jornadas: [
+      {
+        numero: 1,
+        fase: "Fase previa",
+        fechaNominal: "2026-10-31",
+        partidos: cruces.map(([local, visitante]) => ({ local, visitante })),
+      },
+    ],
+  });
+  const eq = (nombre: string, codigoFederativo = "") => ({ nombre, codigoFederativo });
+  const estado = (equipos: EstadoBd["equipos"]): EstadoBd => ({
+    equipos,
+    jornadas: [],
+    cruces: [],
+    categoria: "Veteranos",
+  });
+
+  it("crea los desconocidos con las reglas de nombres y su club, y deja los partidos listos", () => {
+    const plan = planDeImportacion(
+      conCodigos([[eq("MELIDE VETERANOS", "5120"), eq("ALFA VETERANOS C.F.", "1000")]]),
+      estado([{ id: "melide", nombre: "Melide", clubCodigo: "5120" }]),
+    );
+    expect(plan.equiposNuevos).toEqual([
+      { nombre: "Alfa C.F.", clave: "alfa c f", clubCodigo: "1000" },
+    ]);
+    expect(plan.equiposExistentes).toEqual(["melide"]);
+    expect(plan.sinResolver).toEqual([]);
+    expect(plan.cruces[0]).toMatchObject({
+      estado: "nuevo",
+      localId: "melide",
+      visitanteId: null,
+      visitanteNuevo: "alfa c f",
+    });
+    expect(plan.jornadasNuevas[0]?.nombreFase).toBe("Fase previa");
+  });
+
+  it("el código de club reconoce a un equipo escrito de otra forma, y lo enseña", () => {
+    const plan = planDeImportacion(
+      conCodigos([[eq("SR XOGADORES DA VILA", "1234"), eq("ALFA", "1000")]]),
+      estado([
+        { id: "v", nombre: "Vila", clubCodigo: "1234" },
+        { id: "a", nombre: "Alfa", clubCodigo: "1000" },
+      ]),
+    );
+    expect(plan.equiposNuevos).toEqual([]);
+    expect(plan.cruces[0]?.localId).toBe("v");
+    expect(plan.parecidos).toEqual([{ federacion: "SR XOGADORES DA VILA", equipo: "Vila" }]);
+  });
+
+  it("un filial no se confunde con el primer equipo aunque compartan club", () => {
+    const plan = planDeImportacion(
+      conCodigos([[eq('BASTAVALES U.D. "B"', "1122"), eq("ALFA", "1000")]]),
+      estado([
+        { id: "b", nombre: "Bastavales U.D.", clubCodigo: "1122" },
+        { id: "a", nombre: "Alfa", clubCodigo: "1000" },
+      ]),
+    );
+    expect(plan.equiposNuevos.map((e) => e.clubCodigo)).toEqual(["1122"]);
+    expect(plan.cruces[0]?.localId).toBeNull();
+  });
+
+  it("un nombre parecido de otro club no es el mismo equipo", () => {
+    const plan = planDeImportacion(
+      conCodigos([[eq("S.D. TOURO NORTE", "1754"), eq("ALFA", "1000")]]),
+      estado([
+        { id: "t", nombre: "S.D. Touro Norte Sur", clubCodigo: "1703" },
+        { id: "a", nombre: "Alfa", clubCodigo: "1000" },
+      ]),
+    );
+    expect(plan.equiposNuevos.map((e) => e.clave)).toEqual(["s d touro norte"]);
+  });
+
+  it("un equipo de la categoría no inscrito todavía se reutiliza e inscribe", () => {
+    const plan = planDeImportacion(
+      conCodigos([[eq("MELIDE VETERANOS"), eq("ULLA OIL VETERANOS")]]),
+      estado([
+        { id: "m", nombre: "Melide", inscrito: true },
+        { id: "u", nombre: "Ulla Oil" },
+      ]),
+    );
+    expect(plan.equiposNuevos).toEqual([]);
+    expect(plan.equiposExistentes.sort()).toEqual(["m", "u"]);
   });
 });

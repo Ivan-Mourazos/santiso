@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProblemasFederacion } from "@/components/admin/jornada/ProblemasFederacion";
+import { useStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select } from "@/components/ui/foundation/Fields";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
@@ -25,6 +26,7 @@ import type { Resultado } from "@/lib/resultado";
 import type { EstadoFederacion, PartidoFederacion } from "@/lib/server/rfgf/estado";
 import type { ResultadoClasificacionRfgf } from "@/lib/server/rfgf/demanda";
 import { ArchivoPartidos } from "./ArchivoPartidos";
+import TraerCalendario from "./TraerCalendario";
 import s from "./Federacion.module.css";
 
 type Historico = Extract<
@@ -109,7 +111,9 @@ export default function AdminFederacion({
   showToast: (msg: string, type?: "success" | "error") => void;
 }) {
   const [competiciones, setCompeticiones] = useState<CompeticionRfgf[] | null>(null);
-  const [elegida, setElegida] = useState<string | null>(null);
+  const { params } = useStudio();
+  // Al llegar desde crear una competición, viene elegida en la dirección.
+  const [elegida, setElegida] = useState<string | null>(params.get("competicion"));
   const [estado, setEstado] = useState<EstadoFederacion | null>(null);
   const [historico, setHistorico] = useState<Historico | null>(null);
   const [clasificacion, setClasificacion] = useState<ResultadoClasificacionRfgf | null>(null);
@@ -211,6 +215,35 @@ export default function AdminFederacion({
   const jugadas = jornadas.filter((j) => j.estado !== "por_jugar");
   const completas = jugadas.filter((j) => j.estado === "completa").length;
   const comparacion = estado?.competicion.clasificacion ?? null;
+  const sinPartidos = estado !== null && jornadas.every((j) => j.partidos === 0);
+
+  /** El campo del enlace de una competición y su botón de guardar. */
+  const campoEnlace = (c: CompeticionRfgf) => (
+    <div key={c.competicionId} className={s.enlace}>
+      <Field
+        label={`Enlace de ${c.nombre}`}
+        type="url"
+        inputMode="url"
+        placeholder="https://www.futgal.es/pnfg/NPcd/NFG_VisCalendario_Vis?…"
+        value={enlaces[c.competicionId] ?? ""}
+        onChange={(e) => setEnlaces({ ...enlaces, [c.competicionId]: e.target.value })}
+        disabled={ocupado}
+      />
+      <Button
+        variant="secondary"
+        disabled={ocupado || (enlaces[c.competicionId] ?? "") === c.enlace}
+        onClick={() =>
+          void traer(
+            `enlace:${c.competicionId}`,
+            () => guardarEnlaceRfgf(c.competicionId, enlaces[c.competicionId] ?? ""),
+            () => "Enlace guardado",
+          )
+        }
+      >
+        Guardar
+      </Button>
+    </div>
+  );
 
   return (
     <div className={s.panel}>
@@ -236,9 +269,13 @@ export default function AdminFederacion({
             se trae lo que quieras ya, cosa por cosa.
           </p>
         ) : (
-          <p className={s.aviso} role="status">
-            Sin enlazar con la federación: pega el enlace de su calendario en «Enlaces» (abajo).
-          </p>
+          <>
+            <p className={s.aviso} role="status">
+              Sin enlazar con la federación. Pega el enlace de su calendario en futgal.es y podrás
+              traer sus equipos y partidos.
+            </p>
+            {campoEnlace(actual)}
+          </>
         )}
         {estado && (
           <p className={s.cifras}>
@@ -264,6 +301,20 @@ export default function AdminFederacion({
           )
         }
       />
+
+      {actual.enlace && (
+        <TraerCalendario
+          key={actual.competicionId}
+          competicionId={actual.competicionId}
+          sinPartidos={sinPartidos}
+          bloqueado={ocupado && trayendo !== "calendario"}
+          onOcupado={(si) => setTrayendo(si ? "calendario" : null)}
+          onHecho={async () => {
+            await Promise.all([cargarEstado(actual.competicionId), cargarCompeticiones()]);
+          }}
+          showToast={showToast}
+        />
+      )}
 
       {actual.enlace && (
         <section aria-label="Traer de la federación">
@@ -542,32 +593,7 @@ export default function AdminFederacion({
         <p className={s.nota}>
           Pega una vez el enlace del calendario de cada competición en futgal.es.
         </p>
-        {deCategoria.map((c) => (
-          <div key={c.competicionId} className={s.enlace}>
-            <Field
-              label={`Enlace de ${c.nombre}`}
-              type="url"
-              inputMode="url"
-              placeholder="https://www.futgal.es/pnfg/NPcd/NFG_VisCalendario_Vis?…"
-              value={enlaces[c.competicionId] ?? ""}
-              onChange={(e) => setEnlaces({ ...enlaces, [c.competicionId]: e.target.value })}
-              disabled={ocupado}
-            />
-            <Button
-              variant="secondary"
-              disabled={ocupado || (enlaces[c.competicionId] ?? "") === c.enlace}
-              onClick={() =>
-                void traer(
-                  `enlace:${c.competicionId}`,
-                  () => guardarEnlaceRfgf(c.competicionId, enlaces[c.competicionId] ?? ""),
-                  () => "Enlace guardado",
-                )
-              }
-            >
-              Guardar
-            </Button>
-          </div>
-        ))}
+        {deCategoria.filter((c) => c.enlace || c !== actual).map(campoEnlace)}
       </details>
     </div>
   );

@@ -20,7 +20,10 @@ export interface PartidoJornada {
 
 export interface JornadaFederacion {
   competicion: string;
-  numero: number;
+  /** `null` en una ronda de copa, que no va numerada. */
+  numero: number | null;
+  /** Título de la ronda de copa («FASE PREVIA»). */
+  fase?: string;
   partidos: PartidoJornada[];
   /** Bloques que no se supieron leer, tal cual: se enseñan para revisarlos a mano. */
   sinLeer: string[];
@@ -79,21 +82,53 @@ export function parsearJornada(
   sigueArbitro: ReadonlySet<string> = new Set(),
 ): JornadaFederacion {
   const lineas = juntarArbitros(texto.split(/\r?\n/u).map(limpiar).filter(Boolean), sigueArbitro);
-  const cabecera = lineas.findIndex((linea) => /^Jornada\s+\d+$/iu.test(linea));
+  const numerada = lineas.findIndex((linea) => /^Jornada\s+\d+$/iu.test(linea));
+  // En una copa el título es el de la ronda, entre la temporada y «Resultados».
+  const ronda = lineas.findIndex(
+    (linea, i) =>
+      /\bTemporada\s+\d{4}-\d{4}$/iu.test(linea) && /^Resultados$/iu.test(lineas[i + 2] ?? ""),
+  );
+  const cabecera = numerada >= 0 ? numerada : ronda < 0 ? -1 : ronda + 1;
   if (cabecera < 0) throw new Error("El PDF no es de una jornada de la federación.");
-  const numero = Number(/\d+/u.exec(lineas[cabecera]!)![0]);
+  const numero = numerada >= 0 ? Number(/\d+/u.exec(lineas[numerada]!)![0]) : null;
   const competicion = limpiar((lineas[cabecera - 1] ?? "").replace(/\s*Temporada\s+.*$/iu, ""));
 
   const partidos: PartidoJornada[] = [];
   const sinLeer: string[] = [];
   let bloque: string[] = [];
-  for (const linea of lineas.slice(cabecera + 1)) {
+  // Un cambio de hoja separa el «Árbitro:» de su «Campo:»: queda aquí hasta que llegue.
+  let arbitroSuelto = "";
+  for (const [i, leida] of lineas.entries()) {
+    if (i <= cabecera) continue;
+    let linea = leida;
     if (/^Resultados$/iu.test(linea)) continue;
-    // El pie del documento: ya no hay más partidos.
-    if (/^REAL FEDERACI[OÓ]N/iu.test(linea)) break;
+    // Quién pasa de ronda y por penaltis: el resultado va aparte y aquí estorba al cruce.
+    if (/^(?:\((?:P|Clasificado)\)\s*)+$/iu.test(linea)) continue;
+    if (/^Penaltis:\s*\d+\s*-\s*\d+$/iu.test(linea)) continue;
+    // El pie sale en cada hoja; solo acaba el documento si detrás no queda ningún partido.
+    if (/^REAL FEDERACI[OÓ]N/iu.test(linea) || /^GALLEGA DE F[UÚ]TBOL/iu.test(linea)) {
+      if (!lineas.slice(i + 1).some((l) => /^Campo:/iu.test(l))) break;
+      continue;
+    }
+    if (/^Árbitro:/iu.test(linea)) {
+      arbitroSuelto = limpiar(linea.replace(/^Árbitro:/iu, ""));
+      continue;
+    }
     if (!/^Campo:/iu.test(linea)) {
       bloque.push(linea);
       continue;
+    }
+    if (arbitroSuelto) {
+      // El final del nombre del árbitro cae pegado a la superficie: «… Hierba Artificial RUBEN».
+      const pegado = /^(.*\b(?:Hierba\s+\p{L}+|C[eé]sped|Tierra))\s+(\p{Lu}[\p{Lu}\s]*)$/u.exec(
+        linea,
+      );
+      if (pegado) {
+        linea = pegado[1]!;
+        arbitroSuelto = `${arbitroSuelto} ${pegado[2]}`;
+      }
+      linea = `${linea} Árbitro: ${arbitroSuelto}`;
+      arbitroSuelto = "";
     }
     const cruce = CRUCE.exec(bloque.join(" "));
     if (cruce) {
@@ -113,7 +148,13 @@ export function parsearJornada(
     bloque = [];
   }
   if (bloque.length) sinLeer.push(bloque.join(" "));
-  return { competicion, numero, partidos, sinLeer };
+  return {
+    competicion,
+    numero,
+    ...(numero === null ? { fase: lineas[cabecera]! } : {}),
+    partidos,
+    sinLeer,
+  };
 }
 
 /** Lo mismo, a partir de los bytes del PDF. */

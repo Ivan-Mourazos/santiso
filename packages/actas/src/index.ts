@@ -11,6 +11,7 @@ export type {
   Lado,
 } from "./ficha";
 export { parsearCalendario, parsearCalendarioPdf } from "./calendario";
+export { catalogoDeCalendarioPdf, parsearCalendarioWeb } from "./calendario-web";
 export type { MarcaFicha } from "./iconos";
 export type {
   Calendario,

@@ -286,7 +286,7 @@ async function leerPartido(p: Partido, grupo: Grupo, descargador: DescargadorRfg
           .where(filtro);
         return;
       }
-      if (jornada.numero !== p.jornada) throw new Error("El PDF corresponde a otra jornada.");
+      if (jornada.numero !== null && jornada.numero !== p.jornada) throw new Error("El PDF corresponde a otra jornada.");
       const candidatos = jornada.partidos.filter(
         (c) => misma(c.local, p.local, grupo) && misma(c.visitante, p.visitante, grupo),
       );

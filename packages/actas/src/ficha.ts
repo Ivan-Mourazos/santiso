@@ -43,7 +43,7 @@ export function parsearFicha(
     .filter((i) => i.texto);
   ancla(items, "Ficha del Partido");
   const competicion = exigir(
-    items.find((i) => /^(VETERANOS -|TERCERA FUTGAL)/.test(i.texto)),
+    items.find((i) => /^(VETERANOS -|VETERANOS COPA|COPA\b|TERCERA FUTGAL)/.test(i.texto)),
     "Categoría o formato no soportado",
   ).texto;
   const jornada = Number(

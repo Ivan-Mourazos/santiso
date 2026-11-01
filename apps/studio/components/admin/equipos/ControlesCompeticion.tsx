@@ -4,8 +4,9 @@ import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext"
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Field, Select } from "@/components/ui/foundation/Fields";
+import { rutaSeccion } from "@/lib/navigation/contexto";
 import type { useCompeticiones } from "@/lib/useCompeticiones";
-import { crearCompeticion } from "@/lib/server/acciones/competiciones";
+import { crearCompeticion, crearCompeticionDesdeEnlace } from "@/lib/server/acciones/competiciones";
 import styles from "./Equipos.module.css";
 
 type Contexto = ReturnType<typeof useCompeticiones>;
@@ -18,7 +19,7 @@ export default function ControlesCompeticion({
   categoria: string;
   onMutado: () => void;
 }) {
-  const { showConfirm } = useStudio();
+  const { navigate, params, showConfirm, showToast } = useStudio();
   const [dialogo, setDialogo] = useState<"crear" | "borrar" | null>(null);
   // La competición elegida vive en la URL y tarda un instante en actualizarse. Mientras tanto,
   // `selectedCompetitionId` sigue siendo la anterior: se guarda aquí la pedida para mostrarla ya
@@ -27,13 +28,14 @@ export default function ControlesCompeticion({
   // El borrado apunta a la competición que se vio al abrir el diálogo, no a la que esté
   // seleccionada al confirmar.
   const [objetivo, setObjetivo] = useState<{ id: string; nombre: string } | null>(null);
+  const [enlace, setEnlace] = useState("");
   const [nombre, setNombre] = useState("");
   const [formato, setFormato] = useState("liga");
   const [error, setError] = useState<string | null>(null);
   const [pendiente, setPendiente] = useState(false);
   const operacion = useRef(false);
-  const refNombre = useRef<HTMLInputElement>(null);
-  const sucio = dialogo === "crear" && (nombre !== "" || formato !== "liga");
+  const refEnlace = useRef<HTMLInputElement>(null);
+  const sucio = dialogo === "crear" && (enlace !== "" || nombre !== "" || formato !== "liga");
   useUnsavedChanges(sucio);
   // Solo cuenta como «cambiando» mientras siga seleccionada la de antes: en cuanto la selección
   // cambia —por este desplegable o por otra vía, como crear una competición—, deja de estarlo.
@@ -54,15 +56,16 @@ export default function ControlesCompeticion({
   }
   function descartar() {
     setDialogo(null);
+    setEnlace("");
     setNombre("");
     setFormato("liga");
     setError(null);
   }
   async function confirmar() {
     if (operacion.current) return;
-    if (dialogo === "crear" && !nombre.trim()) {
-      setError("El nombre es obligatorio.");
-      refNombre.current?.focus();
+    if (dialogo === "crear" && !enlace.trim() && !nombre.trim()) {
+      setError("Pega el enlace de la federación o escribe el nombre.");
+      refEnlace.current?.focus();
       return;
     }
     if (dialogo === "borrar" && !objetivo) return;
@@ -71,18 +74,28 @@ export default function ControlesCompeticion({
     setError(null);
     try {
       if (dialogo === "crear") {
-        const resultado = await crearCompeticion({ nombre, categoria, formato });
+        const resultado = enlace.trim()
+          ? await crearCompeticionDesdeEnlace({ enlace, categoria, nombre })
+          : await crearCompeticion({ nombre, categoria, formato });
         if (!resultado.ok) {
           setError(resultado.error);
           return;
         }
         // Solo después de guardar se resuelve el borrador. La recarga desmonta el
         // diálogo y su guardia antes de navegar a la competición recién creada.
+        const conEnlace = enlace.trim() !== "";
         setDialogo(null);
+        setEnlace("");
         setNombre("");
         setFormato("liga");
         await contexto.loadCompeticiones();
         contexto.setSelectedCompetitionId(resultado.datos.id);
+        if (conEnlace) {
+          showToast(`${resultado.datos.nombre} creada. Trae sus equipos y partidos en Federación.`);
+          const destino = new URLSearchParams(params);
+          destino.set("competicion", resultado.datos.id);
+          navigate(rutaSeccion("federacion", destino));
+        }
       } else {
         if (!objetivo) return;
         const resultado = await contexto.removeCompeticion(objetivo.id);
@@ -92,6 +105,7 @@ export default function ControlesCompeticion({
         }
       }
       setDialogo(null);
+      setEnlace("");
       setNombre("");
       setFormato("liga");
       onMutado();
@@ -154,7 +168,7 @@ export default function ControlesCompeticion({
           open
           onClose={cerrar}
           pending={pendiente}
-          initialFocusRef={dialogo === "crear" ? refNombre : undefined}
+          initialFocusRef={dialogo === "crear" ? refEnlace : undefined}
           title={dialogo === "crear" ? "Crear competición" : "Eliminar competición"}
           footer={
             <>
@@ -180,16 +194,32 @@ export default function ControlesCompeticion({
             <fieldset className={styles.editor} disabled={pendiente}>
               <legend>{categoria}</legend>
               <Field
-                ref={refNombre}
-                label="Nombre de la competición"
+                ref={refEnlace}
+                label="Enlace de futgal.es"
+                type="url"
+                inputMode="url"
+                placeholder="https://www.futgal.es/pnfg/NPcd/NFG_VisCalendario_Vis?…"
+                value={enlace}
+                onChange={(e) => setEnlace(e.target.value)}
+              />
+              <p className={styles.detalle}>
+                Con el enlace, el nombre y el formato salen de la federación. Sin él, créala a mano.
+              </p>
+              <Field
+                label={enlace.trim() ? "Nombre (opcional)" : "Nombre de la competición"}
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                required
               />
-              <Select label="Formato" value={formato} onChange={(e) => setFormato(e.target.value)}>
-                <option value="liga">Liga</option>
-                <option value="eliminatoria">Copa / Árbol</option>
-              </Select>
+              {!enlace.trim() && (
+                <Select
+                  label="Formato"
+                  value={formato}
+                  onChange={(e) => setFormato(e.target.value)}
+                >
+                  <option value="liga">Liga</option>
+                  <option value="eliminatoria">Copa / Árbol</option>
+                </Select>
+              )}
             </fieldset>
           ) : (
             <p>

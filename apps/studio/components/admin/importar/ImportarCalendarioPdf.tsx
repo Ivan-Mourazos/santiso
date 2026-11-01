@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select } from "@/components/ui/foundation/Fields";
 import { ErrorState, LoadingState } from "@/components/ui/foundation/States";
@@ -11,6 +11,7 @@ import {
   traerCalendarioRfgf,
 } from "@/lib/server/acciones/calendario-pdf";
 import { useCompeticiones } from "@/lib/useCompeticiones";
+import PlanCalendario from "./PlanCalendario";
 import styles from "./Importar.module.css";
 
 interface Props {
@@ -19,23 +20,6 @@ interface Props {
 }
 
 const CATEGORIAS = ["Senior", "Veteranos"];
-
-function Dato({
-  valor,
-  etiqueta,
-  tono,
-}: {
-  valor: number;
-  etiqueta: string;
-  tono?: "bien" | "neutro" | "mal";
-}) {
-  return (
-    <p className={styles.dato} data-tono={tono}>
-      <strong>{valor}</strong>
-      <span>{etiqueta}</span>
-    </p>
-  );
-}
 
 /**
  * Cargar el calendario de la temporada desde el PDF de la federación, sin IA. Primero se lee y
@@ -54,17 +38,6 @@ export default function ImportarCalendarioPdf({ showToast, showConfirm }: Props)
   const [leido, setLeido] = useState<CalendarioLeido | null>(null);
   const [ocupada, setOcupada] = useState<string | null>(null);
   const [origenLeido, setOrigenLeido] = useState<"pdf" | "federacion">("pdf");
-
-  const porJornada = useMemo(() => {
-    if (!leido) return [];
-    const mapa = new Map<number, typeof leido.plan.cruces>();
-    for (const cruce of leido.plan.cruces) {
-      const lista = mapa.get(cruce.jornada) ?? [];
-      lista.push(cruce);
-      mapa.set(cruce.jornada, lista);
-    }
-    return [...mapa.entries()].sort((a, b) => a[0] - b[0]);
-  }, [leido]);
 
   /** Lee el calendario del PDF subido o, sin fichero, del enlace de la federación. */
   async function leer(origen: "pdf" | "federacion" = "pdf") {
@@ -100,7 +73,8 @@ export default function ImportarCalendarioPdf({ showToast, showConfirm }: Props)
     if (!leido || !selectedCompetitionId) return;
     const { resumen } = leido.plan;
     showConfirm(
-      `Se crearán ${resumen.jornadasNuevas} jornada(s) y ${resumen.crucesNuevos} partido(s). ` +
+      `Se crearán ${resumen.equiposNuevos} equipo(s), ${resumen.jornadasNuevas} jornada(s) y ` +
+        `${resumen.crucesNuevos} partido(s). ` +
         `Lo que ya existe no se toca. ¿Continuar?`,
       async () => {
         setOcupada("Guardando el calendario…");
@@ -111,7 +85,8 @@ export default function ImportarCalendarioPdf({ showToast, showConfirm }: Props)
           });
           if (!resultado.ok) return showToast(resultado.error, "error");
           showToast(
-            `Creadas ${resultado.datos.jornadas} jornada(s) y ${resultado.datos.partidos} partido(s).`,
+            `Creados ${resultado.datos.equipos} equipo(s), ${resultado.datos.jornadas} jornada(s) y ` +
+              `${resultado.datos.partidos} partido(s).`,
           );
           // Releer para que el plan refleje lo que acaba de escribirse.
           await leer(origenLeido);
@@ -124,9 +99,6 @@ export default function ImportarCalendarioPdf({ showToast, showConfirm }: Props)
     );
   }
 
-  const resumen = leido?.plan.resumen;
-  const nadaQueHacer =
-    resumen !== undefined && resumen.jornadasNuevas === 0 && resumen.crucesNuevos === 0;
   const hayOcupacion = ocupada !== null;
 
   return (
@@ -217,57 +189,7 @@ export default function ImportarCalendarioPdf({ showToast, showConfirm }: Props)
 
       {ocupada && <LoadingState title={ocupada} />}
 
-      {leido && resumen && (
-        <section aria-label="Plan de importación">
-          <h4 className={styles.titulo}>{leido.competicion}</h4>
-          <p className={styles.nota}>Temporada {leido.temporada}</p>
-
-          <div className={styles.resumen}>
-            <Dato valor={resumen.jornadasNuevas} etiqueta="jornadas nuevas" />
-            <Dato valor={resumen.crucesNuevos} etiqueta="partidos nuevos" tono="bien" />
-            <Dato valor={resumen.crucesExistentes} etiqueta="ya estaban" tono="neutro" />
-            <Dato
-              valor={resumen.crucesSinEquipo}
-              etiqueta="sin equipo"
-              tono={resumen.crucesSinEquipo > 0 ? "mal" : "neutro"}
-            />
-          </div>
-
-          {leido.plan.sinResolver.length > 0 && (
-            <div className={styles.avisos} role="status">
-              <p>
-                Estos nombres del PDF no corresponden a ningún equipo de la competición. Sus
-                partidos no se crearán. Dalos de alta en «Equipos» y vuelve a leer el PDF:
-              </p>
-              <p>
-                <strong>{leido.plan.sinResolver.join(" · ")}</strong>
-              </p>
-            </div>
-          )}
-
-          <div className={styles.accion}>
-            <Button onClick={aplicar} disabled={hayOcupacion || nadaQueHacer}>
-              {nadaQueHacer ? "Nada que crear" : "Crear jornadas y partidos"}
-            </Button>
-          </div>
-
-          <div className={styles.jornadas}>
-            {porJornada.map(([numero, cruces]) => (
-              <div key={numero}>
-                <h5 className={styles.titulo}>Jornada {numero}</h5>
-                <ul>
-                  {cruces.map((cruce, indice) => (
-                    <li key={`${numero}-${indice}`} data-estado={cruce.estado}>
-                      {cruce.estado === "nuevo" ? "+" : cruce.estado === "existe" ? "=" : "!"}{" "}
-                      {cruce.localNombre} vs {cruce.visitanteNombre}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {leido && <PlanCalendario leido={leido} ocupado={hayOcupacion} onAplicar={aplicar} />}
     </div>
   );
 }

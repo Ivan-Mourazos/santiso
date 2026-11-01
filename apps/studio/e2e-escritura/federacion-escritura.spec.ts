@@ -15,11 +15,16 @@ test("federación: jornadas y partidos de cada competición, sin traer nada sin 
   await expect(page.getByRole("region", { name: "Traer de la federación" })).toBeVisible({
     timeout: 30000,
   });
+  // Con enlace se puede traer la competición entera. Ya montada, el bloque sale plegado.
+  await page.getByText("Equipos y partidos", { exact: true }).click();
+  await expect(page.getByRole("button", { name: "Traer equipos y partidos" })).toBeVisible();
   await page
     .getByLabel("Competición", { exact: true })
     .selectOption({ label: "Copa Convocatoria" });
-  // Sin enlace no hay botones de traer.
+  // Sin enlace no hay botones de traer: el campo para pegarlo está a la vista.
   await expect(page.getByText(/Sin enlazar con la federación/)).toBeVisible();
+  await expect(page.getByLabel("Enlace de Copa Convocatoria")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Traer equipos y partidos" })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Traer de la federación" })).toHaveCount(0);
   const jornadas = page.getByRole("region", { name: "Jornadas", exact: true });
   const primera = jornadas.locator("details[data-estado]").first();

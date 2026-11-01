@@ -95,6 +95,11 @@ export function urlCalendarioPdf(grupo: GrupoRfgf): string {
   return `${BASE}NFG_VisCalendario_Vis?${consulta}`;
 }
 
+/** La página del calendario: la única con las rondas de una copa y lo que queda por sortear. */
+export function urlCalendarioWeb(grupo: GrupoRfgf): string {
+  return urlCalendarioPdf(grupo).replace("&NPcd_Pdf=1", "");
+}
+
 /** La página de un partido en la web (no el PDF): lista a los jugadores con su código. */
 export function urlActaWeb(grupo: GrupoRfgf, codActa: string): string {
   const consulta = new URLSearchParams({

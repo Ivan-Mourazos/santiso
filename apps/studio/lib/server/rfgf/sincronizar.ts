@@ -54,6 +54,7 @@ import { clasificacionDeCompeticion } from "@/lib/server/consultas/clasificacion
 import { listarJugadores } from "@/lib/server/consultas/jugadores";
 import { obtenerDb } from "@/lib/server/db";
 import type { DescargadorRfgf } from "./descargador";
+import { actualizarCrucesDeCopa } from "./calendario";
 import { sincronizarJugadores } from "./jugadores";
 import { conCandadoRfgf } from "./candado";
 
@@ -66,6 +67,8 @@ export interface ResumenRfgf {
   resultados: number;
   /** Actas del Santiso guardadas enteras en esta pasada. */
   actas: number;
+  /** Cruces de copa añadidos tras un sorteo. */
+  crucesNuevos?: number;
   /** Cambios de día, hora o campo traídos de la federación, uno por línea. */
   horarios: string[];
   /** Actas que no se pudieron guardar solas, con el motivo. */
@@ -156,6 +159,15 @@ export async function anotar(
     .onConflictDoUpdate({ target: schema.rfgfActas.codActa, set: valores });
 }
 
+/** El campo del catálogo si ya está; si no, se da de alta con las reglas de siempre. */
+async function campoDeFederacion(nombre: string): Promise<string> {
+  const conocido = mejorCampo(nombre, "", await listarCampos());
+  if (conocido) return conocido;
+  const creado = await asegurarCampo(nombre, null);
+  if (!creado.ok) throw new Error(creado.error);
+  return creado.datos.id;
+}
+
 /**
  * Lee el PDF de una jornada y pone al día lo que traiga: el marcador de los partidos jugados
  * que aún no lo tienen y, de los que quedan por jugar, día, hora y campo. Devuelve cuántas
@@ -171,7 +183,10 @@ export async function tratarJornada(
   actualizarResultados = false,
 ): Promise<number> {
   const leida = await parsearJornadaPdf(await descargador.pdf(urlJornadaPdf(grupo, jornada)));
-  if (leida.numero !== jornada) throw new Error("La federación devolvió otra jornada.");
+  // Una ronda de copa no va numerada: ahí responde el cruce, que debe ser de esta jornada.
+  if (leida.numero !== null && leida.numero !== jornada) {
+    throw new Error("La federación devolvió otra jornada.");
+  }
   const candidatos = partidos.filter((p) => p.jornada === jornada);
   const { db } = await obtenerDb();
   let cambios = 0;
@@ -194,6 +209,20 @@ export async function tratarJornada(
       if (!guardado.ok) throw new Error(guardado.error);
       resumen.resultados += 1;
       cambios += 1;
+      // Recién importado, un partido ya jugado no tiene ni día ni campo: sin ellos no se buscaría
+      // su acta. Solo se rellena; lo que ya tuviera lo pone al día la pasada de horarios.
+      if (!partido.fecha) {
+        const fecha = await cambiarFechaPartido(
+          partido.id,
+          fechaDeFederacion(enPdf.fecha, enPdf.hora),
+        );
+        if (!fecha.ok) throw new Error(fecha.error);
+        if (enPdf.campo && !partido.campoId) {
+          const campoId = await campoDeFederacion(enPdf.campo);
+          const campo = await cambiarCampoPartido(partido.id, campoId);
+          if (!campo.ok) throw new Error(campo.error);
+        }
+      }
       continue;
     }
     // La ausencia de resultado en el PDF no borra uno que ya estuviera guardado.
@@ -217,13 +246,7 @@ export async function tratarJornada(
         if (partido.fecha) pisa = true;
       }
       if (cambio.campo) {
-        // El del catálogo si ya está; si no, se da de alta con las reglas de siempre.
-        let campoId = mejorCampo(cambio.campo, "", await listarCampos());
-        if (!campoId) {
-          const creado = await asegurarCampo(cambio.campo, null);
-          if (!creado.ok) throw new Error(creado.error);
-          campoId = creado.datos.id;
-        }
+        const campoId = await campoDeFederacion(cambio.campo);
         if (campoId !== partido.campoId) {
           const campo = await cambiarCampoPartido(partido.id, campoId);
           if (!campo.ok) throw new Error(campo.error);
@@ -512,6 +535,19 @@ async function sincronizarCompeticionSinCandado(
   // Primero el PDF de cada jornada: de una sola descarga salen los marcadores de todos los
   // partidos jugados y los horarios de los que quedan. Los horarios, cada pocas horas.
   const mirarHorarios = completa || tocaMirarHorarios(fila.horariosEn, ahora);
+
+  // Una copa se va sorteando: con la cadencia de los horarios se añaden los cruces nuevos. La
+  // primera carga, con su repaso de equipos, no se hace nunca sola.
+  if (mirarHorarios && fila.formato === "eliminatoria" && partidos.length > 0) {
+    try {
+      resumen.crucesNuevos = await actualizarCrucesDeCopa(competicionId, grupo, descargador);
+      if (resumen.crucesNuevos > 0) partidos = await partidosDeCompeticion(competicionId);
+    } catch (error) {
+      const detalle = error instanceof Error ? error.message : "fallo desconocido";
+      resumen.errores.push(`Cruces de la copa: ${detalle}`);
+    }
+  }
+
   const jornadasPdf = new Set([
     ...jornadasPendientes(partidos, horaLocal(ahora), desde),
     ...(mirarHorarios ? jornadasPorJugar(partidos, horaLocal(ahora)) : []),
@@ -580,6 +616,9 @@ async function sincronizarCompeticionSinCandado(
       ? `${resumen.actas} acta${resumen.actas > 1 ? "s" : ""} guardada${resumen.actas > 1 ? "s" : ""}`
       : "",
     resumen.resultados ? `${resumen.resultados} resultado${resumen.resultados > 1 ? "s" : ""}` : "",
+    resumen.crucesNuevos
+      ? `${resumen.crucesNuevos} cruce${resumen.crucesNuevos > 1 ? "s" : ""} nuevo${resumen.crucesNuevos > 1 ? "s" : ""}`
+      : "",
     // Los cambios de horario se cuentan con su detalle: es lo que hay que saber de un vistazo.
     ...resumen.horarios.slice(0, 3),
     resumen.horarios.length > 3 ? `y ${resumen.horarios.length - 3} horarios más` : "",

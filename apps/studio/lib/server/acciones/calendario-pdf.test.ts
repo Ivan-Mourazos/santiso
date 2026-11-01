@@ -104,7 +104,7 @@ describe("guardarCalendario", () => {
 
     const primero = await guardarCalendario({ competicionId, plan });
     if (!primero.ok) throw new Error(primero.error);
-    expect(primero.datos).toEqual({ jornadas: 2, partidos: 3 });
+    expect(primero.datos).toEqual({ equipos: 0, jornadas: 2, partidos: 3 });
 
     const jornadas = await db
       .select({ id: bd.schema.jornadas.id, numero: bd.schema.jornadas.numero, fechaInicio: bd.schema.jornadas.fechaInicio })
@@ -131,7 +131,7 @@ describe("guardarCalendario", () => {
 
     const segundo = await guardarCalendario({ competicionId, plan: segundoPlan });
     if (!segundo.ok) throw new Error(segundo.error);
-    expect(segundo.datos).toEqual({ jornadas: 0, partidos: 0 });
+    expect(segundo.datos).toEqual({ equipos: 0, jornadas: 0, partidos: 0 });
     expect(await db.select().from(bd.schema.partidos)).toHaveLength(3);
   });
 
@@ -163,5 +163,62 @@ describe("guardarCalendario", () => {
     expect(despues).toHaveLength(3);
     const mismo = despues.find((p) => p.id === conMarcador.id);
     expect(mismo).toMatchObject({ golesLocal: 3, golesVisitante: 1, estado: "finalizado" });
+  });
+});
+
+describe("guardarCalendario con equipos por crear", () => {
+  it("los da de alta, los inscribe y repetirlo no duplica nada", async () => {
+    const { bd, db, cerrar, competicionId, equipos } = await entorno();
+    cerrarActual = cerrar;
+    const { guardarCalendario } = await import("./calendario-pdf");
+    const { planDeImportacion } = await import("@/lib/calendario/plan-importacion");
+    const estado = {
+      equipos: equipos.filter((e) => e.nombre !== "SD Touro"),
+      jornadas: [],
+      cruces: [],
+      categoria: "Senior",
+    };
+    const calendario: Calendario = {
+      ...CALENDARIO,
+      jornadas: [
+        {
+          numero: 1,
+          fase: "Final",
+          fechaNominal: "2026-09-27",
+          partidos: [
+            {
+              local: { nombre: "U.D. SANTISO F.C.", codigoFederativo: "" },
+              visitante: { nombre: "NUEVO RIVAL F.C.", codigoFederativo: "999999" },
+            },
+          ],
+        },
+      ],
+    };
+
+    const resultado = await guardarCalendario({
+      competicionId,
+      plan: planDeImportacion(calendario, estado),
+    });
+    expect(resultado).toMatchObject({ ok: true, datos: { equipos: 1, jornadas: 1, partidos: 1 } });
+
+    const creado = (await db.select().from(bd.schema.equipos)).find(
+      (e) => e.nombre === "Nuevo Rival F.C.",
+    );
+    // Un código que no está en el listado de clubes no rompe nada: queda sin club.
+    expect(creado).toMatchObject({ categoria: "Senior", esPropio: false, clubCodigo: null });
+    const inscritos = await db
+      .select()
+      .from(bd.schema.competicionEquipos)
+      .where(eq(bd.schema.competicionEquipos.competicionId, competicionId));
+    expect(inscritos).toHaveLength(2);
+    const [jornada] = await db.select().from(bd.schema.jornadas);
+    expect(jornada?.nombreFase).toBe("Final");
+
+    const otraVez = await guardarCalendario({
+      competicionId,
+      plan: planDeImportacion(calendario, estado),
+    });
+    expect(otraVez).toMatchObject({ ok: true, datos: { equipos: 0 } });
+    expect(await db.select().from(bd.schema.partidos)).toHaveLength(1);
   });
 });

@@ -6,7 +6,7 @@ import { capturar, fallo, type Resultado } from "@/lib/resultado";
 import { grupoDeEnlace, urlActaPdf } from "@/lib/rfgf/enlace";
 import { obtenerDb } from "@/lib/server/db";
 import { crearDescargador } from "@/lib/server/rfgf/descargador";
-import { sincronizarTodo } from "@/lib/server/rfgf/sincronizar";
+import { sincronizarCompeticion, sincronizarTodo } from "@/lib/server/rfgf/sincronizar";
 import { estadoFederacion, type EstadoFederacion } from "@/lib/server/rfgf/estado";
 import {
   actualizarClasificacion,
@@ -199,6 +199,26 @@ export async function comprobarRfgfAhora(): Promise<Resultado<string>> {
     ]
       .filter(Boolean)
       .join(" · ");
+  });
+}
+
+/**
+ * Justo después de crear equipos y partidos: horarios, resultados y actas de lo más próximo.
+ * El resto llega solo en las siguientes pasadas, para no saturar a la federación.
+ */
+export async function completarCompeticionRfgf(competicionId: string): Promise<Resultado<string>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudo completar la competición.", async () => {
+    const r = await sincronizarCompeticion(competicionId, crearDescargador(), new Date(), false, true);
+    if (!r) return "La federación está ocupada: se completará sola en la siguiente pasada.";
+    const partes = [
+      r.resultados ? `${r.resultados} resultado${r.resultados > 1 ? "s" : ""}` : "",
+      r.actas ? `${r.actas} acta${r.actas > 1 ? "s" : ""}` : "",
+      r.horarios.length ? `${r.horarios.length} horario${r.horarios.length > 1 ? "s" : ""}` : "",
+      r.errores.length ? `${r.errores.length} con error` : "",
+    ].filter(Boolean);
+    return partes.join(" · ") || "Lo demás llegará en las siguientes pasadas.";
   });
 }
 

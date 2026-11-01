@@ -5,16 +5,20 @@ import {
   esValorDe,
   FORMATOS_COMPETICION,
   normalizarCategoria,
+  normalizarNombreCompeticion,
   type ReglaClasificacion,
   reglasClasificacionSchema,
 } from "@santiso/domain";
 import { and, eq, max } from "drizzle-orm";
 import type { CompeticionDto } from "@/lib/dto";
 import { capturar, exito, fallo, type Resultado } from "@/lib/resultado";
+import { grupoDeEnlace } from "@/lib/rfgf/enlace";
 import { listarCompeticiones, reglasDeCompeticion } from "@/lib/server/consultas/competiciones";
 import { temporadaActivaId } from "@/lib/server/consultas/temporadas";
 import { obtenerDb } from "@/lib/server/db";
 import { soloAdmin } from "@/lib/server/acceso/permisos";
+import { leerCalendarioFederacion } from "@/lib/server/rfgf/calendario";
+import { crearDescargador } from "@/lib/server/rfgf/descargador";
 
 export async function cargarCompeticiones(): Promise<Resultado<CompeticionDto[]>> {
   return capturar("No se pudieron cargar las competiciones.", listarCompeticiones);
@@ -85,6 +89,45 @@ export async function crearCompeticion(entrada: {
     if (!creada) throw new Error("La inserción no devolvió ninguna fila");
     return { ...creada, activa: true };
   });
+}
+
+/**
+ * Alta a partir del enlace de futgal.es: nombre y formato salen de la federación y la competición
+ * queda enlazada. Solo crea la competición; sus equipos y partidos se traen desde Federación.
+ */
+export async function crearCompeticionDesdeEnlace(entrada: {
+  enlace: string;
+  categoria: string;
+  /** Si se escribe, manda sobre el de la federación. */
+  nombre?: string;
+}): Promise<Resultado<CompeticionDto>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  const enlace = entrada.enlace.trim();
+  const grupo = grupoDeEnlace(enlace);
+  if (!grupo) {
+    return fallo(
+      "Ese enlace no vale. Pega el del calendario o el de una jornada de la competición en futgal.es.",
+    );
+  }
+  let nombre = entrada.nombre?.trim() ?? "";
+  let formato: (typeof FORMATOS_COMPETICION)[number];
+  try {
+    const calendario = await leerCalendarioFederacion(grupo, crearDescargador());
+    nombre ||= normalizarNombreCompeticion(calendario.competicion);
+    formato = calendario.jornadas.some((j) => j.fase) ? "eliminatoria" : "liga";
+  } catch (error) {
+    const detalle = error instanceof Error ? error.message : "motivo desconocido";
+    return fallo(`No se pudo leer esa competición en la federación: ${detalle}`);
+  }
+
+  const creada = await crearCompeticion({ nombre, categoria: entrada.categoria, formato });
+  if (!creada.ok) return creada;
+  const { db } = await obtenerDb();
+  const enlazada = await capturar("Competición creada, pero no se pudo guardar el enlace.", () =>
+    db.insert(schema.rfgfCompeticiones).values({ competicionId: creada.datos.id, enlace }),
+  );
+  return enlazada.ok ? creada : enlazada;
 }
 
 /** Borra una competición vacía. Con jornadas se niega: el borrado en cascada se llevaría partidos. */

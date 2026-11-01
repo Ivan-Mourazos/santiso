@@ -129,6 +129,63 @@ describe("PDF de jornada de la federación", () => {
     expect(jornada.sinLeer).toEqual(["U.D. SANTISO F.C. APLAZADO ATLETICO ETER"]);
   });
 
+  it("lee una ronda de copa: sin número, con clasificados, penaltis y salto de hoja", () => {
+    const ronda = parsearJornada(
+      [
+        "COPA DE PRUEBA, ZONA Temporada 2026-2027",
+        "FASE PREVIA",
+        "Resultados",
+        "(Clasificado)",
+        "ALFA F.C.",
+        "3 - 0",
+        "31-10-2026",
+        "16:30",
+        "BETA S.D.",
+        "Campo: Uno - Hierba Artificial Árbitro: PONTE LOPEZ, ANA",
+        "(P) (Clasificado)",
+        "GAMA F.C.",
+        "3 - 3",
+        "Penaltis: 4 - 2",
+        "31-10-2026",
+        "17:00",
+        "DELTA",
+        "Campo: Dos - Hierba Artificial Árbitro: REY SOTO, XAN",
+        "OMEGA",
+        "1 - 5",
+        "31-10-2026",
+        "18:00",
+        "SIGMA",
+        "(Clasificado)",
+        "Árbitro: FERNANDEZ LAGO,",
+        "REAL FEDERACIÓN",
+        "GALLEGA DE FÚTBOL",
+        "Campo: Tres - Hierba Artificial RUBEN",
+        "KAPPA -",
+        "LAMBDA S.D. 31-10-2026",
+        "18:15",
+        "MU",
+        "Campo: Cuatro - Val Do Ulla - Hierba Artificial",
+        "REAL FEDERACIÓN",
+        "GALLEGA DE FÚTBOL",
+      ].join("\n"),
+    );
+    expect(ronda.numero).toBeNull();
+    expect(ronda.fase).toBe("FASE PREVIA");
+    expect(ronda.competicion).toBe("COPA DE PRUEBA, ZONA");
+    expect(ronda.sinLeer).toEqual([]);
+    expect(ronda.partidos.map((p) => [p.local, p.marcador, p.visitante])).toEqual([
+      ["ALFA F.C.", [3, 0], "BETA S.D."],
+      ["GAMA F.C.", [3, 3], "DELTA"],
+      ["OMEGA", [1, 5], "SIGMA"],
+      ["KAPPA - LAMBDA S.D.", null, "MU"],
+    ]);
+    expect(ronda.partidos[2]).toMatchObject({
+      campo: "Tres",
+      superficie: "Hierba Artificial",
+      arbitro: "FERNANDEZ LAGO, RUBEN",
+    });
+  });
+
   it("rechaza un PDF que no es de jornada", () => {
     expect(() => parsearJornada("Calendario de Competiciones\nEquipos Participantes")).toThrow(
       /no es de una jornada/,

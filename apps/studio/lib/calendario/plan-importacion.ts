@@ -1,5 +1,10 @@
-import type { Calendario } from "@santiso/actas";
-import { claveEquipo, similitudTokens } from "@santiso/domain";
+import type { Calendario, EquipoCalendario } from "@santiso/actas";
+import {
+  claveEquipo,
+  claveNombre,
+  normalizarNombreEquipo,
+  similitudTokens,
+} from "@santiso/domain";
 
 /**
  * El calendario federativo trae la temporada entera con los nombres tal y como los publica la
@@ -11,6 +16,10 @@ import { claveEquipo, similitudTokens } from "@santiso/domain";
 export interface EquipoConocido {
   id: string;
   nombre: string;
+  /** Su club en la federación, si se sabe. */
+  clubCodigo?: string | null;
+  /** Ya está inscrito en esta competición. */
+  inscrito?: boolean;
 }
 
 export interface JornadaConocida {
@@ -29,6 +38,11 @@ export interface EstadoBd {
   equipos: EquipoConocido[];
   jornadas: JornadaConocida[];
   cruces: CruceConocido[];
+  /**
+   * Con ella, los nombres que no son de ningún equipo se dan de alta en esa categoría. Sin ella
+   * se quedan en `sinResolver`.
+   */
+  categoria?: string;
 }
 
 export type EstadoCruce = "nuevo" | "existe" | "sin-equipo";
@@ -39,13 +53,25 @@ export interface CrucePlaneado {
   visitanteNombre: string;
   localId: string | null;
   visitanteId: string | null;
+  /** Clave del equipo por crear, cuando aún no tiene id. */
+  localNuevo?: string | null;
+  visitanteNuevo?: string | null;
   estado: EstadoCruce;
+}
+
+export interface EquipoNuevo {
+  /** Ya con las reglas de nombres de equipo. */
+  nombre: string;
+  clave: string;
+  clubCodigo: string | null;
 }
 
 export interface JornadaNueva {
   numero: number;
   /** Fecha nominal de la jornada, "YYYY-MM-DD". No es la hora de cada partido. */
   fechaInicio: string;
+  /** Nombre de la ronda, en una copa. */
+  nombreFase?: string | null;
 }
 
 export interface PlanImportacion {
@@ -54,7 +80,15 @@ export interface PlanImportacion {
   cruces: CrucePlaneado[];
   /** Nombres del PDF que no corresponden a ningún equipo, sin repetir. */
   sinResolver: string[];
+  /** Equipos que hay que dar de alta. */
+  equiposNuevos: EquipoNuevo[];
+  /** Equipos que ya existen y juegan aquí: se inscriben en la competición. */
+  equiposExistentes: string[];
+  /** Los que no se llaman igual: se enseñan para ver de un vistazo si alguno está mal. */
+  parecidos: { federacion: string; equipo: string }[];
   resumen: {
+    equiposNuevos: number;
+    equiposExistentes: number;
     jornadasNuevas: number;
     crucesNuevos: number;
     crucesExistentes: number;
@@ -109,6 +143,37 @@ function emparejar(nombre: string, equipos: EquipoConocido[]): EquipoConocido | 
   return mejor;
 }
 
+/** La letra de un filial («BASTAVALES U.D. "B"»). Dos equipos del mismo club se distinguen por ella. */
+const filial = (nombre: string) => /["'\s]([B-E])["']?\s*$/u.exec(nombre)?.[1] ?? "";
+
+/**
+ * Un equipo del calendario, mirando toda la categoría. El código es el del club: si otro equipo
+ * ya lo tiene es el mismo (salvo que sea su filial) y, si tiene otro distinto, no lo es por mucho
+ * que se parezcan los nombres.
+ */
+function emparejarEnCategoria(
+  { nombre, codigoFederativo: codigo }: EquipoCalendario,
+  categoria: string,
+  equipos: EquipoConocido[],
+): EquipoConocido | null {
+  const inscritos = equipos.filter((e) => e.inscrito);
+  const entreInscritos = inscritos.length ? emparejar(nombre, inscritos) : null;
+  if (entreInscritos) return entreInscritos;
+
+  const clave = claveEquipo(normalizarNombreEquipo(nombre, categoria));
+  const exactos = equipos.filter((e) => claveEquipo(e.nombre) === clave);
+  if (exactos.length === 1) return exactos[0] ?? null;
+
+  const mismoClub = equipos.filter(
+    (e) => codigo && e.clubCodigo === codigo && filial(e.nombre) === filial(nombre),
+  );
+  if (mismoClub.length === 1) return mismoClub[0] ?? null;
+
+  const parecido = emparejar(nombre, equipos);
+  if (!parecido || filial(parecido.nombre) !== filial(nombre)) return null;
+  return codigo && parecido.clubCodigo && parecido.clubCodigo !== codigo ? null : parecido;
+}
+
 export function planDeImportacion(calendario: Calendario, estado: EstadoBd): PlanImportacion {
   const jornadasPorNumero = new Map(estado.jornadas.map((j) => [j.numero, j]));
   const cruceExistente = new Set(
@@ -117,9 +182,28 @@ export function planDeImportacion(calendario: Calendario, estado: EstadoBd): Pla
 
   // Un mismo nombre aparece en muchas jornadas: se resuelve una vez y se reutiliza.
   const resueltos = new Map<string, EquipoConocido | null>();
-  const resolver = (nombre: string) => {
-    if (!resueltos.has(nombre)) resueltos.set(nombre, emparejar(nombre, estado.equipos));
-    return resueltos.get(nombre) ?? null;
+  const nuevos = new Map<string, EquipoNuevo>();
+  const parecidos = new Map<string, string>();
+  const { categoria } = estado;
+  const claveNueva = (nombre: string) =>
+    categoria ? claveNombre(normalizarNombreEquipo(nombre, categoria)) : null;
+  const resolver = (equipo: EquipoCalendario) => {
+    const { nombre, codigoFederativo } = equipo;
+    if (resueltos.has(nombre)) return resueltos.get(nombre) ?? null;
+    const hallado = categoria
+      ? emparejarEnCategoria(equipo, categoria, estado.equipos)
+      : emparejar(nombre, estado.equipos);
+    resueltos.set(nombre, hallado);
+    if (!categoria) return hallado;
+    const normalizado = normalizarNombreEquipo(nombre, categoria);
+    if (hallado && claveEquipo(normalizado) !== claveEquipo(hallado.nombre)) {
+      parecidos.set(nombre, hallado.nombre);
+    }
+    const clave = claveNombre(normalizado);
+    if (!hallado && !nuevos.has(clave)) {
+      nuevos.set(clave, { nombre: normalizado, clave, clubCodigo: codigoFederativo || null });
+    }
+    return hallado;
   };
 
   const jornadasNuevas: JornadaNueva[] = [];
@@ -129,19 +213,30 @@ export function planDeImportacion(calendario: Calendario, estado: EstadoBd): Pla
 
   for (const jornada of calendario.jornadas) {
     if (jornadasPorNumero.has(jornada.numero)) jornadasExistentes.push(jornada.numero);
-    else jornadasNuevas.push({ numero: jornada.numero, fechaInicio: jornada.fechaNominal });
+    else {
+      jornadasNuevas.push({
+        numero: jornada.numero,
+        fechaInicio: jornada.fechaNominal,
+        ...(jornada.fase ? { nombreFase: jornada.fase } : {}),
+      });
+    }
 
     for (const partido of jornada.partidos) {
-      const local = resolver(partido.local.nombre);
-      const visitante = resolver(partido.visitante.nombre);
-      if (!local) sinResolver.add(partido.local.nombre);
-      if (!visitante) sinResolver.add(partido.visitante.nombre);
+      const local = resolver(partido.local);
+      const visitante = resolver(partido.visitante);
+      const localNuevo = local ? null : claveNueva(partido.local.nombre);
+      const visitanteNuevo = visitante ? null : claveNueva(partido.visitante.nombre);
+      if (!local && !localNuevo) sinResolver.add(partido.local.nombre);
+      if (!visitante && !visitanteNuevo) sinResolver.add(partido.visitante.nombre);
 
-      const estadoCruce: EstadoCruce = !local || !visitante
-        ? "sin-equipo"
-        : cruceExistente.has(`${jornada.numero}|${local.id}|${visitante.id}`)
-          ? "existe"
-          : "nuevo";
+      const estadoCruce: EstadoCruce =
+        (!local && !localNuevo) || (!visitante && !visitanteNuevo)
+          ? "sin-equipo"
+          : local &&
+              visitante &&
+              cruceExistente.has(`${jornada.numero}|${local.id}|${visitante.id}`)
+            ? "existe"
+            : "nuevo";
 
       cruces.push({
         jornada: jornada.numero,
@@ -149,6 +244,8 @@ export function planDeImportacion(calendario: Calendario, estado: EstadoBd): Pla
         visitanteNombre: partido.visitante.nombre,
         localId: local?.id ?? null,
         visitanteId: visitante?.id ?? null,
+        localNuevo,
+        visitanteNuevo,
         estado: estadoCruce,
       });
     }
@@ -157,12 +254,21 @@ export function planDeImportacion(calendario: Calendario, estado: EstadoBd): Pla
   const cuenta = (estadoCruce: EstadoCruce) =>
     cruces.filter((cruce) => cruce.estado === estadoCruce).length;
 
+  const existentes = new Set(
+    [...resueltos.values()].flatMap((equipo) => (equipo ? [equipo.id] : [])),
+  );
+
   return {
     jornadasNuevas,
     jornadasExistentes,
     cruces,
     sinResolver: [...sinResolver],
+    equiposNuevos: [...nuevos.values()],
+    equiposExistentes: [...existentes],
+    parecidos: [...parecidos].map(([federacion, equipo]) => ({ federacion, equipo })),
     resumen: {
+      equiposNuevos: nuevos.size,
+      equiposExistentes: existentes.size,
       jornadasNuevas: jornadasNuevas.length,
       crucesNuevos: cuenta("nuevo"),
       crucesExistentes: cuenta("existe"),

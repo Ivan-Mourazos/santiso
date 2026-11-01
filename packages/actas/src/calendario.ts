@@ -16,6 +16,8 @@ export interface JornadaCalendario {
   numero: number;
   /** Fecha nominal de jornada. NO representa la fecha/hora exacta de cada partido. */
   fechaNominal: string;
+  /** Nombre de la ronda en una copa («Octavos»). En una liga no hay. */
+  fase?: string;
   partidos: { local: EquipoCalendario; visitante: EquipoCalendario }[];
 }
 

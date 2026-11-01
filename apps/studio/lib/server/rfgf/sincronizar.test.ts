@@ -703,3 +703,40 @@ it("repasa una temporada pasada poco a poco y apunta el año en el historial del
   expect(await avanzarHistorico(historico, AHORA, 2)).toBe(0);
   expect(pedidas).toHaveLength(antes);
 });
+
+it("un partido recién importado toma día y campo junto con su marcador, y así se busca su acta", async () => {
+  const { s, db, competicionId, porJugarId, sincronizarCompeticion, leerPartido } =
+    await conPartidoPorJugar();
+  await db.update(s.partidos).set({ fecha: null }).where(eq(s.partidos.id, porJugarId));
+  const { descargador } = descargadorDe("", [
+    "EQUIPO VISITANTE",
+    "2 - 1",
+    "20-09-2025",
+    "17:00",
+    "EQUIPO LOCAL",
+    "Campo: Campo Nuevo - Hierba Artificial",
+  ]);
+  await sincronizarCompeticion(competicionId, descargador, new Date(2025, 8, 22, 10), false, true);
+  const partido = await leerPartido();
+  expect(partido).toMatchObject({ golesLocal: 2, golesVisitante: 1, fecha: "2025-09-20T17:00" });
+  expect(partido.campoId).not.toBeNull();
+});
+
+it("en una copa añade los cruces que se van sorteando, con su equipo nuevo", async () => {
+  const { s, db, competicionId, sincronizarCompeticion } = await conPartidoPorJugar();
+  await db
+    .update(s.competiciones)
+    .set({ formato: "eliminatoria" })
+    .where(eq(s.competiciones.id, competicionId));
+  const celda = (lado: string, nombre: string) =>
+    `<td width="47%" align=${lado}> ${nombre} </td>`;
+  const calendario = `<h4>COPA<br><br>Temporada 2025-2026</h4><table><tr><th colspan=4>Final , 30-05-2026</th></tr>
+    <tr>${celda("right", "EQUIPO LOCAL")}<td width="6%"></td>${celda("left", "EQUIPO SORTEADO")}</tr></table>`;
+  const { descargador } = descargadorDe(calendario);
+  const primera = await sincronizarCompeticion(competicionId, descargador, AHORA, false, true);
+  expect(primera?.crucesNuevos).toBe(1);
+  const nuevo = (await db.select().from(s.equipos)).find((e) => e.nombre === "Equipo Sorteado");
+  expect(nuevo).toBeDefined();
+  const segunda = await sincronizarCompeticion(competicionId, descargador, AHORA, false, true);
+  expect(segunda?.crucesNuevos).toBe(0);
+});
