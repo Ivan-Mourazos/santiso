@@ -1,3 +1,4 @@
+import { esEquipoPropio } from "@santiso/domain";
 import { avanzarClasificacionesSinCandado } from "./historico-clasificaciones";
 import { avanzarAnterioresSinCandado } from "./anteriores";
 import {
@@ -147,10 +148,10 @@ async function prepararGrupo(
         opciones.gruposVistos.length
           ? notInArray(schema.rfgfGruposHistoricos.codGrupo, opciones.gruposVistos)
           : undefined,
-        // Una categoría sin jugadores identificados no bloquea las demás.
-        sql`exists (select 1 from ${schema.rfgfJugadores} r join ${schema.competiciones} c on c.id = r.competicion_id where r.jugador_id is not null and c.categoria = ${schema.rfgfGruposHistoricos.categoria})`,
+        // Cualquier jugador identificado puede tener trayectoria en ambas categorías.
+        sql`exists (select 1 from ${schema.rfgfJugadores} r join ${schema.competiciones} c on c.id = r.competicion_id where r.jugador_id is not null)`,
         opciones.jugadorId
-          ? sql`exists (select 1 from ${schema.rfgfJugadores} r join ${schema.competiciones} c on c.id = r.competicion_id where r.jugador_id = ${opciones.jugadorId} and c.categoria = ${schema.rfgfGruposHistoricos.categoria})`
+          ? sql`exists (select 1 from ${schema.rfgfJugadores} r join ${schema.competiciones} c on c.id = r.competicion_id where r.jugador_id = ${opciones.jugadorId})`
           : undefined,
       ),
     )
@@ -161,7 +162,7 @@ async function prepararGrupo(
     .limit(1);
   if (!grupo) return 0;
   opciones.gruposVistos.push(grupo.codGrupo);
-  // Solo los jugadores de hoy que la federación ya tiene identificados, y de esa categoría.
+  // Todos los jugadores identificados, aunque hoy compitan en otra categoría.
   const jugadores = await db
     .selectDistinct({
       jugadorId: schema.rfgfJugadores.jugadorId,
@@ -172,12 +173,7 @@ async function prepararGrupo(
       schema.competiciones,
       eq(schema.competiciones.id, schema.rfgfJugadores.competicionId),
     )
-    .where(
-      and(
-        isNotNull(schema.rfgfJugadores.jugadorId),
-        sql`${schema.competiciones.categoria} = ${grupo.categoria}`,
-      ),
-    );
+    .where(isNotNull(schema.rfgfJugadores.jugadorId));
   // Sin jugadores identificados todavía, el grupo espera (sin gastar consultas): llegarán con
   // la comprobación diaria.
   if (jugadores.length === 0) return 0;
@@ -339,6 +335,7 @@ async function leerUno(
     .update(schema.rfgfHistorico)
     .set({
       cifras: {
+        equipo: cifras.equipo,
         convocados: cifras.convocados,
         titular: cifras.titular,
         suplente: cifras.suplente,
@@ -357,7 +354,7 @@ async function leerUno(
         eq(schema.rfgfHistorico.codGrupo, pendiente.codGrupo),
       ),
     );
-  if (cifras.convocados > 0) {
+  if (cifras.convocados > 0 && (!cifras.equipo || esEquipoPropio(cifras.equipo))) {
     const [propio] = await db
       .select({ nombre: schema.equipos.nombre })
       .from(schema.equipos)
@@ -417,7 +414,7 @@ export async function avanzarHistorico(
 
 interface OpcionesPaso {
   codGrupo?: string;
-  /** Solo lo que falta de este jugador: los grupos de sus categorías y sus páginas. */
+  /** Solo lo que falta de este jugador: los grupos de ambas categorías y sus páginas. */
   jugadorId?: string;
   gruposVistos: string[];
   jugadoresVistos: string[];
@@ -450,7 +447,7 @@ async function avanzarSinCandado(
 }
 
 /**
- * Apunta a los jugadores identificados en los grupos ya preparados de su categoría en los que
+ * Apunta a los jugadores identificados en los grupos ya preparados de ambas categorías en los que
  * todavía no están (se identificaron después). No pide nada a la federación.
  */
 async function completarJugadores(jugadorId?: string): Promise<void> {
@@ -466,10 +463,7 @@ async function completarJugadores(jugadorId?: string): Promise<void> {
       schema.competiciones,
       eq(schema.competiciones.id, schema.rfgfJugadores.competicionId),
     )
-    .innerJoin(
-      schema.rfgfGruposHistoricos,
-      sql`${schema.rfgfGruposHistoricos.categoria} = ${schema.competiciones.categoria}`,
-    )
+    .innerJoin(schema.rfgfGruposHistoricos, sql`1 = 1`)
     .where(
       and(
         isNotNull(schema.rfgfJugadores.jugadorId),
@@ -493,7 +487,7 @@ export interface ResumenTemporadasJugador {
   paginas: number;
   /** Temporadas de las que se leyeron sus cifras en esta llamada. */
   leidas: number;
-  /** Lo que aún le falta: grupos por leer y grupos de su categoría por preparar. */
+  /** Lo que aún le falta: grupos por leer y grupos de ambas categorías por preparar. */
   pendientes: number;
   avisos: string[];
   errores: string[];
@@ -514,7 +508,7 @@ async function pendientesDeJugador(jugadorId: string): Promise<number> {
     .where(
       and(
         eq(schema.rfgfGruposHistoricos.estado, "pendiente"),
-        sql`exists (select 1 from ${schema.rfgfJugadores} r join ${schema.competiciones} c on c.id = r.competicion_id where r.jugador_id = ${jugadorId} and c.categoria = ${schema.rfgfGruposHistoricos.categoria})`,
+        sql`exists (select 1 from ${schema.rfgfJugadores} r join ${schema.competiciones} c on c.id = r.competicion_id where r.jugador_id = ${jugadorId})`,
       ),
     );
   return Number(porLeer?.n ?? 0) + Number(porPreparar?.n ?? 0);

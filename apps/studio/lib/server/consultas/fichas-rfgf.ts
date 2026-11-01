@@ -1,3 +1,4 @@
+import { esEquipoPropio } from "@santiso/domain";
 import { otrosClubesDeJugador } from "@/lib/server/rfgf/anteriores";
 import "server-only";
 
@@ -654,7 +655,11 @@ export async function fichaCompletaDeJugador(
     })),
     // Un grupo leído sin convocatorias no es una temporada suya: se queda fuera.
     ...pasadas
-      .filter((p) => !p.cifras || p.cifras.convocados > 0)
+      .filter(
+        (p) =>
+          (!p.cifras?.equipo || esEquipoPropio(p.cifras.equipo)) &&
+          (!p.cifras || p.cifras.convocados > 0),
+      )
       .map((p) => ({
         temporada: p.temporada,
         categoria: p.categoria as Categoria,

@@ -1,3 +1,4 @@
+import { esEquipoPropio } from "@santiso/domain";
 import "server-only";
 import { schema } from "@santiso/db";
 import type { Categoria } from "@santiso/domain";
@@ -161,7 +162,9 @@ export async function fichaDeJugador(ambito: AmbitoFicha): Promise<FichaJugador 
     // Solo los grupos en los que de verdad estuvo: sin convocatorias no jugó ahí.
     anteriores: pasadas
       .flatMap((fila) =>
-        fila.cifras && fila.cifras.convocados > 0
+        fila.cifras &&
+        (!fila.cifras.equipo || esEquipoPropio(fila.cifras.equipo)) &&
+        fila.cifras.convocados > 0
           ? [
               {
                 temporada: fila.temporada,

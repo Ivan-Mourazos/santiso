@@ -684,7 +684,8 @@ it("repasa una temporada pasada poco a poco y apunta el año en el historial del
     async html(url) {
       pedidas.push(url);
       if (url.includes("NFG_VisCompeticiones_Equipo")) return competiciones;
-      if (url.includes("NFG_EstadisticasJugador")) return PAGINA_JUGADOR;
+      if (url.includes("NFG_EstadisticasJugador"))
+        return PAGINA_JUGADOR.replace("EQUIPO VISITANTE", "U.D. SANTISO F.C.");
       return jornada;
     },
     async pdf() {

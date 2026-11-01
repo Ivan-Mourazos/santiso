@@ -202,6 +202,7 @@ export const rfgfHistorico = sqliteTable(
     codigo: text("codigo").notNull(),
     /** `null` hasta leer su página. */
     cifras: text("cifras", { mode: "json" }).$type<{
+      equipo?: string;
       convocados: number;
       titular: number;
       suplente: number;

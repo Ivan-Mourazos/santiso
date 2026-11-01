@@ -554,7 +554,7 @@ it("candado se libera tras entrada inválida y fallo de descarga", async () => {
   });
 });
 
-it("histórico no deja que categoría sin jugadores bloquee otra, ni excede presupuesto al descubrir", async () => {
+it("histórico cruza categorías y respeta presupuesto al descubrir", async () => {
   const { db, s, competicionId } = await preparar();
   const [jugador] = await db.insert(s.jugadores).values({ nombre: "Persona Prueba" }).returning();
   await db.insert(s.rfgfJugadores).values({
@@ -588,7 +588,7 @@ it("histórico no deja que categoría sin jugadores bloquee otra, ni excede pres
   const { descargador, urls } = descargadorDe();
   expect(await avanzarHistorico(descargador, AHORA, 1)).toBe(1);
   expect(urls).toHaveLength(1);
-  expect(urls[0]).toContain("CodGrupo=200");
+  expect(urls[0]).toContain("CodGrupo=100");
 });
 
 it("clasificación explica sanción conocida y reconoce causas desconocidas", async () => {

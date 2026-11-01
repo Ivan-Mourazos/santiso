@@ -167,3 +167,112 @@ it("a demanda, un jugador identificado tarde entra en los grupos ya preparados y
   });
   expect(urls).toHaveLength(1);
 });
+
+it.each(["U.D. SANTISO F.C.", "OTRO CLUB"])(
+  "Veteranos cruza Senior, conserva equipo y atribuye solo propio: %s",
+  async (equipo) => {
+    const { db } = conexion;
+
+    const [comp] = await db.select().from(s.competiciones);
+
+    const [vet] = await db
+      .insert(s.competiciones)
+      .values({ temporadaId: comp!.temporadaId, categoria: "Veteranos", nombre: "Veteranos" })
+      .returning();
+
+    const [jugador] = await db
+      .insert(s.jugadores)
+      .values({ nombre: "Iván", historial: [] })
+      .returning();
+
+    await db.insert(s.rfgfJugadores).values({
+      codigo: "101",
+      competicionId: vet!.id,
+      jugadorId: jugador!.id,
+      nombre: "Iván",
+      codActa: "1",
+    });
+
+    await db.insert(s.rfgfGruposHistoricos).values({
+      codGrupo: "senior-prueba",
+      categoria: "Senior",
+      temporada: "2022-2023",
+      competicion: "Liga",
+      grupo: "1",
+      codCompeticion: "2",
+      codEquipo: "3",
+      codActa: "4",
+      estado: "listo",
+    });
+
+    const d: DescargadorRfgf = {
+      html: vi.fn(async () => PAGINA_JUGADOR.replace("U.D. SANTISO F.C.", equipo)),
+      pdf: vi.fn(),
+    };
+
+    const { traerTemporadasDeJugador } = await import("./historico");
+
+    const r = await traerTemporadasDeJugador(jugador!.id, d, AHORA);
+
+    expect(r.paginas).toBeLessThanOrEqual(2);
+
+    const filas = await db.select().from(s.rfgfHistorico);
+
+    expect(filas.find((f) => f.codGrupo === "senior-prueba")?.cifras?.equipo).toBe(equipo);
+
+    const { fichaCompletaDeJugador } = await import("../consultas/fichas-rfgf");
+
+    const ficha = await fichaCompletaDeJugador(jugador!.id);
+
+    expect(ficha!.total.convocados).toBe(equipo === "OTRO CLUB" ? 0 : 18);
+
+    const [p] = await db.select().from(s.jugadores);
+
+    expect(p!.historial?.length).toBe(equipo === "OTRO CLUB" ? 0 : 2);
+  },
+);
+
+it("prepara grupo Senior pendiente con jugador identificado solo en Veteranos", async () => {
+  const { db } = conexion;
+  await db.delete(s.rfgfGruposHistoricos);
+  const [comp] = await db.select().from(s.competiciones);
+  const [vet] = await db
+    .insert(s.competiciones)
+    .values({ temporadaId: comp!.temporadaId, categoria: "Veteranos", nombre: "Veteranos" })
+    .returning();
+  const [p] = await db.insert(s.jugadores).values({ nombre: "Iván" }).returning();
+  await db.insert(s.rfgfJugadores).values({
+    codigo: "101",
+    competicionId: vet!.id,
+    jugadorId: p!.id,
+    nombre: "Iván",
+    codActa: "9",
+  });
+  await db.insert(s.rfgfGruposHistoricos).values({
+    codGrupo: "senior-pendiente",
+    categoria: "Senior",
+    temporada: "2022-2023",
+    competicion: "Liga",
+    grupo: "1",
+    codCompeticion: "2",
+    codEquipo: "3",
+  });
+  const d: DescargadorRfgf = {
+    html: vi.fn(async (url) =>
+      url.includes("CmpJornada")
+        ? '<a href="NFG_VisEquipos?Codigo_Equipo=3">Santiso</a><a href="NFG_CmpPartido?CodActa=99">2-0</a><a href="NFG_VisEquipos?Codigo_Equipo=4">Rival</a>'
+        : PAGINA_JUGADOR,
+    ),
+    pdf: vi.fn(),
+  };
+  const { traerTemporadasDeJugador } = await import("./historico");
+  const r = await traerTemporadasDeJugador(p!.id, d, AHORA);
+  expect(r.paginas).toBe(2);
+  expect(d.html).toHaveBeenCalledTimes(2);
+  const [fila] = await db.select().from(s.rfgfHistorico);
+  expect(fila).toMatchObject({
+    jugadorId: p!.id,
+    codGrupo: "senior-pendiente",
+    cifras: { convocados: 9 },
+  });
+});
