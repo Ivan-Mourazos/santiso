@@ -34,6 +34,7 @@ export const PLANTILLAS = [
   "convocatoria",
   "fichaxe",
   "comunicado",
+  "loteria",
 ] as const;
 export type Plantilla = (typeof PLANTILLAS)[number];
 
@@ -282,6 +283,37 @@ export interface DatosComunicado {
   escudoClub: string | null;
 }
 
+/** Sorteos en los que juega el club: el de Nadal (22 de decembro) y el do Neno (6 de xaneiro). */
+export const SORTEOS_LOTERIA = {
+  nadal: { etiqueta: "LOTARÍA DE NADAL", dia: "22 de decembro" },
+  neno: { etiqueta: "SORTEO DO NENO", dia: "6 de xaneiro" },
+} as const;
+export type SorteoLoteria = keyof typeof SORTEOS_LOTERIA;
+
+/** Lotaría del club: número (o dous), papeleta, cánto xoga e onde mercala. Sin logos. */
+export interface DatosLoteria {
+  sorteo: SorteoLoteria;
+  /** Ano do sorteo (o do Neno xa é o seguinte ao da tempada). */
+  anio: number;
+  /** De 1 a 2 números de cinco cifras. */
+  numeros: string[];
+  titulo: string;
+  /** Bajo el título; vacío, se pone el sorteo y el año. */
+  subtitulo: string;
+  /** Importes tal cal se escriben: «5», «2,50». Vacíos, non se pintan. */
+  prezo: string;
+  xoga: string;
+  /** Onde mercala: unha liña por sitio. */
+  puntos: string;
+  /** Otras formas de comprarla, bajo los puntos de venda. */
+  nota: string;
+  /** Foto o escaneo del décimo de verdad; sin ella, se dibuja uno amarillo. */
+  decimoFoto: string | null;
+  escudoClub: string | null;
+  /** Sorteo do Baúl, si lo hay ese año: foto de la cesta y cómo participar (una línea por paso). */
+  baul: { foto: string | null; participar: string } | null;
+}
+
 export interface FilaTabla {
   posicion: number;
   nombre: string;
@@ -323,7 +355,8 @@ export type PeticionCartel =
   | { plantilla: "alineacion"; datos: DatosAlineacion }
   | { plantilla: "convocatoria"; datos: DatosConvocatoria }
   | { plantilla: "fichaxe"; datos: DatosFichaxe }
-  | { plantilla: "comunicado"; datos: DatosComunicado };
+  | { plantilla: "comunicado"; datos: DatosComunicado }
+  | { plantilla: "loteria"; datos: DatosLoteria };
 
 const DIAS = ["DOMINGO", "LUNS", "MARTES", "MÉRCORES", "XOVES", "VENRES", "SÁBADO"];
 const MESES = ["XAN", "FEB", "MAR", "ABR", "MAI", "XUÑ", "XUL", "AGO", "SET", "OUT", "NOV", "DEC"];

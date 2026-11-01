@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
   COMPOSICIONES,
   ESTILOS_FOTO,
+  SORTEOS_LOTERIA,
   TEMAS_ANUNCIO,
   TIPOS_COMUNICADO,
   TIPOS_EVENTO,
@@ -305,7 +306,28 @@ const comunicado = z.object({
   }),
 });
 
+const importe = z.union([z.literal(""), z.string().regex(/^\d{1,4}(,\d{1,2})?$/)]);
+
+const loteria = z.object({
+  plantilla: z.literal("loteria"),
+  datos: z.object({
+    sorteo: z.enum(Object.keys(SORTEOS_LOTERIA) as [string, ...string[]]),
+    anio: z.number().int().min(2000).max(2100),
+    numeros: z.array(z.string().regex(/^\d{5}$/)).max(2),
+    titulo: texto(80),
+    subtitulo: texto(120),
+    prezo: importe,
+    xoga: importe,
+    puntos: texto(400),
+    nota: texto(240),
+    decimoFoto: imagen.nullable(),
+    escudoClub: imagen.nullable(),
+    baul: z.object({ foto: imagen.nullable(), participar: texto(400) }).nullable(),
+  }),
+});
+
 const peticion = z.discriminatedUnion("plantilla", [
+  loteria,
   fichaxe,
   comunicado,
   partido,

@@ -6,6 +6,7 @@ import { CartelClasificacion } from "./CartelClasificacion";
 import { CartelComunicado } from "./CartelComunicado";
 import { CartelCronoloxia } from "./CartelCronoloxia";
 import { CartelFichaxe } from "./CartelFichaxe";
+import { CartelLoteria } from "./CartelLoteria";
 import { CartelOnce } from "./CartelOnce";
 import { CartelPartido } from "./CartelPartido";
 import { CartelProximos } from "./CartelProximos";
@@ -42,5 +43,7 @@ export function Cartel({ peticion }: { peticion: PeticionCartel }) {
       return <CartelFichaxe datos={peticion.datos} />;
     case "comunicado":
       return <CartelComunicado datos={peticion.datos} />;
+    case "loteria":
+      return <CartelLoteria datos={peticion.datos} />;
   }
 }

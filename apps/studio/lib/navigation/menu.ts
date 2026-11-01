@@ -58,6 +58,7 @@ const I = {
   fiesta: "M4 20 9 7l8 8-13 5ZM14 4v2M19 9h2M17.5 5.5 16 7",
   traer: "M12 3v12M7 10l5 5 5-5M5 21h14",
   escudo: "M12 3 4 6v6c0 4.4 3.4 8.2 8 9 4.6-.8 8-4.6 8-9V6Z",
+  boleto: "M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4ZM14 6v12",
   moneda: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM15 9.5a3.5 3.5 0 1 0 0 5M8 11h5M8 13.5h5",
   directiva:
     "M8 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM16 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM2 20c0-3 2.7-5 6-5s6 2 6 5M14 15.5c.6-.3 1.3-.5 2-.5 3.3 0 6 2 6 5",
@@ -178,6 +179,7 @@ export const MENU: readonly PestanaMenu[] = [
           cartel("fichaxe", "Fichaje", "Altas y renovaciones", I.firma),
           cartel("comunicado", "Comunicado", "Aviso del club", I.estrella),
           cartel("multiusos", "Celebración", "Títulos y fiestas", I.fiesta, "celebracion"),
+          cartel("loteria", "Lotaría", "Nadal e Neno", I.boleto),
         ],
       },
     ],

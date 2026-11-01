@@ -5,6 +5,7 @@
  */
 import type { FormState, TemplateId } from "@/components/admin/cartel/types";
 import type { CronEvent, FilaCartelClasificacion, Player } from "./types";
+import { importeLoteria, numerosLoteria } from "@/lib/cartel2/formulario";
 
 const DIAS = ["domingo", "luns", "martes", "mércores", "xoves", "venres", "sábado"];
 const MESES = [
@@ -265,6 +266,42 @@ function textoClasificacion(f: FormState): string {
   return linhas.join("\n");
 }
 
+function textoLoteria(f: FormState): string {
+  const numeros = numerosLoteria(f.loteriaNumeros);
+  if (numeros.length === 0) return "";
+  const nadal = f.loteriaSorteo === "nadal";
+  const prezo = importeLoteria(f.loteriaPrezo);
+  const xoga = importeLoteria(f.loteriaXoga);
+  const sorteo = nadal ? `LOTARÍA DE NADAL ${f.loteriaAnio}` : `SORTEO DO NENO ${f.loteriaAnio + 1}`;
+  const linhas = [
+    `🍀 ${sorteo}`,
+    "",
+    `Xa está dispoñible a lotaría ${nadal ? "de Nadal" : "do Neno"} do club: ${numeros.length === 2 ? "números" : "número"} ${numeros.join(" e ")}.`,
+  ];
+  if (prezo) {
+    const resto = xoga ? Number(prezo.replace(",", ".")) - Number(xoga.replace(",", ".")) : 0;
+    linhas.push(
+      resto > 0
+        ? `Prezo: ${xoga} € ${xoga === "20" ? "décimo" : "xogados"} + ${String(resto).replace(".", ",")} € donativo.`
+        : `Prezo: ${prezo} €.`,
+    );
+  }
+  const lineas = (t: string) =>
+    t
+      .split("\n")
+      .map((p) => p.trim())
+      .filter(Boolean);
+  const puntos = lineas(f.loteriaPuntos);
+  if (puntos.length) linhas.push("", "📍 Puntos de venda:", ...puntos.map((p) => `· ${p}`));
+  if (f.loteriaNota.trim()) linhas.push(f.loteriaNota.trim());
+  if (f.loteriaBaul) {
+    linhas.push("", "🧺 SORTEO DO BAÚL");
+    linhas.push(...lineas(f.loteriaBaulTexto).map((l) => (l.endsWith(":") ? `\n${l}` : l)));
+  }
+  linhas.push("", "Grazas polo voso apoio! 💛🖤", "", "#UDSantiso #Lotaria");
+  return linhas.join("\n");
+}
+
 /** Texto para el pie de la publicación del cartel; vacío si aún no hay datos con qué hacerlo. */
 export function textoInstagram(tipo: TemplateId, f: FormState): string {
   switch (tipo) {
@@ -290,6 +327,8 @@ export function textoInstagram(tipo: TemplateId, f: FormState): string {
         .join("\n");
       return [`✍️ ${etiqueta[f.fichaxeTipo]}`, cuerpo, "#UDSantiso"].filter(Boolean).join("\n\n");
     }
+    case "loteria":
+      return textoLoteria(f);
     case "comunicado":
       return [f.comunicadoTitulo.trim().toUpperCase(), f.comunicadoTexto.trim(), "#UDSantiso"]
         .filter(Boolean)

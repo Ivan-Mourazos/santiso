@@ -12,7 +12,7 @@ import {
   cargarJugadoresDePartido,
 } from "@/lib/server/acciones/actas";
 import { cargarEquiposDeCategoria } from "@/lib/server/acciones/equipos";
-import type { FormState } from "./types";
+import type { FormState, FotoLoteria } from "./types";
 import type { SelectorMatch } from "./Common";
 import type { Player, CronEvent, NextMatch } from "@/lib/cartel/types";
 import { fetchCompeticiones, type CompetenciaRow } from "@/lib/lecturas-cliente";
@@ -142,6 +142,22 @@ const DEFAULT_FORM: FormState = {
   comunicadoTexto: "",
   comunicadoFecha: "",
   comunicadoFirma: "A Directiva",
+  loteriaSorteo: "nadal",
+  loteriaAnio: new Date().getFullYear(),
+  loteriaNumeros: "14712",
+  // Iván, 22/10/2026: el título anuncia que ya está a la venta.
+  loteriaTitulo: "Xa está dispoñible",
+  loteriaSubtitulo: "",
+  // Precios y puntos de venda de la tempada 2026 (Iván, 22/10/2026): se cambian en el formulario.
+  loteriaPrezo: "22",
+  loteriaXoga: "20",
+  loteriaPuntos: "Cafetaría Solaina\nParrillada Rúa\nCasa Suárez\nMesón Visantoña\nA Lareira",
+  loteriaNota:
+    "Tamén no campo os días de partido ou contactando con calquera xogador ou directivo do club.",
+  loteriaDecimoFoto: "",
+  loteriaBaul: false,
+  loteriaBaulFoto: "",
+  loteriaBaulTexto: "",
   clasificacionTipo: "liga",
   clasificacionNombre: "",
   clasificacionData: [],
@@ -182,6 +198,8 @@ export function useCartelForm(
   const matchFileUrlsRef = useRef<Record<number, string>>({});
   const multiImg1Ref = useRef<string>("");
   const multiImg2Ref = useRef<string>("");
+  /** Fotos de la lotaría (décimo y Baúl) en memoria, por campo, para liberarlas. */
+  const fotosLoteriaRef = useRef<Partial<Record<FotoLoteria, string>>>({});
 
   useEffect(() => {
     catalogRef.current = competicionesCatalog;
@@ -240,6 +258,7 @@ export function useCartelForm(
       });
       if (multiImg1Ref.current) URL.revokeObjectURL(multiImg1Ref.current);
       if (multiImg2Ref.current) URL.revokeObjectURL(multiImg2Ref.current);
+      Object.values(fotosLoteriaRef.current).forEach((url) => url && URL.revokeObjectURL(url));
     };
   }, []);
 
@@ -284,6 +303,8 @@ export function useCartelForm(
       URL.revokeObjectURL(multiImg2Ref.current);
       multiImg2Ref.current = "";
     }
+    Object.values(fotosLoteriaRef.current).forEach((url) => url && URL.revokeObjectURL(url));
+    fotosLoteriaRef.current = {};
   }
 
   function handleRivalSelect(nombre: string) {
@@ -483,10 +504,20 @@ export function useCartelForm(
     set(key, url);
   }
 
+  /** Foto del décimo o de la cesta del Baúl: en memoria (`blob:`) hasta exportar. */
+  function handleLoteriaFile(campo: FotoLoteria, file: File | null) {
+    const anterior = fotosLoteriaRef.current[campo];
+    if (anterior) URL.revokeObjectURL(anterior);
+    const url = file ? URL.createObjectURL(file) : "";
+    fotosLoteriaRef.current[campo] = url;
+    set(campo, url);
+  }
+
   return {
     form,
     set,
     errorDatos,
+    handleLoteriaFile,
     equipos,
     setEquipos,
     jugadores,

@@ -49,6 +49,7 @@ for (const ancho of [360, 390]) {
       ["clasificacion", "Clasificación"],
       ["fichaxe", "Fichaje"],
       ["comunicado", "Comunicado"],
+      ["loteria", "Lotaría"],
     ]) {
       await page.goto("/admin/carteles");
       const fila = page.getByRole("main").getByRole("link", { name: new RegExp(`^${nombre}`) });

@@ -15,6 +15,7 @@ export const TEMPLATES = [
   { id: "clasificacion", label: "Clasificación", emoji: "📈" },
   { id: "fichaxe", label: "Fichaje", emoji: "✍️" },
   { id: "comunicado", label: "Comunicado", emoji: "📢" },
+  { id: "loteria", label: "Lotaría", emoji: "🍀" },
 ] as const;
 
 export type TemplateId = (typeof TEMPLATES)[number]["id"];
@@ -86,6 +87,25 @@ export interface FormState {
   comunicadoTexto: string;
   comunicadoFecha: string;
   comunicadoFirma: string;
+  // Lotaría do club
+  loteriaSorteo: "nadal" | "neno";
+  loteriaAnio: number;
+  /** Uno o dos números de cinco cifras, separados por coma o espacio. */
+  loteriaNumeros: string;
+  loteriaTitulo: string;
+  /** Línea bajo el título; vacía, «Lotaría de Nadal 2026 do club». */
+  loteriaSubtitulo: string;
+  loteriaPrezo: string;
+  loteriaXoga: string;
+  loteriaPuntos: string;
+  /** Otras formas de comprarla, bajo los puntos de venda. */
+  loteriaNota: string;
+  /** Foto o escaneo del décimo de verdad: si la hay, va en vez del dibujado. */
+  loteriaDecimoFoto: string;
+  /** Sorteo do Baúl: no todos los años lo hay. */
+  loteriaBaul: boolean;
+  loteriaBaulFoto: string;
+  loteriaBaulTexto: string;
 
   // Clasificación
   clasificacionTipo: "liga" | "copa";
@@ -94,6 +114,9 @@ export interface FormState {
 
   showAssets: boolean;
 }
+
+/** Campos del formulario con una foto de la lotaría subida a mano. */
+export type FotoLoteria = "loteriaDecimoFoto" | "loteriaBaulFoto";
 
 export interface AssetUrls {
   xunta: string;

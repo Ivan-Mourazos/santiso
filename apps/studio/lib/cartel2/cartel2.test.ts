@@ -137,6 +137,19 @@ function formulario(cambios: Partial<FormState> = {}): FormState {
     comunicadoTexto: "",
     comunicadoFecha: "",
     comunicadoFirma: "A Directiva",
+    loteriaSorteo: "nadal",
+    loteriaAnio: 2026,
+    loteriaNumeros: "",
+    loteriaTitulo: "",
+    loteriaSubtitulo: "",
+    loteriaPrezo: "",
+    loteriaXoga: "",
+    loteriaPuntos: "",
+    loteriaNota: "",
+    loteriaDecimoFoto: "",
+    loteriaBaul: false,
+    loteriaBaulFoto: "",
+    loteriaBaulTexto: "",
     showAssets: true,
     ...cambios,
   } as FormState;
@@ -377,6 +390,62 @@ describe("peticionDeFormulario", () => {
     expect(c.datos).not.toHaveProperty("institucionales");
   });
 
+  it("lotaría: números de cinco cifras, importes limpios, sin patrocinadores ni logos", () => {
+    const p = peticionDeFormulario(
+      "loteria",
+      formulario({
+        loteriaNumeros: "12.345, 678, 67890, 11111",
+        loteriaPrezo: "5 €",
+        loteriaXoga: "2.5",
+        loteriaPuntos: "Bar do campo\nXogadores",
+      }),
+      recursos,
+      opciones,
+    );
+    if (p.plantilla !== "loteria") throw new Error("plantilla");
+    expect(p.datos).toMatchObject({ numeros: ["12345", "67890"], prezo: "5", xoga: "2,50" });
+    expect(p.datos).not.toHaveProperty("patrocinadores");
+    expect(p.datos).not.toHaveProperty("institucionales");
+    expect(p.datos.baul).toBeNull();
+    expect(leerPeticion(JSON.parse(JSON.stringify(p)))).not.toBeNull();
+    const texto = textoInstagram(
+      "loteria",
+      formulario({
+        loteriaNumeros: "14712",
+        loteriaPrezo: "22",
+        loteriaXoga: "20",
+        loteriaPuntos: "Casa Suárez",
+      }),
+    );
+    expect(texto).toContain("LOTARÍA DE NADAL 2026");
+    expect(texto).toContain("número 14712");
+    expect(texto).toContain("20 € décimo + 2 € donativo");
+    expect(texto).toContain("· Casa Suárez");
+    expect(texto).not.toContain("BAÚL");
+  });
+
+  it("lotaría con Baúl: foto y cómo participar; sin Baúl no va nada", () => {
+    const p = peticionDeFormulario(
+      "loteria",
+      formulario({
+        loteriaNumeros: "14712",
+        loteriaDecimoFoto: "data:image/png;base64,AAAA",
+        loteriaBaul: true,
+        loteriaBaulFoto: "/media/baul.webp",
+        loteriaBaulTexto: " Rifas individuais:\nXogadores ",
+      }),
+      recursos,
+      opciones,
+    );
+    if (p.plantilla !== "loteria") throw new Error("plantilla");
+    expect(p.datos.decimoFoto).toBe("data:image/png;base64,AAAA");
+    expect(p.datos.baul).toEqual({
+      foto: "/media/baul.webp",
+      participar: "Rifas individuais:\nXogadores",
+    });
+    expect(leerPeticion(JSON.parse(JSON.stringify(p)))).not.toBeNull();
+  });
+
   it("clasificación: marca la fila del Santiso", () => {
     const p = peticionDeFormulario("clasificacion", formulario(), recursos, opciones);
     if (p.plantilla !== "clasificacion" || p.datos.tipo !== "liga") throw new Error("plantilla");
@@ -562,6 +631,7 @@ describe("leerPeticion", () => {
       "clasificacion",
       "fichaxe",
       "comunicado",
+      "loteria",
     ] as const;
     const plantillas = tipos.map((t) => {
       const p = peticionDeFormulario(t, formulario(), recursos, opciones);
