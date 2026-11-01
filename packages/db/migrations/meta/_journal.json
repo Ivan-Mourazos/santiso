@@ -176,6 +176,13 @@
       "when": 1793551989158,
       "tag": "0024_reintentar-calendarios",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1793555547658,
+      "tag": "0025_asistencia-entrenamientos",
+      "breakpoints": true
     }
   ]
 }

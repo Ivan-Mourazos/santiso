@@ -29,6 +29,7 @@ const Lineup = dynamic(() => import("@/components/admin/alineacion/AdminAlineaci
 const Callup = dynamic(() => import("@/components/admin/convocatoria/AdminConvocatoria"), {
   loading,
 });
+const Training = dynamic(() => import("@/components/admin/adestramentos/AdminAdestramentos"), { loading });
 const Fines = dynamic(() => import("@/components/admin/multas/AdminMultas"), { loading });
 const Federation = dynamic(() => import("@/components/admin/federacion/AdminFederacion"), {
   loading,
@@ -105,6 +106,7 @@ export function StudioSection({ section }: { section: Seccion }) {
       {section === "alineacion" && (
         <Lineup categoria="Senior" partidoInicial={params.get("partido")} showToast={showToast} />
       )}
+      {section === "adestramentos" && <Training {...feedback} categoria={category} />}
       {section === "multas" && <Fines {...feedback} />}
       {section === "equipo" && <TeamCard equipoId={params.get("id")} />}
       {section === "jugador" && <PlayerCard jugadorId={params.get("id")} />}

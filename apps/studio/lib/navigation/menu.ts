@@ -215,6 +215,7 @@ export const MENU: readonly PestanaMenu[] = [
       {
         titulo: "Vestuario",
         entradas: [
+          { seccion: "adestramentos", label: "Adestramentos", detalle: "Asistencia y multas", icono: I.lista },
           { seccion: "multas", label: "Multas", detalle: "Caja del equipo", icono: I.moneda },
           { seccion: "directiva", label: "Directiva", detalle: "Del club", icono: I.directiva },
         ],

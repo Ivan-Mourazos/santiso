@@ -11,3 +11,5 @@ export * from "./rfgf-clubes";
 export * from "./acceso";
 export * from "./liga";
 export * from "./carteles";
+
+export * from "./entrenamientos";

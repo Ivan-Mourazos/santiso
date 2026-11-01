@@ -573,3 +573,33 @@ describe("clubes de la federación y alineaciones vistas", () => {
     expect(await db.select().from(s.rfgfHistoricoAlineaciones)).toHaveLength(0);
   });
 });
+
+describe("entrenamientos y asistencia", () => {
+  it("fecha única por categoría, persona exclusiva, estados y FK set null", async () => {
+    const { db } = conexion;
+    const { temporada, jugador } = await sembrar();
+    const datos = { temporadaId: temporada.id, categoria: "Senior" as const, fecha: "2026-11-01" };
+    const [e] = await db.insert(s.entrenamientos).values(datos).returning();
+    await rechaza(db.insert(s.entrenamientos).values(datos));
+    await db.insert(s.entrenamientos).values({ ...datos, categoria: "Veteranos" });
+    const marca = { entrenamientoId: e!.id, jugadorId: jugador.id, estado: "presente" as const };
+    await rechaza(db.insert(s.asistencias).values({ entrenamientoId: e!.id, estado: "presente" }));
+    await rechaza(db.insert(s.asistencias).values({ ...marca, estado: "otro" as "presente" }));
+    const [m] = await db
+      .insert(s.multas)
+      .values({
+        temporadaId: temporada.id,
+        jugadorId: jugador.id,
+        concepto: "Prueba",
+        importeCentimos: 50,
+        fecha: datos.fecha,
+      })
+      .returning();
+    await db.insert(s.asistencias).values({ ...marca, multaId: m!.id });
+    await rechaza(db.insert(s.asistencias).values(marca));
+    await db.delete(s.multas).where(eq(s.multas.id, m!.id));
+    expect((await db.select().from(s.asistencias))[0]!.multaId).toBeNull();
+    await db.delete(s.entrenamientos).where(eq(s.entrenamientos.id, e!.id));
+    expect(await db.select().from(s.asistencias)).toHaveLength(0);
+  });
+});

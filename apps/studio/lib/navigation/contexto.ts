@@ -13,6 +13,7 @@ export const SECCIONES = [
   { id: "jugadores", label: "Jugadores" },
   { id: "tecnicos", label: "Cuerpo técnico" },
   { id: "directiva", label: "Directiva" },
+  { id: "adestramentos", label: "Adestramentos" },
   { id: "multas", label: "Multas" },
   { id: "convocatoria", label: "Convocatoria" },
   { id: "alineacion", label: "Once inicial" },

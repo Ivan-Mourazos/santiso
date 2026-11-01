@@ -1,0 +1,86 @@
+.panel {
+  display: grid;
+  gap: 1rem;
+  max-width: 46rem;
+  width: 100%;
+  margin: 0 auto;
+}
+.panel p {
+  color: var(--ui-muted, #aaa);
+  margin: 0.5rem 0;
+  overflow-wrap: anywhere;
+}
+.lista {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+.fila {
+  padding: 0.8rem;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-panel-face, #171717);
+  min-width: 0;
+}
+.fila h4 {
+  margin: 0 0 0.75rem;
+}
+.formulario {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.botones {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+.botones button {
+  min-height: 48px;
+  padding-inline: 0.25rem;
+}
+.botones button[aria-pressed="true"]:not(:disabled) {
+  background: var(--estado-color);
+  border-color: var(--estado-color);
+  color: #141414;
+  box-shadow: inset 0 0 0 2px #141414;
+}
+.botones button[data-estado="presente"] {
+  --estado-color: var(--ui-success, #74d9a2);
+}
+.botones button[data-estado="tarde"] {
+  --estado-color: #f8c35b;
+}
+.botones button[data-estado="ausente"] {
+  --estado-color: #ff8989;
+}
+.justificado {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  min-height: 48px;
+}
+.justificado input {
+  width: 24px;
+  height: 24px;
+}
+.guardar {
+  /* En flujo normal: nunca tapa el motivo de la ultima persona.
+     StudioShell ya reserva espacio para la navegacion movil. */
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  scroll-margin-bottom: calc(7rem + env(safe-area-inset-bottom));
+  background: var(--ui-panel-face, #171717);
+  padding: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-radius: var(--ui-radius-lg);
+}
+.guardar p {
+  flex-basis: 100%;
+}

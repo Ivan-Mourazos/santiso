@@ -16,9 +16,9 @@ import {
   type GrupoMulta,
   type Multa,
   type PantallaMultas,
-  type PersonaMulta,
 } from "@/lib/multas/modelo";
 import { capturar, fallo, type Resultado } from "@/lib/resultado";
+import { personas } from "../personas-multas";
 import { obtenerDb } from "@/lib/server/db";
 
 type Db = Awaited<ReturnType<typeof obtenerDb>>["db"];
@@ -51,65 +51,6 @@ async function sembrarConceptos(db: Db) {
   await db.insert(schema.multasConceptos).values(
     CONCEPTOS_DEL_CLUB.map((c, orden) => ({ ...c, clave: claveNombre(c.nombre), orden })),
   );
-}
-
-/** Plantilla y cuerpo técnico de la temporada; cada persona una vez. */
-async function personas(db: Db, temporadaId: string): Promise<PersonaMulta[]> {
-  const jugadores = await db
-    .select({
-      id: schema.jugadores.id,
-      nombre: schema.jugadores.nombre,
-      apodo: schema.jugadores.apodo,
-      categoria: schema.jugadoresTemporada.categoria,
-      dorsal: schema.jugadoresTemporada.dorsal,
-    })
-    .from(schema.jugadoresTemporada)
-    .innerJoin(schema.jugadores, eq(schema.jugadores.id, schema.jugadoresTemporada.jugadorId))
-    .where(eq(schema.jugadoresTemporada.temporadaId, temporadaId))
-    .orderBy(asc(schema.jugadoresTemporada.categoria), asc(schema.jugadores.nombre));
-  const tecnicos = await db
-    .select({
-      id: schema.staff.id,
-      nombre: schema.staff.nombre,
-      categoria: schema.staffTemporada.categoria,
-      cargo: schema.staffTemporada.cargo,
-    })
-    .from(schema.staffTemporada)
-    .innerJoin(schema.staff, eq(schema.staff.id, schema.staffTemporada.staffId))
-    .where(
-      and(
-        eq(schema.staffTemporada.temporadaId, temporadaId),
-        eq(schema.staffTemporada.tipo, "tecnico"),
-      ),
-    )
-    .orderBy(asc(schema.staff.nombre));
-
-  const lista = new Map<string, PersonaMulta>();
-  for (const j of jugadores) {
-    const clave = `jugador:${j.id}`;
-    if (lista.has(clave)) continue;
-    lista.set(clave, {
-      clave,
-      tipo: "jugador",
-      id: j.id,
-      nombre: j.apodo?.trim() ? `${j.nombre} (${j.apodo.trim()})` : j.nombre,
-      detalle: `${j.categoria}${j.dorsal === null ? "" : ` · ${j.dorsal}`}`,
-      adestrador: false,
-    });
-  }
-  for (const t of tecnicos) {
-    const clave = `staff:${t.id}`;
-    if (lista.has(clave)) continue;
-    lista.set(clave, {
-      clave,
-      tipo: "staff",
-      id: t.id,
-      nombre: t.nombre,
-      detalle: [t.categoria, t.cargo].filter(Boolean).join(" · "),
-      adestrador: true,
-    });
-  }
-  return [...lista.values()];
 }
 
 async function multasDe(db: Db, temporadaId: string): Promise<Multa[]> {
