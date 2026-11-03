@@ -52,6 +52,7 @@ export interface PantallaMultas {
   conceptos: ConceptoMulta[];
   personas: PersonaMulta[];
   multas: Multa[];
+  gastos: GastoBote[];
 }
 
 /**
@@ -136,7 +137,14 @@ export function unidadesDe(
 
 /** «a, b ,, a» → ["a", "b"]: la lista de opciones tal como se escribe en Normas. */
 export function opcionesDeTexto(texto: string): string[] {
-  return [...new Set(texto.split(",").map((o) => o.trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      texto
+        .split(",")
+        .map((o) => o.trim())
+        .filter(Boolean),
+    ),
+  ];
 }
 
 /** Texto que se guarda en la multa: el concepto y, si procede, lo marcado o las unidades. */
@@ -145,7 +153,8 @@ export function textoDeConcepto(
   unidades: number,
   elegidas: string[] = [],
 ): string {
-  if (concepto.porUnidad && elegidas.length > 0) return `${concepto.nombre}: ${elegidas.join(", ")}`;
+  if (concepto.porUnidad && elegidas.length > 0)
+    return `${concepto.nombre}: ${elegidas.join(", ")}`;
   const cantidad = Math.max(1, Math.floor(unidades) || 1);
   return concepto.porUnidad && cantidad > 1 ? `${concepto.nombre} ×${cantidad}` : concepto.nombre;
 }
@@ -208,3 +217,69 @@ export function resumirMultas(multas: Multa[]): ResumenMultas {
 
 const DIA = /^\d{4}-\d{2}-\d{2}$/;
 export const esDia = (texto: string) => DIA.test(texto) && !Number.isNaN(Date.parse(texto));
+
+export interface GastoBote {
+  id: string;
+  fecha: string;
+  concepto: string;
+  importeCentimos: number;
+  nota: string | null;
+}
+
+export interface MovimientoBote {
+  id: string;
+  tipo: "gasto" | "cobro";
+  fecha: string;
+  concepto: string;
+  persona: string | null;
+  importeCentimos: number;
+  nota: string | null;
+}
+
+/** Recibe solo las multas y gastos de la temporada elegida. */
+export function resumirBote(multas: Multa[], gastos: GastoBote[]) {
+  const resumen = resumirMultas(multas);
+  const gastadoCentimos = gastos.reduce((total, g) => total + g.importeCentimos, 0);
+  const movimientos: MovimientoBote[] = [
+    ...multas
+      .filter((m) => m.pagadaEn)
+      .map((m) => ({
+        id: m.id,
+        tipo: "cobro" as const,
+        fecha: m.pagadaEn!,
+        concepto: m.concepto,
+        persona: m.persona,
+        importeCentimos: m.importeCentimos,
+        nota: m.nota,
+      })),
+    ...gastos.map((g) => ({
+      ...g,
+      tipo: "gasto" as const,
+      persona: null,
+      importeCentimos: -g.importeCentimos,
+    })),
+  ].sort(
+    (a, b) =>
+      b.fecha.localeCompare(a.fecha) || a.tipo.localeCompare(b.tipo) || a.id.localeCompare(b.id),
+  );
+  return {
+    ...resumen,
+    cobradoCentimos: resumen.boteCentimos,
+    gastadoCentimos,
+    cajaCentimos: resumen.boteCentimos - gastadoCentimos,
+    movimientos,
+  };
+}
+
+export function errorGasto(entrada: {
+  concepto: string;
+  importeCentimos: number;
+  fecha: string;
+}): string | null {
+  if (!entrada.concepto.trim()) return "Escribe el motivo del gasto.";
+  if (!Number.isSafeInteger(entrada.importeCentimos) || entrada.importeCentimos <= 0)
+    return "El importe debe ser positivo y tener como máximo dos decimales.";
+  if (!esDia(entrada.fecha) || new Date(entrada.fecha).toISOString().slice(0, 10) !== entrada.fecha)
+    return "La fecha no es válida.";
+  return null;
+}

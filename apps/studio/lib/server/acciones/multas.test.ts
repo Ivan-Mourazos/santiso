@@ -1,3 +1,5 @@
+import { resumirBote } from "../../multas/modelo";
+import { eq } from "drizzle-orm";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -204,7 +206,11 @@ describe("multas del club", () => {
     });
 
     expect(
-      await acciones.guardarConcepto({ ...bus, nombre: "Non ir no autobús", importeCentimos: 2500 }),
+      await acciones.guardarConcepto({
+        ...bus,
+        nombre: "Non ir no autobús",
+        importeCentimos: 2500,
+      }),
     ).toEqual({ ok: true, datos: null });
     expect(
       await acciones.guardarConcepto({
@@ -232,5 +238,63 @@ describe("multas del club", () => {
       importeCentimos: 2500,
     });
     expect(despues.multas[0]).toMatchObject({ concepto: "Non ir no bus", importeCentimos: 2000 });
+  });
+  it("gastos: valida, crea, edita, borra y aísla temporadas", async () => {
+    const { acciones } = await entorno();
+    const base = {
+      concepto: "  Cena  ",
+      importeCentimos: 1500,
+      fecha: "2026-10-06",
+      nota: "  adelanto  ",
+    };
+    for (const importeCentimos of [0, -1, 0.5, Infinity])
+      expect(await acciones.guardarGasto({ ...base, importeCentimos })).toMatchObject({
+        ok: false,
+      });
+    expect(await acciones.guardarGasto({ ...base, concepto: " " })).toMatchObject({ ok: false });
+    expect(await acciones.guardarGasto({ ...base, fecha: "2026-02-30" })).toMatchObject({
+      ok: false,
+    });
+    expect(await acciones.guardarGasto(base)).toEqual({ ok: true, datos: null });
+    const [gasto] = (await pantalla(acciones)).gastos;
+    expect(gasto).toMatchObject({ concepto: "Cena", importeCentimos: 1500, nota: "adelanto" });
+    expect(
+      await acciones.guardarGasto({
+        ...base,
+        id: gasto!.id,
+        concepto: "Material",
+        importeCentimos: 500,
+      }),
+    ).toMatchObject({ ok: true });
+    expect((await pantalla(acciones)).gastos[0]).toMatchObject({
+      concepto: "Material",
+      importeCentimos: 500,
+    });
+    const { db } = await (await import("../db")).obtenerDb();
+    const { schema: s } = await import("@santiso/db");
+    const [otra] = await db
+      .insert(s.temporadas)
+      .values({ nombre: "2025/26", activa: false })
+      .returning();
+    const [ajeno] = await db
+      .insert(s.boteGastos)
+      .values({ ...base, temporadaId: otra!.id, importeCentimos: 9999 })
+      .returning();
+    const actual = await pantalla(acciones);
+    expect(actual.gastos).toHaveLength(1);
+    expect(resumirBote(actual.multas, actual.gastos).gastadoCentimos).toBe(500);
+    expect(await acciones.guardarGasto({ ...base, id: ajeno!.id })).toMatchObject({ ok: false });
+    expect(await acciones.borrarGasto(ajeno!.id)).toMatchObject({ ok: false });
+    expect(
+      (await db.select().from(s.boteGastos).where(eq(s.boteGastos.id, ajeno!.id)))[0]!
+        .importeCentimos,
+    ).toBe(9999);
+    expect(await acciones.borrarGasto(gasto!.id)).toMatchObject({ ok: true });
+    expect((await pantalla(acciones)).gastos).toEqual([]);
+    await db.update(s.temporadas).set({ activa: false });
+    expect(await acciones.guardarGasto(base)).toMatchObject({
+      ok: false,
+      error: "No hay temporada activa.",
+    });
   });
 });

@@ -6,6 +6,8 @@ import {
   importeDeMulta,
   opcionesDeTexto,
   resumirMultas,
+  resumirBote,
+  errorGasto,
   textoDeConcepto,
   unidadesDe,
   type Multa,
@@ -49,9 +51,9 @@ describe("normas del club", () => {
     expect(textoDeConcepto(prenda, 2, elegidas)).toBe("Non traer material: Medias 1ª, Peto");
     // La camiseta va aparte, a 5 € cada una.
     const camiseta = concepto("Non traer a camiseta");
-    expect(importeDeMulta(camiseta, unidadesDe(camiseta, 1, ["Camiseta 1ª", "Camiseta 2ª"]), false)).toBe(
-      1000,
-    );
+    expect(
+      importeDeMulta(camiseta, unidadesDe(camiseta, 1, ["Camiseta 1ª", "Camiseta 2ª"]), false),
+    ).toBe(1000);
     expect(unidadesDe(concepto("Vir en mal estado"), 5, ["x"])).toBe(1);
     expect(opcionesDeTexto(" Peto, Medias 1ª ,, Peto ")).toEqual(["Peto", "Medias 1ª"]);
   });
@@ -101,5 +103,59 @@ describe("resumen del bote", () => {
 
   it("sin multas, todo a cero", () => {
     expect(resumirMultas([])).toEqual({ boteCentimos: 0, pendienteCentimos: 0, personas: [] });
+  });
+});
+
+describe("caja y movimientos", () => {
+  const pagada: Multa = {
+    id: "m",
+    persona: "Ana",
+    personaClave: "jugador:a",
+    concepto: "Retraso",
+    importeCentimos: 500,
+    fecha: "2026-09-01",
+    pagadaEn: "2026-10-02",
+    nota: null,
+  };
+  const gasto = {
+    id: "g",
+    fecha: "2026-10-03",
+    concepto: "Cena",
+    importeCentimos: 200,
+    nota: null,
+  };
+  it("sin gastos, con gastos y caja negativa, manteniendo pendientes", () => {
+    const multas = [pagada, { ...pagada, id: "p", pagadaEn: null }];
+    expect(resumirBote(multas, [])).toMatchObject({
+      cajaCentimos: 500,
+      cobradoCentimos: 500,
+      gastadoCentimos: 0,
+      pendienteCentimos: 500,
+    });
+    expect(resumirBote(multas, [gasto])).toMatchObject({ cajaCentimos: 300, gastadoCentimos: 200 });
+    expect(resumirBote(multas, [{ ...gasto, importeCentimos: 600 }]).cajaCentimos).toBe(-100);
+    expect(resumirBote([], []).cajaCentimos).toBe(0);
+  });
+  it("ordena por fecha de cobro o gasto y sus movimientos cuadran con caja", () => {
+    const r = resumirBote(
+      [pagada, { ...pagada, id: "pendiente", pagadaEn: null }],
+      [gasto, { ...gasto, id: "viejo", fecha: "2026-10-01", importeCentimos: 100 }],
+    );
+    expect(r.movimientos.map((m) => m.id)).toEqual(["g", "m", "viejo"]);
+    expect(r.movimientos.reduce((n, m) => n + m.importeCentimos, 0)).toBe(r.cajaCentimos);
+    expect(
+      r.movimientos.filter((m) => m.tipo === "cobro").reduce((n, m) => n + m.importeCentimos, 0),
+    ).toBe(r.cobradoCentimos);
+    expect(
+      r.movimientos.filter((m) => m.tipo === "gasto").reduce((n, m) => n - m.importeCentimos, 0),
+    ).toBe(r.gastadoCentimos);
+  });
+  it("valida motivo, céntimos enteros positivos y fecha real", () => {
+    expect(errorGasto(gasto)).toBeNull();
+    expect(errorGasto({ ...gasto, concepto: "  " })).toMatch(/motivo/);
+    for (const importeCentimos of [0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])
+      expect(errorGasto({ ...gasto, importeCentimos })).toMatch(/importe/);
+    for (const fecha of ["ayer", "2026-02-30", "2026-13-01"])
+      expect(errorGasto({ ...gasto, fecha })).toMatch(/fecha/);
   });
 });

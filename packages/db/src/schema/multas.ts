@@ -66,3 +66,27 @@ export const multas = sqliteTable(
     check("multas_importe_ck", condicion(`"importe_centimos" > 0`)),
   ],
 );
+
+/** Salidas del bote de la temporada, siempre en céntimos enteros. */
+export const boteGastos = sqliteTable(
+  "bote_gastos",
+  {
+    id: id(),
+    temporadaId: text("temporada_id")
+      .notNull()
+      .references(() => temporadas.id, { onDelete: "cascade" }),
+    fecha: text("fecha").notNull(),
+    concepto: text("concepto").notNull(),
+    importeCentimos: integer("importe_centimos").notNull(),
+    nota: text("nota"),
+    ...marcasTiempo(),
+  },
+  (t) => [
+    index("bote_gastos_temporada_idx").on(t.temporadaId, t.fecha),
+    check(
+      "bote_gastos_importe_ck",
+      condicion(`typeof("importe_centimos") = 'integer' and "importe_centimos" > 0`),
+    ),
+    check("bote_gastos_concepto_ck", condicion(`length(trim("concepto")) > 0`)),
+  ],
+);

@@ -697,3 +697,25 @@ it("código equipo compatible con peticiones anteriores y caché única por equi
   await rechaza(db.update(s.rfgfAnterioresEquipo).set({ estado: "inventado" as never }));
   expect((await db.select().from(s.rfgfAnterioresEquipo))[0]!.grupos![0]!.codEquipo).toBe("5120");
 });
+
+it("gastos: importe entero positivo, motivo obligatorio, FK y cascada", async () => {
+  const { db } = conexion;
+  const [temporada] = await db.insert(s.temporadas).values({ nombre: "2026/27" }).returning();
+  if (!temporada) throw new Error("Falta temporada de prueba");
+  const base = {
+    temporadaId: temporada.id,
+    fecha: "2026-11-03",
+    concepto: "Cena",
+    importeCentimos: 1200,
+  };
+  for (const importeCentimos of [0, -1, 1.5])
+    await rechaza(db.insert(s.boteGastos).values({ ...base, importeCentimos }));
+  await rechaza(db.insert(s.boteGastos).values({ ...base, concepto: "  " }));
+  await rechaza(db.insert(s.boteGastos).values({ ...base, temporadaId: "inexistente" }));
+  const [g] = await db.insert(s.boteGastos).values(base).returning();
+  expect(g).toMatchObject({ ...base, nota: null });
+  expect(g!.creadoEn).toBeTruthy();
+  expect(g!.actualizadoEn).toBeTruthy();
+  await db.delete(s.temporadas).where(eq(s.temporadas.id, temporada.id));
+  expect(await db.select().from(s.boteGastos)).toEqual([]);
+});

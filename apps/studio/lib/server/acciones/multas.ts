@@ -7,6 +7,7 @@ import { hoyLocal } from "@/lib/jornada/semana";
 import {
   CONCEPTOS_DEL_CLUB,
   esDia,
+  errorGasto,
   GRUPOS_MULTA,
   importeDeMulta,
   OTRO_MOTIVO,
@@ -46,11 +47,14 @@ async function conceptos(db: Db): Promise<ConceptoMulta[]> {
 
 /** La primera vez, el catálogo son las normas del club; después manda lo que haya en la tabla. */
 async function sembrarConceptos(db: Db) {
-  const [alguno] = await db.select({ id: schema.multasConceptos.id }).from(schema.multasConceptos).limit(1);
+  const [alguno] = await db
+    .select({ id: schema.multasConceptos.id })
+    .from(schema.multasConceptos)
+    .limit(1);
   if (alguno) return;
-  await db.insert(schema.multasConceptos).values(
-    CONCEPTOS_DEL_CLUB.map((c, orden) => ({ ...c, clave: claveNombre(c.nombre), orden })),
-  );
+  await db
+    .insert(schema.multasConceptos)
+    .values(CONCEPTOS_DEL_CLUB.map((c, orden) => ({ ...c, clave: claveNombre(c.nombre), orden })));
 }
 
 async function multasDe(db: Db, temporadaId: string): Promise<Multa[]> {
@@ -94,13 +98,23 @@ export async function cargarPantallaMultas(): Promise<Resultado<PantallaMultas>>
       .from(schema.temporadas)
       .where(eq(schema.temporadas.activa, true));
     if (!temporada) {
-      return { temporada: null, conceptos: await conceptos(db), personas: [], multas: [] };
+      return {
+        temporada: null,
+        conceptos: await conceptos(db),
+        personas: [],
+        multas: [],
+        gastos: [],
+      };
     }
     return {
       temporada,
       conceptos: await conceptos(db),
       personas: await personas(db, temporada.id),
       multas: await multasDe(db, temporada.id),
+      gastos: await db
+        .select()
+        .from(schema.boteGastos)
+        .where(eq(schema.boteGastos.temporadaId, temporada.id)),
     };
   });
 }
@@ -238,7 +252,9 @@ export async function guardarConcepto(entrada: ConceptoEditado): Promise<Resulta
       grupo,
       importeCentimos: entrada.importeCentimos,
       porUnidad: entrada.porUnidad,
-      opciones: entrada.porUnidad ? [...new Set((entrada.opciones ?? []).map((o) => o.trim()))].filter(Boolean) : [],
+      opciones: entrada.porUnidad
+        ? [...new Set((entrada.opciones ?? []).map((o) => o.trim()))].filter(Boolean)
+        : [],
       activo: entrada.activo,
     };
     if (entrada.id) {
@@ -249,6 +265,73 @@ export async function guardarConcepto(entrada: ConceptoEditado): Promise<Resulta
     } else {
       await db.insert(schema.multasConceptos).values({ ...valores, orden: 999 });
     }
+    return null;
+  });
+}
+
+export interface GastoEditado {
+  id?: string;
+  concepto: string;
+  importeCentimos: number;
+  fecha: string;
+  nota?: string;
+}
+
+/** Alta y edición solo en la temporada activa; misma barrera de sesión que ponerMulta. */
+export async function guardarGasto(entrada: GastoEditado): Promise<Resultado<null>> {
+  const error = errorGasto(entrada);
+  if (error) return fallo(error);
+  const { db } = await obtenerDb();
+  const [temporada] = await db
+    .select()
+    .from(schema.temporadas)
+    .where(eq(schema.temporadas.activa, true));
+  if (!temporada) return fallo("No hay temporada activa.");
+  if (entrada.id) {
+    const [gasto] = await db
+      .select()
+      .from(schema.boteGastos)
+      .where(
+        and(eq(schema.boteGastos.id, entrada.id), eq(schema.boteGastos.temporadaId, temporada.id)),
+      );
+    if (!gasto) return fallo("Ese gasto no pertenece a la temporada activa.");
+  }
+  return capturar("No se pudo guardar el gasto.", async () => {
+    const valores = {
+      concepto: entrada.concepto.trim(),
+      importeCentimos: entrada.importeCentimos,
+      fecha: entrada.fecha,
+      nota: entrada.nota?.trim() || null,
+    };
+    if (entrada.id) {
+      await db
+        .update(schema.boteGastos)
+        .set(valores)
+        .where(
+          and(
+            eq(schema.boteGastos.id, entrada.id),
+            eq(schema.boteGastos.temporadaId, temporada.id),
+          ),
+        );
+    } else {
+      await db.insert(schema.boteGastos).values({ ...valores, temporadaId: temporada.id });
+    }
+    return null;
+  });
+}
+
+export async function borrarGasto(id: string): Promise<Resultado<null>> {
+  const { db } = await obtenerDb();
+  const [temporada] = await db
+    .select()
+    .from(schema.temporadas)
+    .where(eq(schema.temporadas.activa, true));
+  if (!temporada) return fallo("No hay temporada activa.");
+  const filtro = and(eq(schema.boteGastos.id, id), eq(schema.boteGastos.temporadaId, temporada.id));
+  const [gasto] = await db.select().from(schema.boteGastos).where(filtro);
+  if (!gasto) return fallo("Ese gasto no pertenece a la temporada activa.");
+  return capturar("No se pudo borrar el gasto.", async () => {
+    await db.delete(schema.boteGastos).where(filtro);
     return null;
   });
 }
