@@ -1,8 +1,12 @@
 import { expect, test } from "@playwright/test";
-test.use({ viewport: { width: 360, height: 780 } });
+test.use({
+  viewport: { width: 360, height: 780 },
+  permissions: ["clipboard-read", "clipboard-write"],
+});
 test("crear entrenamiento, pasar lista y ver multa automática en móvil", async ({
   page,
 }, testInfo) => {
+  test.setTimeout(120_000);
   // Inicializa catálogo con las normas habituales de Multas.
   await page.goto("/admin/multas");
   await expect(page.getByRole("button", { name: "Nueva multa" })).toBeVisible({ timeout: 30000 });
@@ -74,14 +78,86 @@ test("crear entrenamiento, pasar lista y ver multa automática en móvil", async
   await expect(page.getByRole("status").filter({ hasText: "Asistencia guardada" })).toContainText(
     "Asistencia guardada",
   );
+  await page.getByRole("link", { name: "Volver a entrenos" }).click();
+  // Segunda fecha: valida desplazamiento con varias columnas, incluso con la cabecera compacta.
+  await page.getByRole("button", { name: "Crear entrenamiento" }).click();
+  await page.getByLabel("Fecha", { exact: true }).fill("2026-11-03");
+  await page.getByRole("button", { name: "Guardar asistencia" }).click();
+  await expect(page.getByRole("region", { name: "Detalle del entrenamiento" })).toBeVisible();
+  await page.getByRole("link", { name: "Volver a entrenos" }).click();
   await expect(page.getByRole("list", { name: "Entrenamientos" })).toContainText("mié 4/11/2026");
-  const resumen = page.getByRole("list", { name: "Resumen de asistencia" });
-  await expect(resumen.getByRole("listitem").first()).toContainText("1 entrenamiento ");
-  await expect(resumen).toContainText(/1 presente ·/);
-  await expect(resumen).toContainText(/1 ausente ·/);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  );
+  const sinDesbordamiento = async () => {
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+  };
+  await sinDesbordamiento();
+  await expect(page.getByRole("status").filter({ hasText: "Asistencia guardada" })).toHaveCount(0, {
+    timeout: 6000,
+  });
+  const listaEntrenos = page.getByRole("list", { name: "Entrenamientos" });
+  await listaEntrenos.getByRole("button", { name: "Copiar", exact: true }).first().click();
+  await expect(page.getByRole("region", { name: "Detalle del entrenamiento" })).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("entrenos-360.png"), fullPage: true });
+  // Zona de chevron abre el detalle; Copiar, comprobado arriba, no lo abre.
+  const filaEntreno = listaEntrenos.getByRole("listitem").first();
+  await filaEntreno.click({ position: { x: (await filaEntreno.boundingBox())!.width - 8, y: 24 } });
+  const detalle = page.getByRole("region", { name: "Detalle del entrenamiento" });
+  await expect(detalle).toContainText("Pendiente");
+  await expect(
+    detalle.getByRole("heading", { name: "mié 4/11/2026 · Senior", exact: true }),
+  ).toBeVisible();
+  await expect(detalle).not.toContainText("2026-11-04");
+  await expect(detalle).toContainText("0,50 €");
+  await detalle.getByRole("button", { name: "Editar lista" }).click();
+  await page.getByLabel("Nota del entrenamiento").fill("Nota editada de prueba");
+  await page.getByRole("button", { name: "Guardar asistencia" }).click();
+  await expect(detalle).toContainText("Nota editada de prueba");
+  await expect(detalle).toContainText("Pendiente");
+  await detalle.getByRole("button", { name: "Copiar", exact: true }).click();
+  await expect(detalle.getByRole("status")).toHaveText("Copiado.");
+  const whatsapp = await page.evaluate(() => navigator.clipboard.readText());
+  expect(whatsapp).toContain("Entrenamiento mié 4/11 · Senior");
+  expect(whatsapp).toContain("Uno Aliñación Ficticio");
+  expect(whatsapp).not.toContain("€");
+  await sinDesbordamiento();
+  await expect(page.getByRole("status").filter({ hasText: "Asistencia guardada" })).toHaveCount(0, {
+    timeout: 6000,
+  });
+  await page.screenshot({ path: testInfo.outputPath("detalle-360.png"), fullPage: true });
+  await page.getByRole("tab", { name: "Asistencia", exact: true }).click();
+  await expect(page).toHaveURL(/vista=asistencia/);
+  const tabla = page.getByRole("table", { name: "Cuadrante de asistencia" });
+  await expect(tabla).toBeVisible();
+  await expect(tabla).toContainText("4/11");
+  await sinDesbordamiento();
+  await page.getByRole("button", { name: "Copiar tabla" }).click();
+  const tsv = await page.evaluate(() => navigator.clipboard.readText());
+  expect(tsv).toContain("Persona\t4/11\t3/11\tAsistencia");
+  expect(tsv).toContain("100%");
+  await page.screenshot({ path: testInfo.outputPath("asistencia-360.png"), fullPage: true });
+  const nombreFijo = tabla.getByRole("button", { name: "Uno Aliñación Ficticio", exact: true });
+  await nombreFijo.click();
+  await expect(tabla).toContainText("Tráfico de prueba");
+  await nombreFijo.click();
+  const xAntes = (await nombreFijo.boundingBox())!.x;
+  const desplazable = page.getByRole("region", { name: "Cuadrante desplazable" });
+  await desplazable.evaluate((e) => {
+    e.scrollLeft = e.scrollWidth;
+  });
+  expect(await desplazable.evaluate((e) => e.scrollLeft)).toBeGreaterThan(0);
+  expect((await nombreFijo.boundingBox())!.x).toBeCloseTo(xAntes, 0);
+  await sinDesbordamiento();
+  await desplazable.evaluate((e) => {
+    e.scrollLeft = 0;
+  });
+  await page.reload();
+  await expect(tabla).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await sinDesbordamiento();
+  await page.screenshot({ path: testInfo.outputPath("asistencia-1280.png"), fullPage: true });
+  await page.getByRole("tab", { name: "Entrenos", exact: true }).click();
+  await page.screenshot({ path: testInfo.outputPath("entrenos-1280.png"), fullPage: true });
   await page.goto("/admin/multas");
   const multa = page
     .getByRole("list", { name: "Multas" })
@@ -89,15 +165,37 @@ test("crear entrenamiento, pasar lista y ver multa automática en móvil", async
     .filter({ hasText: "Uno Aliñación Ficticio" });
   await expect(multa).toContainText("Chegar tarde (inxustificado)");
   await expect(multa).toContainText("0,50 €");
-  // Limpia la multa pendiente mediante asistencia, para aislar el flujo de Multas.
+  await multa.getByRole("button", { name: /^Cobrar a/ }).click();
+  await expect(multa).toHaveCount(0);
   await page.goto("/admin/adestramentos");
-  await page.getByRole("button", { name: "Pasar lista" }).click();
   await page
-    .getByRole("region", { name: "Uno Aliñación Ficticio", exact: true })
-    .getByRole("button", { name: "Presente", exact: true })
+    .getByRole("list", { name: "Entrenamientos" })
+    .getByRole("button", { name: /mié,? 4/ })
     .click();
-  await page.getByRole("button", { name: "Guardar asistencia" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "Asistencia guardada" })).toContainText(
-    "Asistencia guardada",
+  await expect(detalle).toContainText("Pagada");
+  await page.screenshot({ path: testInfo.outputPath("detalle-1280.png"), fullPage: true });
+  // La copia manual funciona también cuando el navegador no ofrece portapapeles.
+  await page.evaluate(() =>
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }),
   );
+  await detalle.getByRole("button", { name: "Copiar", exact: true }).click();
+  await expect(detalle.getByLabel("Texto para copiar")).toBeFocused();
+  expect(
+    await detalle
+      .getByLabel("Texto para copiar")
+      .evaluate((e: HTMLTextAreaElement) => e.selectionEnd - e.selectionStart),
+  ).toBeGreaterThan(0);
+  await page.goto("/admin/multas");
+  await page.getByRole("button", { name: "Todas", exact: true }).click();
+  await multa.getByRole("button", { name: /^Ver la multa/ }).click();
+  await page.getByRole("button", { name: /^Quitar la multa/ }).click();
+  await page.getByRole("button", { name: "Confirmar", exact: true }).click();
+  await expect(page.getByText("Multa quitada", { exact: true })).toBeVisible();
+  await page.goto("/admin/adestramentos");
+  await page
+    .getByRole("list", { name: "Entrenamientos" })
+    .getByRole("button", { name: /mié,? 4/ })
+    .click();
+  await expect(detalle).toContainText("Quitada en Multas");
+  await expect(detalle).not.toContainText("0,50 €");
 });

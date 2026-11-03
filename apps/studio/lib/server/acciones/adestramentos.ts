@@ -34,6 +34,8 @@ export async function cargarAdestramentos(categoria: Categoria) {
         .select({
           asistencia: s.asistencias,
           nombreJugador: s.jugadores.nombre,
+          apodoJugador: s.jugadores.apodo,
+          multaConcepto: s.multas.concepto,
           nombreStaff: s.staff.nombre,
           pagadaEn: s.multas.pagadaEn,
           importeCentimos: s.multas.importeCentimos,
@@ -50,14 +52,16 @@ export async function cargarAdestramentos(categoria: Categoria) {
           ),
         );
       const lista = await personas(db, temporada.id, categoria);
-      for (const { asistencia: a, nombreJugador, nombreStaff } of marcas) {
+      for (const { asistencia: a, nombreJugador, nombreStaff, apodoJugador } of marcas) {
         const clave = a.jugadorId ? `jugador:${a.jugadorId}` : `staff:${a.staffId}`;
         if (!lista.some((p) => p.clave === clave))
           lista.push({
             clave,
             id: (a.jugadorId ?? a.staffId)!,
             tipo: a.jugadorId ? "jugador" : "staff",
-            nombre: (nombreJugador ?? nombreStaff)!,
+            nombre: nombreJugador
+              ? `${nombreJugador}${apodoJugador?.trim() ? ` (${apodoJugador.trim()})` : ""}`
+              : nombreStaff!,
             detalle: "Fuera de la plantilla actual",
             adestrador: !!a.staffId,
           });

@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { useStudio } from "@/components/studio/StudioContext";
 import { claveNombre } from "@santiso/domain";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field } from "@/components/ui/foundation/Fields";
@@ -13,16 +14,8 @@ import {
   guardarAdestramento,
   borrarAdestramento,
 } from "@/lib/server/acciones/adestramentos";
+import VistaAdestramentos from "./VistaAdestramentos";
 import styles from "./Adestramentos.module.css";
-const FECHA = new Intl.DateTimeFormat("es-ES", {
-  weekday: "short",
-  day: "numeric",
-  month: "numeric",
-  year: "numeric",
-});
-const cantidad = (n: number, singular: string, plural = `${singular}s`) =>
-  `${n} ${n === 1 ? singular : plural}`;
-
 type Carga = Extract<Awaited<ReturnType<typeof cargarAdestramentos>>, { ok: true }>["datos"];
 export default function AdminAdestramentos({
   categoria,
@@ -33,7 +26,8 @@ export default function AdminAdestramentos({
 }) {
   const [datos, setDatos] = useState<Carga | null>(null);
   const [error, setError] = useState("");
-  const [mensaje, setMensaje] = useState("");
+  const { showToast } = useStudio();
+  const [detalleId, setDetalleId] = useState<string | null>(null);
   const [editor, setEditor] = useState(false);
   const [id, setId] = useState<string>();
   const [fecha, setFecha] = useState(hoyLocal);
@@ -97,7 +91,6 @@ export default function AdminAdestramentos({
         }),
     );
     setEditor(true);
-    setMensaje("");
   }
   function cambiar(clave: string, patch: Partial<Marca>) {
     setMarcas((prev) => prev.map((m) => (m.personaClave === clave ? { ...m, ...patch } : m)));
@@ -129,7 +122,8 @@ export default function AdminAdestramentos({
     if (!r.ok) setError(r.error);
     else {
       setEditor(false);
-      setMensaje(["Asistencia guardada.", ...r.datos.avisos].join(" "));
+      setDetalleId(r.datos.id);
+      showToast(["Asistencia guardada.", ...r.datos.avisos].join(" "));
       await cargar();
     }
     setOcupado(false);
@@ -139,7 +133,7 @@ export default function AdminAdestramentos({
     const r = await borrarAdestramento(entrenamientoId).catch(sinConexion);
     if (!r.ok) setError(r.error);
     else {
-      setMensaje(["Entrenamiento borrado.", ...r.datos.avisos].join(" "));
+      showToast(["Entrenamiento borrado.", ...r.datos.avisos].join(" "));
       await cargar();
     }
     setOcupado(false);
@@ -151,72 +145,28 @@ export default function AdminAdestramentos({
         <p>{datos.temporada.nombre} · Asistencia y multas automáticas</p>
       </header>
       {error && <p role="alert">{error}</p>}
-      {mensaje && <p role="status">{mensaje}</p>}
       {!editor ? (
-        <>
-          <Button onClick={() => abrir()}>Crear entrenamiento</Button>
-          <ul className={styles.lista} aria-label="Entrenamientos">
-            {datos.entrenamientos.map((e) => {
-              const filas = datos.marcas.filter((a) => a.asistencia.entrenamientoId === e.id);
-              return (
-                <li key={e.id} className={styles.fila}>
-                  <strong>
-                    {FECHA.format(new Date(`${e.fecha}T12:00:00`)).replace(",", "")}
-                    {e.hora ? ` · ${e.hora}` : ""}
-                  </strong>
-                  <p>
-                    {cantidad(
-                      filas.filter((a) => a.asistencia.estado === "presente").length,
-                      "presente",
-                    )}{" "}
-                    · {filas.filter((a) => a.asistencia.estado === "tarde").length} tarde ·{" "}
-                    {cantidad(
-                      filas.filter((a) => a.asistencia.estado === "ausente").length,
-                      "ausente",
-                    )}
-                  </p>
-                  <Button onClick={() => abrir(e)}>Pasar lista</Button>{" "}
-                  <Button
-                    disabled={ocupado}
-                    onClick={() =>
-                      showConfirm(
-                        "¿Borrar entrenamiento y sus multas pendientes? Las pagadas se conservan.",
-                        () => void borrar(e.id),
-                      )
-                    }
-                  >
-                    Borrar
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
-          {!datos.entrenamientos.length && <p>No hay entrenamientos todavía.</p>}
-          <h3>Resumen por persona</h3>
-          <p>Porcentaje de asistencia: presentes y tarde sobre entrenamientos registrados.</p>
-          <ul className={styles.lista} aria-label="Resumen de asistencia">
-            {datos.personas.map((p) => {
-              const filas = datos.marcas.filter(
-                (a) =>
-                  (a.asistencia.jugadorId
-                    ? `jugador:${a.asistencia.jugadorId}`
-                    : `staff:${a.asistencia.staffId}`) === p.clave,
-              );
-              const presentes = filas.filter((a) => a.asistencia.estado === "presente").length;
-              const tarde = filas.filter((a) => a.asistencia.estado === "tarde").length;
-              return (
-                <li className={styles.fila} key={p.clave}>
-                  <strong>{p.nombre}</strong>
-                  <p>
-                    {cantidad(filas.length, "entrenamiento")} · {cantidad(presentes, "presente")} ·{" "}
-                    {tarde} tarde · {cantidad(filas.length - presentes - tarde, "ausente")} ·{" "}
-                    {filas.length ? Math.round(((presentes + tarde) * 100) / filas.length) : 0}%
-                  </p>
-                </li>
-              );
-            })}
-          </ul>
-        </>
+        <VistaAdestramentos
+          datos={datos}
+          categoria={categoria}
+          detalleId={detalleId}
+          onDetalle={(id) => {
+            setDetalleId(id);
+            void cargar();
+          }}
+          onCrear={() => abrir()}
+          onEditar={abrir}
+          ocupado={ocupado}
+          onBorrar={(id) =>
+            showConfirm(
+              "¿Borrar entrenamiento y sus multas pendientes? Las pagadas se conservan.",
+              () => {
+                setDetalleId(null);
+                void borrar(id);
+              },
+            )
+          }
+        />
       ) : (
         <form
           aria-label="Pasar lista"
