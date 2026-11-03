@@ -18,6 +18,9 @@ import {
   opcionesDeTexto,
   OTRO_MOTIVO,
   resumirMultas,
+  resumirBote,
+  errorGasto,
+  type GastoBote,
   unidadesDe,
   type ConceptoMulta,
   type Multa,
@@ -25,6 +28,8 @@ import {
 } from "@/lib/multas/modelo";
 import {
   cambiarPagoMulta,
+  guardarGasto,
+  borrarGasto,
   cargarPantallaMultas,
   guardarConcepto,
   ponerMulta,
@@ -107,7 +112,18 @@ export default function AdminMultas({ showToast, showConfirm }: Props) {
               />
             ),
           },
-          { value: "resumen", label: "Bote", content: <Resumen multas={pantalla.multas} /> },
+          {
+            value: "resumen",
+            label: "Bote",
+            content: (
+              <Resumen
+                pantalla={pantalla}
+                recargar={cargar}
+                showToast={showToast}
+                showConfirm={showConfirm}
+              />
+            ),
+          },
           {
             value: "normas",
             label: "Normas",
@@ -169,8 +185,7 @@ function Registro({
   const activos = pantalla.conceptos.filter((c) => c.activo);
 
   const visibles = pantalla.multas.filter(
-    (m) =>
-      (!soloPendientes || !m.pagadaEn) && (!filtroPersona || m.personaClave === filtroPersona),
+    (m) => (!soloPendientes || !m.pagadaEn) && (!filtroPersona || m.personaClave === filtroPersona),
   );
   const multados = useMemo(() => {
     const vistos = new Map<string, string>();
@@ -226,10 +241,8 @@ function Registro({
         label: "Deshacer",
         onClick: () =>
           void cambiarPagoMulta(multa.id, !pagar)
-      .catch(sinConexion)
-      .then((x) =>
-            x.ok ? recargar() : showToast(x.error, "error"),
-          ),
+            .catch(sinConexion)
+            .then((x) => (x.ok ? recargar() : showToast(x.error, "error"))),
       },
     );
   }
@@ -355,12 +368,7 @@ function Registro({
               : undefined
           }
         />
-        <Field
-          label="Fecha"
-          type="date"
-          value={fecha}
-          onChange={(e) => setFecha(e.target.value)}
-        />
+        <Field label="Fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
       </div>
       <Field
         label="Nota (opcional)"
@@ -379,7 +387,12 @@ function Registro({
       <div className={styles.nueva}>
         <Button onClick={() => setAlta(true)}>Nueva multa</Button>
       </div>
-      <Dialog open={alta} onClose={() => setAlta(false)} title="Nueva multa" mobilePresentation="sheet">
+      <Dialog
+        open={alta}
+        onClose={() => setAlta(false)}
+        title="Nueva multa"
+        mobilePresentation="sheet"
+      >
         {formulario}
       </Dialog>
     </>
@@ -396,8 +409,7 @@ function Registro({
         <p className={styles.cifra}>
           <strong>{euros(pendienteCentimos)}</strong>
           <span>
-            pendiente de cobrar · {sinCobrar.length}{" "}
-            {sinCobrar.length === 1 ? "multa" : "multas"}
+            pendiente de cobrar · {sinCobrar.length} {sinCobrar.length === 1 ? "multa" : "multas"}
           </span>
         </p>
       )}
@@ -504,7 +516,9 @@ function Registro({
               </div>
               <div>
                 <dt>Estado</dt>
-                <dd>{abierta.pagadaEn ? `Pagada el ${fechaCorta(abierta.pagadaEn)}` : "Pendiente"}</dd>
+                <dd>
+                  {abierta.pagadaEn ? `Pagada el ${fechaCorta(abierta.pagadaEn)}` : "Pendiente"}
+                </dd>
               </div>
               {abierta.nota && (
                 <div>
@@ -534,20 +548,123 @@ function Registro({
 
 // ─── Bote ───────────────────────────────────────────────────────────────────────────────────
 
-function Resumen({ multas }: { multas: Multa[] }) {
-  const resumen = useMemo(() => resumirMultas(multas), [multas]);
+function Resumen({
+  pantalla,
+  recargar,
+  showToast,
+  showConfirm,
+}: {
+  pantalla: PantallaMultas;
+  recargar: () => Promise<void>;
+} & Props) {
+  const resumen = resumirBote(pantalla.multas, pantalla.gastos);
+  const [editar, setEditar] = useState<GastoBote | "nuevo" | null>(null);
+  const [borrando, setBorrando] = useState(false);
+  function borrar(gasto: GastoBote) {
+    showConfirm(
+      `¿Borrar el gasto «${gasto.concepto}» de ${euros(gasto.importeCentimos)}?`,
+      async () => {
+        setBorrando(true);
+        try {
+          const r = await borrarGasto(gasto.id).catch(sinConexion);
+          if (!r.ok) return showToast(r.error, "error");
+          await recargar();
+          showToast("Gasto borrado");
+        } finally {
+          setBorrando(false);
+        }
+      },
+    );
+  }
   return (
     <div className={styles.seccion}>
+      <p className={styles.cifra} data-negativa={resumen.cajaCentimos < 0}>
+        <strong>{euros(resumen.cajaCentimos)}</strong>
+        <span>En caja</span>
+      </p>
+      {resumen.cajaCentimos < 0 && (
+        <p className={styles.negativo} role="status">
+          Se ha gastado más de lo cobrado
+        </p>
+      )}
       <div className={styles.totales}>
         <div>
-          <strong>{euros(resumen.boteCentimos)}</strong>
-          <span>en el bote (cobrado)</span>
+          <strong>{euros(resumen.cobradoCentimos)}</strong>
+          <span>Cobrado</span>
+        </div>
+        <div>
+          <strong>{euros(resumen.gastadoCentimos)}</strong>
+          <span>Gastado</span>
         </div>
         <div>
           <strong>{euros(resumen.pendienteCentimos)}</strong>
-          <span>pendiente de cobrar</span>
+          <span>Pendiente de cobrar</span>
         </div>
       </div>
+      <Button onClick={() => setEditar("nuevo")}>Anotar gasto</Button>
+      <Dialog
+        open={editar !== null}
+        onClose={() => setEditar(null)}
+        title={editar === "nuevo" ? "Anotar gasto" : "Editar gasto"}
+        mobilePresentation="sheet"
+      >
+        {editar !== null && (
+          <FormularioGasto
+            key={editar === "nuevo" ? "nuevo" : editar.id}
+            gasto={editar === "nuevo" ? null : editar}
+            guardar={async () => {
+              await recargar();
+              setEditar(null);
+              showToast("Gasto guardado");
+            }}
+          />
+        )}
+      </Dialog>
+      <h4 className={styles.grupo}>Movimientos</h4>
+      {resumen.movimientos.length === 0 ? (
+        <p className={styles.vacio}>Todavía no hay movimientos esta temporada.</p>
+      ) : (
+        <ul className={styles.movimientos} aria-label="Movimientos">
+          {resumen.movimientos.map((m) => (
+            <li key={`${m.tipo}:${m.id}`}>
+              <div className={styles.movimientoTexto}>
+                <strong>{m.tipo === "cobro" ? m.persona : m.concepto}</strong>
+                <span>
+                  {m.fecha.split("-").reverse().join("/")} ·{" "}
+                  {m.tipo === "cobro" ? `Cobro · ${m.concepto}` : "Gasto"}
+                </span>
+                {m.nota && <span>{m.nota}</span>}
+              </div>
+              <strong className={m.tipo === "gasto" ? styles.negativo : undefined}>
+                {m.tipo === "cobro" ? "+" : ""}
+                {euros(m.importeCentimos)}
+              </strong>
+              {m.tipo === "gasto" && (
+                <div className={styles.movimientoAcciones}>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setEditar(pantalla.gastos.find((g) => g.id === m.id)!)}
+                    aria-label={`Editar gasto: ${m.concepto}`}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    disabled={borrando}
+                    onClick={() => borrar(pantalla.gastos.find((g) => g.id === m.id)!)}
+                    aria-label={`Borrar gasto: ${m.concepto}`}
+                  >
+                    Borrar
+                  </Button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <h4 className={styles.grupo}>Por persona</h4>
       {resumen.personas.length === 0 ? (
         <p className={styles.vacio}>Todavía no hay multas esta temporada.</p>
       ) : (
@@ -579,6 +696,63 @@ function Resumen({ multas }: { multas: Multa[] }) {
 }
 
 // ─── Normas: catálogo de conceptos ──────────────────────────────────────────────────────────
+
+function FormularioGasto({
+  gasto,
+  guardar,
+}: {
+  gasto: GastoBote | null;
+  guardar: () => Promise<void>;
+}) {
+  const [importe, setImporte] = useState(gasto ? sinCeros(gasto.importeCentimos) : "");
+  const [concepto, setConcepto] = useState(gasto?.concepto ?? "");
+  const [fecha, setFecha] = useState(gasto?.fecha ?? hoyLocal());
+  const [nota, setNota] = useState(gasto?.nota ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const [ocupada, setOcupada] = useState(false);
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    const entrada = {
+      id: gasto?.id,
+      importeCentimos: centimosDe(importe) ?? 0,
+      concepto,
+      fecha,
+      nota,
+    };
+    const fallo = errorGasto(entrada);
+    if (fallo) return setError(fallo);
+    setError(null);
+    setOcupada(true);
+    try {
+      const r = await guardarGasto(entrada).catch(sinConexion);
+      if (!r.ok) return setError(r.error);
+      await guardar();
+    } finally {
+      setOcupada(false);
+    }
+  }
+  return (
+    <form className={styles.alta} aria-label="Gasto del bote" onSubmit={(e) => void enviar(e)}>
+      <Field
+        label="Importe (€)"
+        inputMode="decimal"
+        value={importe}
+        onChange={(e) => setImporte(e.target.value)}
+      />
+      <Field label="Motivo" value={concepto} onChange={(e) => setConcepto(e.target.value)} />
+      <Field label="Fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+      <Field label="Nota (opcional)" value={nota} onChange={(e) => setNota(e.target.value)} />
+      {error && (
+        <p className={styles.negativo} role="alert">
+          {error}
+        </p>
+      )}
+      <Button type="submit" pending={ocupada} pendingLabel="Guardando…">
+        Guardar gasto
+      </Button>
+    </form>
+  );
+}
 
 function Normas({
   conceptos,
