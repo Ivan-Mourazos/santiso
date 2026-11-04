@@ -99,9 +99,15 @@ export function parsearFicha(
     exigir(ml, "Marcador local"),
     exigir(mv, "Marcador visitante"),
   ];
+  // Tras una eliminatoria empatada, la tanda va en «TIROS PENALES», entre los goles y el estadio:
+  // sus líneas acaban en «(GOL)» o «(FALLADO)» y no son goles del partido.
+  const tituloPenales = centro.find(
+    (i) => /^TIROS PENALES$/iu.test(i.texto) && i.y > tituloGoles.y && i.y < estadio.y,
+  );
+  const finGoles = tituloPenales?.y ?? estadio.y;
   let anterior: [number, number] = [0, 0];
   const goles = unirMinutoSuelto(
-    filas(centro.filter((i) => i.y > tituloGoles.y + 0.0025 && i.y < estadio.y - 0.0025)),
+    filas(centro.filter((i) => i.y > tituloGoles.y + 0.0025 && i.y < finGoles - 0.0025)),
   ).map((l) => {
     const m = exigir(/^(\d+) - (\d+) (.+)$/.exec(l), "Fila de gol incompleta");
     const actual: [number, number] = [Number(m[1]), Number(m[2])];

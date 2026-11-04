@@ -34,6 +34,19 @@ describe("fichas de veteranos por coordenadas", () => {
     );
     expect(parsearFicha(items).competicion).toBe("COPA DO SAR");
   });
+  it("la tanda de penaltis de una eliminatoria no cuenta como goles del partido", () => {
+    const goles = j1.find((i) => i.texto === "GOLES")!;
+    const x = goles.x;
+    const tanda = [
+      { texto: "TIROS PENALES", x, y: 0.338 },
+      { texto: "1 - 0 PENALTI UN, XAN (GOL)", x, y: 0.346 },
+      { texto: "1 - 0 PENALTI DOUS, BRAIS (FALLADO)", x, y: 0.354 },
+    ];
+    const f = parsearFicha([...j1, ...tanda]);
+    expect(f.marcador).toEqual([3, 2]);
+    expect(f.goles).toHaveLength(5);
+    expect(f.goles.some((g) => /PENALTI/u.test(g.autor))).toBe(false);
+  });
   it("conserva goles repetidos y no deduce penaltis", () => {
     const f = parsearFicha(j2);
     expect(f.goles.filter((g) => g.autor === f.goles[2]?.autor)).toHaveLength(4);
