@@ -79,6 +79,22 @@ export interface ResumenRfgf {
 /** Un acta suele cerrarse el mismo día; pasado este plazo ya solo se mira una vez al día. */
 const DIAS_RECIENTES = 10;
 
+/** Jornadas con algún partido con marcador jugado en los últimos `dias` días. */
+export function jornadasJugadasRecientes(
+  partidos: readonly PartidoLocal[],
+  ahora: string,
+  dias: number,
+): number[] {
+  const desde = horaLocal(new Date(new Date(`${ahora}:00`).getTime() - dias * 86_400_000));
+  return [
+    ...new Set(
+      partidos
+        .filter((p) => p.conMarcador && p.fecha && p.fecha <= ahora && p.fecha >= desde)
+        .map((p) => p.jornada),
+    ),
+  ].sort((a, b) => b - a);
+}
+
 /** Carpeta donde queda el PDF de un acta que hay que revisar a mano. */
 export const DIR_RFGF = path.join(DIR_DATOS, "rfgf");
 
@@ -209,6 +225,15 @@ export async function tratarJornada(
       if (!guardado.ok) throw new Error(guardado.error);
       resumen.resultados += 1;
       cambios += 1;
+      if (partido.conMarcador) {
+        // La federación corrigió un resultado ya guardado (se apuntó con el acta aún abierta):
+        // sus goles y tarjetas se vuelven a traer en esta misma pasada. El acta del Santiso, si
+        // ya estaba guardada, no se toca.
+        await db.delete(schema.rfgfActas).where(eq(schema.rfgfActas.partidoId, partido.id));
+        resumen.horarios.unshift(
+          `J${jornada} ${partido.local} – ${partido.visitante}: resultado corregido a ${local}–${visitante}`,
+        );
+      }
       // Recién importado, un partido ya jugado no tiene ni día ni campo: sin ellos no se buscaría
       // su acta. Solo se rellena; lo que ya tuviera lo pone al día la pasada de horarios.
       if (!partido.fecha) {
@@ -560,10 +585,23 @@ async function sincronizarCompeticionSinCandado(
         )
       : []),
   ]);
+  // Con la misma cadencia, lo jugado en los últimos días se contrasta con la publicación
+  // oficial: un resultado guardado con el acta aún abierta se corrige solo.
+  const corregir = new Set(
+    mirarHorarios ? jornadasJugadasRecientes(partidos, horaLocal(ahora), DIAS_RECIENTES) : [],
+  );
+  for (const jornada of corregir) jornadasPdf.add(jornada);
   let cambiosPdf = 0;
   for (const jornada of jornadasPdf) {
     try {
-      cambiosPdf += await tratarJornada(jornada, grupo, partidos, descargador, resumen);
+      cambiosPdf += await tratarJornada(
+        jornada,
+        grupo,
+        partidos,
+        descargador,
+        resumen,
+        corregir.has(jornada),
+      );
     } catch (error) {
       const detalle = error instanceof Error ? error.message : "fallo desconocido";
       resumen.errores.push(`Jornada ${jornada} (PDF): ${detalle}`);

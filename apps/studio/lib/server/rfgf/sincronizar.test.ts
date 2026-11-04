@@ -411,7 +411,8 @@ it("pone al día día, hora y campo de un partido por jugar y lo cuenta en el re
     cruce("20-09-2025", "16:30", "Municipal de Proba - Hierba Artificial"),
   );
   const resumen = await sincronizarCompeticion(competicionId, descargador, AHORA);
-  expect(pedidas.jornadas).toEqual([2]);
+  // La 2 por sus horarios; la 1, recién jugada, se contrasta con la oficial.
+  expect(pedidas.jornadas).toEqual([2, 1]);
   expect(resumen?.errores).toEqual([]);
   expect(resumen?.horarios).toEqual([
     "J2 Equipo Visitante – Equipo Local: 20/09 16:30 · Municipal de Proba",
@@ -477,7 +478,7 @@ it("los horarios no se vuelven a pedir hasta pasadas unas horas", async () => {
   const { competicionId, sincronizarCompeticion } = await conPartidoPorJugar();
   const primera = descargadorDe("", cruce("21-09-2025", "17:00", "Campo Pendiente de asignar"));
   await sincronizarCompeticion(competicionId, primera.descargador, AHORA);
-  expect(primera.pedidas.jornadas).toEqual([2]);
+  expect(primera.pedidas.jornadas).toEqual([2, 1]);
 
   const enseguida = descargadorDe("");
   await sincronizarCompeticion(
@@ -493,7 +494,7 @@ it("los horarios no se vuelven a pedir hasta pasadas unas horas", async () => {
     luego.descargador,
     new Date(AHORA.getTime() + 3 * 3_600_000),
   );
-  expect(luego.pedidas.jornadas).toEqual([2]);
+  expect(luego.pedidas.jornadas).toEqual([2, 1]);
 });
 
 it("un PDF de jornada que no se sabe leer queda como error y no toca nada", async () => {
@@ -505,6 +506,7 @@ it("un PDF de jornada que no se sabe leer queda como error y no toca nada", asyn
   const resumen = await sincronizarCompeticion(competicionId, roto, AHORA);
   expect(resumen?.errores).toEqual([
     "Jornada 2 (PDF): El PDF no es de una jornada de la federación.",
+    "Jornada 1 (PDF): El PDF no es de una jornada de la federación.",
   ]);
   expect((await leerPartido()).fecha).toBe("2025-09-21T17:00");
 });
@@ -581,14 +583,14 @@ it("guarda el árbitro de un partido ya jugado, aunque ya tuviera marcador", asy
   expect(pedidas.jornadas.sort()).toEqual([1, 2]);
   const [partido] = await db.select().from(s.partidos).where(eq(s.partidos.id, partidoId));
   expect(partido).toMatchObject({ arbitro: "Nome Apelido Apelido", golesLocal: 1 });
-  // Ya lo tiene: la jornada 1 no se vuelve a pedir.
+  // Ya lo tiene: la jornada 1 solo vuelve a pedirse para contrastar su resultado.
   const despues = descargadorDe("");
   await sincronizarCompeticion(
     competicionId,
     despues.descargador,
     new Date(AHORA.getTime() + 4 * 3_600_000),
   );
-  expect(despues.pedidas.jornadas).toEqual([2]);
+  expect(despues.pedidas.jornadas).toEqual([2, 1]);
 });
 
 it("compara la clasificación con la oficial y deja dicho en qué no cuadra", async () => {
@@ -761,4 +763,56 @@ it("en una copa añade los cruces que se van sorteando, con su equipo nuevo", as
   expect(nuevo).toBeDefined();
   const segunda = await sincronizarCompeticion(competicionId, descargador, AHORA, false, true);
   expect(segunda?.crucesNuevos).toBe(0);
+});
+
+it("corrige solo un resultado ya guardado si la federación publica otro y vuelve a por su acta", async () => {
+  const { s, db, competicionId, porJugarId, sincronizarCompeticion, leerPartido } =
+    await conPartidoPorJugar();
+  // Guardado el mismo día con el acta aún abierta: 1–1, con sus eventos ya apuntados.
+  await db
+    .update(s.partidos)
+    .set({ golesLocal: 1, golesVisitante: 1, estado: "finalizado" })
+    .where(eq(s.partidos.id, porJugarId));
+  await db.insert(s.rfgfActas).values({
+    codActa: "777",
+    competicionId,
+    partidoId: porJugarId,
+    estado: "resultado",
+    detalle: "1–1",
+    eventos: true,
+  });
+  const { descargador, pedidas } = descargadorDe("", [
+    "EQUIPO VISITANTE",
+    "1 - 2",
+    "21-09-2025",
+    "17:00",
+    "EQUIPO LOCAL",
+    "Campo: Campo Nuevo - Hierba Artificial",
+  ]);
+  const resumen = await sincronizarCompeticion(competicionId, descargador, new Date(2025, 8, 22, 10));
+  expect(await leerPartido()).toMatchObject({ golesLocal: 1, golesVisitante: 2 });
+  expect(resumen?.horarios.join(" ")).toContain("resultado corregido a 1–2");
+  expect(pedidas.jornadas).toContain(2);
+  const apunte = await db.select().from(s.rfgfActas).where(eq(s.rfgfActas.codActa, "777"));
+  expect(apunte).toEqual([]);
+});
+
+it("sin novedad en la federación, un resultado guardado no se toca ni se repite su acta", async () => {
+  const { s, db, competicionId, porJugarId, sincronizarCompeticion, leerPartido } =
+    await conPartidoPorJugar();
+  await db
+    .update(s.partidos)
+    .set({ golesLocal: 1, golesVisitante: 2, estado: "finalizado" })
+    .where(eq(s.partidos.id, porJugarId));
+  const { descargador } = descargadorDe("", [
+    "EQUIPO VISITANTE",
+    "1 - 2",
+    "21-09-2025",
+    "17:00",
+    "EQUIPO LOCAL",
+    "Campo: Campo Nuevo - Hierba Artificial",
+  ]);
+  const resumen = await sincronizarCompeticion(competicionId, descargador, new Date(2025, 8, 22, 10));
+  expect(await leerPartido()).toMatchObject({ golesLocal: 1, golesVisitante: 2 });
+  expect(resumen?.horarios.join(" ")).not.toContain("corregido");
 });

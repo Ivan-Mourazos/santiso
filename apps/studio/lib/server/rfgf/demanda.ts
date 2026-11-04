@@ -296,7 +296,8 @@ async function motivosDeComparacion(
           `${cruce}: jugado sin acta completa o sin eventos en el Studio; esto no acredita la causa de la diferencia de clasificación.`,
         );
     }
-    return `${diferencia} ${conocidos.length ? conocidos.join(" ") : "No hay un motivo conocido para esta diferencia."}`;
+    // La diferencia ya se enseña al lado: aquí solo va su explicación.
+    return conocidos.length ? conocidos.join(" ") : "No hay un motivo conocido para esta diferencia.";
   });
 }
 
