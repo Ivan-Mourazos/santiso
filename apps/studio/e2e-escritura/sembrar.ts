@@ -729,6 +729,17 @@ async function sembrar() {
       rojas: 0,
     },
   });
+  // Archivo: fase posterior, pendiente y clasificación no publicada.
+  await db.insert(schema.rfgfGruposHistoricos).values([
+    { ...grupoHistorico, codGrupo: "9012", temporada: "2023-2024", grupo: "Fase de ascenso" },
+    {
+      ...grupoHistorico,
+      codGrupo: "9013",
+      temporada: "2023-2024",
+      grupo: "",
+      competicion: "Liga sin tabla",
+    },
+  ]);
   // Clasificaciones históricas, sin descargar actas ni estadísticas de rivales.
   await db.insert(schema.rfgfGruposHistoricos).values([
     {
@@ -761,6 +772,8 @@ async function sembrar() {
   }));
   await db.insert(schema.rfgfHistoricoClasificaciones).values([
     { codGrupo: "9001", formato: "liga", jornada: 26, filas: filasClasificacion, estado: "leido" },
+    { codGrupo: "9012", formato: "liga", jornada: 26, filas: filasClasificacion, estado: "leido" },
+    { codGrupo: "9013", estado: "sin_datos" },
     { codGrupo: "9010", formato: "copa", jornada: 2, ronda: "Octavos", estado: "leido" },
     { codGrupo: "9011", formato: "liga", jornada: 22, filas: filasClasificacion, estado: "leido" },
   ]);

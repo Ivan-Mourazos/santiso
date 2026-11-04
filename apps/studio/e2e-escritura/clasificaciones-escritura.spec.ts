@@ -1,35 +1,99 @@
 import { expect, test } from "@playwright/test";
-test("clasificaciones históricas a 360 px: liga, copa, pendientes y categoría", async ({
-  page,
-}, testInfo) => {
-  await page.setViewportSize({ width: 360, height: 780 });
-  await page.goto("/admin/archivo?categoria=Senior");
-  const seccion = page.getByRole("region", { name: "Clasificaciones", exact: true });
-  await expect(seccion).toBeVisible({ timeout: 30000 });
-  await expect(seccion).toContainText("2023-2024");
-  await expect(seccion).toContainText(
-    "6.º · 34 puntos · PJ 26 · G 10 · E 4 · P 12 · GF 31 · GC 35",
-  );
-  await expect(seccion).toContainText("Copa do Sar: llegó a Octavos");
-  await expect(seccion).toContainText("Buscando…");
-  await expect(seccion).not.toContainText("Liga Veterana Ficticia");
-  await seccion.locator("summary").filter({ hasText: "TERCEIRA FICTICIA" }).click();
-  const tabla = seccion.getByRole("table");
-  await expect(tabla).toBeVisible();
-  await expect(tabla.locator("tbody tr")).toHaveCount(12);
-  await expect(tabla.locator('tr[data-propio="true"]')).toContainText("U.D. Santiso");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
-  await seccion.locator("summary").filter({ hasText: "TERCEIRA FICTICIA" }).click();
-  await page.evaluate(() => {
-    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-    window.scrollTo(0, 0);
+
+for (const ancho of [360, 1280]) {
+  test(`archivo ordenado a ${ancho} px: trayectoria, temporadas y detalle`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: ancho, height: 780 });
+    // Ninguna petición del navegador sale del servidor de prueba.
+    await page.route("**/*", (route) =>
+      new URL(route.request().url()).hostname === "127.0.0.1" ? route.continue() : route.abort(),
+    );
+    await page.goto("/admin/archivo?categoria=Senior");
+    const trayectoria = page.getByRole("region", { name: "Trayectoria", exact: true });
+    await expect(trayectoria).toBeVisible({ timeout: 30000 });
+    const filas = ancho < 600 ? trayectoria.getByRole("listitem") : trayectoria.locator("tbody tr");
+    await expect(filas).toHaveCount(2);
+    await expect(filas.first()).toContainText(ancho < 600 ? "2023-24" : "2023-2024");
+    if (ancho < 600) {
+      await expect(filas.first()).toBeVisible();
+      await expect(filas.first()).toContainText("6.º · 34 pts · Copa: Octavos");
+      await expect(trayectoria.getByRole("table")).not.toBeVisible();
+    }
+    await expect(filas.first()).toContainText("Fase de ascenso");
+    await expect(filas.first()).toContainText("6.º");
+    await expect(filas.first()).toContainText("34");
+    await expect(filas.first()).toContainText("Octavos");
+    await expect(filas.last()).toContainText("Buscando…");
+    const temporada = page
+      .locator("details")
+      .filter({ has: page.locator(":scope > summary", { hasText: "2023-2024" }) });
+    const anterior = page
+      .locator("details")
+      .filter({ has: page.locator(":scope > summary", { hasText: "2022-2023" }) });
+    await expect(temporada).toHaveAttribute("open", "");
+    await expect(anterior).not.toHaveAttribute("open");
+    await expect(temporada).toContainText("La federación no publica clasificación");
+    await expect(temporada).not.toContainText("jugadores con cifras");
+    await expect(temporada).not.toContainText("Todos traídos");
+    const detalles = temporada.locator("details");
+    await expect(detalles.last().locator("summary")).toContainText("Copa do Sar");
+    await expect(detalles.nth(2).locator("summary")).toContainText("Liga sin tabla");
+    const liga = detalles.filter({ hasText: "Grupo ficticio 1" });
+    await expect(liga.locator("summary")).toContainText(
+      "6.º · 34 puntos · PJ 26 · G 10 · E 4 · P 12 · GF 31 · GC 35",
+    );
+    await liga.locator("summary").click();
+    const tabla = liga.getByRole("table");
+    await expect(tabla).toBeVisible();
+    await expect(tabla.locator("tbody tr")).toHaveCount(12);
+    await expect(tabla.getByRole("columnheader")).toHaveText(
+      ancho < 600
+        ? ["Pos", "Equipo", "Pts", "PJ", "DG"]
+        : ["Pos", "Equipo", "Pts", "PJ", "DG", "G", "E", "P", "GF", "GC"],
+    );
+    await expect(tabla.locator('tr[data-propio="true"] td').nth(3)).toHaveText("-4");
+    const caja = liga.getByRole("region", { name: /^Tabla final/ });
+    expect(await caja.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await expect(tabla.locator('tr[data-propio="true"]')).toContainText("U.D. Santiso");
+    await expect(liga.getByText("U.D. Santiso – Antigo Rival Ficticio")).toBeVisible();
+    await expect(liga.getByRole("button", { name: /^Traer/ })).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      ancho,
+    );
+    await page.screenshot({
+      path: testInfo.outputPath(`archivo-detalle-${ancho}.png`),
+      fullPage: true,
+    });
+    await liga.locator("summary").click();
+    const copa = detalles.filter({ hasText: "Copa do Sar" });
+    await expect(copa.locator("summary")).toContainText("Llegó a Octavos");
+    await expect(copa.getByRole("button")).not.toBeVisible();
+    await copa.locator("summary").click();
+    await expect(
+      copa.getByRole("button", { name: "Traer los partidos de esta temporada", exact: true }),
+    ).toHaveCount(1);
+    await expect(copa.getByRole("button")).toBeVisible();
+    await copa.locator("summary").click();
+    await temporada.locator(":scope > summary").click();
+    await expect(detalles.first().locator("summary")).not.toBeVisible();
+    await temporada.locator(":scope > summary").click();
+    await anterior.locator(":scope > summary").click();
+    await anterior.locator("details > summary").click();
+    await expect(
+      anterior.getByRole("button", { name: "Traer los partidos de esta temporada", exact: true }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      ancho,
+    );
+    await anterior.locator(":scope > summary").click();
+    await page.evaluate(() => {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      window.scrollTo(0, 0);
+    });
+    await page.screenshot({ path: testInfo.outputPath(`archivo-${ancho}.png`), fullPage: true });
+    await page.goto("/admin/archivo?categoria=Veteranos");
+    await expect(trayectoria).toContainText("Liga Veterana Ficticia");
+    await expect(trayectoria).not.toContainText("Copa do Sar");
   });
-  await page.screenshot({ path: testInfo.outputPath("clasificaciones-360.png"), fullPage: true });
-  // El botón manual de partidos sigue en Archivo, sin pedir nada a la federación.
-  await expect(
-    page.getByRole("button", { name: "Traer partidos", exact: true }).first(),
-  ).toBeVisible();
-  await page.goto("/admin/archivo?categoria=Veteranos");
-  await expect(seccion).toContainText("Liga Veterana Ficticia");
-  await expect(seccion).not.toContainText("Copa do Sar");
-});
+}

@@ -1,5 +1,12 @@
 "use client";
-import ClasificacionesHistoricas from "./ClasificacionesHistoricas";
+import ClasificacionesHistoricas, { TablaFinal } from "./ClasificacionesHistoricas";
+import {
+  esCopa,
+  estadoClasificacion,
+  filaSantiso,
+  nombreCompeticion,
+  ordenarCompeticiones,
+} from "@/lib/archivo-historico";
 import { sinConexion } from "@/lib/resultado";
 import { useCallback, useEffect, useState } from "react";
 import { useStudio } from "@/components/studio/StudioContext";
@@ -43,7 +50,8 @@ export default function Archivo({ categoria }: { categoria: string }) {
   if (!archivo) return <LoadingState title="Cargando el archivo…" />;
   const temporadas = archivo
     .map((t) => ({ ...t, grupos: t.grupos.filter((g) => g.categoria === categoria) }))
-    .filter((t) => t.grupos.length > 0);
+    .filter((t) => t.grupos.length > 0)
+    .sort((a, b) => b.temporada.localeCompare(a.temporada));
   if (temporadas.length === 0)
     return (
       <EmptyState
@@ -55,7 +63,7 @@ export default function Archivo({ categoria }: { categoria: string }) {
 
   async function pedir(g: GrupoDeArchivo) {
     setPidiendo(g.codGrupo);
-    const r = await pedirPartidosHistoricosRfgf(g.codGrupo);
+    const r = await pedirPartidosHistoricosRfgf(g.codGrupo).catch(sinConexion);
     setPidiendo(null);
     if (!r.ok) return showToast(r.error, "error");
     showToast("Pedidos. Llegarán poco a poco, unas horas por temporada.");
@@ -74,76 +82,77 @@ export default function Archivo({ categoria }: { categoria: string }) {
             </small>
           </summary>
           <div className={styles.temporadaContenido}>
-            {t.grupos.map((g) => (
-              <section key={g.codGrupo} className={styles.grupoArchivo} aria-label={g.competicion}>
-                <h4>
-                  {g.competicion}
-                  <small>
-                    {g.grupo} · {g.conCifras} de {g.jugadores} jugadores con cifras
-                    {/* Sin pedir no aporta nada: abajo ya sale el botón o «Sin partidos». */}
-                    {g.archivo.estado !== "no_pedido" && ` · partidos: ${g.archivo.texto}`}
-                  </small>
-                </h4>
-                {g.partidos.length > 0 ? (
-                  <ul className={styles.lista}>
-                    {g.partidos.map((p) => (
-                      <li key={p.id}>
-                        <span>
-                          {p.local} – {p.visitante}
-                          <small>
-                            J{p.jornada} · {fechaCorta(p.fecha ?? p.fechaNominal)}
-                            {p.enlaceActa && (
-                              <>
-                                {" · "}
-                                <a
-                                  className={styles.chipActa}
-                                  href={p.enlaceActa}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  Acta
-                                </a>
-                              </>
-                            )}
-                          </small>
-                        </span>
-                        <span className={styles.marcador}>
-                          {p.golesLocal ?? "–"}–{p.golesVisitante ?? "–"}
-                          <Resultado r={p.resultado} />
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : admin && g.archivo.estado === "no_pedido" ? (
-                  <div className={styles.acciones}>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      pending={pidiendo === g.codGrupo}
-                      pendingLabel="Pidiendo…"
-                      onClick={() => void pedir(g)}
-                    >
-                      Traer partidos
-                    </Button>
+            {ordenarCompeticiones(t.grupos).map((g) => {
+              const propio = filaSantiso(g);
+              const c = g.clasificacion;
+              const nombre = nombreCompeticion(g, t.grupos);
+              return (
+                <details key={g.codGrupo} className={styles.clasificacionHistorica}>
+                  <summary>
+                    <strong>{nombre}</strong>
+                    <span>
+                      {esCopa(g) && c?.estado === "leido" && c.ronda
+                        ? `Llegó a ${c.ronda}`
+                        : propio
+                          ? `${propio.posicion}.º · ${propio.puntos} puntos · PJ ${propio.jugados} · G ${propio.ganados} · E ${propio.empatados} · P ${propio.perdidos} · GF ${propio.golesFavor} · GC ${propio.golesContra}`
+                          : estadoClasificacion(g)}
+                    </span>
+                  </summary>
+                  <div className={styles.detalleArchivo}>
+                    {!esCopa(g) && c?.estado === "leido" && c.filas?.length ? (
+                      <TablaFinal grupo={g} nombre={nombre} />
+                    ) : null}
+                    {g.partidos.length > 0 ? (
+                      <ul className={styles.lista}>
+                        {g.partidos.map((p) => (
+                          <li key={p.id}>
+                            <span>
+                              {p.local} – {p.visitante}
+                              <small>
+                                J{p.jornada} · {fechaCorta(p.fecha ?? p.fechaNominal)}
+                                {p.enlaceActa && (
+                                  <>
+                                    {" · "}
+                                    <a
+                                      className={styles.chipActa}
+                                      href={p.enlaceActa}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                    >
+                                      Acta
+                                    </a>
+                                  </>
+                                )}
+                              </small>
+                            </span>
+                            <span className={styles.marcador}>
+                              {p.golesLocal ?? "–"}–{p.golesVisitante ?? "–"}
+                              <Resultado r={p.resultado} />
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className={styles.nota}>Sin partidos traídos todavía.</p>
+                    )}
+                    {admin && g.archivo.estado === "no_pedido" && (
+                      <div className={styles.acciones}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          pending={pidiendo === g.codGrupo}
+                          disabled={pidiendo !== null}
+                          pendingLabel="Pidiendo…"
+                          onClick={() => void pedir(g)}
+                        >
+                          Traer los partidos de esta temporada
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <p className={styles.nota}>Sin partidos traídos todavía.</p>
-                )}
-                {admin && g.partidos.length > 0 && g.archivo.estado === "no_pedido" && (
-                  <div className={styles.acciones}>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      pending={pidiendo === g.codGrupo}
-                      pendingLabel="Pidiendo…"
-                      onClick={() => void pedir(g)}
-                    >
-                      Traer partidos
-                    </Button>
-                  </div>
-                )}
-              </section>
-            ))}
+                </details>
+              );
+            })}
           </div>
         </details>
       ))}
