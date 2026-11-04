@@ -178,6 +178,14 @@
   max-width: 24rem;
 }
 .toast {
+  /* Es un `popover`: fuera los estilos que le pone el navegador. */
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  overflow: visible;
   position: fixed;
   bottom: 1rem;
   right: 1rem;

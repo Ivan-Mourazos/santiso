@@ -8,20 +8,37 @@
 }
 /* Vacío no ocupa ni tapa nada; solo el aviso visible recibe toques. */
 .root:has(.close) {
+  --tono: var(--ui-success);
   pointer-events: auto;
-  padding: var(--ui-space-1) var(--ui-space-1) var(--ui-space-1) var(--ui-space-4);
-  background: var(--ui-control);
-  /* Aviso con borde fino de su color y fondo tintado, sin franja lateral. */
-  border: 1px solid color-mix(in srgb, var(--ui-success) 45%, transparent);
-  background-color: color-mix(in srgb, var(--ui-success) 10%, transparent);
+  padding: var(--ui-space-1) var(--ui-space-1) var(--ui-space-1) var(--ui-space-3);
+  /* Fondo sólido: sobre una tabla o una lista el texto tiene que leerse igual. */
+  background-color: color-mix(in srgb, var(--tono) 14%, var(--ui-surface));
+  border: 1px solid color-mix(in srgb, var(--tono) 55%, transparent);
   box-shadow: var(--ui-shadow);
   animation: entrar var(--ui-duration-lg) var(--ui-ease-enter);
 }
+.root[data-kind="error"]:has(.close) {
+  --tono: var(--ui-danger);
+}
+/* Un icono además del color: correcto o problema se distingue sin fijarse en el tono. */
+.root:has(.close)::before {
+  content: "✓";
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: var(--tono);
+  color: var(--ui-bg);
+  font-size: var(--ui-text-sm);
+  font-weight: 900;
+}
+.root[data-kind="error"]:has(.close)::before {
+  content: "!";
+}
 .root:has(.close) .message {
   padding-block: var(--ui-space-2);
-}
-.root[data-kind="error"]:has(.close) {
-  border-left-color: var(--ui-danger);
 }
 .message {
   min-width: 0;

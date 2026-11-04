@@ -97,6 +97,16 @@ export function StudioProvider({
     void accion();
   }, [confirmation]);
   const [pending, setPending] = useState(false);
+  // Una ventana abierta con `showModal` está en la capa superior y tapa todo lo demás. El aviso
+  // también se sube a esa capa, y se vuelve a subir cada vez, para quedar por encima de la
+  // última ventana abierta.
+  const capaAviso = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const capa = capaAviso.current;
+    if (!capa || typeof capa.showPopover !== "function") return;
+    if (capa.matches(":popover-open")) capa.hidePopover();
+    if (toast) capa.showPopover();
+  }, [toast]);
   const showToast = useCallback(
     (
       message: string,
@@ -106,8 +116,13 @@ export function StudioProvider({
     [],
   );
   useEffect(() => {
-    if (!toast || toast.type === "error") return;
-    const reloj = setTimeout(() => setToast(null), toast.action ? 6000 : 4000);
+    if (!toast) return;
+    // Los errores duran más, pero también se van: dentro de una ventana abierta el navegador no
+    // deja pulsar su «×».
+    const reloj = setTimeout(
+      () => setToast(null),
+      toast.type === "error" ? 8000 : toast.action ? 6000 : 4000,
+    );
     return () => clearTimeout(reloj);
   }, [toast]);
   const showConfirm = useCallback(
@@ -295,7 +310,7 @@ export function StudioProvider({
   return (
     <StudioContext.Provider value={value}>
       {children}
-      <div className={styles.toast}>
+      <div className={styles.toast} ref={capaAviso} popover="manual">
         <Toast
           message={toast?.message ?? null}
           kind={toast?.type}
