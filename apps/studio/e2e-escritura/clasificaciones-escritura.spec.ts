@@ -10,21 +10,8 @@ for (const ancho of [360, 1280]) {
       new URL(route.request().url()).hostname === "127.0.0.1" ? route.continue() : route.abort(),
     );
     await page.goto("/admin/archivo?categoria=Senior");
-    const trayectoria = page.getByRole("region", { name: "Trayectoria", exact: true });
-    await expect(trayectoria).toBeVisible({ timeout: 30000 });
-    const filas = ancho < 600 ? trayectoria.getByRole("listitem") : trayectoria.locator("tbody tr");
-    await expect(filas).toHaveCount(2);
-    await expect(filas.first()).toContainText(ancho < 600 ? "2023-24" : "2023-2024");
-    if (ancho < 600) {
-      await expect(filas.first()).toBeVisible();
-      await expect(filas.first()).toContainText("6.º · 34 pts · Copa: Octavos");
-      await expect(trayectoria.getByRole("table")).not.toBeVisible();
-    }
-    await expect(filas.first()).toContainText("Fase de ascenso");
-    await expect(filas.first()).toContainText("6.º");
-    await expect(filas.first()).toContainText("34");
-    await expect(filas.first()).toContainText("Octavos");
-    await expect(filas.last()).toContainText("Buscando…");
+    // Sin resumen arriba: las temporadas plegables ya lo cuentan todo.
+    await expect(page.getByRole("region", { name: "Trayectoria", exact: true })).toHaveCount(0);
     const temporada = page
       .locator("details")
       .filter({ has: page.locator(":scope > summary", { hasText: "2023-2024" }) });
@@ -93,7 +80,8 @@ for (const ancho of [360, 1280]) {
     });
     await page.screenshot({ path: testInfo.outputPath(`archivo-${ancho}.png`), fullPage: true });
     await page.goto("/admin/archivo?categoria=Veteranos");
-    await expect(trayectoria).toContainText("Liga Veterana Ficticia");
-    await expect(trayectoria).not.toContainText("Copa do Sar");
+    // Cada categoría, sus temporadas: Veteranos no enseña la copa del Senior.
+    await expect(page.getByText("Liga Veterana Ficticia").first()).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText("Copa do Sar")).toHaveCount(0);
   });
 }

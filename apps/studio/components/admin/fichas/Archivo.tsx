@@ -1,5 +1,5 @@
 "use client";
-import ClasificacionesHistoricas, { TablaFinal } from "./ClasificacionesHistoricas";
+import { TablaFinal } from "./ClasificacionesHistoricas";
 import {
   esCopa,
   estadoClasificacion,
@@ -72,7 +72,6 @@ export default function Archivo({ categoria }: { categoria: string }) {
 
   return (
     <div className={styles.ficha}>
-      <ClasificacionesHistoricas temporadas={temporadas} />
       {temporadas.map((t, i) => (
         <details key={t.temporada} className={styles.temporada} open={i === 0}>
           <summary>

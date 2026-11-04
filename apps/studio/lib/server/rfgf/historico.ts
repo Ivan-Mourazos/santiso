@@ -396,7 +396,9 @@ export async function avanzarHistorico(
       const prioridad = anteriores + clasificaciones;
       if (prioridad >= limite) return prioridad;
       const restante = limite - prioridad;
-      const archivoPrimero = Math.floor(ahora.getTime() / 600_000) % 2 === 0;
+      // Los partidos de una temporada solo se traen si alguien los pide: van delante de las cifras
+      // de los jugadores, que esperan sin prisa.
+      const archivoPrimero = true;
       let paginas =
         prioridad +
         (archivoPrimero

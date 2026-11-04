@@ -449,29 +449,6 @@
 .temporada > summary small {
   margin-left: auto;
 }
-.trayectoria th:first-child,
-.trayectoria td:first-child {
-  min-width: 0;
-  white-space: nowrap;
-}
-.trayectoria td:nth-child(2),
-.trayectoria th:nth-child(2) {
-  text-align: left;
-  white-space: normal;
-  min-width: 7rem;
-}
-.trayectoria td:nth-child(3),
-.trayectoria td:last-child {
-  white-space: normal;
-  min-width: 4rem;
-}
-.copaTrayectoria {
-  display: block;
-}
-
-.trayectoriaMovil {
-  display: none;
-}
 .tablaClasificacion th:first-child,
 .tablaClasificacion td:first-child {
   min-width: 0;
@@ -487,33 +464,8 @@
   overflow-wrap: anywhere;
 }
 @media (max-width: 599px) {
-  .trayectoriaEscritorio,
   .tablaClasificacion .columnaAmpliada {
     display: none;
-  }
-  .trayectoriaMovil {
-    display: grid;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    border: 1px solid var(--ui-line);
-    border-radius: var(--ui-radius);
-    background: var(--ui-surface);
-    overflow: hidden;
-  }
-  .trayectoriaMovil li {
-    display: grid;
-    gap: var(--ui-space-1);
-    padding: var(--ui-space-3);
-    border-bottom: 1px solid var(--ui-line);
-    font-size: var(--ui-text-sm);
-    overflow-wrap: anywhere;
-  }
-  .trayectoriaMovil li:last-child {
-    border-bottom: 0;
-  }
-  .trayectoriaMovil span {
-    color: var(--ui-muted);
   }
   .tablaClasificacion {
     table-layout: fixed;
