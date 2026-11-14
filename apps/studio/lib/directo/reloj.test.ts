@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   avanzarReloj,
   etiquetaMinuto,
+  parteDeMinuto,
   minutoActual,
   RELOJ_INICIAL,
   segundosParte,
@@ -55,5 +56,13 @@ describe("reloj de la libreta", () => {
     expect(etiquetaMinuto(2, 93, 45)).toBe("90+3");
     expect(etiquetaMinuto(1, 23, 45)).toBe("23'");
     expect(etiquetaMinuto(2, null, 45)).toBe("");
+  });
+
+  it("parte deducida del minuto escrito a mano", () => {
+    expect(parteDeMinuto(60, 1, 45)).toBe(2);
+    expect(parteDeMinuto(30, 2, 45)).toBe(1);
+    expect(parteDeMinuto(47, 1, 45)).toBe(1);
+    expect(parteDeMinuto(47, 2, 45)).toBe(2);
+    expect(parteDeMinuto(null, 2, 45)).toBe(2);
   });
 });

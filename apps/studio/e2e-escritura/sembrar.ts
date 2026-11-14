@@ -443,6 +443,18 @@ async function sembrar() {
     equipoVisitanteId: sur!.id,
     fecha: "2000-01-08T17:00",
   });
+  // Libreta en directo: partido propio de visitante, sin convocatoria (sale la plantilla).
+  const [directoJornada] = await db
+    .insert(schema.jornadas)
+    .values({ competicionId: convocatoriaCompeticion!.id, numero: 4 })
+    .returning();
+  await db.insert(schema.partidos).values({
+    id: "directo-e2e",
+    jornadaId: directoJornada!.id,
+    equipoLocalId: sur!.id,
+    equipoVisitanteId: norte!.id,
+    fecha: "2000-01-15T17:00",
+  });
   // Un partido ya jugado de la misma copa: «Uno» expulsado y «Tres» con cuatro
   // amarillas. Convocatoria y alineación lo avisan junto a su nombre. La federación escribe
   // «APELLIDOS, NOMBRE».

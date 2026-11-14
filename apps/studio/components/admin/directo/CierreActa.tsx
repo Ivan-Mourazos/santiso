@@ -14,14 +14,6 @@ export function CierreActa({
 }) {
   const { partido, reloj, jugadores } = pantalla;
   const m = marcador(partido, eventos);
-  const equipo = (e: EventoDirecto) =>
-    e.lado === "propio"
-      ? partido.somosLocal
-        ? partido.local
-        : partido.visitante
-      : partido.somosLocal
-        ? partido.visitante
-        : partido.local;
   return (
     <section className={s.cierre} aria-label="Para cerrar el acta">
       <h3>
@@ -34,28 +26,22 @@ export function CierreActa({
         return (
           <div key={parte}>
             <h4>{parte === 1 ? "1ª parte" : "2ª parte"}</h4>
-            <table className={s.tabla}>
-              <thead>
-                <tr>
-                  <th>Min.</th>
-                  <th>Equipo</th>
-                  <th>Qué</th>
-                  <th>Quién</th>
-                </tr>
-              </thead>
-              <tbody>
-                {deParte.map((e) => (
-                  <tr key={e.id} data-lado={e.lado}>
-                    <td>{etiquetaMinuto(e.parte, e.minuto, reloj.duracionParte) || "—"}</td>
-                    <td>{equipo(e)}</td>
-                    <td>
+            <ol className={s.cierreLista} aria-label={parte === 1 ? "1ª parte" : "2ª parte"}>
+              {deParte.map((e) => (
+                <li key={e.id} data-lado={e.lado}>
+                  <div className={s.cierreArriba}>
+                    <span className={s.minuto}>
+                      {etiquetaMinuto(e.parte, e.minuto, reloj.duracionParte) || "—"}
+                    </span>
+                    <span>
                       {ICONO[e.tipo]} {NOMBRE_TIPO[e.tipo]}
-                    </td>
-                    <td>{descripcion(e, jugadores)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                    <span className={s.lado}>{e.lado === "propio" ? "Nosotros" : "Rival"}</span>
+                  </div>
+                  <div className={s.cierreQuien}>{descripcion(e, jugadores)}</div>
+                </li>
+              ))}
+            </ol>
           </div>
         );
       })}

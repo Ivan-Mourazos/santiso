@@ -112,3 +112,17 @@ export function avanzarReloj(r: RelojDirecto, accion: AccionReloj, ahora: number
         : r;
   }
 }
+
+/** Descuento de la 1ª parte más largo que se admite antes de dar el minuto por 2ª parte. */
+const DESCUENTO_MAXIMO = 10;
+
+/**
+ * Parte de un minuto escrito a mano: hasta el fin de la 1ª es 1ª; pasado el descuento máximo, 2ª;
+ * entre medias (46–55 con 45) vale cualquiera y se respeta la elegida.
+ */
+export function parteDeMinuto(minuto: number | null, parte: 1 | 2, duracion: number): 1 | 2 {
+  if (minuto === null) return parte;
+  if (minuto <= duracion) return 1;
+  if (minuto > duracion + DESCUENTO_MAXIMO) return 2;
+  return parte;
+}

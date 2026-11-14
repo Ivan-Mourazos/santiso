@@ -287,29 +287,38 @@
   margin: 0 0 6px;
   color: var(--text-2);
 }
-.tabla {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
+.cierreLista {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
-.tabla th,
-.tabla td {
-  padding: 8px 6px;
-  border-bottom: 1px solid var(--hairline);
-  text-align: left;
-  vertical-align: top;
-  overflow-wrap: anywhere;
+.cierreLista li {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
 }
-.tabla th {
-  font-size: 0.75rem;
-  color: var(--text-3);
-  text-transform: uppercase;
-}
-.tabla td:first-child {
-  font-weight: 800;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-.tabla tr[data-lado="rival"] td {
+.cierreLista li[data-lado="rival"] {
+  background: transparent;
   color: var(--text-2);
+}
+.cierreArriba {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-weight: 700;
+}
+.cierreArriba .lado {
+  margin-left: auto;
+}
+.cierreQuien {
+  padding-left: calc(3.5rem + 10px);
+  overflow-wrap: break-word;
+}
+.cierreArriba .minuto {
+  min-width: 3.5rem;
 }

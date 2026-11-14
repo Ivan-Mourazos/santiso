@@ -3,6 +3,7 @@ import type { LadoEvento, TipoEvento } from "@santiso/domain";
 import { useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
+import { parteDeMinuto } from "@/lib/directo/reloj";
 import type { EventoDirecto, JugadorDirecto } from "@/lib/directo/tipos";
 import { NOMBRE_TIPO } from "./modelo";
 import s from "./Directo.module.css";
@@ -51,6 +52,7 @@ function Eleccion({
             <button
               type="button"
               aria-pressed={jugadorId === j.id}
+              aria-label={`${titulo}: ${j.dorsal !== null ? `#${j.dorsal} ` : ""}${j.nombre}`}
               onClick={() =>
                 jugadorId === j.id ? onCambio(null, null) : onCambio(j.id, j.dorsal)
               }
@@ -160,7 +162,8 @@ export function PanelEvento({
               value={e.minuto ?? ""}
               onChange={(ev) => {
                 const n = ev.target.value === "" ? null : Math.trunc(Number(ev.target.value));
-                cambiar({ minuto: n !== null && n >= 0 && n <= 130 ? n : null });
+                const minuto = n !== null && n >= 0 && n <= 130 ? n : null;
+                cambiar({ minuto, parte: parteDeMinuto(minuto, e.parte, duracion) });
               }}
             />
           </label>
