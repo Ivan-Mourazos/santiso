@@ -1,5 +1,5 @@
 "use client";
-import type { TipoEvento } from "@santiso/domain";
+import { DURACION_PARTE_MAX, DURACION_PARTE_MIN, type TipoEvento } from "@santiso/domain";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
@@ -142,7 +142,7 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
 
   function moverReloj(accion: AccionReloj) {
     const minutos = Math.trunc(Number(duracion));
-    const duracionParte = minutos >= 10 && minutos <= 60 ? minutos : reloj.duracionParte;
+    const duracionParte = minutos >= DURACION_PARTE_MIN && minutos <= DURACION_PARTE_MAX ? minutos : reloj.duracionParte;
     if (accion === "empezar") setDuracion(String(duracionParte));
     const base = accion === "empezar" ? { ...reloj, duracionParte } : reloj;
     const siguiente = avanzarReloj(base, accion, Date.now());
@@ -216,8 +216,8 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
                 <input
                   type="number"
                   inputMode="numeric"
-                  min={10}
-                  max={60}
+                  min={DURACION_PARTE_MIN}
+                  max={DURACION_PARTE_MAX}
                   value={duracion}
                   onChange={(e) => setDuracion(e.target.value)}
                 />

@@ -1,5 +1,5 @@
 "use client";
-import type { LadoEvento, TipoEvento } from "@santiso/domain";
+import { MINUTO_MAXIMO, type LadoEvento, type TipoEvento } from "@santiso/domain";
 import { useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
@@ -160,11 +160,11 @@ export function PanelEvento({
               type="number"
               inputMode="numeric"
               min={0}
-              max={130}
+              max={MINUTO_MAXIMO}
               value={e.minuto ?? ""}
               onChange={(ev) => {
                 const n = ev.target.value === "" ? null : Math.trunc(Number(ev.target.value));
-                const minuto = n !== null && n >= 0 && n <= 130 ? n : null;
+                const minuto = n !== null && n >= 0 && n <= MINUTO_MAXIMO ? n : null;
                 cambiar({ minuto, parte: parteDeMinuto(minuto, parteElegida, duracion) });
               }}
             />

@@ -5,7 +5,14 @@
  * árbitro. Nunca escribe en el acta (`partido_eventos`), ni en participaciones ni en el partido.
  */
 import { schema } from "@santiso/db";
-import { ESTADOS_RELOJ, LADOS_EVENTO, MINUTO_MAXIMO, TIPOS_EVENTO } from "@santiso/domain";
+import {
+  DURACION_PARTE_MAX,
+  DURACION_PARTE_MIN,
+  ESTADOS_RELOJ,
+  LADOS_EVENTO,
+  MINUTO_MAXIMO,
+  TIPOS_EVENTO,
+} from "@santiso/domain";
 import { aliasedTable, and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { RELOJ_INICIAL, type RelojDirecto } from "@/lib/directo/reloj";
@@ -36,7 +43,7 @@ const esquemaEvento = z.object({
 });
 
 const esquemaReloj = z.object({
-  duracionParte: entero(10, 60),
+  duracionParte: entero(DURACION_PARTE_MIN, DURACION_PARTE_MAX),
   estado: z.enum(ESTADOS_RELOJ),
   inicioParte: z.number().int().nonnegative().nullable(),
   pausadoMs: z.number().int().nonnegative(),

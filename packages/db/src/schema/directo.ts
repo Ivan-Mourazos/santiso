@@ -1,4 +1,11 @@
-import { ESTADOS_RELOJ, LADOS_EVENTO, MINUTO_MAXIMO, TIPOS_EVENTO } from "@santiso/domain";
+import {
+  DURACION_PARTE_MAX,
+  DURACION_PARTE_MIN,
+  ESTADOS_RELOJ,
+  LADOS_EVENTO,
+  MINUTO_MAXIMO,
+  TIPOS_EVENTO,
+} from "@santiso/domain";
 import { check, index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { partidos } from "./calendario";
 import { checkEnum, condicion, marcasTiempo } from "./comunes";
@@ -24,7 +31,10 @@ export const partidoDirecto = sqliteTable(
   },
   () => [
     checkEnum("partido_directo_estado_ck", "estado", ESTADOS_RELOJ),
-    check("partido_directo_duracion_ck", condicion(`"duracion_parte" between 10 and 60`)),
+    check(
+      "partido_directo_duracion_ck",
+      condicion(`"duracion_parte" between ${DURACION_PARTE_MIN} and ${DURACION_PARTE_MAX}`),
+    ),
     check("partido_directo_pausado_ck", condicion(`"pausado_ms" >= 0`)),
   ],
 );
