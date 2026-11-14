@@ -86,6 +86,8 @@ export function PanelEvento({
   onCerrar: () => void;
 }) {
   const [e, setE] = useState<EventoDirecto>(inicial);
+  /** La parte elegida a propósito; el minuto a medio teclear no la cambia por el camino. */
+  const [parteElegida, setParteElegida] = useState<1 | 2>(inicial.parte);
   const cambiar = (parche: Partial<EventoDirecto>) => setE((x) => ({ ...x, ...parche }));
   const tipo: TipoEvento = e.tipo;
   const cambiarLado = (lado: LadoEvento) =>
@@ -163,7 +165,7 @@ export function PanelEvento({
               onChange={(ev) => {
                 const n = ev.target.value === "" ? null : Math.trunc(Number(ev.target.value));
                 const minuto = n !== null && n >= 0 && n <= 130 ? n : null;
-                cambiar({ minuto, parte: parteDeMinuto(minuto, e.parte, duracion) });
+                cambiar({ minuto, parte: parteDeMinuto(minuto, parteElegida, duracion) });
               }}
             />
           </label>
@@ -171,7 +173,11 @@ export function PanelEvento({
             <span>Parte</span>
             <select
               value={e.parte}
-              onChange={(ev) => cambiar({ parte: ev.target.value === "2" ? 2 : 1 })}
+              onChange={(ev) => {
+                const parte = ev.target.value === "2" ? 2 : 1;
+                setParteElegida(parte);
+                cambiar({ parte });
+              }}
             >
               <option value={1}>1ª parte</option>
               <option value={2}>2ª parte</option>

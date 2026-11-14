@@ -75,6 +75,11 @@ test("sin cobertura queda pendiente y se envía al volver la red", async ({ page
   await apuntar(page, "Roja", { rival: true, dorsal: "5", minuto: "60" });
   await apuntar(page, "Gol", { rival: true, dorsal: "9", minuto: "61" });
   await expect(page.getByRole("status").filter({ hasText: "Pendiente de enviar (2)" })).toBeVisible();
+  // Dice por qué no se envía.
+  await expect(page.getByRole("status").filter({ hasText: "Pendiente" })).toContainText(
+    "Sin conexión",
+    { timeout: 15000 },
+  );
   const lista = page.getByRole("list", { name: "Lo apuntado" });
   await expect(lista.getByRole("listitem")).toHaveCount(4);
   await context.setOffline(false);
@@ -90,6 +95,13 @@ test("cronómetro: el minuto se pone solo y la vista de cierre lista todo", asyn
   await page.clock.install({ time: new Date("2026-11-15T16:00:00Z") });
   await page.setViewportSize({ width: 1280, height: 720 });
   await abrir(page);
+  // Se puede teclear otra duración (en el móvil no hay flechas).
+  const duracion = page.getByLabel("Minutos por parte");
+  await duracion.clear();
+  await duracion.pressSequentially("40");
+  await expect(duracion).toHaveValue("40");
+  await duracion.clear();
+  await duracion.pressSequentially("45");
   await page.getByRole("button", { name: "Empezar 1ª parte", exact: true }).click();
   await page.clock.fastForward("22:30");
   await page.getByRole("button", { name: "Amarilla", exact: true }).click();
@@ -111,6 +123,24 @@ test("cronómetro: el minuto se pone solo y la vista de cierre lista todo", asyn
   await expect(segunda.getByRole("listitem").filter({ hasText: "Roja" })).toContainText(
     /Rival.*#5/,
   );
+});
+
+test("editar el minuto tecla a tecla no cambia de parte", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await abrir(page);
+  await apuntar(page, "Roja", { rival: true, dorsal: "4", minuto: "70" });
+  const lista = page.getByRole("list", { name: "Lo apuntado" });
+  await lista.getByRole("button", { name: /Roja · #4/ }).click();
+  const minuto = page.getByRole("dialog").getByLabel("Minuto");
+  await minuto.clear();
+  await minuto.pressSequentially("50");
+  await page.getByRole("dialog").getByRole("button", { name: "Guardar", exact: true }).click();
+  const fila = lista.getByRole("listitem").filter({ hasText: "#4" });
+  await expect(fila).toContainText("50'");
+  await fila.getByRole("button").click();
+  await page.getByRole("dialog").getByRole("button", { name: "Borrar", exact: true }).click();
+  await page.getByRole("button", { name: "Confirmar" }).click();
+  await expect(fila).toHaveCount(0);
 });
 
 test("la ficha del partido abre el directo", async ({ page }) => {

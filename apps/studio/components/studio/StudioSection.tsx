@@ -107,7 +107,7 @@ export function StudioSection({ section }: { section: Seccion }) {
       {section === "alineacion" && (
         <Lineup categoria="Senior" partidoInicial={params.get("partido")} showToast={showToast} />
       )}
-      {section === "directo" && <Live partidoId={params.get("partido")} />}
+      {section === "directo" && <Live key={params.get("partido")} partidoId={params.get("partido")} />}
       {section === "adestramentos" && <Training {...feedback} categoria={category} />}
       {section === "multas" && <Fines {...feedback} />}
       {section === "equipo" && <TeamCard equipoId={params.get("id")} />}

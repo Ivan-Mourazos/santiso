@@ -192,3 +192,17 @@ it("no toca el acta ni el partido; jugador borrado conserva el dorsal", async ()
   const r = await acciones.cargarDirecto(p.id);
   expect(r.ok && r.datos.eventos[0]).toMatchObject({ jugadorId: null, dorsal: 1 });
 });
+
+it("un jugador que ya no existe no atasca el lote: se guarda sin jugador y con su dorsal", async () => {
+  const { p, acciones } = await preparar();
+  const r = await acciones.aplicarDirecto(p.id, [
+    { op: "guardar", evento: evento({ id: "a", jugadorId: "borrado", jugadorSaleId: "otro" }) },
+    { op: "guardar", evento: evento({ id: "b" }) },
+  ]);
+  expect(r).toEqual({ ok: true, datos: null });
+  const c = await acciones.cargarDirecto(p.id);
+  expect(c.ok && c.datos.eventos.map((e) => [e.id, e.jugadorId, e.jugadorSaleId, e.dorsal])).toEqual([
+    ["a", null, null, 9],
+    ["b", null, null, 9],
+  ]);
+});

@@ -174,11 +174,39 @@ export async function aplicarDirecto(
     if (deOtro.some(Boolean)) return fallo("Hay un apunte que es de otro partido.");
   }
 
+  // Un jugador borrado mientras el apunte esperaba en el móvil no puede atascar toda la cola:
+  // se guarda sin jugador y conserva su dorsal.
+  const referidos = [
+    ...new Set(
+      ops.flatMap((o) =>
+        o.op === "guardar"
+          ? [o.evento.jugadorId, o.evento.jugadorSaleId].filter((x): x is string => !!x)
+          : [],
+      ),
+    ),
+  ];
+  const conocidos = new Set(
+    referidos.length === 0
+      ? []
+      : (
+          await db
+            .select({ id: schema.jugadores.id })
+            .from(schema.jugadores)
+            .where(inArray(schema.jugadores.id, referidos))
+        ).map((f) => f.id),
+  );
+  const existe = (id: string | null) => (id && conocidos.has(id) ? id : null);
+
   const resultado = await capturar("No se pudieron guardar los apuntes.", async () => {
     await db.transaction(async (tx) => {
       for (const o of ops) {
         if (o.op === "guardar") {
-          const { id, ...resto } = o.evento;
+          const { id, ...datos } = o.evento;
+          const resto = {
+            ...datos,
+            jugadorId: existe(datos.jugadorId),
+            jugadorSaleId: existe(datos.jugadorSaleId),
+          };
           await tx
             .insert(schema.partidoDirectoEventos)
             .values({ id, partidoId, ...resto })

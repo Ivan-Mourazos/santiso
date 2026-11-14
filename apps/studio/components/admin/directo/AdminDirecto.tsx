@@ -44,7 +44,10 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
   const [ahora, setAhora] = useState(() => Date.now());
   const [vista, setVista] = useState<"apuntar" | "cierre">("apuntar");
   const [panel, setPanel] = useState<{ evento: EventoDirecto; nuevo: boolean } | null>(null);
-  const [duracion, setDuracion] = useState(45);
+  /** Texto tal cual se teclea: se valida al empezar, no a cada tecla. */
+  const [duracion, setDuracion] = useState("45");
+  /** Por qué no se pudo enviar la cola la última vez; `null` si se envió. */
+  const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
 
   const guardarCola = useCallback(
     (ops: OperacionDirecto[]) => {
@@ -62,6 +65,7 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
     const lote = colaRef.current;
     try {
       const r = await enviarCola(lote, (ops) => aplicarDirecto(partidoId, ops));
+      setErrorEnvio(r.error ?? null);
       if (r.enviadas > 0) {
         setServidor((prev) => aplicarLocal(prev, lote));
         const ultimoReloj = [...lote].reverse().find((o) => o.op === "reloj");
@@ -84,7 +88,7 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
         setPantalla(r.datos);
         setServidor(r.datos.eventos);
         setRelojServidor(r.datos.reloj);
-        setDuracion(r.datos.reloj.duracionParte);
+        setDuracion(String(r.datos.reloj.duracionParte));
         const a = almacen();
         guardarCola(a ? leerCola(a, partidoId) : []);
         void sincronizar();
@@ -137,7 +141,10 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
   }
 
   function moverReloj(accion: AccionReloj) {
-    const base = accion === "empezar" ? { ...reloj, duracionParte: duracion } : reloj;
+    const minutos = Math.trunc(Number(duracion));
+    const duracionParte = minutos >= 10 && minutos <= 60 ? minutos : reloj.duracionParte;
+    if (accion === "empezar") setDuracion(String(duracionParte));
+    const base = accion === "empezar" ? { ...reloj, duracionParte } : reloj;
     const siguiente = avanzarReloj(base, accion, Date.now());
     if (siguiente !== base) encolar({ op: "reloj", reloj: siguiente });
   }
@@ -212,10 +219,7 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
                   min={10}
                   max={60}
                   value={duracion}
-                  onChange={(e) => {
-                    const n = Math.trunc(Number(e.target.value));
-                    if (n >= 10 && n <= 60) setDuracion(n);
-                  }}
+                  onChange={(e) => setDuracion(e.target.value)}
                 />
               </label>
               <Button size="sm" onClick={() => moverReloj("empezar")}>
@@ -246,6 +250,10 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
         {pendientes > 0 && (
           <p className={s.pendiente} role="status">
             Pendiente de enviar ({pendientes})
+            {errorEnvio &&
+              (errorEnvio === "Sin conexión"
+                ? " · Sin conexión: se envía solo al volver la señal. Si tienes señal, vuelve a entrar en el Studio."
+                : ` · ${errorEnvio}`)}
           </p>
         )}
       </header>
