@@ -455,6 +455,18 @@ async function sembrar() {
     equipoVisitanteId: norte!.id,
     fecha: "2000-01-15T17:00",
   });
+  // Libreta con dos móviles a la vez (delegado y míster).
+  const [directoSyncJornada] = await db
+    .insert(schema.jornadas)
+    .values({ competicionId: convocatoriaCompeticion!.id, numero: 5 })
+    .returning();
+  await db.insert(schema.partidos).values({
+    id: "directo-sync-e2e",
+    jornadaId: directoSyncJornada!.id,
+    equipoLocalId: norte!.id,
+    equipoVisitanteId: sur!.id,
+    fecha: "2000-01-22T17:00",
+  });
   // Un partido ya jugado de la misma copa: «Uno» expulsado y «Tres» con cuatro
   // amarillas. Convocatoria y alineación lo avisan junto a su nombre. La federación escribe
   // «APELLIDOS, NOMBRE».

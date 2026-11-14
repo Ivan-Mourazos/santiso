@@ -13,6 +13,7 @@ import {
   type AccionReloj,
   type RelojDirecto,
 } from "@/lib/directo/reloj";
+import { posibleDuplicado, repetidos } from "@/lib/directo/duplicados";
 import type { EventoDirecto, OperacionDirecto, PantallaDirecto } from "@/lib/directo/tipos";
 import { aplicarDirecto, cargarDirecto } from "@/lib/server/acciones/directo";
 import { CierreActa } from "./CierreActa";
@@ -22,6 +23,8 @@ import s from "./Directo.module.css";
 
 const TIPOS: TipoEvento[] = ["gol", "tarjeta_amarilla", "tarjeta_roja", "cambio"];
 const REINTENTO_MS = 20_000;
+/** Cada cuánto se trae lo que haya apuntado el otro móvil (delegado y míster a la vez). */
+const REFRESCO_MS = 10_000;
 
 const reloj2 = (n: number) => String(n).padStart(2, "0");
 const almacen = () => (typeof window === "undefined" ? null : window.localStorage);
@@ -41,6 +44,8 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
   const [cola, setCola] = useState<OperacionDirecto[]>([]);
   const colaRef = useRef<OperacionDirecto[]>([]);
   const enviando = useRef(false);
+  /** Sube con cada envío correcto: un refresco pedido antes de un envío llega viejo y se tira. */
+  const envios = useRef(0);
   const [ahora, setAhora] = useState(() => Date.now());
   const [vista, setVista] = useState<"apuntar" | "cierre">("apuntar");
   const [panel, setPanel] = useState<{ evento: EventoDirecto; nuevo: boolean } | null>(null);
@@ -67,6 +72,7 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
       const r = await enviarCola(lote, (ops) => aplicarDirecto(partidoId, ops));
       setErrorEnvio(r.error ?? null);
       if (r.enviadas > 0) {
+        envios.current += 1;
         setServidor((prev) => aplicarLocal(prev, lote));
         const ultimoReloj = [...lote].reverse().find((o) => o.op === "reloj");
         if (ultimoReloj?.op === "reloj") setRelojServidor(ultimoReloj.reloj);
@@ -77,6 +83,20 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
       enviando.current = false;
     }
   }, [partidoId, guardarCola]);
+
+  /** Trae lo del servidor (lo del otro móvil). La cola pendiente se sigue pintando encima. */
+  const refrescar = useCallback(async () => {
+    if (!partidoId || enviando.current) return;
+    const marca = envios.current;
+    try {
+      const r = await cargarDirecto(partidoId);
+      if (!r.ok || enviando.current || marca !== envios.current) return;
+      setServidor(r.datos.eventos);
+      setRelojServidor(r.datos.reloj);
+    } catch {
+      // Sin red: se queda lo que hay y se reintenta en el siguiente refresco.
+    }
+  }, [partidoId]);
 
   useEffect(() => {
     if (!partidoId) return;
@@ -105,14 +125,21 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
   useEffect(() => {
     const t = setInterval(() => setAhora(Date.now()), 1000);
     const r = setInterval(() => void sincronizar(), REINTENTO_MS);
-    const enLinea = () => void sincronizar();
+    const f = setInterval(() => void refrescar(), REFRESCO_MS);
+    const enLinea = () => void sincronizar().then(refrescar);
+    const alVolver = () => {
+      if (document.visibilityState === "visible") void sincronizar().then(refrescar);
+    };
     window.addEventListener("online", enLinea);
+    document.addEventListener("visibilitychange", alVolver);
     return () => {
       clearInterval(t);
       clearInterval(r);
+      clearInterval(f);
       window.removeEventListener("online", enLinea);
+      document.removeEventListener("visibilitychange", alVolver);
     };
-  }, [sincronizar]);
+  }, [sincronizar, refrescar]);
 
   if (!partidoId) {
     return (
@@ -131,6 +158,7 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
   const m = marcador(pantalla.partido, eventos);
   const seg = segundosParte(reloj, ahora);
   const pausado = reloj.pausaDesde !== null;
+  const dobles = repetidos(eventos);
 
   function encolar(op: OperacionDirecto) {
     const pendientes = enviando.current
@@ -301,6 +329,7 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
                     <span className={s.texto}>
                       <span className={s.lado}>{e.lado === "propio" ? "Nosotros" : "Rival"}</span>{" "}
                       {NOMBRE_TIPO[e.tipo]} · {descripcion(e, pantalla.jugadores)}
+                      {dobles.has(e.id) && <span className={s.repetido}> ¿Repetido?</span>}
                     </span>
                   </button>
                 </li>
@@ -321,8 +350,18 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
           duracion={reloj.duracionParte}
           onCerrar={() => setPanel(null)}
           onGuardar={(evento) => {
-            encolar({ op: "guardar", evento });
-            setPanel(null);
+            const guardar = () => {
+              encolar({ op: "guardar", evento });
+              setPanel(null);
+            };
+            const doble = posibleDuplicado(evento, eventos);
+            if (!doble) return guardar();
+            const lado = doble.lado === "propio" ? "Nosotros" : "Rival";
+            const minuto = etiquetaMinuto(doble.parte, doble.minuto, reloj.duracionParte) || "—";
+            showConfirm(
+              `Parece que ya está apuntado: ${minuto} · ${lado} · ${NOMBRE_TIPO[doble.tipo]} · ${descripcion(doble, pantalla.jugadores)}. ¿Guardarlo igualmente?`,
+              guardar,
+            );
           }}
           onBorrar={(id) =>
             showConfirm("¿Borrar este apunte?", () => {
