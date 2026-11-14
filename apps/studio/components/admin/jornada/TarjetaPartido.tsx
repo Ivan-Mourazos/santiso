@@ -69,16 +69,14 @@ export default function TarjetaPartido({
   const [trayendo, setTrayendo] = useState(false);
   const [galeria, setGaleria] = useState(false);
   // Los carteles guardados dicen qué pasos están hechos; hasta tenerlos, cuentan como pendientes.
-  const [carteles, setCarteles] = useState<{ id: string; deEste: CartelesDelPartido } | null>(
-    null,
-  );
+  const [carteles, setCarteles] = useState<{ id: string; deEste: CartelesDelPartido } | null>(null);
   useEffect(() => {
     let vigente = true;
     void cargarCartelesPartido([p.id])
       .catch(sinConexion)
       .then((r) => {
-      if (vigente && r.ok) setCarteles({ id: p.id, deEste: r.datos[p.id] ?? {} });
-    });
+        if (vigente && r.ok) setCarteles({ id: p.id, deEste: r.datos[p.id] ?? {} });
+      });
     return () => {
       vigente = false;
     };
@@ -153,14 +151,20 @@ export default function TarjetaPartido({
         <time dateTime={p.fecha ?? undefined}>{cuando.dia}</time>
         <strong>{marcador(p)?.cifras ?? (cuando.hora || "Sin hora")}</strong>
       </div>
-      {marcado && (
-        <p className={styles.contexto}>
-          {marcador(p)?.desenlace}
-        </p>
-      )}
+      {marcado && <p className={styles.contexto}>{marcador(p)?.desenlace}</p>}
       <p className={styles.campo}>{p.campo || "Campo por confirmar"}</p>
       <p className={styles.competicion}>{p.competicion}</p>
       {p.arbitro && <p className={styles.competicion}>Árbitro: {p.arbitro}</p>}
+
+      {/* La libreta del delegado durante el partido: siempre a mano, antes y después. */}
+      <Link
+        href={`/admin/directo?categoria=${encodeURIComponent(categoria)}&partido=${encodeURIComponent(p.id)}`}
+        className={styles.directo}
+        transitionTypes={["nav-forward"]}
+      >
+        <span aria-hidden="true">⏱</span> Directo · apuntar el partido
+        <span aria-hidden="true">→</span>
+      </Link>
 
       <div className={styles.trabajo}>
         <p className={styles.etiqueta}>Siguiente tarea</p>

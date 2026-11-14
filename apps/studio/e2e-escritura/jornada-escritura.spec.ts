@@ -92,3 +92,14 @@ test("jornada: antes del partido avisa de sanciones del rival y de cambios de la
   await expect(page.locator("[data-mesa-partido]")).toBeVisible({ timeout: 30000 });
   await expect(page.getByRole("region", { name: "Sanciones y apercibidos" })).toHaveCount(0);
 });
+
+test("jornada: la tarjeta del partido lleva a la libreta en directo", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto(ruta("sin-nada"));
+  const mesa = page.locator("[data-mesa-partido]");
+  const directo = mesa.getByRole("link", { name: /Directo · apuntar el partido/ });
+  await expect(directo).toBeVisible({ timeout: 30000 });
+  await directo.click();
+  await expect(page).toHaveURL(/\/admin\/directo\?.*partido=vestiario-sin-nada/);
+  await expect(page.getByLabel("Marcador")).toBeVisible({ timeout: 30000 });
+});

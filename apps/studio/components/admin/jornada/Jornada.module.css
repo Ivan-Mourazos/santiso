@@ -149,6 +149,23 @@
   text-decoration: none;
   font-weight: 700;
 }
+/* Libreta en directo: visible, pero sin competir con la siguiente tarea. */
+.directo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  margin: 12px 0 4px;
+  padding: 10px 18px;
+  border: 1px solid var(--ui-accent);
+  border-radius: var(--ui-radius-pill);
+  color: var(--ui-accent);
+  text-decoration: none;
+  font-weight: 700;
+}
+.directo span:last-child {
+  margin-left: auto;
+}
 /* «Esperando a la federación · Traer ahora» es un botón con la misma cara que el enlace. */
 button.principal {
   width: 100%;
