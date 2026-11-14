@@ -21,7 +21,9 @@ async function fotoGrande() {
 }
 
 for (const plantilla of ["cronoloxia", "resumo"]) {
-  test(`carteles: foto propia de fondo en ${plantilla}, reducida y encuadrable`, async ({ page }) => {
+  test(`carteles: foto propia de fondo en ${plantilla}, reducida y encuadrable`, async ({
+    page,
+  }) => {
     const peticiones: { datos: { foto?: { url: string; zoom?: number } | null } }[] = [];
     await page.route("**/api/carteles/png", async (ruta) => {
       peticiones.push(ruta.request().postDataJSON());
@@ -45,7 +47,8 @@ for (const plantilla of ["cronoloxia", "resumo"]) {
     await page.getByLabel("Acercar").fill("2");
     await expect(fondo).toHaveCSS("transform", /matrix\(2, 0, 0, 2/);
 
-    await expect.poll(() => peticiones.length, { timeout: 15000 }).toBeGreaterThan(0);
+    // Con toda la batería en marcha el servidor de desarrollo tarda en compilar el render.
+    await expect.poll(() => peticiones.length, { timeout: 30000 }).toBeGreaterThan(0);
     const ultima = peticiones.at(-1)!.datos.foto!;
     expect(ultima.url.startsWith("data:image/jpeg")).toBe(true);
     expect(ultima.url.length).toBeLessThan(6_000_000);

@@ -37,7 +37,10 @@ async function comprobarControles(page: Page, contenedor: Locator) {
   for (const control of await contenedor
     .locator("input:visible, select:visible, button:visible, a:visible")
     .all()) {
-    const rect = (await control.boundingBox())!;
+    // Un control puede desaparecer entre la lista y la medida (la sección se re-pinta al
+    // llegar los datos): si ya no se ve, no hay nada que medir.
+    const rect = await control.boundingBox();
+    if (!rect) continue;
     expect(rect.width).toBeGreaterThanOrEqual(44);
     expect(rect.height).toBeGreaterThanOrEqual(44);
     expect(rect.x).toBeGreaterThanOrEqual(0);
