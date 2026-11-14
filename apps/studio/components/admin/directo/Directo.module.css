@@ -1,0 +1,315 @@
+.pantalla {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding-bottom: 90px;
+  min-width: 0;
+}
+
+/* Cabecera fija: marcador y cronómetro siempre a la vista mientras se apunta. */
+.cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--background) 88%, transparent);
+  backdrop-filter: blur(var(--blur));
+}
+.marcador {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+.marcador span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--ui-text-sm, 0.875rem);
+  font-weight: 700;
+}
+.marcador span:last-child {
+  text-align: right;
+}
+.marcador strong {
+  font-size: 1.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary);
+}
+.reloj {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.parte {
+  font-size: var(--ui-text-sm, 0.875rem);
+  color: var(--text-2);
+}
+.tiempo {
+  margin-left: auto;
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.tiempo[data-pausado] {
+  color: var(--text-3);
+}
+.accionesReloj {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.accionesReloj:empty {
+  display: none;
+}
+.duracion {
+  display: grid;
+  gap: 2px;
+  margin-right: auto;
+  font-size: var(--ui-text-sm, 0.875rem);
+  color: var(--text-2);
+}
+.duracion input {
+  width: 5rem;
+}
+.pendiente {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--primary);
+}
+
+.vistas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.vistas button,
+.lados button {
+  min-height: 44px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  color: var(--text-1);
+  font-weight: 700;
+}
+.vistas button[aria-selected="true"],
+.lados button[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.botones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (min-width: 640px) {
+  .botones {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.botonEvento {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 64px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+.botonEvento:active {
+  transform: scale(0.98);
+}
+.botonEvento[data-tipo="gol"] {
+  border-color: var(--primary);
+}
+
+.lista {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lista button {
+  display: grid;
+  grid-template-columns: 3.5rem auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  color: var(--text-1);
+  text-align: left;
+}
+.lista li[data-lado="rival"] button {
+  background: transparent;
+  color: var(--text-2);
+}
+.minuto {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.texto {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.lado {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.nota {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--ui-text-sm, 0.875rem);
+}
+
+/* Hoja para apuntar un evento. */
+.panel {
+  display: grid;
+  gap: 14px;
+}
+.lados {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.rejillaCampo {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.rejillaCampo legend {
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rejilla button {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: 100%;
+  min-height: 56px;
+  padding: 6px 4px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  color: var(--text-1);
+}
+.rejilla button[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
+}
+.rejilla strong {
+  font-size: 1.15rem;
+}
+.rejilla span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+}
+.campo {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  font-weight: 700;
+}
+.campo input,
+.campo select,
+.duracion input {
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  color: var(--text-1);
+  font-size: 1rem;
+}
+.fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.casilla input {
+  width: 20px;
+  height: 20px;
+}
+.pie {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Para cerrar el acta. */
+.cierre {
+  display: grid;
+  gap: 12px;
+}
+.cierre h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.cierre h4 {
+  margin: 0 0 6px;
+  color: var(--text-2);
+}
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.tabla th,
+.tabla td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.tabla th {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+.tabla td:first-child {
+  font-weight: 800;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.tabla tr[data-lado="rival"] td {
+  color: var(--text-2);
+}

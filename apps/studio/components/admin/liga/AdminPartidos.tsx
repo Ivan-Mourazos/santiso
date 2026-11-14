@@ -352,6 +352,15 @@ function Detalle({
             />
           )}
           {(p.local.propio || p.visitante.propio) && (
+            <Link
+              className={styles.enlace}
+              href={`/admin/directo?categoria=${encodeURIComponent(categoria)}&partido=${encodeURIComponent(p.id)}`}
+              transitionTypes={["nav-forward"]}
+            >
+              Directo · apuntar el partido
+            </Link>
+          )}
+          {(p.local.propio || p.visitante.propio) && (
             <CartelesDelPartidoLiga partido={p} categoria={categoria} />
           )}
           {p.enlaceActa && (

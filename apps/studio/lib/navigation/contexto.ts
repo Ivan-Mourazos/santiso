@@ -17,6 +17,8 @@ export const SECCIONES = [
   { id: "multas", label: "Multas" },
   { id: "convocatoria", label: "Convocatoria" },
   { id: "alineacion", label: "Once inicial" },
+  // Libreta del delegado durante el partido; se abre desde la ficha del partido.
+  { id: "directo", label: "Directo", oculta: true },
   // Los carteles los lleva el delegado: el técnico no los ve en el menú ni puede abrirlos.
   { id: "carteles", label: "Carteles", admin: true },
   { id: "importar", label: "Importar" },
