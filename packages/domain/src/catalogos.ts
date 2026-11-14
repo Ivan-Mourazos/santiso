@@ -39,6 +39,10 @@ export type Posicion = (typeof POSICIONES)[number];
 /** Minuto máximo admitido en un acta (prórroga más descuento). */
 export const MINUTO_MAXIMO = 130;
 
+/** Estados del cronómetro de la libreta en directo. */
+export const ESTADOS_RELOJ = ["previo", "primera", "descanso", "segunda", "final"] as const;
+export type EstadoReloj = (typeof ESTADOS_RELOJ)[number];
+
 /** Comprueba y estrecha el tipo de un texto a un catálogo cerrado. */
 export function esValorDe<T extends string>(valores: readonly T[], valor: string): valor is T {
   // includes() exige el tipo de los elementos (T); ampliar a string es seguro porque solo se lee.

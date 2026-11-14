@@ -17,3 +17,4 @@ export * from "./entrenamientos";
 export * from "./rfgf-anteriores";
 
 export * from "./rfgf-historico-clasificaciones";
+export * from "./directo";

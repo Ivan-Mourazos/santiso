@@ -719,3 +719,46 @@ it("gastos: importe entero positivo, motivo obligatorio, FK y cascada", async ()
   await db.delete(s.temporadas).where(eq(s.temporadas.id, temporada.id));
   expect(await db.select().from(s.boteGastos)).toEqual([]);
 });
+
+it("libreta directo: id del móvil, cascada y checks", async () => {
+  const { db } = conexion;
+  const { jornada, local, visitante, jugador } = await sembrar();
+  const [p] = await db
+    .insert(s.partidos)
+    .values({ jornadaId: jornada.id, equipoLocalId: local.id, equipoVisitanteId: visitante.id })
+    .returning();
+  await db.insert(s.partidoDirecto).values({ partidoId: p!.id });
+  const [reloj] = await db.select().from(s.partidoDirecto);
+  expect(reloj).toMatchObject({ duracionParte: 45, estado: "previo", pausadoMs: 0 });
+  await rechaza(db.insert(s.partidoDirecto).values({ partidoId: p!.id, estado: "otro" as never }));
+  const base = {
+    id: "m-1",
+    partidoId: p!.id,
+    tipo: "gol" as const,
+    lado: "propio" as const,
+    parte: 1,
+    minuto: 23,
+    jugadorId: jugador.id,
+  };
+  await rechaza(db.insert(s.partidoDirectoEventos).values({ ...base, id: "x1", parte: 3 }));
+  await rechaza(
+    db
+      .insert(s.partidoDirectoEventos)
+      .values({ ...base, id: "x2", propia: true, tipo: "tarjeta_amarilla" }),
+  );
+  await rechaza(db.insert(s.partidoDirectoEventos).values({ ...base, id: "x3", dorsal: -1 }));
+  await db.insert(s.partidoDirectoEventos).values(base);
+  // Cambio a medias: en directo se puede apuntar sin saber aún quién sale.
+  await db
+    .insert(s.partidoDirectoEventos)
+    .values({ ...base, id: "m-2", tipo: "cambio", lado: "rival", jugadorId: null, dorsal: 9 });
+  await db.delete(s.jugadores).where(eq(s.jugadores.id, jugador.id));
+  const [e] = await db
+    .select()
+    .from(s.partidoDirectoEventos)
+    .where(eq(s.partidoDirectoEventos.id, "m-1"));
+  expect(e).toMatchObject({ jugadorId: null, nota: "" });
+  await db.delete(s.partidos).where(eq(s.partidos.id, p!.id));
+  expect(await db.select().from(s.partidoDirecto)).toEqual([]);
+  expect(await db.select().from(s.partidoDirectoEventos)).toEqual([]);
+});

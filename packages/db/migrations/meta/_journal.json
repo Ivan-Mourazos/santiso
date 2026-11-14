@@ -218,6 +218,13 @@
       "when": 1793745062703,
       "tag": "0030_gastos-bote",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1794674379394,
+      "tag": "0031_libreta-directo",
+      "breakpoints": true
     }
   ]
 }
