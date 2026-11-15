@@ -6,7 +6,7 @@ import {
   type DatosCronoloxia,
   type EventoCartel,
 } from "@/lib/cartel2/modelo";
-import { medidasLinea } from "@/lib/cartel2/cronoloxia";
+import { filasLinea, medidasLinea } from "@/lib/cartel2/cronoloxia";
 import { Balon } from "./Balon";
 import { Base } from "./Base";
 import { Escudo } from "./Escudo";
@@ -73,16 +73,66 @@ function Texto({ evento }: { evento: EventoCartel }) {
   );
 }
 
+/** El descanso cae entre el último minuto de la primera parte y el primero de la segunda. */
+const FIN_PRIMERA = 45;
+
+/** Una fila de la línea de tiempo: la incidencia en el lado de su equipo y el minuto en medio. */
+function Fila({ evento, propio }: { evento: EventoCartel; propio: boolean }) {
+  const hecho = (
+    <span className={s.hecho} data-lectura-columna>
+      <Icono tipo={evento.tipo} />
+      <Texto evento={evento} />
+    </span>
+  );
+  const local = evento.lado === "local";
+  return (
+    <li className={s.fila} data-lectura-fila data-propio={propio} data-lado={evento.lado}>
+      <span className={s.ladoLocal}>{local && hecho}</span>
+      <span className={`${b.display} ${s.minuto}`}>
+        {evento.minuto ? `${evento.minuto}'` : "–"}
+      </span>
+      <span className={s.ladoVisitante}>{!local && hecho}</span>
+    </li>
+  );
+}
+
+/** Las amarillas de un equipo cuando no caben en la línea: «NOMBRE 19' · NOMBRE 31'». */
+function Resumen({
+  eventos,
+  lado,
+}: {
+  eventos: readonly EventoCartel[];
+  lado: "local" | "visitante";
+}) {
+  return (
+    <div className={s.resumenLado} data-lado={lado}>
+      <span className={s.tarjeta} style={{ background: "#f5c518" }} />
+      {eventos.length === 0
+        ? "—"
+        : eventos.map((e, i) => (
+            <span key={`${e.minuto}-${i}`}>
+              {i > 0 && " · "}
+              {(nombreDeCartel(e.jugador) || "—").toUpperCase()}{" "}
+              <span className={s.minutoResumen}>{e.minuto ? `${e.minuto}'` : ""}</span>
+            </span>
+          ))}
+    </div>
+  );
+}
+
 /**
- * Cronoloxía del partido: marcador arriba, con cada escudo y su nombre encima de su columna, y
- * debajo una columna por equipo (la de casa a la izquierda), cada una por orden de minuto.
+ * Resultado del partido: marcador arriba, con cada escudo y su nombre, y debajo la línea de
+ * tiempo: cada incidencia en el lado de su equipo (la de casa a la izquierda) con el minuto en
+ * medio, y el descanso marcado. Con muchas, las amarillas van a un resumen abajo.
  */
 export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
   const eventos = [...datos.eventos].sort((a, c) => orden(a.minuto) - orden(c.minuto));
-  const columnas = (["local", "visitante"] as const).map((lado) =>
-    eventos.filter((e) => e.lado === lado),
-  );
-  const { cuerpo: cuerpoLinea, aire, minuto, denso } = medidasLinea(columnas);
+  const { enLinea, amarillasLocal, amarillasVisitante } = filasLinea(eventos);
+  const resumen = amarillasLocal.length + amarillasVisitante.length > 0;
+  const { cuerpo: cuerpoLinea, aire, minuto, denso } = medidasLinea(enLinea, resumen);
+  const primera = enLinea.filter((e) => orden(e.minuto) <= FIN_PRIMERA);
+  const segunda = enLinea.filter((e) => orden(e.minuto) > FIN_PRIMERA);
+  const propio = (e: EventoCartel) => (e.lado === "local" ? datos.local : datos.visitante).propio;
   const pie = [fechaCorta(datos.fecha), datos.campo.toUpperCase()].filter(Boolean).join("  ·  ");
 
   return (
@@ -96,7 +146,7 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
       patrocinadores={datos.patrocinadores}
     >
       <header className={`${b.cabecera} ${s.cabecera}`} data-lectura-bloque>
-        <div className={b.xornada}>CRONOLOXÍA</div>
+        <div className={b.xornada}>RESULTADO</div>
         <div className={b.competicion}>
           {categoriaCartel(datos.categoria)}
           {datos.jornada ? ` · XORNADA ${datos.jornada}` : ""}
@@ -129,48 +179,40 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
       </div>
 
       {eventos.length === 0 && <div className={s.vacia}>SEN INCIDENCIAS REXISTRADAS</div>}
-      <div
-        className={s.linea}
-        data-denso={denso || undefined}
-        style={
-          {
-            "--cuerpo": `${cuerpoLinea}px`,
-            "--aire": `${aire}px`,
-            "--ancho-minuto": minuto,
-          } as CSSProperties
-        }
-      >
-        {columnas.map((lista, i) => {
-          const lado = i === 0 ? "local" : "visitante";
-          const equipo = i === 0 ? datos.local : datos.visitante;
-          return (
-            <ol
-              key={lado}
-              className={s.columna}
-              aria-label={equipo.nombre}
-              data-lectura-bloque
-              data-lado={lado}
-            >
-              {lista.map((e, j) => (
-                <li
-                  key={`${e.minuto}-${j}`}
-                  className={i === 0 ? s.izquierda : s.derecha}
-                  data-lectura-fila
-                  data-propio={equipo.propio}
-                >
-                  <span className={s.hecho} data-lectura-columna>
-                    <Icono tipo={e.tipo} />
-                    <Texto evento={e} />
-                  </span>
-                  <span className={`${b.display} ${s.minuto}`}>
-                    {e.minuto ? `${e.minuto}'` : "–"}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          );
-        })}
-      </div>
+      {enLinea.length > 0 && (
+        <ol
+          className={s.linea}
+          data-denso={denso || undefined}
+          data-resumen={resumen || undefined}
+          data-lectura-bloque
+          style={
+            {
+              "--cuerpo": `${cuerpoLinea}px`,
+              "--aire": `${aire}px`,
+              "--ancho-minuto": minuto,
+            } as CSSProperties
+          }
+        >
+          {primera.map((e, i) => (
+            <Fila key={`a-${e.minuto}-${i}`} evento={e} propio={propio(e)} />
+          ))}
+          {primera.length > 0 && segunda.length > 0 && (
+            <li className={s.descanso} aria-label="Descanso">
+              <span>DESCANSO</span>
+            </li>
+          )}
+          {segunda.map((e, i) => (
+            <Fila key={`b-${e.minuto}-${i}`} evento={e} propio={propio(e)} />
+          ))}
+        </ol>
+      )}
+
+      {resumen && (
+        <div className={s.resumen} data-lectura-bloque>
+          <Resumen eventos={amarillasLocal} lado="local" />
+          <Resumen eventos={amarillasVisitante} lado="visitante" />
+        </div>
+      )}
 
       {pie && (
         <div className={`${b.dato} ${s.pie}`} data-lectura-bloque>

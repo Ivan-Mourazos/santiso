@@ -1,4 +1,4 @@
-/* Cronoloxía. Zonas: cabecera 150–290 · marcador 300–480 · línea de tiempo 516–1120 · pie
+/* Resultado (línea de tiempo central). Zonas: cabecera 150–290 · marcador 300–480 · línea de tiempo 516–1120 · pie
    1140–1182 · patrocinadores 1200–1310. */
 .cabecera {
   top: 150px;
@@ -60,8 +60,8 @@
   font-size: 0.5em;
 }
 
-/* Una columna por equipo, como el marcador: la de casa a la izquierda. Cada una reparte su
-   altura por su cuenta, así los cambios de dos líneas no agrandan filas de la otra. */
+/* Línea de tiempo central: lado local · minuto · lado visitante, con un eje amarillo detrás
+   de los minutos. Cada fila lleva una sola incidencia. */
 .linea {
   position: absolute;
   z-index: 5;
@@ -69,40 +69,82 @@
   bottom: 230px;
   left: 64px;
   right: 64px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 32px;
-  align-items: start;
-  border-top: 2px solid rgb(255 255 255 / 18%);
-  padding-top: 12px;
-}
-.columna {
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.linea li {
-  display: grid;
-  grid-template-columns: calc(var(--cuerpo, 34px) * var(--ancho-minuto, 1.42)) minmax(0, 1fr);
-  align-items: center;
-  gap: 8px;
-  padding: calc(var(--aire, 4px) / 2) 0;
-  border-bottom: 1px solid rgb(255 255 255 / 10%);
+.linea[data-resumen] {
+  bottom: 360px;
 }
-.linea li:last-child {
-  border-bottom: 0;
+.linea::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  margin-left: -1.5px;
+  background: linear-gradient(
+    transparent,
+    rgb(245 197 24 / 60%) 8%,
+    rgb(245 197 24 / 60%) 92%,
+    transparent
+  );
+}
+.fila {
+  position: relative;
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) calc(var(--cuerpo, 34px) * var(--ancho-minuto, 1.42) + 24px)
+    minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: calc(var(--aire, 4px) / 2) 0;
+}
+.ladoLocal {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.ladoVisitante {
+  display: flex;
+  justify-content: flex-start;
+  min-width: 0;
+}
+.ladoLocal .hecho {
+  flex-direction: row-reverse;
+  text-align: right;
 }
 .minuto {
-  grid-column: 1;
-  grid-row: 1;
-  font-size: calc(var(--cuerpo, 34px) * 0.8);
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--amarillo);
+  border-radius: 999px;
+  background: #0b0b0c;
+  font-size: calc(var(--cuerpo, 34px) * 0.7);
   line-height: 1.5;
-  color: rgb(255 255 255 / 70%);
-  text-align: center;
+  color: #fff;
 }
-.linea li[data-propio="true"] .minuto {
+.fila[data-propio="true"] .minuto {
   color: var(--amarillo);
+}
+.descanso {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+}
+.descanso span {
+  padding: 0 16px;
+  background: #0b0b0c;
+  font-size: 20px;
+  line-height: 1.5;
+  letter-spacing: 0.3em;
+  color: rgb(255 255 255 / 60%);
 }
 .hecho {
   grid-column: 2;
@@ -115,7 +157,7 @@
   min-width: 0;
   color: #fff;
 }
-.linea li[data-propio="true"] .hecho {
+.fila[data-propio="true"] .hecho {
   color: var(--amarillo);
 }
 .hecho svg,
@@ -157,6 +199,34 @@
 .sale {
   color: rgb(255 255 255 / 72%);
 }
+.resumen {
+  position: absolute;
+  z-index: 6;
+  left: 64px;
+  right: 64px;
+  bottom: 230px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px;
+  padding-top: 14px;
+  border-top: 1px solid rgb(255 255 255 / 15%);
+  font-size: 25px;
+  line-height: 1.35;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 85%);
+}
+.resumenLado[data-lado="visitante"] {
+  text-align: right;
+}
+.resumenLado .tarjeta {
+  width: 16px;
+  height: 22px;
+  margin-right: 10px;
+  vertical-align: -3px;
+}
+.minutoResumen {
+  color: var(--amarillo);
+}
 .pie {
   position: absolute;
   z-index: 6;
@@ -186,5 +256,5 @@
   font-size: 72px;
 }
 .linea[data-denso] {
-  top: 400px;
+  top: 424px;
 }

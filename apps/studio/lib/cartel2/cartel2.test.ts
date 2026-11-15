@@ -16,7 +16,8 @@ import {
   PLANTILLAS,
   urlFoto,
 } from "./modelo";
-import { medidasLinea } from "./cronoloxia";
+import { filasLinea, medidasLinea } from "./cronoloxia";
+import type { EventoCartel } from "./modelo";
 
 /** Píxeles RGBA de una imagen hecha con franjas de colores, como un escudo simplificado. */
 async function pixeles(franjas: { color: string; alto: number }[], ancho = 40) {
@@ -232,19 +233,36 @@ describe("modelo", () => {
     ).toEqual([{ nombre: "CESAR VIEITES", goles: 1 }]);
   });
 
-  it("cronoloxía: con pocas incidencias la letra crece sin partir nombres; con muchas, encoge", () => {
-    const tarjeta = (jugador: string) =>
-      ({ minuto: "10", tipo: "amarilla", lado: "local", jugador, entra: "" }) as const;
-    const pocas = medidasLinea([[tarjeta("MENDEZ CASTRO, FRANCISCO")], []]);
+  it("resultado: con pocas incidencias la letra crece sin partir nombres; con muchas, encoge", () => {
+    const tarjeta = (jugador: string, lado: "local" | "visitante" = "local") =>
+      ({ minuto: "10", tipo: "amarilla", lado, jugador, entra: "" }) as const;
+    const pocas = medidasLinea([tarjeta("MENDEZ CASTRO, FRANCISCO")], false);
     expect(pocas.cuerpo).toBeGreaterThanOrEqual(40);
-    const muchas = medidasLinea([Array.from({ length: 14 }, () => tarjeta("Iago Castro")), []]);
+    const muchas = medidasLinea(Array.from({ length: 13 }, () => tarjeta("Iago Castro")), false);
     expect(muchas.cuerpo).toBeLessThan(pocas.cuerpo);
-    expect(muchas.cuerpo).toBeGreaterThanOrEqual(26);
+    expect(muchas.cuerpo).toBeGreaterThanOrEqual(30);
     expect(pocas.denso).toBe(false);
-    // Con 13 por equipo y cambios, el marcador encoge para que quepa la lista entera.
+    // Con muchos cambios (dos líneas cada uno), el marcador encoge para que quepa la lista.
     const cambio = { minuto: "10", tipo: "cambio", lado: "local", jugador: "Ramos", entra: "Xoel" } as const;
-    const llena = Array.from({ length: 13 }, (_, i) => (i % 4 ? tarjeta("Nicolás Carbajales") : cambio));
-    expect(medidasLinea([llena, llena]).denso).toBe(true);
+    expect(medidasLinea(Array.from({ length: 13 }, () => cambio), false).denso).toBe(true);
+  });
+
+  it("resultado: hasta 13 incidencias todas en la línea; con más, las amarillas van abajo", () => {
+    const e = (minuto: number, tipo: EventoCartel["tipo"], lado: "local" | "visitante") =>
+      ({ minuto: String(minuto), tipo, lado, jugador: `Xogador ${minuto}`, entra: "" }) as const;
+    const siete = [e(5, "gol", "local"), e(10, "amarilla", "visitante"), e(20, "roja", "local"),
+      e(30, "amarilla", "local"), e(40, "gol", "visitante"), e(50, "amarilla", "local"), e(60, "gol", "local")];
+    expect(filasLinea(siete)).toEqual({ enLinea: siete, amarillasLocal: [], amarillasVisitante: [] });
+    const dieciocho = Array.from({ length: 18 }, (_, i) =>
+      e(i * 5 + 1, i % 2 ? "amarilla" : i % 4 ? "gol" : "doble_amarilla", i % 3 ? "local" : "visitante"),
+    );
+    const r = filasLinea(dieciocho);
+    expect(r.enLinea.every((x) => x.tipo !== "amarilla")).toBe(true);
+    expect(r.enLinea).toHaveLength(9);
+    expect([...r.amarillasLocal, ...r.amarillasVisitante]).toHaveLength(9);
+    expect(r.amarillasLocal.every((x) => x.lado === "local")).toBe(true);
+    expect(r.amarillasVisitante.every((x) => x.lado === "visitante")).toBe(true);
+    expect(medidasLinea(r.enLinea, true).cuerpo).toBeGreaterThanOrEqual(30);
   });
 });
 
