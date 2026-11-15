@@ -1,8 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-const foto = Buffer.from(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900"><rect width="1600" height="900" fill="#99bda0"/></svg>',
-);
 for (const pantalla of ["convocatoria", "alineacion"] as const) {
   test(`${pantalla}: capacidad explica dos láminas sin escribir en datos reales`, async ({
     page,
@@ -54,38 +51,17 @@ for (const pantalla of ["convocatoria", "alineacion"] as const) {
   });
 }
 for (const ancho of [360, 390]) {
-  test(`alineación: foto de campo editable sin guardar jugadores a ${ancho}px`, async ({
-    page,
-  }) => {
+  test(`alineación: el campo va sin foto de fondo y cabe a ${ancho}px`, async ({ page }) => {
     await page.setViewportSize({ width: ancho, height: 844 });
     await page.goto("/admin/alineacion");
-    const control = page.locator("details").filter({ hasText: "Foto de campo · fondo del cartel" });
-    await expect(control).toBeVisible({ timeout: 30000 });
-    await control.locator("summary").tap();
-    await page
-      .getByLabel("Subir foto del campo", { exact: true })
-      .setInputFiles({ name: "campo.svg", mimeType: "image/svg+xml", buffer: foto });
-    await expect(
-      control.getByRole("img", { name: "Foto de campo para el fondo completo" }),
-    ).toBeVisible();
-    // Con un cartel ya guardado, la foto nueva lo deja por actualizar: no se comparte el viejo.
-    const guardado = page.getByRole("region", { name: /Once inicial: carteles guardados/ });
-    if ((await guardado.getByRole("list", { name: "Carteles guardados" }).count()) > 0) {
-      await expect(guardado.getByText(/Has cambiado la foto de fondo/)).toBeVisible();
-      await expect(guardado.getByRole("button", { name: "Actualizar cartel" })).toBeVisible();
-    }
-    await page.getByLabel("Encuadre horizontal", { exact: true }).fill("0.3");
-    await page.getByLabel("Encuadre vertical", { exact: true }).fill("0.7");
-    for (const campo of ["Subir foto del campo", "Encuadre horizontal", "Encuadre vertical"]) {
-      const c = await page.getByLabel(campo, { exact: true }).boundingBox();
-      expect(Math.round(c!.height)).toBeGreaterThanOrEqual(44);
-    }
-    await control.getByRole("button", { name: "Quitar foto de fondo", exact: true }).tap();
-    await expect(control.getByRole("img")).toHaveCount(0);
+    await expect(page.getByRole("region", { name: /Once inicial: carteles guardados/ })).toBeVisible({
+      timeout: 30000,
+    });
+    // Desde el 15/11/2026 el once se dibuja en el campo con la camiseta del club: sin fotos.
+    await expect(page.locator("details").filter({ hasText: "Foto de campo" })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       ancho,
     );
-    // No «Generar cartel»: guarda la alineación y el cartel. Nada se escribe en la base real.
   });
   test(`convocatoria: hora y lugar de quedada editables sin desplegar a ${ancho}px`, async ({
     page,
