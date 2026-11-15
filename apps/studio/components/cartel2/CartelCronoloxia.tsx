@@ -8,6 +8,8 @@ import {
 } from "@/lib/cartel2/modelo";
 import {
   filasLinea,
+  ordenMinuto,
+  esPrimeraParte,
   MAX_CENTRAL,
   medidasColumnas,
   medidasLinea,
@@ -17,12 +19,6 @@ import { Base } from "./Base";
 import { Escudo } from "./Escudo";
 import b from "./Base.module.css";
 import s from "./CartelCronoloxia.module.css";
-
-/** «45+2» → 45,002; «90» → 90. Para ordenar por minuto con el descuento detrás. */
-function orden(minuto: string) {
-  const m = /^(\d+)(?:\s*\+\s*(\d+))?/.exec(minuto);
-  return m ? Number(m[1]) + Number(m[2] ?? 0) / 1000 : 999;
-}
 
 function Tarjeta({ color }: { color: string }) {
   return <span className={s.tarjeta} style={{ background: color }} />;
@@ -78,9 +74,6 @@ function Texto({ evento }: { evento: EventoCartel }) {
   );
 }
 
-/** El descanso cae entre el último minuto de la primera parte y el primero de la segunda. */
-const FIN_PRIMERA = 45;
-
 /** Una fila de la línea de tiempo: la incidencia en el lado de su equipo y el minuto en medio. */
 function Fila({ evento, propio }: { evento: EventoCartel; propio: boolean }) {
   const hecho = (
@@ -131,7 +124,7 @@ function Resumen({
  * medio, y el descanso marcado. Con muchas, las amarillas van a un resumen abajo.
  */
 export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
-  const eventos = [...datos.eventos].sort((a, c) => orden(a.minuto) - orden(c.minuto));
+  const eventos = [...datos.eventos].sort((a, c) => ordenMinuto(a.minuto) - ordenMinuto(c.minuto));
   const { enLinea, amarillasLocal, amarillasVisitante } = filasLinea(eventos);
   const resumen = amarillasLocal.length + amarillasVisitante.length > 0;
   // Con muchísimas incidencias la línea central no cabe: una columna por equipo.
@@ -139,11 +132,14 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
   const columnas = (["local", "visitante"] as const).map((lado) =>
     enLinea.filter((e) => e.lado === lado),
   );
-  const { cuerpo: cuerpoLinea, aire, minuto, denso } = enColumnas
-    ? medidasColumnas(columnas)
-    : medidasLinea(enLinea, resumen);
-  const primera = enLinea.filter((e) => orden(e.minuto) <= FIN_PRIMERA);
-  const segunda = enLinea.filter((e) => orden(e.minuto) > FIN_PRIMERA);
+  const {
+    cuerpo: cuerpoLinea,
+    aire,
+    minuto,
+    denso,
+  } = enColumnas ? medidasColumnas(columnas) : medidasLinea(enLinea, resumen);
+  const primera = enLinea.filter((e) => esPrimeraParte(e.minuto));
+  const segunda = enLinea.filter((e) => !esPrimeraParte(e.minuto));
   const propio = (e: EventoCartel) => (e.lado === "local" ? datos.local : datos.visitante).propio;
   const pie = [fechaCorta(datos.fecha), datos.campo.toUpperCase()].filter(Boolean).join("  ·  ");
 

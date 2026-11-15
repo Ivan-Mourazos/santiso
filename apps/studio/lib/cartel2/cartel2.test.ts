@@ -229,7 +229,10 @@ describe("modelo", () => {
     expect(nombreDeCartel("RODRIGUEZ MELLA, JOSE MANUEL")).toBe("JOSE RODRIGUEZ");
     expect(nombreDeCartel(" Bareto ")).toBe("Bareto");
     expect(
-      goleadores([{ minuto: "36", jugador: "VIEITES PENA, CESAR", lado: "local", tipo: "gol" }], "local"),
+      goleadores(
+        [{ minuto: "36", jugador: "VIEITES PENA, CESAR", lado: "local", tipo: "gol" }],
+        "local",
+      ),
     ).toEqual([{ nombre: "CESAR VIEITES", goles: 1 }]);
   });
 
@@ -238,23 +241,52 @@ describe("modelo", () => {
       ({ minuto: "10", tipo: "amarilla", lado, jugador, entra: "" }) as const;
     const pocas = medidasLinea([tarjeta("MENDEZ CASTRO, FRANCISCO")], false);
     expect(pocas.cuerpo).toBeGreaterThanOrEqual(40);
-    const muchas = medidasLinea(Array.from({ length: 13 }, () => tarjeta("Iago Castro")), false);
+    const muchas = medidasLinea(
+      Array.from({ length: 13 }, () => tarjeta("Iago Castro")),
+      false,
+    );
     expect(muchas.cuerpo).toBeLessThan(pocas.cuerpo);
     expect(muchas.cuerpo).toBeGreaterThanOrEqual(30);
     expect(pocas.denso).toBe(false);
     // Con muchos cambios (dos líneas cada uno), el marcador encoge para que quepa la lista.
-    const cambio = { minuto: "10", tipo: "cambio", lado: "local", jugador: "Ramos", entra: "Xoel" } as const;
-    expect(medidasLinea(Array.from({ length: 13 }, () => cambio), false).denso).toBe(true);
+    const cambio = {
+      minuto: "10",
+      tipo: "cambio",
+      lado: "local",
+      jugador: "Ramos",
+      entra: "Xoel",
+    } as const;
+    expect(
+      medidasLinea(
+        Array.from({ length: 13 }, () => cambio),
+        false,
+      ).denso,
+    ).toBe(true);
   });
 
   it("resultado: hasta 13 incidencias todas en la línea; con más, las amarillas van abajo", () => {
     const e = (minuto: number, tipo: EventoCartel["tipo"], lado: "local" | "visitante") =>
       ({ minuto: String(minuto), tipo, lado, jugador: `Xogador ${minuto}`, entra: "" }) as const;
-    const siete = [e(5, "gol", "local"), e(10, "amarilla", "visitante"), e(20, "roja", "local"),
-      e(30, "amarilla", "local"), e(40, "gol", "visitante"), e(50, "amarilla", "local"), e(60, "gol", "local")];
-    expect(filasLinea(siete)).toEqual({ enLinea: siete, amarillasLocal: [], amarillasVisitante: [] });
+    const siete = [
+      e(5, "gol", "local"),
+      e(10, "amarilla", "visitante"),
+      e(20, "roja", "local"),
+      e(30, "amarilla", "local"),
+      e(40, "gol", "visitante"),
+      e(50, "amarilla", "local"),
+      e(60, "gol", "local"),
+    ];
+    expect(filasLinea(siete)).toEqual({
+      enLinea: siete,
+      amarillasLocal: [],
+      amarillasVisitante: [],
+    });
     const dieciocho = Array.from({ length: 18 }, (_, i) =>
-      e(i * 5 + 1, i % 2 ? "amarilla" : i % 4 ? "gol" : "doble_amarilla", i % 3 ? "local" : "visitante"),
+      e(
+        i * 5 + 1,
+        i % 2 ? "amarilla" : i % 4 ? "gol" : "doble_amarilla",
+        i % 3 ? "local" : "visitante",
+      ),
     );
     const r = filasLinea(dieciocho);
     expect(r.enLinea.every((x) => x.tipo !== "amarilla")).toBe(true);
@@ -316,18 +348,54 @@ describe("peticionDeFormulario", () => {
     expect(p.formato).toBe("publicacion");
     expect(p.datos.momento).toBe("final");
     expect(p.datos.huecos.filter(Boolean)).toHaveLength(2);
-    expect(p.datos.huecos[0]).toEqual({ dorsal: "1", nombre: "Miguel Pampín", capitan: false, portero: true });
+    expect(p.datos.huecos[0]).toEqual({
+      dorsal: "1",
+      nombre: "Miguel Pampín",
+      capitan: false,
+      portero: true,
+    });
     // El Santiso va de visitante: sus goles son los del visitante (3), los del rival los de casa (1).
     expect([p.datos.golesClub, p.datos.golesRival]).toEqual([3, 1]);
     expect(p.datos.local).toBe(false);
     expect(leerPeticion(JSON.parse(JSON.stringify(p)))).not.toBeNull();
   });
 
+  it("O Noso 11: no vuelve a colocar a un titular retirado de un hueco explícito", () => {
+    const f = formulario({
+      titulares: [
+        { id: "fila-1", jugadorId: "j1", dorsal: "1", nome: "Porteiro", eCapitan: false },
+        { id: "fila-2", jugadorId: "j9", dorsal: "9", nome: "Dianteiro", eCapitan: false },
+      ],
+    });
+    const p = peticionDeFormulario("noso11", f, recursos, {
+      ...opciones,
+      colocacion: { sistema: "4-4-2", huecos: [null, "j9", ...Array<null>(9).fill(null)] },
+    });
+    if (p.plantilla !== "campo") throw new Error("plantilla");
+    expect(p.datos.huecos[0]).toBeNull();
+    expect(p.datos.huecos.filter(Boolean)).toHaveLength(1);
+    expect(p.datos.huecos[1]?.nombre).toBe("Dianteiro");
+  });
+
   it("O Noso 11: respeta la colocación elegida, por jugador de la base", () => {
     const f = formulario({
       titulares: [
-        { id: "fila-1", jugadorId: "j1", dorsal: "1", nome: "Porteiro", eCapitan: false, posicion: "POR" },
-        { id: "fila-2", jugadorId: "j9", dorsal: "9", nome: "Dianteiro", eCapitan: false, posicion: "DC" },
+        {
+          id: "fila-1",
+          jugadorId: "j1",
+          dorsal: "1",
+          nome: "Porteiro",
+          eCapitan: false,
+          posicion: "POR",
+        },
+        {
+          id: "fila-2",
+          jugadorId: "j9",
+          dorsal: "9",
+          nome: "Dianteiro",
+          eCapitan: false,
+          posicion: "DC",
+        },
       ],
     });
     const huecos = [null, null, null, null, null, null, null, null, null, "j9", "j1"];
@@ -342,7 +410,12 @@ describe("peticionDeFormulario", () => {
   });
 
   it("O Noso 11 sin marcador no inventa el resultado", () => {
-    const p = peticionDeFormulario("noso11", formulario({ golesLocal: "", golesRival: "" }), recursos, opciones);
+    const p = peticionDeFormulario(
+      "noso11",
+      formulario({ golesLocal: "", golesRival: "" }),
+      recursos,
+      opciones,
+    );
     if (p.plantilla !== "campo") throw new Error("plantilla");
     expect([p.datos.golesClub, p.datos.golesRival]).toEqual([null, null]);
   });
@@ -355,7 +428,12 @@ describe("peticionDeFormulario", () => {
 
   it("anuncio: fichajes y comunicados sin logos; celebraciones con ellos", () => {
     for (const tema of ["fichaje", "formal", "medico"] as const) {
-      const p = peticionDeFormulario("multiusos", formulario({ multiusosTema: tema }), recursos, opciones);
+      const p = peticionDeFormulario(
+        "multiusos",
+        formulario({ multiusosTema: tema }),
+        recursos,
+        opciones,
+      );
       if (p.plantilla !== "anuncio") throw new Error("plantilla");
       expect(p.datos.institucionales, tema).toEqual([]);
       expect(p.datos.patrocinadores, tema).toEqual([]);
@@ -607,9 +685,17 @@ describe("escudos del club y relieve", () => {
 });
 
 describe("cartel de alineación en el campo", () => {
-  const equipo = { nombre: "Santiso", escudo: null, propio: true, color: "#f5c518", relieve: false };
+  const equipo = {
+    nombre: "Santiso",
+    escudo: null,
+    propio: true,
+    color: "#f5c518",
+    relieve: false,
+  };
   const huecos = Array.from({ length: 11 }, (_, i) =>
-    i === 3 ? null : { dorsal: String(i + 1), nombre: `Xogador ${i + 1}`, capitan: i === 5, portero: i === 0 },
+    i === 3
+      ? null
+      : { dorsal: String(i + 1), nombre: `Xogador ${i + 1}`, capitan: i === 5, portero: i === 0 },
   );
   const campo = (formato: "publicacion" | "historia", cambios: Record<string, unknown> = {}) => ({
     plantilla: "campo",
@@ -844,7 +930,10 @@ describe("resultado con muchísimas incidencias", () => {
     }));
     const { enLinea } = filasLinea(eventos);
     expect(enLinea.length).toBeGreaterThan(MAX_CENTRAL);
-    const columnas = [enLinea.filter((e) => e.lado === "local"), enLinea.filter((e) => e.lado === "visitante")];
+    const columnas = [
+      enLinea.filter((e) => e.lado === "local"),
+      enLinea.filter((e) => e.lado === "visitante"),
+    ];
     expect(medidasColumnas(columnas).cuerpo).toBeGreaterThanOrEqual(26);
   });
 });

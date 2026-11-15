@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
+import { archivosActuales, estadoCarrusel } from "@/lib/cartel2/despues";
 import type { PeticionCartel } from "@/lib/cartel2/modelo";
 import { estadoPaso, PASOS, PASOS_DESPUES, type CartelGuardado } from "@/lib/cartel2/pasos";
 import { compartirArchivos, descargarArchivos } from "./compartirArchivos";
@@ -26,6 +27,7 @@ export function PaqueteDespues({
   partidoId,
   guardados: iniciales,
   preparar,
+  firma,
   antesDeGuardar,
   texto,
   motivo,
@@ -38,6 +40,7 @@ export function PaqueteDespues({
   preparar: () => Promise<Record<PasoDespues, PeticionCartel> | null>;
   /** Lo que hay que guardar antes (la colocación de O Noso 11); `false` si falló. */
   antesDeGuardar?: () => Promise<boolean>;
+  firma: string;
   texto: string;
   motivo?: string | null;
   showToast: (msg: string, type?: "success" | "error") => void;
@@ -48,17 +51,15 @@ export function PaqueteDespues({
   const [compartiendo, setCompartiendo] = useState(false);
   const [viendo, setViendo] = useState<{ paso: PasoDespues; url: string } | null>(null);
   // Los PNG ya bajados: compartir en iOS solo funciona justo tras el toque, sin esperar a la red.
-  const [ficheros, setFicheros] = useState<File[] | null>(null);
+  const [descargados, setDescargados] = useState<{ clave: string; archivos: File[] } | null>(null);
+  const [firmaGenerada, setFirmaGenerada] = useState(firma);
   const bloqueo = useRef(false);
 
   const estados = PASOS_DESPUES.map((p) => estadoPaso(guardados[p]));
-  const estado = estados.includes("pendiente")
-    ? "pendiente"
-    : estados.includes("desactualizado")
-      ? "desactualizado"
-      : "hecho";
+  const estado = estadoCarrusel(estados, firma, firmaGenerada);
   const urls = PASOS_DESPUES.map((p) => guardados[p][0]?.url ?? null);
   const claveUrls = urls.join("|");
+  const ficheros = archivosActuales(descargados, claveUrls);
 
   useEffect(() => {
     if (estado === "pendiente") return;
@@ -72,10 +73,10 @@ export function PaqueteDespues({
       }),
     )
       .then((lista) => {
-        if (vigente) setFicheros(lista);
+        if (vigente) setDescargados({ clave: claveUrls, archivos: lista });
       })
       .catch(() => {
-        if (vigente) setFicheros(null);
+        if (vigente) setDescargados(null);
       });
     return () => {
       vigente = false;
@@ -88,6 +89,7 @@ export function PaqueteDespues({
     if (bloqueo.current) return;
     bloqueo.current = true;
     setGenerando(true);
+    const firmaEnviada = firma;
     try {
       const peticiones = await preparar();
       if (!peticiones) return;
@@ -110,6 +112,7 @@ export function PaqueteDespues({
         nuevos[paso] = (await respuesta.json()) as CartelGuardado[];
         setGuardados({ ...nuevos });
       }
+      setFirmaGenerada(firmaEnviada);
       onCambio?.(nuevos);
       showToast(estado === "pendiente" ? "Carrusel generado y guardado" : "Carrusel actualizado");
     } catch {
@@ -171,7 +174,10 @@ export function PaqueteDespues({
         </Button>
         {estado !== "pendiente" && (
           <>
-            <Button onClick={() => void compartir()} disabled={!ficheros || compartiendo || generando}>
+            <Button
+              onClick={() => void compartir()}
+              disabled={!ficheros || compartiendo || generando}
+            >
               {compartiendo ? "Abriendo…" : "Guardar o compartir"}
             </Button>
             <Button
@@ -190,7 +196,11 @@ export function PaqueteDespues({
         title={viendo ? PASOS[viendo.paso].nombre : ""}
       >
         {viendo && (
-          <img className={s.grande} src={viendo.url} alt={`${PASOS[viendo.paso].nombre} · Publicación`} />
+          <img
+            className={s.grande}
+            src={viendo.url}
+            alt={`${PASOS[viendo.paso].nombre} · Publicación`}
+          />
         )}
       </Dialog>
     </section>

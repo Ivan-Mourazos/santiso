@@ -192,6 +192,9 @@ export function useCartelForm(
   );
   const [equipos, setEquipos] = useState<CartelTeam[]>([]);
   const [jugadores, setJugadores] = useState<CartelPlayer[]>([]);
+  const cargaPartido = useRef(0);
+  const [eventosPartidoId, setEventosPartidoId] = useState<string | null>(null);
+  const [jugadoresPartidoId, setJugadoresPartidoId] = useState<string | null>(null);
   const [dbMatches, setDbMatches] = useState<SelectorMatch[]>([]);
   const [errorDatos, setErrorDatos] = useState<string | null>(null);
   const [campos, setCampos] = useState<CartelField[]>([]);
@@ -395,6 +398,9 @@ export function useCartelForm(
   }
 
   function loadMatchFromDb(match: SelectorMatch) {
+    const carga = ++cargaPartido.current;
+    setEventosPartidoId(null);
+    setJugadoresPartidoId(null);
     const isSantisoLocal = match.equipo_local?.nombre?.toLowerCase().includes("santiso");
     const rival = isSantisoLocal ? match.equipo_visitante : match.equipo_local;
     const campoNombre = match.campo?.nombre || match.lugar || "";
@@ -420,10 +426,13 @@ export function useCartelForm(
       golesLocal: match.goles_local?.toString() ?? "",
       golesRival: match.goles_visitante?.toString() ?? "",
       events: [],
+      titulares: [],
+      suplentes: [],
     }));
 
     // `propia` ya es una columna: no hay que deducirla del nombre mostrado como antes.
     cargarEventosDePartido(match.id).then((filas) => {
+      if (carga !== cargaPartido.current) return;
       const events: CronEvent[] = filas.map((fila) => {
         let tipo = mapDbEventType(fila.tipo);
         if (tipo === "gol" && fila.propia) tipo = "propia";
@@ -441,12 +450,13 @@ export function useCartelForm(
         };
       });
 
-      setForm((p) => ({ ...p, events }));
+      setForm((p) => (p.partido_id === match.id ? { ...p, events } : p));
+      setEventosPartidoId(match.id);
     });
 
     // Los del acta y, mientras no llega, el once y la convocatoria guardados. Titulares primero.
     cargarJugadoresDePartido(match.id).then((filas) => {
-      if (filas.length === 0) return;
+      if (carga !== cargaPartido.current) return;
 
       const aJugador = (fila: (typeof filas)[number]) =>
         toCartelPlayer({
@@ -464,12 +474,12 @@ export function useCartelForm(
         .map(aJugador)
         .slice(0, 11);
       const suplentes = filas.filter((f) => !f.titular).map(aJugador);
-      if (titulares.length === 0 && suplentes.length === 0) return;
 
       while (titulares.length < 11) titulares.push(mkPlayer());
       while (suplentes.length < 5) suplentes.push(mkPlayer());
 
-      setForm((p) => ({ ...p, titulares, suplentes }));
+      setForm((p) => (p.partido_id === match.id ? { ...p, titulares, suplentes } : p));
+      setJugadoresPartidoId(match.id);
     });
   }
 
@@ -539,6 +549,7 @@ export function useCartelForm(
     updateMatch,
     handleMatchRivalFile,
     dbMatches,
+    jugadoresPartidoId: eventosPartidoId === jugadoresPartidoId ? jugadoresPartidoId : null,
     campos,
     loadMatchFromDb,
     resetForm,

@@ -269,7 +269,12 @@ async function huellasDe(ids: string[]): Promise<Map<string, Record<PasoCartelPa
       const colocacion = (momento: "previa" | "final") => {
         const fila = colocacionesPorPartido.get(p.id)?.find((c) => c.momento === momento);
         return fila
-          ? { colocacion: { sistema: fila.sistema, huecos: fila.huecos.map((id) => id && jugador(id)) } }
+          ? {
+              colocacion: {
+                sistema: fila.sistema,
+                huecos: fila.huecos.map((id) => id && jugador(id)),
+              },
+            }
           : {};
       };
       // El Resultado es la línea de tiempo: marcador, goles, tarjetas y cambios con su minuto.
@@ -282,7 +287,7 @@ async function huellasDe(ids: string[]): Promise<Map<string, Record<PasoCartelPa
           once: hash({ base, alineacion, ...colocacion("previa") }),
           resultado: linea,
           cronoloxia: linea,
-          noso11: hash({ base, jugadores: onceActa, ...colocacion("final") }),
+          noso11: hash({ base, marcador, jugadores: onceActa, ...colocacion("final") }),
         },
       ];
     }),

@@ -147,6 +147,21 @@ describe("huellas de datos visibles", () => {
     expect(await api.huellaPaso(partidoId, "partido")).not.toBe(fecha);
   });
 
+  it("O Noso 11 se desactualiza al corregir cualquiera de los goles del marcador", async () => {
+    const inicial = await api.huellaPaso(partidoId, "noso11");
+    await conexion.db
+      .update(s.partidos)
+      .set({ golesLocal: 1, golesVisitante: 0 })
+      .where(eq(s.partidos.id, partidoId));
+    const local = await api.huellaPaso(partidoId, "noso11");
+    expect(local).not.toBe(inicial);
+    await conexion.db
+      .update(s.partidos)
+      .set({ golesVisitante: 2 })
+      .where(eq(s.partidos.id, partidoId));
+    expect(await api.huellaPaso(partidoId, "noso11")).not.toBe(local);
+  });
+
   it("convocatoria incluye selección, quedada, equipación y nota sin afectar partido", async () => {
     const partido = await api.huellaPaso(partidoId, "partido");
     const inicial = await api.huellaPaso(partidoId, "convocatoria");
@@ -269,7 +284,10 @@ describe("PNG persistidos", () => {
     expect(foto!.url).toMatch(new RegExp(`^/media/carteles/${partidoId}/fotos/`));
     const delJugador = {
       ...resultado,
-      datos: { ...resultado.datos, foto: { ...resultado.datos.foto!, url: "/media/jugadores/a.webp" } },
+      datos: {
+        ...resultado.datos,
+        foto: { ...resultado.datos.foto!, url: "/media/jugadores/a.webp" },
+      },
     } as PeticionCartel;
     await api.guardarCartelesPaso({
       partidoId,
@@ -375,9 +393,9 @@ describe("PNG persistidos", () => {
       },
     };
     expect(api.leerPeticionesPaso("once", [campo])).toHaveLength(1);
-    expect(
-      api.leerPeticionesPaso("noso11", [{ ...campo, formato: "publicacion" }]),
-    ).toHaveLength(1);
+    expect(api.leerPeticionesPaso("noso11", [{ ...campo, formato: "publicacion" }])).toHaveLength(
+      1,
+    );
     expect(() => api.leerPeticionesPaso("noso11", [campo])).toThrow();
     expect(() => api.leerPeticionesPaso("cronoloxia", [resultado])).toThrow();
     expect(api.leerPeticionesPaso("resultado", [resultado])).toHaveLength(1);

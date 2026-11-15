@@ -141,3 +141,15 @@ export function medidasColumnas(columnas: readonly (readonly EventoCartel[])[]) 
 function anchoMinuto(eventos: readonly EventoCartel[]) {
   return eventos.some((e) => e.minuto.includes("+")) ? 2.2 : 1.42;
 }
+
+/** Ordena el descuento detrás de su minuto base, sin confundirlo con otra parte. */
+export function ordenMinuto(minuto: string) {
+  const m = /^(\d+)(?:\s*\+\s*(\d+))?/.exec(minuto);
+  return m ? Number(m[1]) + Number(m[2] ?? 0) / 1000 : 999;
+}
+
+/** 45+N sigue siendo primera parte; 90+N sigue siendo segunda. */
+export function esPrimeraParte(minuto: string) {
+  const m = /^(\d+)/.exec(minuto);
+  return m !== null && Number(m[1]) <= 45;
+}

@@ -24,7 +24,7 @@ import type {
 import { TEMAS_ANUNCIO } from "./modelo";
 import type { FormatoCartel } from "./modelo";
 import type { PreviaCartel } from "./previa";
-import { completar, type Colocacion } from "./tactica";
+import { completar, depurar, type Colocacion } from "./tactica";
 
 export interface RecursosCartel {
   /** Escudo del equipo del Santiso de cada categoría (el que se edita en Equipos). */
@@ -61,9 +61,7 @@ export function escudoClubDe(recursos: RecursosCartel, categoria?: string) {
 
 /** «12345, 67.890» → ["12345", "67890"]: solo los de cinco cifras, como mucho dos. */
 export function numerosLoteria(texto: string) {
-  return (texto.replace(/\./g, "").match(/\d+/g) ?? [])
-    .filter((n) => n.length === 5)
-    .slice(0, 2);
+  return (texto.replace(/\./g, "").match(/\d+/g) ?? []).filter((n) => n.length === 5).slice(0, 2);
 }
 
 /** «5 €», «2.5», «2,50» → «5», «2,50», «2,50»; lo que no es un importe, vacío. */
@@ -313,11 +311,13 @@ export function peticionDeFormulario(
       const clave = (j: Player) => j.jugadorId ?? j.id;
       const porClave = new Map(titulares.map((j) => [clave(j), j]));
       const sistema = opciones.colocacion?.sistema ?? "4-4-2";
-      const huecos = completar(
-        sistema,
-        opciones.colocacion?.huecos ?? [],
-        titulares.map((j) => ({ id: clave(j), posicion: j.posicion ?? null })),
-      );
+      const huecos = opciones.colocacion
+        ? depurar(opciones.colocacion.huecos, titulares.map(clave))
+        : completar(
+            sistema,
+            [],
+            titulares.map((j) => ({ id: clave(j), posicion: j.posicion ?? null })),
+          );
       const [golesClub, golesRival] = partido.santisoLocal
         ? [form.golesLocal, form.golesRival]
         : [form.golesRival, form.golesLocal];
@@ -341,7 +341,12 @@ export function peticionDeFormulario(
           huecos: huecos.map((id, i) => {
             const j = id ? porClave.get(id) : undefined;
             return j
-              ? { dorsal: j.dorsal.trim(), nombre: j.nome.trim(), capitan: j.eCapitan, portero: i === 0 }
+              ? {
+                  dorsal: j.dorsal.trim(),
+                  nombre: j.nome.trim(),
+                  capitan: j.eCapitan,
+                  portero: i === 0,
+                }
               : null;
           }),
           suplentes: jugadores(form.suplentes),

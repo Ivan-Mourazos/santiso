@@ -6,12 +6,7 @@ import Link from "next/link";
 import { LIMITE_INSTAGRAM, textoInstagram } from "@/lib/cartel/instagram";
 
 // UI Components & Hooks
-import {
-  TEMAS_MULTIUSOS,
-  TEMPLATES,
-  type MultiusosTema,
-  type TemplateId,
-} from "./cartel/types";
+import { TEMAS_MULTIUSOS, TEMPLATES, type MultiusosTema, type TemplateId } from "./cartel/types";
 import { useCartelForm } from "./cartel/useCartelForm";
 import { useOptionalStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
@@ -85,6 +80,7 @@ export default function GeneradorCartel({
     updateMatch,
     handleMatchRivalFile,
     dbMatches,
+    jugadoresPartidoId,
     loadMatchFromDb,
     resetForm,
     competicionesCatalog,
@@ -125,10 +121,13 @@ export default function GeneradorCartel({
     void cargarCartelesPartido([partidoId])
       .catch(sinConexion)
       .then((r) => {
-      if (vigente) {
-        setGuardados({ clave: claveGuardados, lista: r.ok ? (r.datos[partidoId]?.[paso] ?? []) : [] });
-      }
-    });
+        if (vigente) {
+          setGuardados({
+            clave: claveGuardados,
+            lista: r.ok ? (r.datos[partidoId]?.[paso] ?? []) : [],
+          });
+        }
+      });
     return () => {
       vigente = false;
     };
@@ -144,12 +143,25 @@ export default function GeneradorCartel({
   const despues = useDespues({
     activo: tipo === "despues",
     form,
-    set,
+    jugadoresPartidoId,
+    plantilla: jugadores
+      .filter((j) => j.categoria === form.categoria)
+      .map((j) => ({
+        id: j.id,
+        jugadorId: j.id,
+        nome: j.apodo?.trim() || j.nombre,
+        dorsal: j.dorsal == null ? "" : String(j.dorsal),
+        eCapitan: Boolean(j.capitan),
+        posicion: j.posicion ?? null,
+      })),
     equipos,
     recursos: assetUrls,
   });
 
-  const textoGenerado = useMemo(() => textoInstagram(tipoForAssets, form), [tipoForAssets, form]);
+  const textoGenerado = useMemo(
+    () => textoInstagram(tipoForAssets, tipo === "despues" ? despues.formulario : form),
+    [tipoForAssets, form, tipo, despues.formulario],
+  );
   const [edicion, setEdicion] = useState<{ base: string; texto: string } | null>(null);
   const instagramText = edicion && edicion.base === textoGenerado ? edicion.texto : textoGenerado;
   const retocado = instagramText !== textoGenerado;
@@ -252,7 +264,12 @@ export default function GeneradorCartel({
               tipo={tipo}
             />
           )}
-          {tipo === "despues" && despues.partidoId && form.titulares.some((j) => j.nome.trim()) && (
+          {tipo === "despues" && despues.partidoId && despues.sinActa && (
+            <p>
+              Sin acta ni alineación: elige el once desde la plantilla tocando los huecos del campo.
+            </p>
+          )}
+          {tipo === "despues" && despues.partidoId && despues.jugadores.length > 0 && (
             <EditorTactico
               jugadores={despues.jugadores}
               colocacion={despues.colocacion}
@@ -265,6 +282,7 @@ export default function GeneradorCartel({
               partidoId={despues.partidoId}
               guardados={despues.guardados}
               preparar={despues.preparar}
+              firma={despues.firma}
               antesDeGuardar={async () => {
                 const error = await despues.guardarFinal();
                 if (error) showToast(error, "error");
@@ -279,11 +297,7 @@ export default function GeneradorCartel({
             <p role="status">{despues.motivo}</p>
           )}
           {tipo === "multiusos" && (
-            <FormMultiusos
-              form={form}
-              set={set}
-              handleMultiusosFile={handleMultiusosFile}
-            />
+            <FormMultiusos form={form} set={set} handleMultiusosFile={handleMultiusosFile} />
           )}
           {tipo === "clasificacion" && <FormClasificacion form={form} set={set} />}
           {tipo === "fichaxe" && (
@@ -359,7 +373,7 @@ export default function GeneradorCartel({
             <>
               <PilotoCartel
                 tipo="despues"
-                form={form}
+                form={despues.formulario}
                 recursos={assetUrls}
                 equipos={equipos}
                 showToast={showToast}
@@ -368,7 +382,7 @@ export default function GeneradorCartel({
               />
               <PilotoCartel
                 tipo="noso11"
-                form={form}
+                form={despues.formulario}
                 recursos={assetUrls}
                 equipos={equipos}
                 showToast={showToast}
@@ -392,15 +406,15 @@ export default function GeneradorCartel({
           )}
           {/* Fichajes, comunicados y lotaría van sin logos: no hay nada que explicar. */}
           {tipo !== "fichaxe" && tipo !== "comunicado" && tipo !== "loteria" && (
-          <PlegableMovil titulo="Logos y patrocinadores">
-            <div className={styles.pie}>
-              <p>
-                Los logos de cabecera se cambian en{" "}
-                <Link href="/admin/ajustes-graficos">Ajustes gráficos</Link>; los de la barra
-                inferior, en <Link href="/admin/patrocinadores">Patrocinadores y logos</Link>.
-              </p>
-            </div>
-          </PlegableMovil>
+            <PlegableMovil titulo="Logos y patrocinadores">
+              <div className={styles.pie}>
+                <p>
+                  Los logos de cabecera se cambian en{" "}
+                  <Link href="/admin/ajustes-graficos">Ajustes gráficos</Link>; los de la barra
+                  inferior, en <Link href="/admin/patrocinadores">Patrocinadores y logos</Link>.
+                </p>
+              </div>
+            </PlegableMovil>
           )}
         </div>
       </div>
