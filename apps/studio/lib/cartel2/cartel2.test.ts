@@ -16,7 +16,7 @@ import {
   PLANTILLAS,
   urlFoto,
 } from "./modelo";
-import { filasLinea, medidasLinea } from "./cronoloxia";
+import { filasLinea, MAX_CENTRAL, medidasColumnas, medidasLinea } from "./cronoloxia";
 import type { EventoCartel } from "./modelo";
 
 /** Píxeles RGBA de una imagen hecha con franjas de colores, como un escudo simplificado. */
@@ -830,5 +830,21 @@ describe("texto de Instagram", () => {
       }),
     );
     expect(texto).toContain("Imos 2º con 4 puntos (1V 1E 0D).");
+  });
+});
+
+describe("resultado con muchísimas incidencias", () => {
+  it("con más de 16 filas en la línea, pasa a una columna por equipo y cabe", () => {
+    const eventos = Array.from({ length: 26 }, (_, i) => ({
+      minuto: String(i * 3),
+      tipo: i % 7 === 0 ? ("cambio" as const) : ("gol" as const),
+      lado: i % 2 ? ("local" as const) : ("visitante" as const),
+      jugador: "Nicolás Carbajales",
+      entra: "Xoel",
+    }));
+    const { enLinea } = filasLinea(eventos);
+    expect(enLinea.length).toBeGreaterThan(MAX_CENTRAL);
+    const columnas = [enLinea.filter((e) => e.lado === "local"), enLinea.filter((e) => e.lado === "visitante")];
+    expect(medidasColumnas(columnas).cuerpo).toBeGreaterThanOrEqual(26);
   });
 });

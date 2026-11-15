@@ -21,8 +21,9 @@ async function abrir(page: Page) {
 
 /** Sin pestañas: datos y vista previa van en la misma pantalla, uno debajo del otro. */
 async function vista(page: Page) {
-  await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
-  await expect(page.locator("[data-vista-cartel] [data-cartel]")).toBeVisible();
+  // El carrusel de después enseña dos vistas previas: basta con la primera.
+  await page.locator("[data-vista-cartel]").first().scrollIntoViewIfNeeded();
+  await expect(page.locator("[data-vista-cartel] [data-cartel]").first()).toBeVisible();
 }
 
 for (const ancho of [360, 390]) {
@@ -41,10 +42,8 @@ for (const ancho of [360, 390]) {
     // Cada cartel se abre desde el catálogo, con filas de toque cómodo.
     for (const [plantilla, nombre] of [
       ["partido", "Cartel de partido"],
-      ["resumo", "Resultado"],
-      ["cronoloxia", "Cronoloxía"],
+      ["despues", "Resultado e O Noso 11"],
       ["proximos", "Próximos partidos"],
-      ["noso11", "O Noso 11"],
       ["multiusos", "Celebración"],
       ["clasificacion", "Clasificación"],
       ["fichaxe", "Fichaje"],
@@ -58,7 +57,7 @@ for (const ancho of [360, 390]) {
       await expect(page).toHaveURL(new RegExp(`plantilla=${plantilla}`));
       await page.waitForLoadState("networkidle");
       await vista(page);
-      const cartel = (await page.locator("[data-vista-cartel]").boundingBox())!;
+      const cartel = (await page.locator("[data-vista-cartel]").first().boundingBox())!;
       expect(cartel.width).toBeGreaterThan(200);
       expect(cartel.x + cartel.width).toBeLessThanOrEqual(ancho + 1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(

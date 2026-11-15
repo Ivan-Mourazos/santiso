@@ -30,8 +30,8 @@ for (const [ancho, alto] of [
     // Carteles abre su hoja; de ahí, a la plantilla elegida.
     await pestanas.getByRole("button", { name: "Carteles", exact: true }).tap();
     const carteles = page.getByRole("dialog", { name: "Carteles" });
-    await carteles.getByRole("link", { name: /^Cronoloxía/ }).tap();
-    await expect(page).toHaveURL(/\/admin\/carteles\?.*plantilla=cronoloxia/);
+    await carteles.getByRole("link", { name: /^Resultado e O Noso 11/ }).tap();
+    await expect(page).toHaveURL(/\/admin\/carteles\?.*plantilla=despues/);
     await expect(carteles).toBeHidden();
     await sinDeslizar(page);
 

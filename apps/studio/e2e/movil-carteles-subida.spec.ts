@@ -57,19 +57,4 @@ for (const plantilla of ["cronoloxia", "resumo"]) {
   });
 }
 
-test("carteles: foto propia de jugador en O noso 11", async ({ page }) => {
-  await page.route("**/api/carteles/png", (ruta) =>
-    ruta.fulfill({ status: 200, contentType: "image/png", body: PNG }),
-  );
-  await page.goto("/admin/carteles?plantilla=noso11");
-  await page.locator("summary", { hasText: "Foto y encuadre" }).tap();
-  await page.getByLabel("Uso de la foto").selectOption("retrato");
-  await page
-    .locator("label", { hasText: "Subir la foto que quieras" })
-    .locator("input")
-    .setInputFiles({ name: "jugador.jpg", mimeType: "image/jpeg", buffer: await fotoGrande() });
-  await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
-  const retrato = page.locator("[data-vista-cartel] img[src^='data:image/jpeg']");
-  await expect(retrato).toBeVisible();
-  expect(await retrato.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(2160);
-});
+// O Noso 11 es ahora el campo con las camisetas del club: va sin fotos (15/11/2026).

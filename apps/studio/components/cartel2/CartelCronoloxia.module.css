@@ -258,3 +258,56 @@
 .linea[data-denso] {
   top: 424px;
 }
+
+/* Modo columnas (muchísimas incidencias): una columna por equipo, la de casa a la izquierda.
+   Cada una reparte su altura por su cuenta. */
+.columnas {
+  position: absolute;
+  z-index: 5;
+  top: 516px;
+  bottom: 230px;
+  left: 64px;
+  right: 64px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 32px;
+  align-items: start;
+  border-top: 2px solid rgb(255 255 255 / 18%);
+  padding-top: 12px;
+}
+.columnas[data-denso] {
+  top: 424px;
+}
+.columna {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.columna li {
+  display: grid;
+  grid-template-columns: calc(var(--cuerpo, 34px) * var(--ancho-minuto, 1.42)) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: calc(var(--aire, 4px) / 2) 0;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+.columna li:last-child {
+  border-bottom: 0;
+}
+.columna .hecho {
+  grid-column: 2;
+  grid-row: 1;
+}
+.minutoColumna {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: calc(var(--cuerpo, 34px) * 0.8);
+  line-height: 1.5;
+  color: rgb(255 255 255 / 70%);
+  text-align: center;
+}
+.columna li[data-propio="true"] .minutoColumna,
+.columna li[data-propio="true"] .hecho {
+  color: var(--amarillo);
+}

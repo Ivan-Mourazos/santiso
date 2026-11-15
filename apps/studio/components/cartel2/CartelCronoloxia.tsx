@@ -6,7 +6,12 @@ import {
   type DatosCronoloxia,
   type EventoCartel,
 } from "@/lib/cartel2/modelo";
-import { filasLinea, medidasLinea } from "@/lib/cartel2/cronoloxia";
+import {
+  filasLinea,
+  MAX_CENTRAL,
+  medidasColumnas,
+  medidasLinea,
+} from "@/lib/cartel2/cronoloxia";
 import { Balon } from "./Balon";
 import { Base } from "./Base";
 import { Escudo } from "./Escudo";
@@ -129,7 +134,14 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
   const eventos = [...datos.eventos].sort((a, c) => orden(a.minuto) - orden(c.minuto));
   const { enLinea, amarillasLocal, amarillasVisitante } = filasLinea(eventos);
   const resumen = amarillasLocal.length + amarillasVisitante.length > 0;
-  const { cuerpo: cuerpoLinea, aire, minuto, denso } = medidasLinea(enLinea, resumen);
+  // Con muchísimas incidencias la línea central no cabe: una columna por equipo.
+  const enColumnas = enLinea.length > MAX_CENTRAL;
+  const columnas = (["local", "visitante"] as const).map((lado) =>
+    enLinea.filter((e) => e.lado === lado),
+  );
+  const { cuerpo: cuerpoLinea, aire, minuto, denso } = enColumnas
+    ? medidasColumnas(columnas)
+    : medidasLinea(enLinea, resumen);
   const primera = enLinea.filter((e) => orden(e.minuto) <= FIN_PRIMERA);
   const segunda = enLinea.filter((e) => orden(e.minuto) > FIN_PRIMERA);
   const propio = (e: EventoCartel) => (e.lado === "local" ? datos.local : datos.visitante).propio;
@@ -179,7 +191,39 @@ export function CartelCronoloxia({ datos }: { datos: DatosCronoloxia }) {
       </div>
 
       {eventos.length === 0 && <div className={s.vacia}>SEN INCIDENCIAS REXISTRADAS</div>}
-      {enLinea.length > 0 && (
+      {enColumnas && (
+        <div
+          className={s.columnas}
+          data-denso={denso || undefined}
+          style={
+            {
+              "--cuerpo": `${cuerpoLinea}px`,
+              "--aire": `${aire}px`,
+              "--ancho-minuto": minuto,
+            } as CSSProperties
+          }
+        >
+          {columnas.map((lista, i) => {
+            const equipo = i === 0 ? datos.local : datos.visitante;
+            return (
+              <ol key={i} className={s.columna} aria-label={equipo.nombre} data-lectura-bloque>
+                {lista.map((e, j) => (
+                  <li key={`${e.minuto}-${j}`} data-lectura-fila data-propio={equipo.propio}>
+                    <span className={s.hecho} data-lectura-columna>
+                      <Icono tipo={e.tipo} />
+                      <Texto evento={e} />
+                    </span>
+                    <span className={`${b.display} ${s.minutoColumna}`}>
+                      {e.minuto ? `${e.minuto}'` : "–"}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            );
+          })}
+        </div>
+      )}
+      {!enColumnas && enLinea.length > 0 && (
         <ol
           className={s.linea}
           data-denso={denso || undefined}

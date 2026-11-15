@@ -83,9 +83,10 @@ test("jornada: antes de jugar muestra preparación y explica publicaciones indis
   await expect(partido.getByRole("list", { name: "Preparación del partido" })).toBeVisible();
   await expect(partido.getByRole("list", { name: "Cierre del partido" })).toHaveCount(0);
   await partido.getByText("Más tareas del partido", { exact: true }).click();
-  await expect(partido.getByText("Cronoloxía", { exact: true })).toBeVisible();
-  await expect(partido.getByText("Necesita acta", { exact: true })).toHaveCount(2);
-  await expect(partido.getByRole("link", { name: "Cronoloxía" })).toHaveCount(0);
+  // Lo de después (Resultado y O Noso 11, en carrusel) espera al marcador.
+  await expect(partido.getByText("Resultado e O Noso 11", { exact: true })).toBeVisible();
+  await expect(partido.getByText("Necesita resultado", { exact: true }).first()).toBeVisible();
+  await expect(partido.getByRole("link", { name: "Resultado e O Noso 11" })).toHaveCount(0);
 });
 
 test("jornada: último partido permite cerrar y regresar al próximo sin guardar", async ({

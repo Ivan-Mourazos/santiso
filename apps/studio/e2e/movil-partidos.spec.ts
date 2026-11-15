@@ -60,7 +60,8 @@ test("partidos: nuestro partido de otra jornada lleva sus carteles", async ({ pa
   const carteles = page.getByRole("dialog").getByRole("region", { name: "Carteles del partido" });
   await expect(carteles).toBeVisible();
   const resultado = carteles.getByRole("link", { name: /^(Hacer|Rehacer) Resultado$/ });
-  await expect(resultado).toHaveAttribute("href", /plantilla=resumo&partido=[^&]+/);
+  // Lo de después se hace junto, en el carrusel.
+  await expect(resultado).toHaveAttribute("href", /plantilla=despues&partido=[^&]+/);
   // Veteranos no convoca ni alinea: no salen esos pasos.
   await expect(carteles.getByText("Convocatoria", { exact: true })).toHaveCount(0);
   for (const caja of await carteles
