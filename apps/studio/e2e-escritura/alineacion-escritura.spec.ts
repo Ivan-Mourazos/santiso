@@ -68,3 +68,39 @@ test("elegir titulares, suplente y capitán, generar la historia y recuperarla a
   ).toHaveAttribute("aria-pressed", "true");
   expect(errores).toEqual([]);
 });
+
+test("colocar el once en el campo: sistema, meter a un suplente en un hueco y recuperarlo", async ({
+  page,
+}) => {
+  const errores: string[] = [];
+  page.on("pageerror", (error) => errores.push(error.message));
+  await page.setViewportSize({ width: 360, height: 740 });
+
+  // Parte de la prueba anterior: Uno y Dous titulares, Tres suplente.
+  await page.goto("/admin/alineacion?partido=alineacion-e2e");
+  const campo = page.getByRole("region", { name: "Once en el campo" });
+  await expect(campo).toBeVisible({ timeout: 30000 });
+  await campo.getByLabel("Sistema").selectOption("4-3-3");
+
+  // Un hueco vacío: se elige al suplente, que entra de titular.
+  await campo.getByRole("button", { name: "Delantero: vacío. Elegir jugador" }).first().click();
+  const hoja = page.getByRole("dialog");
+  await hoja.getByRole("button", { name: /Tres Aliñación Ficticio/ }).click();
+  await expect(campo.getByRole("button", { name: "Delantero: Tres Aliñación Ficticio. Cambiar" })).toBeVisible();
+  await expect(page.getByText("3 / 11 titulares")).toBeVisible();
+
+  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(page.getByText("Alineación guardada")).toBeVisible();
+
+  await page.reload();
+  await expect(campo.getByLabel("Sistema")).toHaveValue("4-3-3", { timeout: 30000 });
+  await expect(
+    campo.getByRole("button", { name: "Delantero: Tres Aliñación Ficticio. Cambiar" }),
+  ).toBeVisible();
+
+  // Quitar del campo lo devuelve al banco.
+  await campo.getByRole("button", { name: "Delantero: Tres Aliñación Ficticio. Cambiar" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Quitar del campo" }).click();
+  await expect(page.getByText("2 / 11 titulares")).toBeVisible();
+  expect(errores).toEqual([]);
+});

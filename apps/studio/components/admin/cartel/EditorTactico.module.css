@@ -1,0 +1,141 @@
+/* Campo plano para elegir hueco con el dedo; cabe desde 360 px de ancho. */
+.editor {
+  display: grid;
+  gap: 12px;
+}
+
+.campo {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  aspect-ratio: 68 / 90;
+  margin: 0 auto;
+  border: 2px solid rgb(255 255 255 / 55%);
+  border-radius: 10px;
+  background:
+    radial-gradient(70% 55% at 50% 40%, rgb(245 197 24 / 12%), transparent 75%),
+    linear-gradient(180deg, #17201a, #0c120e);
+  overflow: hidden;
+}
+.medio {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 2px solid rgb(255 255 255 / 40%);
+}
+.circulo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26%;
+  aspect-ratio: 1;
+  border: 2px solid rgb(255 255 255 / 40%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.area {
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 0;
+  height: 15%;
+  border: 2px solid rgb(255 255 255 / 40%);
+  border-bottom: 0;
+}
+.area.arriba {
+  top: 0;
+  bottom: auto;
+  border-top: 0;
+  border-bottom: 2px solid rgb(255 255 255 / 40%);
+}
+
+/* Cada hueco: botón de al menos 44 px de alto, centrado en su punto del sistema. */
+.hueco {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: 21%;
+  min-height: 44px;
+  padding: 2px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  transform: translate(-50%, -55%);
+  cursor: pointer;
+}
+.hueco:focus-visible {
+  outline: 2px solid #f5c518;
+}
+.hueco:disabled {
+  cursor: default;
+}
+.camiseta {
+  width: clamp(34px, 11vw, 54px);
+  height: clamp(34px, 11vw, 54px);
+  filter: drop-shadow(0 4px 4px rgb(0 0 0 / 55%));
+}
+.mas {
+  display: grid;
+  place-items: center;
+  width: clamp(34px, 11vw, 50px);
+  height: clamp(34px, 11vw, 50px);
+  border: 2px dashed rgb(245 197 24 / 70%);
+  border-radius: 50%;
+  color: #f5c518;
+  font-size: 24px;
+  line-height: 1;
+}
+.nombre {
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgb(6 8 11 / 85%);
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.hueco[data-vacio] .nombre {
+  color: rgb(255 255 255 / 60%);
+}
+
+.grupo {
+  margin: 8px 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted, #9ca3af);
+}
+.opciones {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 4%);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.opcionDorsal {
+  min-width: 2ch;
+  color: #f5c518;
+  font-weight: 800;
+}

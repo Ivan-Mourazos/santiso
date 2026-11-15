@@ -20,7 +20,7 @@
   right: 380px;
 }
 .historia .cabecera {
-  top: 340px;
+  top: 330px;
   text-align: center;
 }
 .kicker {
@@ -108,8 +108,12 @@
   height: 790px;
 }
 .historia .escena {
-  top: 750px;
-  height: 820px;
+  top: 690px;
+  height: 735px;
+}
+.historia .camiseta {
+  width: 108px;
+  height: 108px;
 }
 .campo {
   position: absolute;
@@ -143,7 +147,14 @@
     0 60px 120px rgb(0 0 0 / 80%);
 }
 .historia .campo {
-  inset: 0 50px;
+  inset: 0 90px;
+}
+.historia .escudo {
+  width: 100px;
+  height: 100px;
+}
+.historia .cruce {
+  margin-top: 14px;
 }
 .linea {
   position: absolute;
@@ -260,5 +271,5 @@
   top: 1140px;
 }
 .historia .suplentes {
-  top: 1600px;
+  top: 1450px;
 }

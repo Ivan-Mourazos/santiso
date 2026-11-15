@@ -8,6 +8,7 @@ import {
   errorDeAlineacion,
   papelDe,
   peticionDeAlineacion,
+  aplicarColocacion,
   type Alineacion,
   type JugadorAlineacion,
   type PartidoAlineacion,
@@ -134,5 +135,28 @@ describe("cartel de la alineación", () => {
     expect(p.datos).toMatchObject({ fecha: "", hora: "", campo: "" });
     expect(p.datos.club.nombre).toBe("UD Santiso FC Solaina");
     expect(p.datos.rival.color).toBe("#1d4ed8");
+  });
+});
+
+describe("cambios desde el campo", () => {
+  const base: Alineacion = { titulares: ["a", "b", "c"], suplentes: ["s1", "s2"], capitanId: "b" };
+
+  it("quien sale del campo pasa a suplente y deja de ser capitán", () => {
+    const r = aplicarColocacion(base, ["a", null, "c", ...Array<null>(8).fill(null)]);
+    expect(r.titulares).toEqual(["a", "c"]);
+    expect(r.suplentes).toEqual(["b", "s1", "s2"]);
+    expect(r.capitanId).toBeNull();
+  });
+
+  it("un suplente puesto en el campo entra de titular y sale del banco", () => {
+    const r = aplicarColocacion(base, ["a", "s2", "c", ...Array<null>(8).fill(null)]);
+    expect(r.titulares).toEqual(["a", "s2", "c"]);
+    expect(r.suplentes).toEqual(["b", "s1"]);
+  });
+
+  it("un jugador de fuera puesto en el campo entra de titular", () => {
+    const r = aplicarColocacion(base, ["a", "b", "c", "nuevo", ...Array<null>(7).fill(null)]);
+    expect(r.titulares).toEqual(["a", "b", "c", "nuevo"]);
+    expect(r.capitanId).toBe("b");
   });
 });

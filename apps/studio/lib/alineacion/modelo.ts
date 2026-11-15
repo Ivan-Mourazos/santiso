@@ -4,7 +4,7 @@
  */
 import type { Posicion } from "@santiso/domain";
 import type { JugadorOnce, PeticionCartel } from "@/lib/cartel2/modelo";
-import { completar, type Colocacion, type Sistema } from "@/lib/cartel2/tactica";
+import { completar, type Colocacion, type Huecos, type Sistema } from "@/lib/cartel2/tactica";
 import type { AvisoJugador } from "@/lib/liga/avisos";
 
 export const TITULARES = 11;
@@ -221,5 +221,22 @@ export function peticionDeAlineacion(
       }),
       suplentes: listaDeCartel(alineacion.suplentes, jugadores, alineacion.capitanId),
     },
+  };
+}
+
+/**
+ * La alineación que resulta de tocar el campo: los titulares son los que están en él (en el
+ * orden de los huecos); quien sale pasa el primero al banco y deja de ser capitán; quien entra
+ * desde el banco (o desde fuera) deja de ser suplente.
+ */
+export function aplicarColocacion(alineacion: Alineacion, huecos: Huecos): Alineacion {
+  const enCampo = [...new Set(huecos.filter((id): id is string => id !== null))];
+  const salen = alineacion.titulares.filter((id) => !enCampo.includes(id));
+  const suplentes = [...salen, ...alineacion.suplentes.filter((id) => !enCampo.includes(id))];
+  return {
+    titulares: enCampo,
+    suplentes: suplentes.slice(0, MAX_SUPLENTES),
+    capitanId:
+      alineacion.capitanId && enCampo.includes(alineacion.capitanId) ? alineacion.capitanId : null,
   };
 }
