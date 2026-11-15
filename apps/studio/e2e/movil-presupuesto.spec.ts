@@ -26,7 +26,9 @@ const PRESUPUESTOS: Presupuesto[] = [
 ];
 
 const SECCIONES = [
-  "jornada",
+  "inicio",
+  "partidos",
+  "federacion",
   "calendario",
   "clasificacion",
   "estadisticas",
@@ -36,9 +38,6 @@ const SECCIONES = [
   "multas",
   "alineacion",
   "carteles",
-  "importar",
-  "actas",
-  "importar-jornada",
   "equipos",
   "patrocinadores",
   "temporadas",
@@ -77,23 +76,6 @@ const PLANTILLAS_CARTEL = [
   "clasificacion",
 ];
 for (const ancho of [360, 390]) {
-  test(`jornada: partido y acción en primera pantalla, pasos compactos a ${ancho}px`, async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: ancho, height: 780 });
-    await abrir(page, "jornada");
-    const mesa = page.locator("[data-mesa-partido]");
-    await expect(mesa).toBeVisible();
-    const rival = (await mesa.getByRole("heading", { level: 2 }).boundingBox())!;
-    expect(rival.y + rival.height).toBeLessThanOrEqual(350);
-    const accion = (await mesa.locator("[data-accion-principal]").boundingBox())!;
-    expect(accion.y + accion.height).toBeLessThanOrEqual(650);
-    const altos = await mesa
-      .locator("[data-paso-partido]")
-      .evaluateAll((ns) => ns.map((n) => Math.round(n.getBoundingClientRect().height)));
-    expect(Math.min(...altos)).toBeGreaterThanOrEqual(44);
-    expect(Math.max(...altos)).toBeLessThanOrEqual(64);
-  });
   for (const plantilla of PLANTILLAS_CARTEL) {
     test(`carteles ${plantilla}: presupuesto de formulario y vista debajo a ${ancho}px`, async ({
       page,

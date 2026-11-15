@@ -32,7 +32,7 @@ test("sin sesión no se ve nada: ni pantallas, ni datos, ni imágenes", async ({
   expect((await request.get("/api/estado")).status()).toBe(401);
   expect((await request.get("/media/equipos/no-existe.png")).status()).toBe(401);
   expect((await request.post("/api/carteles/png", { data: {} })).status()).toBe(401);
-  expect((await request.post("/api/admin/acta-detect", { multipart: {} })).status()).toBe(401);
+  expect((await request.get("/api/avisos")).status()).toBe(401);
   // Las acciones de servidor son POST a una página: tampoco pasan.
   expect((await request.post("/admin/multas", { data: "[]" })).status()).toBe(401);
 });

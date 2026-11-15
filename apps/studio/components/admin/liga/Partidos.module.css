@@ -164,65 +164,278 @@
   font: 800 var(--ui-text-2xl) / 1 var(--ui-font-title);
   font-variant-numeric: tabular-nums;
 }
-.datos {
+/* Día, hora y campo en una línea; el árbitro debajo, en pequeño. */
+.cuando {
   display: grid;
-  gap: var(--ui-space-2);
+  gap: 2px;
   margin: 0;
-}
-.datos div {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--ui-space-3);
+  color: var(--ui-text);
   font-size: var(--ui-text-body);
+  text-align: center;
 }
-.datos dt {
-  color: var(--ui-muted);
-}
-.datos dd {
-  margin: 0;
-  text-align: right;
-}
-.datos dd::first-letter {
+.cuando::first-letter {
   text-transform: uppercase;
 }
+.cuando small {
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+/* Lo que se hace con nuestro partido: botones del mismo tamaño, de dos en dos. */
+.acciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--ui-space-2);
+}
+.acciones > a,
+.acciones > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--ui-space-3);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-control);
+  color: var(--ui-text);
+  font-weight: 800;
+  font-size: var(--ui-text-sm);
+  text-decoration: none;
+}
+.acciones > a:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+/* Goles y tarjetas: minuto, icono, nombre y el escudo de su equipo a la derecha. */
 .eventos {
+  display: grid;
+  gap: var(--ui-space-2);
+  padding-top: var(--ui-space-3);
+  border-top: 1px solid var(--ui-line);
+}
+.eventos ol {
   display: grid;
   gap: var(--ui-space-1);
   margin: 0;
-  padding: var(--ui-space-3) 0 0;
-  border-top: 1px solid var(--ui-line);
+  padding: 0;
   list-style: none;
 }
-/* Lo del local a la izquierda y lo del visitante a la derecha, como en un acta. */
 .eventos li {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2.25rem 1.5rem minmax(0, 1fr) auto;
+  align-items: center;
   gap: var(--ui-space-2);
+  min-height: 28px;
+  color: var(--ui-muted);
   font-size: var(--ui-text-body);
 }
-.eventos li[data-lado="visitante"] {
-  flex-direction: row-reverse;
-  text-align: right;
+.eventos li[data-propio] {
+  color: var(--ui-text);
+  font-weight: 700;
 }
 .minuto {
-  flex: none;
-  width: 2.5rem;
   color: var(--ui-muted);
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
+}
+.persona {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lado {
+  display: grid;
 }
 .nota {
   margin: 0;
   color: var(--ui-muted);
   font-size: var(--ui-text-sm);
 }
-.enlace {
+.externo {
+  justify-self: center;
+  padding: var(--ui-space-2);
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.carteles {
+  display: grid;
+  gap: var(--ui-space-2);
+  padding-top: var(--ui-space-3);
+  border-top: 1px solid var(--ui-line);
+}
+.etiqueta {
+  margin: 0;
+  color: var(--ui-muted);
+  font: 800 var(--ui-text-xs) / 1.2 var(--ui-font-body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.carteles ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* Una línea por cartel: nombre a la izquierda; descargar y rehacer, en pequeño, a la derecha. */
+.carteles li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-1) 0;
+  border-bottom: 1px solid var(--ui-line);
+}
+.carteles li:last-child {
+  border-bottom: 0;
+}
+.carteles li > div:first-child {
+  display: grid;
+  min-width: 0;
+}
+.carteles li strong {
+  font-size: var(--ui-text-body);
+}
+.carteles li span {
+  color: var(--ui-muted);
+  font-size: var(--ui-text-xs);
+}
+.accionesCartel {
+  display: flex;
+  gap: var(--ui-space-1);
+}
+.accionesCartel a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--ui-control-h);
-  border-radius: var(--ui-radius);
+  gap: 2px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--ui-space-2);
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-control);
   color: var(--ui-text);
   font-weight: 800;
+  font-size: var(--ui-text-sm);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.accionesCartel a[download] {
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent);
+}
+.accionesCartel a[data-rehacer] {
+  font-size: var(--ui-text-base);
+}
+.accionesCartel a:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+.marcador > a {
+  display: grid;
+  justify-items: center;
+  gap: var(--ui-space-1);
+  font-weight: 800;
+  font-size: var(--ui-text-sm);
+  overflow-wrap: anywhere;
+}
+.marcador .escudo {
+  width: 40px;
+  height: 40px;
+}
+.marcador strong {
+  font: 800 var(--ui-text-2xl) / 1 var(--ui-font-title);
+  font-variant-numeric: tabular-nums;
+}
+/* Día, hora y campo en una línea; el árbitro debajo, en pequeño. */
+.cuando {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  color: var(--ui-text);
+  font-size: var(--ui-text-body);
+  text-align: center;
+}
+.cuando::first-letter {
+  text-transform: uppercase;
+}
+.cuando small {
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+/* Lo que se hace con nuestro partido: botones del mismo tamaño, de dos en dos. */
+.acciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--ui-space-2);
+}
+.acciones > a,
+.acciones > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--ui-space-3);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-control);
+  color: var(--ui-text);
+  font-weight: 800;
+  font-size: var(--ui-text-sm);
+  text-decoration: none;
+}
+.acciones > a:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+/* Goles y tarjetas: minuto, icono, nombre y el escudo de su equipo a la derecha. */
+.eventos {
+  display: grid;
+  gap: var(--ui-space-2);
+  padding-top: var(--ui-space-3);
+  border-top: 1px solid var(--ui-line);
+}
+.eventos ol {
+  display: grid;
+  gap: var(--ui-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.eventos li {
+  display: grid;
+  grid-template-columns: 2.25rem 1.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ui-space-2);
+  min-height: 28px;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-body);
+}
+.eventos li[data-propio] {
+  color: var(--ui-text);
+  font-weight: 700;
+}
+.minuto {
+  color: var(--ui-muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.persona {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lado {
+  display: grid;
+}
+.nota {
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.externo {
+  justify-self: center;
+  padding: var(--ui-space-2);
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
 }
 .carteles {
   display: grid;
@@ -294,8 +507,11 @@
 }
 .marcador > a {
   min-height: 44px;
-  color: var(--ui-text);
+  color: var(--ui-muted);
   text-decoration: none;
+}
+.marcador > a[data-propio] {
+  color: var(--ui-text);
 }
 .marcador > a:focus-visible {
   outline: 3px solid var(--ui-accent);

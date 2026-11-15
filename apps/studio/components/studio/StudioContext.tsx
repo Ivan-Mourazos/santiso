@@ -136,18 +136,45 @@ export function StudioProvider({
     );
   }, []);
   const locationRef = useRef({ pathname, query });
+  // La pantalla a la que se está yendo, mientras el salto no termina. Una pantalla que al cargar
+  // corrige su dirección (temporada, competición…) no debe pisar ese salto: si se tocó otra
+  // pantalla del menú justo entonces, la corrección la devolvía a la de antes.
+  const destinoRef = useRef<string | null>(null);
+  // Si el salto no llega (se canceló), el apunte caduca solo.
+  const apuntarDestino = useCallback((destino: string) => {
+    destinoRef.current = destino;
+    window.setTimeout(() => {
+      if (destinoRef.current === destino) destinoRef.current = null;
+    }, 10_000);
+  }, []);
   useEffect(() => {
     locationRef.current = { pathname, query };
+    destinoRef.current = null;
   }, [pathname, query]);
+  useEffect(() => {
+    // Los enlaces (menú, hojas, fichas) navegan sin pasar por `navigate`: se apuntan al tocarlos.
+    function alTocar(e: MouseEvent) {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      const enlace = (e.target as Element | null)?.closest?.("a[href]");
+      if (!(enlace instanceof HTMLAnchorElement) || enlace.target === "_blank") return;
+      const url = new URL(enlace.href, window.location.href);
+      if (url.origin === window.location.origin && url.pathname !== locationRef.current.pathname)
+        apuntarDestino(url.pathname);
+    }
+    document.addEventListener("click", alTocar, true);
+    return () => document.removeEventListener("click", alTocar, true);
+  }, [apuntarDestino]);
   const navigate = useCallback(
     (href: string, tipo: TipoNavegacion = "nav-forward") => {
       if (new URL(href, window.location.href).href === window.location.href) return true;
       if (!authorize()) return false;
       drafts.current.clear();
+      const destino = new URL(href, window.location.href).pathname;
+      if (destino !== locationRef.current.pathname) apuntarDestino(destino);
       router.push(href, { transitionTypes: [tipo] });
       return true;
     },
-    [authorize, router],
+    [authorize, router, apuntarDestino],
   );
   const setParams = useCallback(
     (patch: Record<string, string | null>, replace = false) => {
@@ -156,6 +183,8 @@ export function StudioProvider({
       if (next === current.query) return true;
       const href = current.pathname + (next ? `?${next}` : "");
       if (replace) {
+        // Con un salto a otra pantalla en marcha, la corrección se deja: al volver se repite.
+        if (destinoRef.current && destinoRef.current !== current.pathname) return true;
         router.replace(href, { scroll: false });
         return true;
       }

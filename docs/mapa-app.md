@@ -12,7 +12,7 @@ Hecho el 15/11/2026 a partir del código (`lib/navigation/contexto.ts`, `menu.ts
 
 | Código | Pantalla | Ruta | Qué se hace | Decisión |
 |---|---|---|---|---|
-| I1 | Inicio | `inicio` | Tablero: partido de cada equipo, siguiente paso, pasos, clasificación | compactar (idea C) |
+| I1 | Inicio | `inicio` | Solo el partido de cada equipo (cruce, puesto en la tabla); tocarlo abre su detalle en L1 | **hecho 15/11**: tarjeta compacta (idea C), sin pasos ni tareas |
 
 ## L · Liga
 
@@ -20,10 +20,10 @@ Subnavegación arriba: Partidos · Clasificación · Goleadores · Estadísticas
 
 | Código | Pantalla | Ruta | Qué se hace | Decisión |
 |---|---|---|---|---|
-| L1 | Partidos | `partidos` | Competición, jornada ‹ ›, mesa del partido de la semana, lista de la jornada | |
-| L1.1 | Mesa del partido | (dentro de L1) | Siguiente tarea, sanciones, «Más tareas», Directo | |
-| L1.2 | Fotos del partido | diálogo | Galería del partido | |
-| L1.3 | Detalle de partido | diálogo | Fichas de equipo, día/campo, goles y tarjetas, acta (traer/abrir), carteles, Directo | |
+| L1 | Partidos | `partidos` | Competición, jornada ‹ ›, lista de la jornada con el nuestro el primero | **hecho 15/11**: sin mesa ni pasos |
+| L1.1 | Mesa del partido | — | (Siguiente tarea, sanciones, «Más tareas», Directo) | **eliminada de L1 15/11**; solo queda en O4 |
+| L1.2 | Fotos del partido | diálogo | Galería del partido, desde «Fotos» en L1.3 | |
+| L1.3 | Detalle de partido | diálogo | Equipos (a su ficha), día·hora·campo, árbitro, Directo, Fotos, Traer acta (si falta), carteles en una línea, goles y tarjetas por separado | **hecho 15/11**: sin corregir/meter acta a mano (manda la federación) |
 | L2 | Clasificación | `clasificacion` | Tabla de la competición | |
 | L2.1 | Ficha rápida de equipo | diálogo | Resumen del equipo, enlace a O2 | |
 | L2.2 | Opciones / Zonas | diálogos | Zonas de ascenso/descenso; actualizar con la federación (admin) | |
@@ -68,13 +68,13 @@ Todas comparten: formulario + vista previa + formato (4:5 / 9:16) + texto para I
 
 | Código | Pantalla | Ruta | Qué se hace | Decisión |
 |---|---|---|---|---|
-| M1 | Importar | `importar` | Subir capturas: decide si es acta o jornada | |
-| M1.1 | Acta individual | `actas?modoActas=individual` | Revisar datos, titulares, suplentes, eventos | |
-| M1.2 | Actas en lote | `actas?modoActas=lote` | Varias actas de una vez, revisar cada una | |
-| M1.3 | Jornada desde foto | `importar-jornada?origen=foto` | Lectura con IA y revisión fila a fila | |
-| M1.4 | Calendario completo (PDF) | `importar-jornada?origen=calendario` | Traer la temporada entera | |
-| M2 | Federación (admin) | `federacion` | Enlaces, traer calendario, traer a mano, jornadas, temporadas pasadas | |
-| M3 | Calendario | `calendario` | Editar jornadas y partidos, nuevo partido, descansos, traer horarios | |
+| M1 | Importar | — | (Subir capturas: acta o jornada) | **eliminada 15/11** (redirige a M2) |
+| M1.1 | Acta individual | — | (Revisar datos, titulares, suplentes, eventos) | **eliminada 15/11**: manda la federación |
+| M1.2 | Actas en lote | — | (Varias actas de una vez) | **eliminada 15/11** |
+| M1.3 | Jornada desde foto | — | (Lectura con IA) | **eliminada 15/11** |
+| M1.4 | Calendario completo (PDF) | — | (Subir PDF) | **eliminada 15/11**: el calendario se trae en M2 |
+| M2 | Federación (admin) | `federacion` | «Volver a traer»: ponerse al día, calendario completo, horarios, jornada o partido, clasificación, jugadores (uno o cuatro); debajo, qué hay traído, temporadas pasadas y enlaces | **hecho 15/11** |
+| M3 | Amistosos y torneos | `calendario` | Crear y editar partidos que no están en futgal.es (antes «Calendario»); sin traer horarios | **hecho 15/11**: renombrada |
 
 ### Vestuario
 
@@ -99,23 +99,23 @@ Todas comparten: formulario + vista previa + formato (4:5 / 9:16) + texto para I
 
 | Código | Pantalla | Ruta | Desde dónde se llega | Decisión |
 |---|---|---|---|---|
-| O1 | Ficha de jugador | `jugador?id=` | Ficha rápida (L4.1 / E3.3) | |
+| O1 | Ficha de jugador | `jugador?id=` | Ficha rápida (L4.1 / E3.3); «Traer cifras de esta temporada» (admin) | |
 | O2 | Ficha de equipo | `equipo?id=` | L1.3, L2.1, «Otros equipos» de O1 | |
 | O3 | Directo (libreta) | `directo?partido=` | L1.1, L1.3 | |
-| O4 | Jornada | `jornada` | **Ninguna pantalla la enlaza** (su mesa ya vive en L1) | |
+| O4 | Jornada | — | (Mesa del partido con pasos) | **eliminada 15/11** (redirige a Inicio) |
 
 Fuera del panel: `/entrar` (login) y `/render/cartel` (interna, para hacer los PNG).
 
 ## Solapes a decidir
 
-1. **Traer de la federación** en varios sitios: acta (L1.3 y M2), horarios (M3 y M2),
-   clasificación (L2.2 y M2), calendario (M2 y M1.4).
+1. **Traer de la federación**: todo en M2 «Volver a traer»; atajos en L1.3 (acta si falta),
+   O1 (cifras del jugador) y L2.2 (clasificación).
 2. **Temporadas pasadas**: L5 (ver) y M2 (traer).
 3. **Fichas dobles**: jugador (L4.1/E3.3 diálogo + O1 pantalla) y equipo (L2.1 y L1.3
    diálogos + O2 pantalla).
-4. **Mesa del partido** en L1 y en O4 (oculta); Inicio (I1) la resume.
+4. **Mesa del partido**: eliminada el 15/11 (I1, L1 y O4).
 5. **Carteles de resultado**: C1 (carrusel) y los viejos de C9.
-6. **Importar** (M1) reparte a M1.1–M1.4, que tienen selectores propios.
+6. **Importar** (M1–M1.4): eliminado el 15/11.
 7. **Multas** las crea M4 y se gestionan en M5.
 8. **Logos** repartidos: M8 (patrocinadores), M10 (institucionales), M7 (escudos).
 9. **E4 y M6** son el mismo componente con otro filtro.

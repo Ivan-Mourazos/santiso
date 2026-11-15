@@ -9,7 +9,7 @@ import type { ComparacionClasificacion } from "@/lib/rfgf/clasificacion";
 import { obtenerDb } from "@/lib/server/db";
 import { AVISO_RFGF_OCUPADA, conCandadoRfgf } from "./candado";
 import type { DescargadorRfgf } from "./descargador";
-import { sincronizarJugadores } from "./jugadores";
+import { sincronizarJugadores, sincronizarUnJugador } from "./jugadores";
 import {
   anotar,
   compararConOficial,
@@ -250,6 +250,19 @@ export async function traerHorarios(
 }
 
 /** Una pasada de jugadores: como mucho cuatro fichas, más el partido usado para identificarlos si es nuevo. */
+/** Las cifras oficiales de un jugador concreto, ya. */
+export async function traerCifrasDeJugador(
+  competicionId: string,
+  codigo: string,
+  descargador: DescargadorRfgf,
+  ahora = new Date(),
+): Promise<ResumenPeticionRfgf> {
+  return pedir(competicionId, async (_competicion, resumen) => {
+    if (await sincronizarUnJugador(competicionId, codigo, descargador, ahora)) resumen.jugadores = 1;
+    else resumen.avisos.push("La federación aún no tiene a ese jugador en ninguna acta leída.");
+  });
+}
+
 export async function traerCifrasJugadores(
   competicionId: string,
   descargador: DescargadorRfgf,

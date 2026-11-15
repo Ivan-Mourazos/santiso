@@ -7,7 +7,7 @@ test("el calendario carga jornadas y partidos desde la base de datos local", asy
   page.on("pageerror", (error) => errores.push(error.message));
 
   await page.goto("/admin");
-  await page.getByText("Calendario", { exact: true }).first().click();
+  await page.getByText("Amistosos y torneos", { exact: true }).first().click();
   await page.waitForTimeout(2500);
 
   // La pantalla llega hasta pintar la tabla de partidos de una jornada.

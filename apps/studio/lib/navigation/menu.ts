@@ -198,21 +198,15 @@ export const MENU: readonly PestanaMenu[] = [
         titulo: "Federación",
         entradas: [
           {
-            seccion: "importar",
-            label: "Importar",
-            detalle: "Actas, jornadas, PDF",
-            icono: I.traer,
-          },
-          {
             seccion: "federacion",
             label: "Federación",
-            detalle: "Qué hay traído",
+            detalle: "Volver a traer datos",
             icono: I.escudo,
           },
           {
             seccion: "calendario",
-            label: "Calendario",
-            detalle: "Editar jornadas",
+            label: "Amistosos y torneos",
+            detalle: "Partidos fuera de la federación",
             icono: I.calendario,
           },
         ],
@@ -243,11 +237,8 @@ export const MENU: readonly PestanaMenu[] = [
 
 /** Secciones sin entrada propia en el menú y la pestaña a la que pertenecen. */
 const PESTANA_DE_OCULTA: Partial<Record<Seccion, IdPestana>> = {
-  jornada: "liga",
   equipo: "liga",
   jugador: "equipo",
-  actas: "mas",
-  "importar-jornada": "mas",
 };
 
 /** La pestaña que se enciende estando en esa sección. */

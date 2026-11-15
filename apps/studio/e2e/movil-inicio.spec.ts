@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * La portada: el partido de cada equipo en tablero, sin repetir el menú; cada pestaña de abajo
+ * La portada: solo el partido de cada equipo, que se abre al tocarlo, sin repetir el menú; cada pestaña de abajo
  * abre su hoja y desde ella se llega a la pantalla. Solo lee.
  */
 const sinDeslizar = async (page: import("@playwright/test").Page) => {
@@ -13,18 +13,31 @@ for (const [ancho, alto] of [
   [360, 640],
   [390, 844],
 ] as const) {
-  test(`inicio: partido en tablero y cada pestaña abre su hoja a ${ancho}px`, async ({ page }) => {
+  test(`inicio: solo los partidos, se abren al tocarlos, y cada pestaña abre su hoja a ${ancho}px`, async ({ page }) => {
     await page.setViewportSize({ width: ancho, height: alto });
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/admin\/inicio/);
-    // El partido que toca, con su siguiente paso a la vista; el menú no se repite aquí.
+    // Solo los partidos: cada tarjeta, entera a la vista, sin pasos ni tareas.
     const partido = page.locator("[data-partido-inicio]").first();
     await expect(partido).toBeVisible();
-    const paso = (await page.locator("[data-accion-principal]").first().boundingBox())!;
-    expect(paso.height).toBeGreaterThanOrEqual(44);
-    expect(paso.y + paso.height).toBeLessThanOrEqual(alto);
+    await expect(page.locator("[data-accion-principal]")).toHaveCount(0);
+    const abrir = page.locator("[data-abrir-partido]");
+    if (alto >= 800) {
+      for (const tarjeta of await page.locator("[data-partido-inicio]").all()) {
+        const caja = (await tarjeta.boundingBox())!;
+        expect(caja.y + caja.height).toBeLessThanOrEqual(alto);
+      }
+    }
     await expect(page.getByRole("heading", { name: "¿Qué quieres hacer?" })).toHaveCount(0);
     await sinDeslizar(page);
+
+    // Tocar la tarjeta abre ese partido en Liga → Partidos, con su detalle.
+    await partido.tap();
+    await expect(page).toHaveURL(/\/admin\/partidos/);
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.getByRole("button", { name: "Cerrar partido" }).tap();
+    await page.goto("/admin/inicio");
+    await expect(abrir.first()).toBeVisible();
 
     const pestanas = page.getByRole("navigation", { name: "Accesos rápidos" });
     // Carteles abre su hoja; de ahí, a la plantilla elegida.

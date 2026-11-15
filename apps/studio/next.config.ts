@@ -17,6 +17,19 @@ const nextConfig: NextConfig = {
     // a los 10 MB: una imagen original o un acta en varias capturas pasan de ahí.
     proxyClientMaxBodySize: "64mb",
   },
+  // Pantallas retiradas el 15/11/2026: un icono instalado o un enlace guardado no da «no
+  // encontrado». La vieja «Jornada» va a la portada; las de meter actas y jornadas a mano, a
+  // Federación, donde ahora se vuelve a traer todo. Temporales: el navegador no las memoriza.
+  async redirects() {
+    return [
+      { source: "/admin/jornada", destination: "/admin/inicio", permanent: false },
+      ...["importar", "actas", "importar-jornada"].map((vieja) => ({
+        source: `/admin/${vieja}`,
+        destination: "/admin/federacion",
+        permanent: false,
+      })),
+    ];
+  },
 };
 
 export default nextConfig;

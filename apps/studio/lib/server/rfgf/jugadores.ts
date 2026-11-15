@@ -154,32 +154,106 @@ export async function sincronizarJugadores(
     .limit(JUGADORES_POR_PASADA);
   let leidos = 0;
   for (const pendiente of pendientes) {
-    const cifras = parsearEstadisticasJugador(
-      await descargador.html(urlEstadisticasJugador(pendiente.codigo, pendiente.codActa)),
-    );
-    await db
-      .update(schema.rfgfJugadores)
-      .set({
-        cifras: {
-          convocados: cifras.convocados,
-          titular: cifras.titular,
-          suplente: cifras.suplente,
-          jugados: cifras.jugados,
-          amarillas: cifras.amarillas,
-          doblesAmarillas: cifras.doblesAmarillas,
-          rojas: cifras.rojas,
-          goles: cifras.goles,
-        },
-        leidoEn: ahora.toISOString(),
-        actualizadoEn: ahora.toISOString(),
-      })
-      .where(
-        and(
-          eq(schema.rfgfJugadores.codigo, pendiente.codigo),
-          eq(schema.rfgfJugadores.competicionId, competicionId),
-        ),
-      );
+    await leerCifras(competicionId, pendiente.codigo, pendiente.codActa, descargador, ahora);
     leidos++;
   }
   return leidos;
+}
+
+/** Lee la página oficial de un jugador (una petición) y guarda sus cifras. */
+async function leerCifras(
+  competicionId: string,
+  codigo: string,
+  codActa: string,
+  descargador: DescargadorRfgf,
+  ahora: Date,
+) {
+  const { db } = await obtenerDb();
+  const cifras = parsearEstadisticasJugador(
+    await descargador.html(urlEstadisticasJugador(codigo, codActa)),
+  );
+  await db
+    .update(schema.rfgfJugadores)
+    .set({
+      cifras: {
+        convocados: cifras.convocados,
+        titular: cifras.titular,
+        suplente: cifras.suplente,
+        jugados: cifras.jugados,
+        amarillas: cifras.amarillas,
+        doblesAmarillas: cifras.doblesAmarillas,
+        rojas: cifras.rojas,
+        goles: cifras.goles,
+      },
+      leidoEn: ahora.toISOString(),
+      actualizadoEn: ahora.toISOString(),
+    })
+    .where(
+      and(
+        eq(schema.rfgfJugadores.codigo, codigo),
+        eq(schema.rfgfJugadores.competicionId, competicionId),
+      ),
+    );
+}
+
+/**
+ * Las cifras oficiales de un solo jugador, ya: una petición. `false` si la federación no lo
+ * tiene apuntado en esta competición (aún no salió en ningún acta leída).
+ */
+export async function sincronizarUnJugador(
+  competicionId: string,
+  codigo: string,
+  descargador: DescargadorRfgf,
+  ahora: Date,
+): Promise<boolean> {
+  const { db } = await obtenerDb();
+  const [fila] = await db
+    .select({ codActa: schema.rfgfJugadores.codActa })
+    .from(schema.rfgfJugadores)
+    .where(
+      and(
+        eq(schema.rfgfJugadores.codigo, codigo),
+        eq(schema.rfgfJugadores.competicionId, competicionId),
+      ),
+    );
+  if (!fila) return false;
+  await leerCifras(competicionId, codigo, fila.codActa, descargador, ahora);
+  return true;
+}
+
+/** Dónde tiene apuntado la federación a un jugador de la plantilla esta temporada. */
+export async function codigosDeJugador(jugadorId: string) {
+  const { db } = await obtenerDb();
+  return db
+    .select({
+      competicionId: schema.rfgfJugadores.competicionId,
+      codigo: schema.rfgfJugadores.codigo,
+    })
+    .from(schema.rfgfJugadores)
+    .innerJoin(schema.competiciones, eq(schema.competiciones.id, schema.rfgfJugadores.competicionId))
+    .innerJoin(schema.temporadas, eq(schema.temporadas.id, schema.competiciones.temporadaId))
+    .where(and(eq(schema.rfgfJugadores.jugadorId, jugadorId), eq(schema.temporadas.activa, true)));
+}
+
+/** Los jugadores del club que la federación tiene apuntados en una competición, para elegir uno. */
+export async function jugadoresApuntados(competicionId: string) {
+  const { db } = await obtenerDb();
+  const filas = await db
+    .select({
+      codigo: schema.rfgfJugadores.codigo,
+      nombreRfgf: schema.rfgfJugadores.nombre,
+      nombre: schema.jugadores.nombre,
+      apodo: schema.jugadores.apodo,
+      leidoEn: schema.rfgfJugadores.leidoEn,
+    })
+    .from(schema.rfgfJugadores)
+    .leftJoin(schema.jugadores, eq(schema.jugadores.id, schema.rfgfJugadores.jugadorId))
+    .where(eq(schema.rfgfJugadores.competicionId, competicionId));
+  return filas
+    .map((f) => ({
+      codigo: f.codigo,
+      nombre: f.apodo || f.nombre || f.nombreRfgf,
+      leidoEn: f.leidoEn,
+    }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 }

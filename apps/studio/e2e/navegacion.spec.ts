@@ -9,7 +9,7 @@ test("ruta, categoría y Directiva conservan contexto al recargar y volver", asy
   await page.getByRole("link", { name: "Directiva", exact: true }).click();
   await expect(page).toHaveURL(/directiva.*categoria=Veteranos/);
   await expect(page.getByRole("group", { name: "Categoría deportiva" })).toHaveCount(0);
-  await page.getByRole("link", { name: "Calendario", exact: true }).click();
+  await page.getByRole("link", { name: "Amistosos y torneos", exact: true }).click();
   await expect(page).toHaveURL(/calendario.*categoria=Veteranos/);
   await page.reload();
   await expect(
@@ -25,7 +25,7 @@ test("ruta, categoría y Directiva conservan contexto al recargar y volver", asy
 // Calendario mantiene edición en línea. Equipos y Plantilla usan editores modales.
 test("borrador bloquea sección, categoría y atrás sin perder texto", async ({ page }) => {
   await page.goto("/admin/temporadas");
-  await page.getByRole("link", { name: "Calendario", exact: true }).click();
+  await page.getByRole("link", { name: "Amistosos y torneos", exact: true }).click();
   await expect(page).toHaveURL(/jornada=/);
   const marcador = page.locator('input[type="number"]').first();
   await expect(marcador).toBeVisible();
@@ -110,22 +110,12 @@ test("pulsar la sección actual conserva la guardia", async ({ page }) => {
     dialogs++;
     await dialog.dismiss();
   });
-  await page.getByRole("link", { name: "Calendario", exact: true }).click();
+  await page.getByRole("link", { name: "Amistosos y torneos", exact: true }).click();
   expect(dialogs).toBe(0);
   await page.getByRole("link", { name: "Jugadores", exact: true }).click();
   await expect.poll(() => dialogs).toBe(1);
   await expect(marcador).toHaveValue(nuevo);
 });
-test("el calendario PDF mantiene Veteranos al cargar competiciones", async ({ page }) => {
-  await page.goto("/admin/importar-jornada?origen=calendario");
-  const category = page.locator("#cal-categoria");
-  await category.selectOption("Veteranos");
-  await expect(page.locator("#cal-competicion option")).not.toHaveCount(1);
-  await page.locator("#cal-competicion").selectOption({ index: 1 });
-  await expect(category).toHaveValue("Veteranos");
-  await expect(page).not.toHaveURL(/competicion=/);
-});
-
 test("Equipos espera a resolver contexto antes de permitir edición", async ({ page }) => {
   let release!: () => void;
   const gate = new Promise<void>((resolve) => {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ProblemasFederacion } from "@/components/admin/jornada/ProblemasFederacion";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { ProblemasFederacion } from "./ProblemasFederacion";
 import { useStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select } from "@/components/ui/foundation/Fields";
@@ -11,11 +11,13 @@ import {
   cargarEstadoFederacion,
   cargarEstadoHistoricoRfgf,
   cargarEstadoRfgf,
+  cargarJugadoresRfgf,
   comprobarRfgfAhora,
   guardarEnlaceRfgf,
   pedirPartidosHistoricosRfgf,
   reintentarActaRfgf,
   traerActaRfgf,
+  traerCifrasDeJugadorRfgf,
   traerCifrasJugadoresRfgf,
   traerHorariosRfgf,
   traerJornadaRfgf,
@@ -28,6 +30,11 @@ import type { ResultadoClasificacionRfgf } from "@/lib/server/rfgf/demanda";
 import { ArchivoPartidos } from "./ArchivoPartidos";
 import TraerCalendario from "./TraerCalendario";
 import s from "./Federacion.module.css";
+
+type JugadoresRfgf = Extract<
+  Awaited<ReturnType<typeof cargarJugadoresRfgf>>,
+  { ok: true }
+>["datos"];
 
 type Historico = Extract<
   Awaited<ReturnType<typeof cargarEstadoHistoricoRfgf>>,
@@ -99,9 +106,35 @@ function frase(r: {
   return partes.length ? `Traído: ${partes.join(" · ")}.` : "Nada nuevo en la federación.";
 }
 
+/** Una fila de «Volver a traer»: qué es, qué trae, cuándo se trajo y sus controles. */
+function Opcion({
+  titulo,
+  texto,
+  ultima,
+  children,
+}: {
+  titulo: string;
+  texto: string;
+  ultima?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={s.opcion}>
+      <div>
+        <strong>{titulo}</strong>
+        <span>{texto}</span>
+        {ultima && <small>Última vez: {ultima}</small>}
+      </div>
+      <div className={s.controles}>{children}</div>
+    </div>
+  );
+}
+
 /**
- * Lo que hay traído de la federación y lo que falta, por jornada y partido, con un botón para
- * traer cada cosa concreta cuando haga falta. Lo normal llega solo cada noche desde las 21:00.
+ * El sitio para volver a traer de la federación lo que haga falta, de lo más grande a lo más
+ * pequeño: ponerse al día, calendario, horarios, una jornada o un partido, la clasificación y
+ * los jugadores. Lo normal llega solo cada noche desde las 21:00. Nada se mete a mano: manda la
+ * federación (los amistosos y torneos se crean en su propia pantalla).
  */
 export default function AdminFederacion({
   categoria,
@@ -118,6 +151,11 @@ export default function AdminFederacion({
   const [historico, setHistorico] = useState<Historico | null>(null);
   const [clasificacion, setClasificacion] = useState<ResultadoClasificacionRfgf | null>(null);
   const [enlaces, setEnlaces] = useState<Record<string, string>>({});
+  const [jugadores, setJugadores] = useState<JugadoresRfgf>([]);
+  // Lo elegido en los selectores de «Una jornada o un partido» y «Jugadores».
+  const [jornadaElegida, setJornadaElegida] = useState<number | null>(null);
+  const [partidoElegido, setPartidoElegido] = useState("");
+  const [jugadorElegido, setJugadorElegido] = useState("");
   const [error, setError] = useState<string | null>(null);
   // Qué se está trayendo ahora mismo; nunca dos a la vez (la federación corta si se le pide mucho).
   const [trayendo, setTrayendo] = useState<string | null>(null);
@@ -137,6 +175,8 @@ export default function AdminFederacion({
     if (!r.ok) return setError(r.error);
     setError(null);
     setEstado(r.datos);
+    const j = await cargarJugadoresRfgf(competicionId);
+    if (esta === turno.current) setJugadores(j.ok ? j.datos : []);
   }, []);
 
   const cargarHistorico = useCallback(async () => {
@@ -165,6 +205,9 @@ export default function AdminFederacion({
     const id = window.setTimeout(() => {
       setEstado(null);
       setClasificacion(null);
+      setJornadaElegida(null);
+      setPartidoElegido("");
+      setJugadorElegido("");
       void cargarEstado(actualId);
     }, 0);
     return () => window.clearTimeout(id);
@@ -216,6 +259,10 @@ export default function AdminFederacion({
   const completas = jugadas.filter((j) => j.estado === "completa").length;
   const comparacion = estado?.competicion.clasificacion ?? null;
   const sinPartidos = estado !== null && jornadas.every((j) => j.partidos === 0);
+  // Por defecto, la última jornada jugada (la que más se suele querer repasar).
+  const numeroJornada = jornadaElegida ?? jugadas.at(-1)?.numero ?? jornadas[0]?.numero ?? null;
+  const jornadaActual = jornadas.find((j) => j.numero === numeroJornada) ?? null;
+  const partidoActual = jornadaActual?.encuentros.find((p) => p.id === partidoElegido) ?? null;
 
   /** El campo del enlace de una competición y su botón de guardar. */
   const campoEnlace = (c: CompeticionRfgf) => (
@@ -265,8 +312,8 @@ export default function AdminFederacion({
         <h2>{actual.nombre}</h2>
         {actual.enlace ? (
           <p className={s.nota}>
-            Se mira sola cada noche desde las 21:00 (última: {momento(actual.comprobadoEn)}). Aquí
-            se trae lo que quieras ya, cosa por cosa.
+            Se mira sola cada noche desde las 21:00. Si algo no ha llegado o quieres repasarlo,
+            vuelve a traerlo aquí.
           </p>
         ) : (
           <>
@@ -303,130 +350,202 @@ export default function AdminFederacion({
       />
 
       {actual.enlace && (
-        <TraerCalendario
-          key={actual.competicionId}
-          competicionId={actual.competicionId}
-          sinPartidos={sinPartidos}
-          bloqueado={ocupado && trayendo !== "calendario"}
-          onOcupado={(si) => setTrayendo(si ? "calendario" : null)}
-          onHecho={async () => {
-            await Promise.all([cargarEstado(actual.competicionId), cargarCompeticiones()]);
-          }}
-          showToast={showToast}
-        />
-      )}
-
-      {actual.enlace && (
-        <section aria-label="Traer de la federación">
-          <details className={s.bloque}>
-            <summary>
-              <h3>Traer ahora, a mano</h3>
-            </summary>
-            <div className={s.opcion}>
-              <div>
-                <strong>Horarios</strong>
-                <span>Fechas, horas y campos de lo que queda por jugar.</span>
-                <small>Última vez: {momento(estado?.competicion.horariosEn ?? null)}</small>
-              </div>
-              <Button
-                variant="secondary"
-                pending={trayendo === "horarios"}
-                pendingLabel="Trayendo…"
-                disabled={ocupado}
-                onClick={() =>
-                  void traer("horarios", () => traerHorariosRfgf(actual.competicionId), frase)
-                }
-              >
-                Traer horarios
-              </Button>
+        <section className={s.traer} aria-label="Volver a traer">
+          <h3>Volver a traer</h3>
+          <Opcion
+            titulo="Ponerse al día"
+            texto="Lo que se hace sola cada noche, ahora, para Senior y Veteranos: marcadores, horarios, cruces de copa, árbitros, goles y tarjetas que falten, la clasificación y unos pocos jugadores."
+            ultima={momento(actual.comprobadoEn)}
+          >
+            <Button
+              variant="secondary"
+              pending={trayendo === "todo"}
+              pendingLabel="Trayendo…"
+              disabled={ocupado}
+              onClick={() => void traer("todo", comprobarRfgfAhora, (texto) => texto)}
+            >
+              Ponerse al día
+            </Button>
+          </Opcion>
+          <TraerCalendario
+            key={actual.competicionId}
+            competicionId={actual.competicionId}
+            sinPartidos={sinPartidos}
+            bloqueado={ocupado && trayendo !== "calendario"}
+            onOcupado={(si) => setTrayendo(si ? "calendario" : null)}
+            onHecho={async () => {
+              await Promise.all([cargarEstado(actual.competicionId), cargarCompeticiones()]);
+            }}
+            showToast={showToast}
+          />
+          <Opcion
+            titulo="Horarios"
+            texto="Día, hora y campo de todo lo que queda por jugar."
+            ultima={momento(estado?.competicion.horariosEn ?? null)}
+          >
+            <Button
+              variant="secondary"
+              pending={trayendo === "horarios"}
+              pendingLabel="Trayendo…"
+              disabled={ocupado}
+              onClick={() =>
+                void traer("horarios", () => traerHorariosRfgf(actual.competicionId), frase)
+              }
+            >
+              Traer horarios
+            </Button>
+          </Opcion>
+          <Opcion
+            titulo="Una jornada o un partido"
+            texto="Marcadores, goles y tarjetas de una jornada entera, o el acta de un solo partido."
+          >
+            <Select
+              label="Jornada"
+              value={numeroJornada ?? ""}
+              disabled={ocupado || jornadas.length === 0}
+              onChange={(e) => {
+                setJornadaElegida(Number(e.target.value));
+                setPartidoElegido("");
+              }}
+            >
+              {jornadas.map((j) => (
+                <option key={j.numero} value={j.numero}>
+                  Jornada {j.numero}
+                  {j.fecha ? ` · ${fecha(j.fecha)}` : ""}
+                  {j.estado === "incompleta" ? " · falta algo" : ""}
+                </option>
+              ))}
+            </Select>
+            <Select
+              label="Partido"
+              value={partidoElegido}
+              disabled={ocupado || !jornadaActual}
+              onChange={(e) => setPartidoElegido(e.target.value)}
+            >
+              <option value="">Toda la jornada</option>
+              {jornadaActual?.encuentros.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.local} – {p.visitante}
+                  {p.acta.estado === "revisar" || p.acta.estado === "error" ? " ⚠" : ""}
+                </option>
+              ))}
+            </Select>
+            <Button
+              variant="secondary"
+              pending={trayendo === "jornada-o-partido"}
+              pendingLabel="Trayendo…"
+              disabled={ocupado || numeroJornada === null}
+              onClick={() =>
+                void traer(
+                  "jornada-o-partido",
+                  () =>
+                    partidoActual
+                      ? traerActaRfgf(actual.competicionId, partidoActual.id)
+                      : traerJornadaRfgf(actual.competicionId, numeroJornada!),
+                  frase,
+                )
+              }
+            >
+              {partidoActual ? "Traer partido" : `Traer jornada ${numeroJornada ?? ""}`}
+            </Button>
+          </Opcion>
+          <Opcion
+            titulo="Clasificación"
+            texto={
+              comparacion
+                ? comparacion.diferencias.length
+                  ? `No cuadraba con la oficial (J${comparacion.jornada}) en ${comparacion.diferencias.length} equipo${comparacion.diferencias.length > 1 ? "s" : ""}.`
+                  : `Cuadra con la oficial (J${comparacion.jornada}).`
+                : "Se compara con la oficial; si no cuadra, se traen los resultados que falten."
+            }
+          >
+            <Button
+              variant="secondary"
+              pending={trayendo === "clasificacion"}
+              pendingLabel="Comparando…"
+              disabled={ocupado}
+              onClick={() =>
+                void traer(
+                  "clasificacion",
+                  async () => {
+                    const r = await actualizarClasificacionRfgf(actual.competicionId);
+                    if (r.ok) setClasificacion(r.datos);
+                    return r;
+                  },
+                  (c) =>
+                    c.cuadra
+                      ? "La clasificación coincide con la federación ✓"
+                      : "La clasificación no coincide: mira el detalle.",
+                )
+              }
+            >
+              Comparar
+            </Button>
+          </Opcion>
+          {clasificacion && !clasificacion.cuadra && (
+            <div className={s.detalle} role="status">
+              <strong>
+                No coincide con la oficial
+                {clasificacion.jornadaOficial ? ` (J${clasificacion.jornadaOficial})` : ""}:
+              </strong>
+              <ul>
+                {clasificacion.diferencias.map((d, i) => (
+                  <li key={d}>
+                    {d}
+                    {clasificacion.motivos[i] ? <em> — {clasificacion.motivos[i]}</em> : null}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div className={s.opcion}>
-              <div>
-                <strong>Cifras de jugadores</strong>
-                <span>
-                  {estado
-                    ? `${estado.jugadores.conCifras} de ${estado.jugadores.plantilla} jugadores con sus cifras oficiales.`
-                    : "Cifras oficiales de la plantilla."}{" "}
-                  Cuatro por vez.
-                </span>
-                <small>
-                  Última lectura: {momento(estado?.jugadores.lecturaMasReciente ?? null)}
-                </small>
-              </div>
-              <Button
-                variant="secondary"
-                pending={trayendo === "jugadores"}
-                pendingLabel="Trayendo…"
-                disabled={ocupado}
-                onClick={() =>
-                  void traer(
-                    "jugadores",
-                    () => traerCifrasJugadoresRfgf(actual.competicionId),
-                    frase,
-                  )
-                }
-              >
-                Traer cifras
-              </Button>
-            </div>
-            <div className={s.opcion}>
-              <div>
-                <strong>Clasificación</strong>
-                <span>
-                  {comparacion
-                    ? comparacion.diferencias.length
-                      ? `No cuadraba con la oficial (J${comparacion.jornada}) en ${comparacion.diferencias.length} equipo${comparacion.diferencias.length > 1 ? "s" : ""}.`
-                      : `Cuadra con la oficial (J${comparacion.jornada}).`
-                    : "Compárala con la oficial; si no cuadra, se traen los resultados que falten."}
-                </span>
-              </div>
-              <Button
-                variant="secondary"
-                pending={trayendo === "clasificacion"}
-                pendingLabel="Comparando…"
-                disabled={ocupado}
-                onClick={() =>
-                  void traer(
-                    "clasificacion",
-                    async () => {
-                      const r = await actualizarClasificacionRfgf(actual.competicionId);
-                      if (r.ok) setClasificacion(r.datos);
-                      return r;
-                    },
-                    (c) =>
-                      c.cuadra
-                        ? "La clasificación coincide con la federación ✓"
-                        : "La clasificación no coincide: mira el detalle.",
-                  )
-                }
-              >
-                Actualizar
-              </Button>
-            </div>
-            {clasificacion && !clasificacion.cuadra && (
-              <div className={s.detalle} role="status">
-                <strong>
-                  No coincide con la oficial
-                  {clasificacion.jornadaOficial ? ` (J${clasificacion.jornadaOficial})` : ""}:
-                </strong>
-                <ul>
-                  {clasificacion.diferencias.map((d, i) => (
-                    <li key={d}>
-                      {d}
-                      {clasificacion.motivos[i] ? <em> — {clasificacion.motivos[i]}</em> : null}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </details>
+          )}
+          <Opcion
+            titulo="Jugadores"
+            texto={`Cifras oficiales: partidos, goles y tarjetas. ${
+              estado
+                ? `${estado.jugadores.conCifras} de ${estado.jugadores.plantilla} con cifras. `
+                : ""
+            }Uno concreto, o los cuatro que llevan más tiempo sin mirarse.`}
+            ultima={momento(estado?.jugadores.lecturaMasReciente ?? null)}
+          >
+            <Select
+              label="Jugador"
+              value={jugadorElegido}
+              disabled={ocupado}
+              onChange={(e) => setJugadorElegido(e.target.value)}
+            >
+              <option value="">Los cuatro siguientes</option>
+              {jugadores.map((j) => (
+                <option key={j.codigo} value={j.codigo}>
+                  {j.nombre}
+                </option>
+              ))}
+            </Select>
+            <Button
+              variant="secondary"
+              pending={trayendo === "jugadores"}
+              pendingLabel="Trayendo…"
+              disabled={ocupado}
+              onClick={() =>
+                void traer(
+                  "jugadores",
+                  () =>
+                    jugadorElegido
+                      ? traerCifrasDeJugadorRfgf(actual.competicionId, jugadorElegido)
+                      : traerCifrasJugadoresRfgf(actual.competicionId),
+                  frase,
+                )
+              }
+            >
+              Traer cifras
+            </Button>
+          </Opcion>
         </section>
       )}
 
       <section aria-label="Jornadas">
-        <details open className={s.bloque}>
+        <details className={s.bloque}>
           <summary>
-            <h3>Jornadas</h3>
+            <h3>Qué hay traído, jornada a jornada</h3>
           </summary>
           {!estado ? (
             <LoadingState title="Cargando jornadas…" />
@@ -458,45 +577,9 @@ export default function AdminFederacion({
                             {ESTADO_ACTA[p.acta.estado]}
                             {p.acta.aviso ? ` · ${p.acta.aviso}` : ""}
                           </span>
-                          {actual.enlace && j.estado !== "por_jugar" && (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              disabled={ocupado}
-                              pending={trayendo === `acta:${p.id}`}
-                              pendingLabel="Trayendo…"
-                              aria-label={`Traer acta: ${p.local} – ${p.visitante}`}
-                              onClick={() =>
-                                void traer(
-                                  `acta:${p.id}`,
-                                  () => traerActaRfgf(actual.competicionId, p.id),
-                                  frase,
-                                )
-                              }
-                            >
-                              Traer acta
-                            </Button>
-                          )}
                         </li>
                       ))}
                     </ul>
-                    {actual.enlace && (
-                      <Button
-                        variant="secondary"
-                        disabled={ocupado}
-                        pending={trayendo === `jornada:${j.numero}`}
-                        pendingLabel="Trayendo…"
-                        onClick={() =>
-                          void traer(
-                            `jornada:${j.numero}`,
-                            () => traerJornadaRfgf(actual.competicionId, j.numero),
-                            frase,
-                          )
-                        }
-                      >
-                        Traer jornada {j.numero}
-                      </Button>
-                    )}
                   </details>
                 </li>
               ))}

@@ -13,6 +13,7 @@ import {
 } from "@/lib/server/acciones/fichas-rfgf";
 import type { FichaCompletaDeJugador } from "@/lib/server/consultas/fichas-rfgf";
 import { CuadrosCifras, Resultado, fechaCorta } from "./comunes";
+import { traerCifrasDelJugadorRfgf } from "@/lib/server/acciones/rfgf";
 import styles from "./Fichas.module.css";
 import { iniciales } from "@/lib/iniciales";
 
@@ -40,6 +41,7 @@ export default function FichaJugadorPantalla({ jugadorId }: { jugadorId: string 
     error: string | null;
   } | null>(null);
   const [trayendo, setTrayendo] = useState(false);
+  const [trayendoCifras, setTrayendoCifras] = useState(false);
   const cargar = useCallback(async (id: string) => {
     const r = await cargarFichaCompletaDeJugador(id);
     setEstado({ id, ficha: r.ok ? r.datos : null, error: r.ok ? null : r.error });
@@ -78,6 +80,21 @@ export default function FichaJugadorPantalla({ jugadorId }: { jugadorId: string 
     await cargar(jugadorId!);
   }
 
+  /** Sus cifras de esta temporada, ya, sin esperar a que le toque en la pasada de la noche. */
+  async function traerCifras() {
+    setTrayendoCifras(true);
+    const r = await traerCifrasDelJugadorRfgf(jugadorId!).catch(() => null);
+    setTrayendoCifras(false);
+    if (!r) return showToast("No se pudo hablar con la federación.", "error");
+    if (!r.ok) return showToast(r.error, "error");
+    showToast(
+      r.datos
+        ? "Cifras de esta temporada traídas de la federación."
+        : "La federación aún no lo tiene en ningún acta de esta temporada.",
+    );
+    await cargar(jugadorId!);
+  }
+
   return (
     <article className={styles.ficha} aria-label={`Ficha de ${j.nombre}`}>
       <header className={styles.cabecera}>
@@ -110,6 +127,17 @@ export default function FichaJugadorPantalla({ jugadorId }: { jugadorId: string 
         <CuadrosCifras cifras={f.total} />
         {(f.porLeer > 0 || admin) && (
           <div className={styles.acciones}>
+            {admin && (
+              <Button
+                variant="secondary"
+                size="sm"
+                pending={trayendoCifras}
+                pendingLabel="Trayendo…"
+                onClick={() => void traerCifras()}
+              >
+                Traer cifras de esta temporada
+              </Button>
+            )}
             {f.porLeer > 0 && (
               <p className={styles.nota}>
                 {f.porLeer} {f.porLeer === 1 ? "temporada" : "temporadas"} por leer de la

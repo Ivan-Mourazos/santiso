@@ -1,19 +1,19 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Enlaces con el partido o la jornada ya elegidos, que usa la pantalla «Jornada». Contra la base
- * real y **solo lectura**: los identificadores se sacan de las propias pantallas.
+ * Enlaces con el partido ya elegido. Contra la base real y **solo lectura**: el identificador se
+ * saca de la hoja del partido en Liga → Partidos.
  */
 
 test("Carteles abre con el partido de la URL ya cargado", async ({ page }) => {
-  // La lista de Actas trae todos los partidos del Santiso, con su id y «Jx - Local vs Visitante».
-  await page.goto("/admin/actas");
-  const partido = page.getByLabel("Partido", { exact: true });
-  // Además del hueco vacío, al menos un partido de verdad.
-  await expect.poll(() => partido.locator("option").count(), { timeout: 30000 }).toBeGreaterThan(1);
-  const opcion = partido.locator("option").last();
-  const id = await opcion.getAttribute("value");
-  const texto = (await opcion.textContent()) ?? "";
+  // Nuestro partido de la jornada: su hoja lleva a Directo con el id en el enlace.
+  await page.goto("/admin/partidos?categoria=Senior");
+  const nuestro = page.locator("button[data-propio]").first();
+  await expect(nuestro).toBeVisible({ timeout: 30000 });
+  const texto = (await nuestro.getAttribute("aria-label")) ?? "";
+  await nuestro.click();
+  const directo = page.getByRole("dialog").getByRole("link", { name: "Directo", exact: true });
+  const id = new URL((await directo.getAttribute("href"))!, page.url()).searchParams.get("partido");
   expect(id).toBeTruthy();
 
   await page.goto(`/admin/carteles?plantilla=partido&partido=${id}`);
@@ -21,42 +21,4 @@ test("Carteles abre con el partido de la URL ya cargado", async ({ page }) => {
   const rival = page.getByLabel("Rival", { exact: true });
   await expect(rival).not.toHaveValue("", { timeout: 30000 });
   expect(texto).toContain(await rival.inputValue());
-});
-
-test("Actas abre con categoría, competición y partido de la URL", async ({ page }) => {
-  await page.goto("/admin/actas");
-  const partido = page.getByLabel("Partido", { exact: true });
-  // Además del hueco vacío, al menos un partido de verdad.
-  await expect.poll(() => partido.locator("option").count(), { timeout: 30000 }).toBeGreaterThan(1);
-  const categoria = await page.getByLabel("Categoría", { exact: true }).inputValue();
-  const competicion = await page.getByLabel("Competición", { exact: true }).inputValue();
-  const opciones = partido.locator("option");
-  const ultima = opciones.nth((await opciones.count()) - 1);
-  const id = await ultima.getAttribute("value");
-  expect(id).toBeTruthy();
-
-  await page.goto(`/admin/actas?categoria=${categoria}&competicion=${competicion}&partido=${id}`);
-  // Con el partido en el enlace no se vuelve a preguntar: su tarjeta y «Cambiar partido».
-  const fijado = page.getByRole("region", { name: "Partido del acta" });
-  await expect(fijado).toHaveAttribute("data-partido", id!, { timeout: 30000 });
-  await expect(page.getByLabel("Partido", { exact: true })).toHaveCount(0);
-  await fijado.getByRole("button", { name: "Cambiar partido", exact: true }).click();
-  await expect(page.getByLabel("Partido", { exact: true })).toHaveValue(id!);
-});
-
-test("Importar jornada abre con la jornada de destino de la URL", async ({ page }) => {
-  await page.goto("/admin/importar-jornada?origen=foto");
-  const jornada = page.getByLabel("Jornada de destino", { exact: true });
-  await expect(jornada.locator("option")).not.toHaveCount(1, { timeout: 30000 });
-  const competicion = await page.getByLabel("Competición", { exact: true }).inputValue();
-  const categoria = await page.getByLabel("Categoría", { exact: true }).inputValue();
-  const id = await jornada.locator("option").nth(1).getAttribute("value");
-  expect(id).toBeTruthy();
-
-  await page.goto(
-    `/admin/importar-jornada?origen=foto&categoria=${categoria}&competicion=${competicion}&jornada=${id}`,
-  );
-  await expect(page.getByLabel("Jornada de destino", { exact: true })).toHaveValue(id!, {
-    timeout: 30000,
-  });
 });

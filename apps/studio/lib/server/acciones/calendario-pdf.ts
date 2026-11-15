@@ -1,6 +1,5 @@
 "use server";
 
-import { parsearCalendarioPdf } from "@santiso/actas";
 import { schema } from "@santiso/db";
 import { eq } from "drizzle-orm";
 import { planDeImportacion, type PlanImportacion } from "@/lib/calendario/plan-importacion";
@@ -24,41 +23,11 @@ export interface CalendarioLeido {
 }
 
 /** El parser rechaza por encima de esto; se comprueba antes para no leer el fichero en balde. */
-const MAXIMO_BYTES = 15 * 1024 * 1024;
 
 /**
- * Lee el calendario federativo en PDF **en local** y lo contrasta con la base de datos.
- * No escribe nada: devuelve el plan para que se revise antes de aplicarlo.
- */
-export async function leerCalendarioPdf(
-  formulario: FormData,
-): Promise<Resultado<CalendarioLeido>> {
-  const fichero = formulario.get("calendario");
-  const competicionId = String(formulario.get("competicionId") ?? "").trim();
-  if (!(fichero instanceof File)) return fallo("No se recibió ningún PDF.");
-  if (fichero.size === 0) return fallo("El PDF está vacío.");
-  if (fichero.size > MAXIMO_BYTES) return fallo("El PDF supera los 15 MiB.");
-  if (!competicionId) return fallo("Elige la competición de destino.");
-
-  let calendario;
-  try {
-    calendario = await parsearCalendarioPdf(new Uint8Array(await fichero.arrayBuffer()));
-  } catch (error) {
-    // El parser rechaza explícitamente lo que no entiende; su mensaje dice qué pasó.
-    const detalle = error instanceof Error ? error.message : "motivo desconocido";
-    return fallo(`No se pudo leer el calendario: ${detalle}`);
-  }
-
-  return capturar("No se pudo preparar la importación.", async () => ({
-    competicion: calendario.competicion,
-    temporada: calendario.temporada,
-    plan: planDeImportacion(calendario, await estadoDeCompeticion(competicionId)),
-  }));
-}
-
-/**
- * Lo mismo, pero el PDF lo baja el Studio de la federación con el enlace guardado de la
- * competición: una sola descarga. Tampoco escribe nada.
+ * Lee el calendario oficial en PDF, que el Studio baja de la federación con el enlace guardado
+ * de la competición (una sola descarga), y lo contrasta con la base de datos. No escribe nada:
+ * devuelve el plan para que se revise antes de aplicarlo.
  */
 export async function traerCalendarioRfgf(
   competicionId: string,

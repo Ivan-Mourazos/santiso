@@ -1,6 +1,6 @@
 /*
- * Portada en tablero: por cada equipo, la tarjeta de cristal del partido, la píldora amarilla del
- * siguiente paso y dos cuadros (pasos y clasificación). Números en letra de marcador.
+ * Portada compacta: por cada equipo, una tarjeta de cristal con el cruce y el puesto en la tabla.
+ * Toda la tarjeta abre el partido. Números en letra de marcador.
  */
 .inicio {
   display: grid;
@@ -16,25 +16,20 @@
 }
 .partidos {
   display: grid;
-  gap: var(--ui-space-5);
+  gap: var(--ui-space-3);
 }
-/* Mismo alto que el tablero: al llegar los datos, nada salta. */
+/* Mismo alto que la tarjeta: al llegar los datos, nada salta. */
 .esqueleto {
-  height: 330px;
+  height: 160px;
   border-radius: var(--ui-radius-lg);
   background: var(--ui-surface);
 }
-.tablero {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--ui-space-2);
-}
-.partido {
-  grid-column: 1 / -1;
+/* Una tarjeta por equipo: cruce, día y campo. */
+.tarjeta {
   position: relative;
   display: grid;
   gap: var(--ui-space-3);
-  padding: var(--ui-space-4);
+  padding: var(--ui-space-3) var(--ui-space-3) var(--ui-space-3) var(--ui-space-4);
   border: 1px solid var(--ui-line);
   border-radius: var(--ui-radius-lg);
   background: var(--ui-panel-face);
@@ -42,20 +37,24 @@
   overflow: hidden;
 }
 /* Halo amarillo tras el marcador, como los focos de un estadio. */
-.partido::before {
+.tarjeta::before {
   content: "";
   position: absolute;
   top: -60px;
   right: -60px;
-  width: 220px;
-  height: 220px;
-  background: radial-gradient(closest-side, rgb(245 197 24 / 20%), transparent);
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(closest-side, rgb(245 197 24 / 18%), transparent);
   pointer-events: none;
+}
+.partido {
+  display: grid;
+  gap: var(--ui-space-2);
+  padding-right: var(--ui-space-1);
 }
 .partidoContexto {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--ui-space-2);
   margin: 0;
   color: var(--ui-muted);
@@ -70,6 +69,29 @@
   font-weight: 800;
   font-size: var(--ui-text-xs);
 }
+.jornada {
+  white-space: nowrap;
+}
+/* Puesto en la tabla: enlace propio, por encima del que cubre la tarjeta. */
+.puesto {
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
+  padding: var(--ui-space-1) var(--ui-space-2);
+  margin-block: calc(-1 * var(--ui-space-1));
+  border-radius: var(--ui-radius-pill);
+  color: var(--ui-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.puesto strong {
+  color: var(--ui-text);
+  font: 900 var(--ui-text-base) / 1 var(--ui-font-title);
+}
+.puesto:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
 .cruce {
   position: relative;
   display: grid;
@@ -79,7 +101,7 @@
 }
 .cruce ul {
   display: grid;
-  gap: var(--ui-space-3);
+  gap: var(--ui-space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -87,7 +109,7 @@
 .cruce li {
   display: flex;
   align-items: center;
-  gap: var(--ui-space-3);
+  gap: var(--ui-space-2);
   min-width: 0;
   color: var(--ui-muted);
   font-weight: 800;
@@ -98,24 +120,26 @@
 }
 .cruce li > span:last-child {
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .cruce img,
 .sinEscudo {
   flex: none;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
 }
 .sinEscudo {
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--ui-control);
 }
 .goles {
   display: grid;
-  gap: 2px;
+  gap: var(--ui-space-2);
   margin: 0;
-  font: 900 52px / 0.9 var(--ui-font-title);
+  font: 900 30px / 24px var(--ui-font-title);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -124,18 +148,20 @@
 }
 .goles span[data-propio] {
   color: var(--ui-accent);
-  text-shadow: 0 0 28px rgb(245 197 24 / 45%);
+  text-shadow: 0 0 24px rgb(245 197 24 / 45%);
 }
 .hora {
   margin: 0;
-  font: 900 var(--ui-text-2xl) / 1 var(--ui-font-title);
+  font: 900 var(--ui-text-xl) / 1 var(--ui-font-title);
   color: var(--ui-accent);
 }
 .partidoCuando {
-  position: relative;
   margin: 0;
   color: var(--ui-muted);
   font-size: var(--ui-text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .partidoCuando a {
   color: inherit;
@@ -148,117 +174,22 @@
 .partidoCuando a::after {
   content: "";
   position: absolute;
-  inset: -400px -20px -20px;
+  inset: 0;
+  border-radius: inherit;
 }
 .partidoCuando a:focus-visible {
-  outline: 3px solid var(--ui-accent);
-  outline-offset: 2px;
+  outline: none;
 }
-.siguiente {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--ui-space-3);
-  min-height: 64px;
-  padding: var(--ui-space-2) var(--ui-space-2) var(--ui-space-2) var(--ui-space-5);
-  border-radius: var(--ui-radius-pill);
-  background: var(--ui-accent);
-  box-shadow: var(--ui-glow);
-  color: var(--ui-on-accent);
-  text-decoration: none;
-  transition: transform var(--ui-duration) var(--ui-ease);
-}
-.siguienteCifra {
-  font: 900 32px / 1 var(--ui-font-title);
-}
-.siguienteTexto {
-  display: grid;
-  min-width: 0;
-  font-weight: 800;
-  font-size: var(--ui-text-base);
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-.siguienteTexto small {
-  font-weight: 700;
-  font-size: var(--ui-text-xs);
-  opacity: 0.75;
-}
-.siguienteFlecha {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: var(--ui-on-accent);
-  color: var(--ui-accent);
-  font-size: var(--ui-text-lg);
-}
-.siguiente:active,
-.cuadro:active {
-  transform: scale(0.98);
-}
-.siguiente:focus-visible,
-.cuadro:focus-visible {
+.tarjeta:has(.partidoCuando a:focus-visible) {
   outline: 3px solid var(--ui-accent);
   outline-offset: 3px;
 }
-.cuadros {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--ui-space-2);
-}
-.cuadro {
-  display: grid;
-  align-content: start;
-  gap: var(--ui-space-1);
-  min-height: 112px;
-  padding: var(--ui-space-4);
-  border: 1px solid var(--ui-line);
-  border-radius: var(--ui-radius);
-  background: var(--ui-surface);
-  color: var(--ui-text);
-  text-decoration: none;
+.tarjeta {
   transition: transform var(--ui-duration) var(--ui-ease);
 }
-.cuadro small {
-  color: var(--ui-muted);
-  font-weight: 700;
-  font-size: var(--ui-text-sm);
+.tarjeta:has(.partidoCuando a:active) {
+  transform: scale(0.98);
 }
-.cuadro strong {
-  font: 900 34px / 1 var(--ui-font-title);
-}
-.cuadro > span:last-child {
-  color: var(--ui-muted);
-  font-size: var(--ui-text-sm);
-}
-.barras {
-  display: flex;
-  gap: 4px;
-  margin-block: var(--ui-space-2);
-}
-.barras span {
-  flex: 1;
-  height: 8px;
-  border-radius: 4px;
-  background: var(--ui-control);
-}
-.barras span[data-hecho] {
-  background: var(--ui-accent);
-}
-
-/* Móvil estrecho: el siguiente paso cabe sin partir palabras a medias. */
-@media (max-width: 379px) {
-  .siguienteTexto {
-    font-size: var(--ui-text-body);
-    text-wrap: balance;
-    overflow-wrap: normal;
-  }
-}
-
 /* Escritorio ancho: Senior y Veteranos uno al lado del otro, sin media pantalla vacía. */
 @media (min-width: 1100px) {
   .inicio {

@@ -8,7 +8,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation
 import { Tabs } from "@/components/ui/foundation/Tabs";
 import type { Disciplina, Goleador } from "@/lib/liga/tablas";
 import { cargarLiga, guardarCicloAmarillas } from "@/lib/server/acciones/liga";
-import { ProblemasFederacion } from "@/components/admin/jornada/ProblemasFederacion";
+import { ProblemasFederacion } from "@/components/admin/federacion/ProblemasFederacion";
 import {
   cargarEstadoRfgf,
   comprobarRfgfAhora,

@@ -1,7 +1,7 @@
 export const SECCIONES = [
   { id: "inicio", label: "Inicio" },
   { id: "partidos", label: "Partidos" },
-  { id: "calendario", label: "Calendario" },
+  { id: "calendario", label: "Amistosos y torneos" },
   { id: "clasificacion", label: "Clasificación" },
   { id: "estadisticas", label: "Estadísticas" },
   { id: "liga", label: "Goleadores" },
@@ -21,13 +21,9 @@ export const SECCIONES = [
   { id: "directo", label: "Directo", oculta: true },
   // Los carteles los lleva el delegado: el técnico no los ve en el menú ni puede abrirlos.
   { id: "carteles", label: "Carteles", admin: true },
-  { id: "importar", label: "Importar" },
   // Siguen teniendo dirección propia (enlaces desde Jornada, lote, calendario PDF), pero se
   // entra por «Importar»: no salen en el menú.
-  { id: "actas", label: "Actas", oculta: true },
   // La mesa del partido vive ahora en Liga → Partidos; la dirección sigue para enlaces viejos.
-  { id: "jornada", label: "Jornada", oculta: true },
-  { id: "importar-jornada", label: "Importar jornada", oculta: true },
   { id: "equipos", label: "Equipos" },
   { id: "patrocinadores", label: "Patrocinadores y logos" },
   { id: "temporadas", label: "Temporadas", admin: true },

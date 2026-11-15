@@ -103,6 +103,45 @@
 .historico button {
   min-height: 44px;
 }
+/* «Volver a traer»: siempre abierto, una fila por cosa, de lo grande a lo pequeño. */
+.traer {
+  display: grid;
+  gap: 10px;
+  padding: 4px 14px 14px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-panel-face);
+  box-shadow: var(--ui-panel-shadow);
+}
+.traer > h3 {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0;
+  font-size: var(--ui-text-base);
+  font-weight: 700;
+}
+/* Selectores y botón de cada fila: en línea si caben, si no uno debajo de otro. */
+.opcion > .controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 1 auto;
+}
+.controles > * {
+  min-width: 0;
+}
+@media (max-width: 599px) {
+  .opcion > .controles {
+    flex-basis: 100%;
+    justify-content: stretch;
+  }
+  .controles > * {
+    flex: 1 1 100%;
+  }
+}
 .detalle {
   padding: 10px;
   /* Aviso con borde fino de su color y fondo tintado, sin franja lateral. */

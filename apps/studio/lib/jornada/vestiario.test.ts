@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cierreHecho, partidoEnMesa, progresoPartido, trasPartido } from "./vestiario";
+import { cierreHecho, partidoEnMesa, trasPartido } from "./vestiario";
 import type { PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
 
 const partido = (cambios: Partial<PartidoDeLaSemana> = {}): PartidoDeLaSemana => ({
@@ -28,143 +28,11 @@ const partido = (cambios: Partial<PartidoDeLaSemana> = {}): PartidoDeLaSemana =>
 });
 const ahora = "2026-10-18T12:00";
 
-const guardado = (desactualizado = false) => [
-  { formato: "publicacion" as const, url: "/media/c.png", generadoEn: ahora, desactualizado },
-];
-
-describe("mesa de trabajo", () => {
-  it("el técnico no recibe pasos de cartel: los lleva el delegado", () => {
-    const antes = progresoPartido(partido(), ahora, "Senior", {}, false);
-    expect(antes.pasos.map((p) => p.titulo)).toEqual(["Convocatoria", "Once inicial"]);
-    expect(antes.principal.titulo).toBe("Preparar convocatoria");
-    const listo = progresoPartido(
-      partido({ preparacion: { convocatoria: 18, titulares: 11, capitan: true } }),
-      ahora,
-      "Senior",
-      {},
-      false,
-    );
-    expect(listo.pasos.every((p) => p.tono === "hecho")).toBe(true);
-    expect(listo.principal.href).not.toContain("/admin/carteles");
-    const jugado = progresoPartido(
-      partido({ fecha: "2026-10-11T17:00", golesSantiso: 2, golesRival: 1, acta: {} as never }),
-      ahora,
-      "Senior",
-      {},
-      false,
-    );
-    expect(jugado.pasos.map((p) => p.titulo)).toEqual(["Marcador", "Acta"]);
-    expect(jugado.principal).toMatchObject({ titulo: "Revisar acta" });
-    const veteranos = progresoPartido(partido(), ahora, "Veteranos", {}, false);
-    expect(veteranos.principal.href).not.toContain("/admin/carteles");
-  });
-  it("Senior antes del partido: cartel de partido, convocatoria y once inicial, en ese orden", () => {
-    const { pasos, principal } = progresoPartido(partido(), ahora, "Senior");
-    expect(pasos.map((p) => p.titulo)).toEqual([
-      "Cartel de partido",
-      "Convocatoria",
-      "Once inicial",
-    ]);
-    expect(principal.titulo).toBe("Preparar cartel de partido");
-  });
-  it("prioriza convocatoria realmente guardada, no valores por defecto del editor", () => {
-    const carteles = { partido: guardado() };
-    expect(progresoPartido(partido(), ahora, "Senior", carteles).principal.titulo).toBe(
-      "Preparar convocatoria",
-    );
-    expect(
-      progresoPartido(
-        partido({ preparacion: { convocatoria: 0, titulares: 0, capitan: false } }),
-        ahora,
-        "Senior",
-        carteles,
-      ).principal.titulo,
-    ).toBe("Preparar convocatoria");
-  });
-  it("una convocatoria guardada sin su cartel sigue pendiente", () => {
-    const p = partido({ preparacion: { convocatoria: 18, titulares: 0, capitan: false } });
-    const { pasos, principal } = progresoPartido(p, ahora, "Senior", { partido: guardado() });
-    expect(pasos[1]).toMatchObject({ estado: "18 convocados · Sin cartel", tono: "pendiente" });
-    expect(principal.titulo).toBe("Preparar convocatoria");
-  });
-  it("pasa al once al tener convocatoria y su cartel; exige once completo y capitán", () => {
-    const carteles = { partido: guardado(), convocatoria: guardado() };
-    const p = partido({ preparacion: { convocatoria: 18, titulares: 10, capitan: true } });
-    expect(progresoPartido(p, ahora, "Senior", carteles).principal.titulo).toBe(
-      "Completar once inicial",
-    );
-    const sinCapitan = { ...p, preparacion: { convocatoria: 18, titulares: 11, capitan: false } };
-    expect(progresoPartido(sinCapitan, ahora, "Senior", carteles).pasos[2]?.estado).toBe(
-      "11/11 · falta capitán",
-    );
-    const completo = { ...p, preparacion: { convocatoria: 18, titulares: 11, capitan: true } };
-    expect(
-      progresoPartido(completo, ahora, "Senior", { ...carteles, once: guardado() }).principal
-        .titulo,
-    ).toBe("Todo listo: compartir");
-  });
-  it("un cartel con datos que cambiaron no cuenta como hecho", () => {
-    const { pasos, principal } = progresoPartido(partido(), ahora, "Senior", {
-      partido: guardado(true),
-    });
-    expect(pasos[0]).toMatchObject({ estado: "⚠ Cartel desactualizado", tono: "pendiente" });
-    expect(principal.titulo).toBe("Preparar cartel de partido");
-  });
-  it("tras el partido: marcador, acta y el carrusel de después (resultado y O Noso 11)", () => {
-    const acta = { convocados: 18, goleadores: [], golesPropiaRival: 0, amarillas: 0, rojas: 0 };
-    const p = partido({ golesSantiso: 2, golesRival: 1, acta });
-    const { pasos } = progresoPartido(p, ahora);
-    expect(pasos.map((x) => x.titulo)).toEqual([
-      "Marcador",
-      "Acta",
-      "Resultado e O Noso 11",
-    ]);
-    // Con solo una de las dos imágenes, el carrusel sigue pendiente.
-    expect(progresoPartido(p, ahora, "Senior", { resultado: guardado() }).principal.titulo).toBe(
-      "Hacer resultado e O Noso 11",
-    );
-    const listo = progresoPartido(p, ahora, "Senior", { resultado: guardado(), noso11: guardado() });
-    expect(listo.principal).toMatchObject({ titulo: "Carteles listos: compartir" });
-    expect(listo.pasos[2]).toMatchObject({ estado: "Carrusel guardado", tono: "hecho" });
-  });
-  it("Veteranos no convoca ni alinea: antes del partido solo queda el cartel", () => {
-    const { pasos, principal } = progresoPartido(partido(), ahora, "Veteranos");
-    expect(pasos.map((p) => p.titulo)).toEqual(["Cartel de partido"]);
-    expect(principal.titulo).toBe("Preparar cartel de partido");
-  });
+describe("partido de la semana", () => {
   it("no exige resultado al arrancar: concede dos horas y excluye aplazados", () => {
     expect(trasPartido(partido(), "2026-10-18T17:01")).toBe(false);
     expect(trasPartido(partido(), "2026-10-18T19:00")).toBe(true);
     expect(trasPartido(partido({ estado: "aplazado" }), "2026-10-19T19:00")).toBe(false);
-  });
-  it("con la federación, sin marcador se espera a que lo traiga: no se manda a Calendario", () => {
-    const { pasos, principal } = progresoPartido(
-      partido({ federacion: true }),
-      "2026-10-18T20:00",
-    );
-    expect(principal).toMatchObject({ titulo: "Esperando a la federación", traerActa: true });
-    expect(principal.href).not.toContain("/admin/calendario");
-    expect(pasos[0]).toMatchObject({ titulo: "Marcador", estado: "Lo trae la federación" });
-    expect(pasos[0]!.href).toContain("/admin/actas");
-    const sin = progresoPartido(partido(), "2026-10-18T20:00");
-    expect(sin.principal).toMatchObject({ titulo: "Anotar resultado" });
-    expect(sin.principal.traerActa).toBeUndefined();
-  });
-  it("marcador completo y acta gobiernan cierre, incluido 0–0", () => {
-    expect(progresoPartido(partido(), "2026-10-18T20:00").principal.titulo).toBe(
-      "Anotar resultado",
-    );
-    const p = partido({ golesSantiso: 0, golesRival: 0 });
-    expect(progresoPartido(p, ahora).principal.titulo).toBe("Completar acta");
-    expect(
-      progresoPartido(
-        {
-          ...p,
-          acta: { convocados: 18, goleadores: [], golesPropiaRival: 0, amarillas: 0, rojas: 0 },
-        },
-        ahora,
-      ).principal.titulo,
-    ).toBe("Hacer resultado e O Noso 11");
   });
   it("mantiene cierre del partido de hoy, sin ocultar siguiente ni último", () => {
     const ultimo = partido({ id: "ultimo", golesSantiso: 1, golesRival: 0 });

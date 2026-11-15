@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import type { CalendarioLeido } from "@/lib/server/acciones/calendario-pdf";
-import styles from "./Importar.module.css";
+import styles from "./PlanCalendario.module.css";
 
 function Dato({
   valor,

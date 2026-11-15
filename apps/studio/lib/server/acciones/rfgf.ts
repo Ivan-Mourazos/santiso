@@ -11,6 +11,7 @@ import { estadoFederacion, type EstadoFederacion } from "@/lib/server/rfgf/estad
 import {
   actualizarClasificacion,
   traerActa,
+  traerCifrasDeJugador,
   traerCifrasJugadores,
   traerHorarios,
   traerJornada,
@@ -23,6 +24,7 @@ import {
   type ResumenHistoricoRfgf,
 } from "@/lib/server/rfgf/historico";
 import { soloAdmin } from "@/lib/server/acceso/permisos";
+import { codigosDeJugador, jugadoresApuntados } from "@/lib/server/rfgf/jugadores";
 import { pedirPartidosHistoricos, partidosHistoricos } from "@/lib/server/rfgf/historico-partidos";
 import {
   elegirClubDeEquipo,
@@ -293,6 +295,48 @@ export async function traerCifrasJugadoresRfgf(
   if (sinPermiso) return sinPermiso;
   return capturar("No se pudieron traer las cifras de los jugadores.", () =>
     traerCifrasJugadores(competicionId, crearDescargador()),
+  );
+}
+
+/** Las cifras oficiales de un jugador concreto, por su código en la federación. */
+export async function traerCifrasDeJugadorRfgf(
+  competicionId: string,
+  codigo: string,
+): Promise<Resultado<ResumenPeticionRfgf>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudieron traer las cifras de ese jugador.", () =>
+    traerCifrasDeJugador(competicionId, codigo, crearDescargador()),
+  );
+}
+
+/**
+ * Las cifras oficiales de esta temporada de un jugador de la plantilla, desde su ficha: una
+ * petición por competición en la que salga (normalmente una). Devuelve en cuántas se leyó.
+ */
+export async function traerCifrasDelJugadorRfgf(jugadorId: string): Promise<Resultado<number>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudieron traer sus cifras de la federación.", async () => {
+    let leidas = 0;
+    for (const { competicionId, codigo } of await codigosDeJugador(jugadorId)) {
+      const r = await traerCifrasDeJugador(competicionId, codigo, crearDescargador());
+      if (r.errores.length) throw new Error(r.errores[0]);
+      if (r.avisos.length && !r.jugadores) throw new Error(r.avisos[0]);
+      leidas += r.jugadores;
+    }
+    return leidas;
+  });
+}
+
+/** Los jugadores del club que la federación tiene apuntados en la competición. Solo lee. */
+export async function cargarJugadoresRfgf(
+  competicionId: string,
+): Promise<Resultado<Awaited<ReturnType<typeof jugadoresApuntados>>>> {
+  const sinPermiso = await soloAdmin();
+  if (sinPermiso) return sinPermiso;
+  return capturar("No se pudieron cargar los jugadores de la federación.", () =>
+    jugadoresApuntados(competicionId),
   );
 }
 

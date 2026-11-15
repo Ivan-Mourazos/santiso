@@ -4,7 +4,7 @@ import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import boton from "@/components/ui/foundation/Button.module.css";
-import { fechaPartido } from "@/components/admin/jornada/TarjetaPartido";
+import { fechaPartido } from "@/lib/jornada/fecha";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import type { FilaClasificacion } from "@/lib/dto";
 import { cargarFichaEquipo } from "@/lib/server/acciones/liga";

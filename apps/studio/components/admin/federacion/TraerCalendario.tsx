@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import PlanCalendario from "@/components/admin/importar/PlanCalendario";
+import PlanCalendario from "./PlanCalendario";
 import { Button } from "@/components/ui/foundation/Button";
 import {
   guardarCalendario,
@@ -12,8 +12,8 @@ import { completarCompeticionRfgf } from "@/lib/server/acciones/rfgf";
 import s from "./Federacion.module.css";
 
 /**
- * Del enlace a la competición montada: trae de la federación equipos, jornadas y partidos,
- * enseña lo que va a crear y, al confirmar, lo crea y baja horarios, resultados y actas.
+ * «Calendario completo», dentro de «Volver a traer»: trae de la federación equipos, jornadas y
+ * partidos, enseña lo que va a crear y, al confirmar, lo crea y baja horarios, resultados y actas.
  */
 export default function TraerCalendario({
   competicionId,
@@ -74,19 +74,16 @@ export default function TraerCalendario({
   }
 
   return (
-    <section aria-label="Equipos y partidos de la competición">
-      <details className={s.bloque} open={sinPartidos || leido !== null}>
-        <summary>
-          <h3>Equipos y partidos</h3>
-        </summary>
-        <div className={s.opcion}>
-          <div>
-            <strong>Traer de la federación</strong>
-            <span>
-              Equipos, jornadas y partidos de esta competición. Primero ves lo que se va a crear; lo
-              que ya existe no se toca.
-            </span>
-          </div>
+    <>
+      <div className={s.opcion} aria-label="Equipos y partidos de la competición" role="group">
+        <div>
+          <strong>Calendario completo</strong>
+          <span>
+            Equipos, jornadas y partidos de la competición. Primero ves lo que se va a crear; lo que
+            ya existe no se toca.
+          </span>
+        </div>
+        <div className={s.controles}>
           <Button
             variant={sinPartidos ? "primary" : "secondary"}
             pending={leyendo}
@@ -94,18 +91,18 @@ export default function TraerCalendario({
             disabled={bloqueado || creando}
             onClick={() => void ver()}
           >
-            Traer equipos y partidos
+            Traer calendario
           </Button>
         </div>
-        {leido && (
-          <PlanCalendario
-            leido={leido}
-            ocupado={bloqueado || creando}
-            pendiente={creando}
-            onAplicar={() => void crear()}
-          />
-        )}
-      </details>
-    </section>
+      </div>
+      {leido && (
+        <PlanCalendario
+          leido={leido}
+          ocupado={bloqueado || creando}
+          pendiente={creando}
+          onAplicar={() => void crear()}
+        />
+      )}
+    </>
   );
 }

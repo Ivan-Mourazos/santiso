@@ -210,15 +210,6 @@
   display: none;
   view-transition-name: pestanas;
 }
-/* Solo para lectores de pantalla. */
-.oculto {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
 .aviso {
   margin: 0;
   padding: 1rem;
@@ -318,17 +309,6 @@
   .tabIcono {
     position: relative;
     display: grid;
-  }
-  /* Algo pendiente en esa pestaña: el siguiente paso de un partido de la semana. */
-  .punto {
-    position: absolute;
-    top: -1px;
-    right: -3px;
-    width: 9px;
-    height: 9px;
-    border: 2px solid #161618;
-    border-radius: 50%;
-    background: var(--ui-accent);
   }
   /* Lo que mide la cabecera fija: quien se quede pegado debajo (pestañas, cabeceras de tabla)
      lo usa para no esconderse tras ella. */

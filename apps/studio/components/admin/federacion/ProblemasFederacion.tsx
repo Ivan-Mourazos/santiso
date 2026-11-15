@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/foundation/Button";
 import type { ActaPorRevisar } from "@/lib/server/acciones/rfgf";
-import styles from "./Jornada.module.css";
+import styles from "./ProblemasFederacion.module.css";
 
 /** Qué puede hacer quien lo lee con cada tipo de problema. */
 const QUE_HACER = {

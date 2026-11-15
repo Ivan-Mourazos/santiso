@@ -5,12 +5,10 @@ import type { Seccion } from "@/lib/navigation/contexto";
 import { categoriaDe } from "@/lib/navigation/contexto";
 import { TEMPLATES } from "@/components/admin/cartel/types";
 import { EmptyState, LoadingState } from "@/components/ui/foundation/States";
-import { Select } from "@/components/ui/foundation/Fields";
 import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
 const loading = () => <LoadingState title="Cargando sección…" />;
 const Home = dynamic(() => import("@/components/admin/inicio/AdminInicio"), { loading });
-const Week = dynamic(() => import("@/components/admin/jornada/AdminJornada"), { loading });
 const Matches = dynamic(() => import("@/components/admin/liga/AdminPartidos"), { loading });
 const Calendar = dynamic(() => import("@/components/admin/calendario/AdminCalendario"), {
   loading,
@@ -39,13 +37,6 @@ const Posters = dynamic(() => import("@/components/admin/GeneradorCartel"), { lo
 const PosterCatalog = dynamic(() => import("@/components/admin/cartel/CatalogoCarteles"), {
   loading,
 });
-const Acta = dynamic(() => import("@/components/admin/AdminActaImporter"), { loading });
-const Batch = dynamic(() => import("@/components/admin/AdminActaBatch"), { loading });
-const Import = dynamic(() => import("@/components/admin/importar/Importar"), { loading });
-const Matchday = dynamic(() => import("@/components/admin/importar/ImportarFoto"), { loading });
-const CalendarPdf = dynamic(() => import("@/components/admin/importar/ImportarCalendarioPdf"), {
-  loading,
-});
 const Graphics = dynamic(() => import("@/components/admin/ajustes/AjustesGraficos"), { loading });
 const Stats = dynamic(() => import("@/components/admin/estadisticas/AdminEstadisticas"), {
   loading,
@@ -65,7 +56,7 @@ const clientReady = () => true;
 const serverReady = () => false;
 
 export function StudioSection({ section }: { section: Seccion }) {
-  const { params, setParams, showToast, showConfirm, acceso } = useStudio();
+  const { params, showToast, showConfirm, acceso } = useStudio();
   const hydrated = useSyncExternalStore(subscribeHydration, clientReady, serverReady);
   const category = categoriaDe(params);
   const feedback = { showToast, showConfirm };
@@ -88,7 +79,6 @@ export function StudioSection({ section }: { section: Seccion }) {
   return (
     <div key={key} className={styles.panel}>
       {section === "inicio" && <Home />}
-      {section === "jornada" && <Week />}
       {section === "partidos" && <Matches categoria={category} />}
       {section === "calendario" && <Calendar {...feedback} categoria={category} />}
       {section === "clasificacion" && <League categoria={category} />}
@@ -129,64 +119,6 @@ export function StudioSection({ section }: { section: Seccion }) {
             showToast={showToast}
           />
         </PantallaDentro>
-      )}
-      {section === "importar" && (
-        <Import
-          {...feedback}
-          inicial={{ categoria: params.get("categoria"), competicionId: params.get("competicion") }}
-        />
-      )}
-      {section === "actas" && (
-        <>
-          <div className={styles.modes}>
-            <Select
-              label="Modo de importación de actas"
-              value={params.get("modoActas") === "lote" ? "lote" : "individual"}
-              onChange={(e) => setParams({ modoActas: e.target.value })}
-            >
-              <option value="individual">Individual</option>
-              <option value="lote">Lote</option>
-            </Select>
-          </div>
-          {params.get("modoActas") === "lote" ? (
-            <Batch showToast={showToast} />
-          ) : (
-            <Acta
-              {...feedback}
-              inicial={{
-                categoria: params.get("categoria"),
-                competicionId: params.get("competicion"),
-                partidoId: params.get("partido"),
-              }}
-            />
-          )}
-        </>
-      )}
-      {section === "importar-jornada" && (
-        <>
-          <div className={styles.modes}>
-            <Select
-              label="Origen de la jornada"
-              value={params.get("origen") === "calendario" ? "calendario" : "foto"}
-              onChange={(e) => setParams({ origen: e.target.value })}
-            >
-              <option value="foto">Foto de jornada</option>
-              <option value="calendario">Calendario PDF</option>
-            </Select>
-          </div>
-          {params.get("origen") === "calendario" ? (
-            <CalendarPdf {...feedback} />
-          ) : (
-            <Matchday
-              {...feedback}
-              inicial={{
-                categoria: params.get("categoria"),
-                competicionId: params.get("competicion"),
-                jornadaId: params.get("jornada"),
-              }}
-            />
-          )}
-        </>
       )}
       {section === "ajustes-graficos" && <Graphics showToast={showToast} />}
       {section === "usuarios" && <Users {...feedback} />}

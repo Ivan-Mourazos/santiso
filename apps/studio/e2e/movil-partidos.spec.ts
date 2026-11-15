@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Liga → Partidos: abre en la jornada que toca, con nuestro partido entero arriba si es el de la
- * mesa; las flechas cambian de jornada y cada partido abre su detalle en una hoja. Solo lee.
+ * Liga → Partidos: abre en la jornada que toca, todos en filas y el nuestro el primero, sin pasos;
+ * las flechas cambian de jornada y cada partido abre su detalle en una hoja. Solo lee.
  */
 for (const ancho of [360, 390]) {
   test(`partidos: jornada actual, flechas y detalle a ${ancho}px`, async ({ page }) => {
@@ -29,12 +29,16 @@ for (const ancho of [360, 390]) {
     }
     const filas = page.getByRole("button", { name: /\S+ (\d+–\d+|contra) \S+/ });
     await expect(filas.first()).toBeVisible();
+    // Sin mesa ni pasos: si juega el Santiso, su fila es la primera.
+    await expect(page.locator("[data-mesa-partido], [data-accion-principal]")).toHaveCount(0);
+    if ((await page.locator("button[data-propio]").count()) > 0)
+      await expect(filas.first()).toHaveAttribute("data-propio", "true");
     for (const caja of await filas.evaluateAll((els) => els.map((e) => e.getBoundingClientRect())))
       expect(caja.height).toBeGreaterThanOrEqual(44);
     await filas.first().click();
     const hoja = page.getByRole("dialog");
     await expect(hoja).toBeVisible();
-    await expect(hoja.getByText("Campo", { exact: true })).toBeVisible();
+    await expect(hoja.getByRole("link", { name: /^Ficha de / }).first()).toBeVisible();
     await hoja.getByRole("button", { name: "Cerrar partido" }).click();
     await expect(hoja).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
@@ -89,10 +93,10 @@ test("partidos: nuestro partido de otra jornada lleva sus carteles", async ({ pa
 });
 
 /**
- * Un partido nuestro ya jugado: no ofrece hacer convocatoria ni once, sí el acta. Y `?partido=`
- * abre ese mismo partido en su jornada.
+ * Un partido nuestro ya jugado: no ofrece hacer convocatoria ni once, ni corregir el acta (manda
+ * la federación). Y `?partido=` abre ese mismo partido en su jornada.
  */
-test("partidos: nuestro partido jugado lleva el acta y se abre por enlace", async ({ page }) => {
+test("partidos: nuestro partido jugado sin acta a mano y se abre por enlace", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
   await page.goto("/admin/partidos?categoria=Senior");
   const jornada = page.getByRole("navigation", { name: "Jornada" });
@@ -106,11 +110,12 @@ test("partidos: nuestro partido jugado lleva el acta y se abre por enlace", asyn
   test.skip((await nuestro.count()) === 0, "El Santiso descansó esa jornada");
   await nuestro.click();
   const hoja = page.getByRole("dialog");
-  const acta = hoja.getByRole("link", { name: /^(Corregir acta|Meter acta a mano)$/ });
-  await expect(acta).toHaveAttribute("href", /\/admin\/actas\?.*partido=[^&]+/);
+  await expect(hoja.getByRole("link", { name: /^(Corregir acta|Meter acta a mano)$/ })).toHaveCount(0);
+  const directo = hoja.getByRole("link", { name: "Directo", exact: true });
+  await expect(directo).toHaveAttribute("href", /\/admin\/directo\?.*partido=[^&]+/);
   await expect(hoja.getByRole("link", { name: /^Hacer (Convocatoria|Once)/ })).toHaveCount(0);
   const titulo = await hoja.getByRole("heading").first().textContent();
-  const id = new URL((await acta.getAttribute("href"))!, page.url()).searchParams.get("partido")!;
+  const id = new URL((await directo.getAttribute("href"))!, page.url()).searchParams.get("partido")!;
 
   await page.goto(`/admin/partidos?partido=${encodeURIComponent(id)}`);
   const abierta = page.getByRole("dialog");

@@ -3,19 +3,15 @@
 import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import TarjetaPartido, { fechaPartido } from "@/components/admin/jornada/TarjetaPartido";
+import { fechaPartido } from "@/lib/jornada/fecha";
+import GaleriaPartido from "@/components/admin/fotos/GaleriaPartido";
 import { useStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Select } from "@/components/ui/foundation/Fields";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import { ahoraLocal, partidoJugado } from "@/lib/actas/partido-por-defecto";
-import { hoyLocal } from "@/lib/jornada/semana";
-import {
-  type CartelesDelPartido,
-  partidoEnMesa,
-  preparaConvocatoria,
-} from "@/lib/jornada/vestiario";
+import { type CartelesDelPartido, preparaConvocatoria } from "@/lib/jornada/vestiario";
 import {
   estadoPaso,
   NOMBRE_FORMATO,
@@ -24,10 +20,8 @@ import {
   type PasoCartel,
 } from "@/lib/cartel2/pasos";
 import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados";
-import { cargarPantallaJornada } from "@/lib/server/acciones/jornada";
 import { cargarPartidosLiga, ubicarPartido } from "@/lib/server/acciones/liga";
 import { traerActaRfgf } from "@/lib/server/acciones/rfgf";
-import type { PantallaJornada, PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
 import type { PartidoDeLiga, PartidosDeLiga } from "@/lib/server/consultas/partidos-liga";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import styles from "./Partidos.module.css";
@@ -89,6 +83,9 @@ function Fila({ partido: p, onAbrir }: { partido: PartidoDeLiga; onAbrir: () => 
   );
 }
 
+/** Las medidas de cada formato, para el botón de descarga: cabe en una línea. */
+const FORMATO_CORTO = { publicacion: "4:5", historia: "9:16" } as const;
+
 /** Dónde se hace el cartel de cada paso para un partido concreto. */
 function enlaceDelPaso(paso: PasoCartel, partidoId: string, categoria: string) {
   const id = encodeURIComponent(partidoId);
@@ -148,7 +145,7 @@ function CartelesDelPartidoLiga({
   if (deEste && pasos.length === 0) return null;
   return (
     <section className={styles.carteles} aria-label="Carteles del partido">
-      <p className={styles.etiqueta}>Carteles del partido</p>
+      <p className={styles.etiqueta}>Carteles</p>
       {!deEste && error ? (
         <p className={styles.nota} role="alert">
           {error}{" "}
@@ -174,13 +171,7 @@ function CartelesDelPartidoLiga({
               <li key={paso} data-estado={estado}>
                 <div>
                   <strong>{PASOS[paso].nombre}</strong>
-                  <span>
-                    {estado === "hecho"
-                      ? "✓ Guardado"
-                      : estado === "desactualizado"
-                        ? "⚠ Guardado con datos viejos"
-                        : "Sin hacer"}
-                  </span>
+                  {estado === "desactualizado" && <span>⚠ Con datos viejos</span>}
                 </div>
                 <div className={styles.accionesCartel}>
                   {guardados.map((g) => (
@@ -190,7 +181,7 @@ function CartelesDelPartidoLiga({
                       download={`${paso}-${g.formato}.png`}
                       aria-label={`Descargar ${PASOS[paso].nombre}: ${NOMBRE_FORMATO[g.formato]}`}
                     >
-                      ↓ {guardados.length > 1 ? NOMBRE_FORMATO[g.formato] : "Descargar"}
+                      ↓ {guardados.length > 1 ? FORMATO_CORTO[g.formato] : ""}
                     </a>
                   ))}
                   {!(jugado && (paso === "convocatoria" || paso === "once")) && (
@@ -198,8 +189,9 @@ function CartelesDelPartidoLiga({
                       href={enlaceDelPaso(paso, p.id, categoria)}
                       transitionTypes={["nav-forward"]}
                       aria-label={`${guardados.length ? "Rehacer" : "Hacer"} ${PASOS[paso].nombre}`}
+                      data-rehacer={guardados.length ? true : undefined}
                     >
-                      {guardados.length ? "Rehacer" : "Hacer"}
+                      {guardados.length ? "↻" : "Hacer"}
                     </Link>
                   )}
                 </div>
@@ -213,23 +205,21 @@ function CartelesDelPartidoLiga({
 }
 
 /**
- * El acta de un partido propio ya jugado: traerla de la federación (solo el administrador, con la
- * competición enlazada) y meterla a mano o corregirla.
+ * Traer el acta de la federación ya, sin esperar a la pasada automática: solo si aún falta, para
+ * el administrador y con la competición enlazada. El acta no se corrige a mano: manda la federación.
  */
-function ActaDelPartido({
+function TraerActa({
   partido: p,
-  categoria,
   competicion,
   onNovedades,
 }: {
   partido: PartidoDeLiga;
-  categoria: string;
   competicion: PartidosDeLiga["competicion"];
   onNovedades: () => void;
 }) {
   const { acceso, showToast } = useStudio();
   const [trayendo, setTrayendo] = useState(false);
-  const href = `/admin/actas?categoria=${encodeURIComponent(categoria)}&competicion=${encodeURIComponent(competicion.id)}&partido=${encodeURIComponent(p.id)}`;
+  if (p.enlaceActa || !competicion.enlazada || acceso?.rol === "tecnico") return null;
   function traer() {
     setTrayendo(true);
     void traerActaRfgf(competicion.id, p.id)
@@ -247,33 +237,57 @@ function ActaDelPartido({
       .finally(() => setTrayendo(false));
   }
   return (
-    <div className={styles.accionesCartel}>
-      {competicion.enlazada && acceso?.rol !== "tecnico" && (
-        <Button
-          size="sm"
-          variant="secondary"
-          pending={trayendo}
-          pendingLabel="Trayendo el acta…"
-          onClick={traer}
-        >
-          Traer acta
-        </Button>
-      )}
-      <Link href={href} transitionTypes={["nav-forward"]}>
-        {p.conActa ? "Corregir acta" : "Meter acta a mano"}
-      </Link>
-    </div>
+    <Button variant="secondary" pending={trayendo} pendingLabel="Trayendo…" onClick={traer}>
+      Traer acta
+    </Button>
+  );
+}
+
+/** Goles o tarjetas del partido, en orden: minuto, qué, quién y el escudo de su equipo. */
+function Eventos({
+  titulo,
+  eventos,
+  partido: p,
+}: {
+  titulo: string;
+  eventos: PartidoDeLiga["eventos"];
+  partido: PartidoDeLiga;
+}) {
+  if (eventos.length === 0) return null;
+  return (
+    <section className={styles.eventos} aria-label={titulo}>
+      <p className={styles.etiqueta}>{titulo}</p>
+      <ol>
+        {eventos.map((e, i) => {
+          const equipo = e.lado === "local" ? p.local : p.visitante;
+          return (
+            <li key={i} data-propio={equipo.propio || undefined}>
+              <span className={styles.minuto}>{e.minuto ? `${e.minuto}'` : ""}</span>
+              <span aria-hidden="true">{EVENTO[e.tipo]}</span>
+              <span className={styles.persona}>{e.persona}</span>
+              <span className={styles.lado} aria-label={equipo.nombre}>
+                <Escudo url={equipo.escudoUrl} />
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
 
 function Detalle({
   partido: p,
+  jornada,
   categoria,
   competicion,
   onNovedades,
+  onFotos,
   onClose,
 }: {
   partido: PartidoDeLiga | null;
+  jornada: number | null;
+  onFotos: (p: PartidoDeLiga) => void;
   categoria: string;
   competicion: PartidosDeLiga["competicion"];
   onNovedades: () => void;
@@ -286,11 +300,14 @@ function Detalle({
       { id: p.id, estado: p.estado, fecha: p.fecha, goles_local: p.golesLocal },
       ahoraLocal(),
     );
+  const propio = !!p && (p.local.propio || p.visitante.propio);
+  const goles = p?.eventos.filter((e) => e.tipo === "gol" || e.tipo === "gol_propia") ?? [];
+  const tarjetas = p?.eventos.filter((e) => e.tipo !== "gol" && e.tipo !== "gol_propia") ?? [];
   return (
     <Dialog
       open={p !== null}
       onClose={onClose}
-      title={p ? `${p.local.nombre} – ${p.visitante.nombre}` : "Partido"}
+      title={jornada ? `Jornada ${jornada}` : "Partido"}
       closeLabel="Cerrar partido"
       mobilePresentation="sheet"
     >
@@ -302,76 +319,51 @@ function Detalle({
               href={`/admin/equipo?id=${encodeURIComponent(p.local.id)}`}
               transitionTypes={["nav-forward"]}
               aria-label={`Ficha de ${p.local.nombre}`}
+              data-propio={p.local.propio || undefined}
             >
               <Escudo url={p.local.escudoUrl} />
               {p.local.nombre}
             </Link>
             <strong>{marcadorDe(p) ?? (cuando.hora || "—")}</strong>
-            {/* Tocar un equipo abre su ficha. */}
             <Link
               href={`/admin/equipo?id=${encodeURIComponent(p.visitante.id)}`}
               transitionTypes={["nav-forward"]}
               aria-label={`Ficha de ${p.visitante.nombre}`}
+              data-propio={p.visitante.propio || undefined}
             >
               <Escudo url={p.visitante.escudoUrl} />
               {p.visitante.nombre}
             </Link>
           </div>
-          <dl className={styles.datos}>
-            <div>
-              <dt>Día</dt>
-              <dd>
-                {cuando.dia}
-                {cuando.hora ? ` · ${cuando.hora}` : ""}
-              </dd>
+          <p className={styles.cuando}>
+            {cuando.dia}
+            {cuando.hora ? ` · ${cuando.hora}` : ""} · {p.campo ?? "Campo por confirmar"}
+            {p.arbitro && <small>Árbitro: {p.arbitro}</small>}
+          </p>
+          {propio && (
+            <div className={styles.acciones}>
+              <Link
+                href={`/admin/directo?categoria=${encodeURIComponent(categoria)}&partido=${encodeURIComponent(p.id)}`}
+                transitionTypes={["nav-forward"]}
+              >
+                Directo
+              </Link>
+              <button type="button" onClick={() => onFotos(p)}>
+                Fotos
+              </button>
+              {pasado && (
+                <TraerActa partido={p} competicion={competicion} onNovedades={onNovedades} />
+              )}
             </div>
-            <div>
-              <dt>Campo</dt>
-              <dd>{p.campo ?? "Por confirmar"}</dd>
-            </div>
-            {p.arbitro && (
-              <div>
-                <dt>Árbitro</dt>
-                <dd>{p.arbitro}</dd>
-              </div>
-            )}
-          </dl>
-          {p.eventos.length > 0 ? (
-            <ol className={styles.eventos} aria-label="Goles y tarjetas">
-              {p.eventos.map((e, i) => (
-                <li key={i} data-lado={e.lado}>
-                  <span className={styles.minuto}>{e.minuto ? `${e.minuto}'` : ""}</span>
-                  <span>
-                    {EVENTO[e.tipo]} {e.persona}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            marcadorDe(p) && <p className={styles.nota}>Sin acta leída todavía.</p>
           )}
-          {(p.local.propio || p.visitante.propio) && pasado && (
-            <ActaDelPartido
-              partido={p}
-              categoria={categoria}
-              competicion={competicion}
-              onNovedades={onNovedades}
-            />
-          )}
-          {(p.local.propio || p.visitante.propio) && (
-            <Link
-              className={styles.enlace}
-              href={`/admin/directo?categoria=${encodeURIComponent(categoria)}&partido=${encodeURIComponent(p.id)}`}
-              transitionTypes={["nav-forward"]}
-            >
-              Directo · apuntar el partido
-            </Link>
-          )}
-          {(p.local.propio || p.visitante.propio) && (
-            <CartelesDelPartidoLiga partido={p} categoria={categoria} />
+          {propio && <CartelesDelPartidoLiga partido={p} categoria={categoria} />}
+          <Eventos titulo="Goles" eventos={goles} partido={p} />
+          <Eventos titulo="Tarjetas" eventos={tarjetas} partido={p} />
+          {p.eventos.length === 0 && marcadorDe(p) && (
+            <p className={styles.nota}>Sin acta leída todavía.</p>
           )}
           {p.enlaceActa && (
-            <a className={styles.enlace} href={p.enlaceActa} target="_blank" rel="noreferrer">
+            <a className={styles.externo} href={p.enlaceActa} target="_blank" rel="noreferrer">
               Acta en futgal.es ↗
             </a>
           )}
@@ -382,11 +374,11 @@ function Detalle({
 }
 
 /**
- * Liga → Partidos: abre en la jornada que toca. Si en ella juega el Santiso y es el partido de la
- * mesa, va arriba entero con sus pasos (convocatoria, once, carteles…); el resto, en filas.
+ * Liga → Partidos: abre en la jornada que toca. Todos los partidos en filas, el nuestro el
+ * primero; cada uno abre su hoja. Sin pasos ni tareas: los carteles se hacen desde la hoja.
  */
 export default function AdminPartidos({ categoria }: { categoria: string }) {
-  const { params, setParams } = useStudio();
+  const { params, setParams, showToast } = useStudio();
   const {
     selectedCompetitionId,
     setSelectedCompetitionId,
@@ -398,9 +390,10 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
   // `?partido=` abre el detalle de ese partido en su jornada (enlaces desde otras pantallas).
   const partidoPedido = params.get("partido");
   const [datos, setDatos] = useState<PartidosDeLiga | null>(null);
-  const [mesa, setMesa] = useState<{ momento: string; partido: PartidoDeLaSemana } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [abierto, setAbierto] = useState<PartidoDeLiga | null>(null);
+  // La galería de fotos de un partido: se abre cerrando su hoja (no dos diálogos a la vez).
+  const [galeria, setGaleria] = useState<PartidoDeLiga | null>(null);
   const generacion = useRef(0);
 
   const cargar = useCallback(async (competicionId: string, numero: number | null) => {
@@ -416,20 +409,6 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
     const id = window.setTimeout(() => void cargar(selectedCompetitionId, pedida), 0);
     return () => window.clearTimeout(id);
   }, [cargar, selectedCompetitionId, pedida]);
-
-  // El partido de la mesa (el mismo de Inicio), para enseñarlo entero con sus pasos.
-  const cargarMesa = useCallback(async () => {
-    const r = await cargarPantallaJornada(hoyLocal());
-    if (!r.ok) return;
-    const pantalla: PantallaJornada = r.datos;
-    const c = pantalla.categorias.find((x) => x.categoria === categoria);
-    const partido = c ? partidoEnMesa(c.proximo, c.ultimo, pantalla.momento) : null;
-    setMesa(partido ? { momento: pantalla.momento, partido } : null);
-  }, [categoria]);
-  useEffect(() => {
-    const id = window.setTimeout(() => void cargarMesa(), 0);
-    return () => window.clearTimeout(id);
-  }, [cargarMesa]);
 
   // Primero se busca dónde está el partido pedido y se va a su competición y jornada.
   useEffect(() => {
@@ -495,8 +474,11 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
   const fechaJornada = datos.jornadas[posicion]?.fecha ?? null;
   const ir = (numero: number | undefined) =>
     numero !== undefined && setParams({ j: numero === datos.actual ? null : String(numero) });
-  const enMesa = mesa && datos.partidos.some((p) => p.id === mesa.partido.id) ? mesa.partido : null;
-  const resto = datos.partidos.filter((p) => p.id !== enMesa?.id);
+  // El nuestro, el primero.
+  const filas = [...datos.partidos].sort(
+    (a, b) =>
+      Number(b.local.propio || b.visitante.propio) - Number(a.local.propio || a.visitante.propio),
+  );
 
   return (
     <div className={styles.pantalla}>
@@ -545,34 +527,35 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
           ›
         </button>
       </nav>
-      {enMesa && mesa && (
-        <TarjetaPartido
-          key={enMesa.id}
-          partido={enMesa}
-          categoria={categoria}
-          momento={mesa.momento}
-          onNovedades={() => {
-            void cargarMesa();
-            void cargar(selectedCompetitionId, pedida);
-          }}
-        />
-      )}
-      {resto.length > 0 ? (
+      {filas.length > 0 ? (
         <div className={styles.lista} aria-label={`Partidos de la jornada ${datos.numero ?? ""}`}>
-          {resto.map((p) => (
+          {filas.map((p) => (
             <Fila key={p.id} partido={p} onAbrir={() => setAbierto(p)} />
           ))}
         </div>
       ) : (
-        !enMesa && <EmptyState title="Esta jornada no tiene partidos." />
+        <EmptyState title="Esta jornada no tiene partidos." />
       )}
       <Detalle
         partido={abierto ? (datos.partidos.find((p) => p.id === abierto.id) ?? abierto) : null}
+        jornada={datos.numero}
         categoria={categoria}
         competicion={datos.competicion}
         onNovedades={() => void cargar(selectedCompetitionId, pedida)}
+        onFotos={(p) => {
+          setAbierto(null);
+          setGaleria(p);
+        }}
         onClose={() => setAbierto(null)}
       />
+      {galeria && (
+        <GaleriaPartido
+          partidoId={galeria.id}
+          partido={`${galeria.local.nombre} – ${galeria.visitante.nombre} · ${fechaPartido(galeria.fecha).dia}`}
+          onCerrar={() => setGaleria(null)}
+          showToast={showToast}
+        />
+      )}
     </div>
   );
 }

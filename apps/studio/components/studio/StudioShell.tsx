@@ -49,7 +49,6 @@ const SUBNAV_LIGA = [
 const CONTEXTO_LIGA = ["categoria", "temporada", "competicion"];
 
 /** Marca de sesión: la app ya arrancó en esta pestaña. */
-const ARRANQUE = "santiso_arrancada";
 
 function Icono({ trazo }: { trazo: string }) {
   return (
@@ -79,27 +78,6 @@ export function StudioShell({
   const pathname = usePathname();
   const { params, navigate, setParams } = useStudio();
   const section = SECCIONES.find((item) => pathname === `/admin/${item.id}`);
-  // Un icono instalado antes de existir «Inicio» guardó «Jornada» como entrada y el teléfono no
-  // la actualiza: si la app arranca desde el icono y cae ahí, se lleva a la portada. Solo en el
-  // arranque (una vez por sesión), no al ir a Jornada a propósito.
-  const seccionActual = section?.id;
-  useEffect(() => {
-    let arrancada = true;
-    try {
-      arrancada = sessionStorage.getItem(ARRANQUE) === "1";
-      sessionStorage.setItem(ARRANQUE, "1");
-    } catch {
-      // Sin almacenamiento de sesión no se puede saber si es el arranque: no se redirige.
-    }
-    const instalada =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    if (!arrancada && instalada && seccionActual === "jornada" && !window.location.search) {
-      window.location.replace("/admin/inicio");
-    }
-    // Solo al montar: después, ir a Jornada es una decisión de quien usa la app.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const visibles = new Set<Seccion>(seccionesDelMenu(acceso).map((item) => item.id));
   const tecnico = acceso?.rol === "tecnico";
   const pestanas = pestanasVisibles(visibles, tecnico);
@@ -107,8 +85,7 @@ export function StudioShell({
   // La hoja abierta: la de la pestaña tocada, o ninguna.
   const [hoja, setHoja] = useState<IdPestana | null>(null);
   const pestanaActiva = pestanaDe(section?.id);
-  // Los carteles los lleva el delegado: al técnico no se le avisa de ellos.
-  const { avisos, porConvocar } = useAvisos(section?.id, !tecnico);
+  const { porConvocar } = useAvisos(section?.id);
   // Solo en sus propias pantallas: en una ficha no quedaría ninguna marcada.
   const subnavLiga = SUBNAV_LIGA.some((item) => item.id === section?.id);
   const contextoLiga = new URLSearchParams(
@@ -333,9 +310,6 @@ export function StudioShell({
             </>
           )}
         </main>
-        <span id="aviso-pestana" className={styles.oculto}>
-          Tiene una tarea pendiente
-        </span>
         <nav
           aria-label="Accesos rápidos"
           className={styles.tabs}
@@ -350,11 +324,9 @@ export function StudioShell({
                 data-activa={pestana.id === pestanaActiva}
                 aria-haspopup={pestana.grupos && !entradaDirecta(pestana) ? "dialog" : undefined}
                 onClick={() => tocarPestana(pestana)}
-                aria-describedby={avisos.has(pestana.id) ? "aviso-pestana" : undefined}
               >
                 <span className={styles.tabIcono}>
                   <Icono trazo={pestana.icono} />
-                  {avisos.has(pestana.id) && <span className={styles.punto} aria-hidden="true" />}
                 </span>
                 {pestana.label}
               </button>
