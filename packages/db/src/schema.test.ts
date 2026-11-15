@@ -157,6 +157,41 @@ describe("convocatorias previas", () => {
   });
 });
 
+describe("colocaciones tácticas", () => {
+  it("una por momento, sistema y momento válidos, y borrado en cascada", async () => {
+    const { db } = conexion;
+    const { jornada, local, visitante, jugador } = await sembrar();
+    const [p] = await db
+      .insert(s.partidos)
+      .values({ jornadaId: jornada.id, equipoLocalId: local.id, equipoVisitanteId: visitante.id })
+      .returning();
+    const huecos = [jugador.id, ...Array<null>(10).fill(null)];
+    const fila = {
+      partidoId: p!.id,
+      momento: "previa" as const,
+      sistema: "4-4-2" as const,
+      huecos,
+    };
+    await db.insert(s.partidoColocaciones).values(fila);
+    await db.insert(s.partidoColocaciones).values({ ...fila, momento: "final" });
+    expect((await db.select().from(s.partidoColocaciones)).map((f) => f.huecos)).toEqual([
+      huecos,
+      huecos,
+    ]);
+    await rechaza(db.insert(s.partidoColocaciones).values(fila));
+    await rechaza(
+      db.insert(s.partidoColocaciones).values({ ...fila, momento: "otro" as "previa" }),
+    );
+    await rechaza(
+      db.insert(s.partidoColocaciones).values({ ...fila, sistema: "2-3-5" as "4-4-2" }),
+    );
+    await rechaza(db.insert(s.partidoColocaciones).values({ ...fila, partidoId: "no-existe" }));
+    expect(await db.select().from(s.partidoAlineaciones)).toHaveLength(0);
+    await db.delete(s.partidos).where(eq(s.partidos.id, p!.id));
+    expect(await db.select().from(s.partidoColocaciones)).toEqual([]);
+  });
+});
+
 describe("archivo de partidos históricos", () => {
   it("vive sin calendario activo, valida estados y borra eventos en cascada", async () => {
     const { db } = conexion;

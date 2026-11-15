@@ -126,3 +126,38 @@ export const partidoAlineaciones = sqliteTable(
     check("partido_alineaciones_capitan_titular_ck", condicion(`not "capitan" or "titular"`)),
   ],
 );
+
+/** Copia de `SISTEMAS` de `apps/studio/lib/cartel2/tactica.ts`: la base no importa de la app. */
+export const SISTEMAS_COLOCACION = [
+  "4-4-2",
+  "4-3-3",
+  "4-2-3-1",
+  "3-5-2",
+  "4-1-4-1",
+  "5-3-2",
+] as const;
+/** `previa`: el once anunciado antes del partido. `final`: el de O Noso 11, después. */
+export const MOMENTOS_COLOCACION = ["previa", "final"] as const;
+
+/**
+ * Dónde va cada titular en el dibujo táctico del cartel: un sistema y sus 11 huecos (id de
+ * jugador o `null`). La previa y la final van aparte, y ninguna toca la alineación anunciada
+ * ni el acta.
+ */
+export const partidoColocaciones = sqliteTable(
+  "partido_colocaciones",
+  {
+    partidoId: text("partido_id")
+      .notNull()
+      .references(() => partidos.id, { onDelete: "cascade" }),
+    momento: text("momento", { enum: MOMENTOS_COLOCACION }).notNull(),
+    sistema: text("sistema", { enum: SISTEMAS_COLOCACION }).notNull(),
+    huecos: text("huecos", { mode: "json" }).$type<(string | null)[]>().notNull(),
+    ...marcasTiempo(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.partidoId, t.momento] }),
+    checkEnum("partido_colocaciones_momento_ck", "momento", MOMENTOS_COLOCACION),
+    checkEnum("partido_colocaciones_sistema_ck", "sistema", SISTEMAS_COLOCACION),
+  ],
+);

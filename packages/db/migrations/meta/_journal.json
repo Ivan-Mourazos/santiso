@@ -225,6 +225,13 @@
       "when": 1794674379394,
       "tag": "0031_libreta-directo",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1794727443016,
+      "tag": "0032_colocaciones",
+      "breakpoints": true
     }
   ]
 }
