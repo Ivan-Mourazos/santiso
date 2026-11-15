@@ -142,19 +142,6 @@
   display: block;
   border-radius: var(--ui-radius);
 }
-.pie {
-  padding: var(--ui-space-3, 0.75rem) var(--ui-space-4, 1rem);
-  border-top: 1px solid rgb(255 255 255 / 6%);
-}
-.pie p {
-  margin: 0;
-  color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm);
-  text-align: center;
-}
-.pie p + p {
-  margin-top: 0.4rem;
-}
 .pie a {
   color: var(--ui-accent);
   font-weight: 700;
@@ -254,4 +241,74 @@
     align-items: center;
     min-height: 44px;
   }
+}
+
+/* «Después del partido»: el resultado arriba y debajo los desplegables Carteles y Eventos. */
+.despues {
+  display: grid;
+  gap: 0.6rem;
+  max-width: 760px;
+  min-width: 0;
+}
+.seccion,
+.seccionInterior {
+  min-width: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+.seccion > summary,
+.seccionInterior > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 52px;
+  padding: 0.35rem 1rem;
+  cursor: pointer;
+  font-weight: 800;
+  list-style: none;
+}
+.seccionInterior > summary {
+  min-height: 44px;
+  padding-inline: 0.75rem;
+  font-size: var(--ui-text-sm);
+}
+.seccion > summary::-webkit-details-marker,
+.seccionInterior > summary::-webkit-details-marker {
+  display: none;
+}
+.seccion > summary small {
+  margin-left: 0.35rem;
+  color: var(--ui-muted);
+  font-weight: 700;
+}
+.seccion > summary > svg,
+.seccionInterior > summary > svg {
+  flex: none;
+  transition: transform var(--ui-duration) var(--ui-ease);
+}
+.seccion[open] > summary > svg,
+.seccionInterior[open] > summary > svg {
+  transform: rotate(180deg);
+}
+.seccion > summary:focus-visible,
+.seccionInterior > summary:focus-visible {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+.seccionContenido {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0 0.75rem 0.75rem;
+}
+.seccionContenido .seccionInterior > :not(summary) {
+  margin: 0 0.75rem 0.75rem;
+}
+/* Las dos vistas previas, una al lado de la otra. */
+.dosCarteles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  min-width: 0;
 }

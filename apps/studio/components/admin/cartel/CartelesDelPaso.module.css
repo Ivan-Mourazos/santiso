@@ -26,6 +26,14 @@
   display: grid;
   gap: 6px;
 }
+/* Cada imagen del carrusel en una línea: nombre, ver y descargar solo esa. */
+.formatoFila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
 .formato small {
   font-weight: 400;
   color: var(--ui-muted);

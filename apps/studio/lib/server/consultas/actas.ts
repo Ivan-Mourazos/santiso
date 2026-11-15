@@ -41,6 +41,8 @@ export async function partidosParaActa(categoria?: string): Promise<PartidoActaD
       nombreVisitante: visitante.nombre,
       escudoLocal: local.escudo,
       escudoVisitante: visitante.escudo,
+      colorLocal: local.color,
+      colorVisitante: visitante.color,
       jornadaNumero: schema.jornadas.numero,
       campoNombre: schema.campos.nombre,
       campoPoblacion: schema.campos.poblacion,
@@ -72,10 +74,12 @@ export async function partidosParaActa(categoria?: string): Promise<PartidoActaD
     equipo_local: {
       nombre: f.nombreLocal,
       escudo_url: f.escudoLocal ? urlMedia(f.escudoLocal) : null,
+      color: f.colorLocal,
     },
     equipo_visitante: {
       nombre: f.nombreVisitante,
       escudo_url: f.escudoVisitante ? urlMedia(f.escudoVisitante) : null,
+      color: f.colorVisitante,
     },
     jornada: { numero: f.jornadaNumero, competicion_id: f.competicionId },
     campo: f.campoNombre ? { nombre: f.campoNombre, poblacion: f.campoPoblacion } : null,

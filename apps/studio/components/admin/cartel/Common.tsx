@@ -6,6 +6,7 @@
  * dicen si están activados.
  */
 
+import Link from "next/link";
 import React, { useId } from "react";
 import { useOptionalStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
@@ -96,6 +97,13 @@ export const Deslizador: React.FC<{
   );
 };
 
+interface EquipoSelector {
+  nombre?: string | null;
+  escudo_url?: string | null;
+  /** Color del club (`#rrggbb`): el halo detrás del escudo. */
+  color?: string | null;
+}
+
 export interface SelectorMatch {
   id: string;
   categoria?: string | null;
@@ -107,8 +115,10 @@ export interface SelectorMatch {
   lugar?: string | null;
   goles_local?: number | null;
   goles_visitante?: number | null;
-  equipo_local?: { nombre?: string | null; escudo_url?: string | null } | null;
-  equipo_visitante?: { nombre?: string | null; escudo_url?: string | null } | null;
+  equipo_local_id?: string | null;
+  equipo_visitante_id?: string | null;
+  equipo_local?: EquipoSelector | null;
+  equipo_visitante?: EquipoSelector | null;
   jornada?: {
     numero?: number | string | null;
     competicion?: string | null;
@@ -118,6 +128,57 @@ export interface SelectorMatch {
   campo?: { nombre?: string | null } | null;
 }
 
+/** Un equipo del cruce: tocarlo abre su ficha; la flecha de atrás vuelve al cartel. */
+function EquipoDelCruce({
+  id,
+  equipo,
+  respaldo,
+}: {
+  id?: string | null;
+  equipo?: EquipoSelector | null;
+  respaldo: string;
+}) {
+  const nombre = equipo?.nombre || respaldo;
+  const contenido = (
+    <>
+      {equipo?.escudo_url && (
+        <span
+          className={styles.cruceEscudo}
+          style={{ "--halo": haloDeClub(equipo.color) } as React.CSSProperties}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- escudo de /media, sin optimizador */}
+          <img src={equipo.escudo_url} alt="" />
+        </span>
+      )}
+      <span className={styles.cruceNombre}>{nombre}</span>
+    </>
+  );
+  if (!id) return <span className={styles.cruceEquipo}>{contenido}</span>;
+  return (
+    <Link
+      className={styles.cruceEquipo}
+      href={`/admin/equipo?id=${encodeURIComponent(id)}`}
+      transitionTypes={["nav-forward"]}
+      aria-label={`Ficha de ${nombre}`}
+    >
+      {contenido}
+    </Link>
+  );
+}
+
+/**
+ * Sombra detrás del escudo con el color del club, para que los escudos oscuros se distingan
+ * sobre el fondo oscuro. Sin color, o con uno casi negro, se usa un blanco suave.
+ */
+function haloDeClub(color?: string | null) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(color?.trim() ?? "");
+  if (!m) return "rgb(255 255 255 / 45%)";
+  const n = parseInt(m[1]!, 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  const luz = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return luz < 0.18 ? "rgb(255 255 255 / 45%)" : `rgb(${r} ${g} ${b} / 85%)`;
+}
+
 /** El cruce de un partido como se verá en el cartel: contexto, equipos con marcador y fecha. */
 const CrucePartido: React.FC<{ m: SelectorMatch; categoria: string }> = ({ m, categoria }) => {
   const competicion = m.competiciones?.nombre || m.competicion || m.jornada?.competicion || "";
@@ -125,20 +186,27 @@ const CrucePartido: React.FC<{ m: SelectorMatch; categoria: string }> = ({ m, ca
     m.goles_local != null && m.goles_visitante != null
       ? `${m.goles_local}–${m.goles_visitante}`
       : "vs";
-  const contexto = [categoria, competicion, m.jornada?.numero ? `Jornada ${m.jornada.numero}` : ""]
+  // Todo el contexto en una línea: categoría, competición, jornada y día.
+  const contexto = [
+    categoria,
+    competicion,
+    m.jornada?.numero ? `J${m.jornada.numero}` : "",
+    m.fecha ? formatLiteralMatchDate(m.fecha) : "",
+  ]
     .filter(Boolean)
     .join(" · ");
   return (
     <>
       <span className={styles.partidoElegidoContexto}>{contexto}</span>
       <strong className={styles.partidoElegidoCruce}>
-        <span>{m.equipo_local?.nombre || "Local"}</span>
+        <EquipoDelCruce id={m.equipo_local_id} equipo={m.equipo_local} respaldo="Local" />
         <b>{marcador}</b>
-        <span>{m.equipo_visitante?.nombre || "Visitante"}</span>
+        <EquipoDelCruce
+          id={m.equipo_visitante_id}
+          equipo={m.equipo_visitante}
+          respaldo="Visitante"
+        />
       </strong>
-      {m.fecha && (
-        <span className={styles.partidoElegidoContexto}>{formatLiteralMatchDate(m.fecha)}</span>
-      )}
     </>
   );
 };
@@ -165,14 +233,15 @@ export const ConPartidoElegido: React.FC<{
   const m = partidoId ? dbMatches.find((x) => x.id === partidoId) : undefined;
   if (m)
     return (
-      <>
+      <div className={styles.conPartido}>
         <section className={styles.partidoElegido} aria-label="Partido del cartel">
           <CrucePartido m={m} categoria={categoria} />
         </section>
-        <details className={styles.manual}>
-          <summary>
-            <span>Cambiar partido o editar datos</span>
-            <Flecha />
+        {/* El lápiz va en la esquina de la tarjeta; al abrirlo, los datos salen debajo. */}
+        <details className={styles.editarPartido}>
+          <summary title="Cambiar partido o editar datos">
+            <span className={styles.soloLector}>Cambiar partido o editar datos</span>
+            <span aria-hidden="true">✎</span>
           </summary>
           <div className={styles.manualContenido}>
             {/* El mismo selector de arriba: un solo sitio para cambiar de partido. */}
@@ -189,7 +258,7 @@ export const ConPartidoElegido: React.FC<{
             {children}
           </div>
         </details>
-      </>
+      </div>
     );
   return (
     <ElegirPartido
@@ -303,13 +372,13 @@ const ElegirPartido: React.FC<{
         </div>
       </section>
       {!soloSelector && (
-      <details className={styles.manual}>
-        <summary>
-          <span>Otro partido o un amistoso, a mano</span>
-          <Flecha />
-        </summary>
-        <div className={styles.manualContenido}>{children}</div>
-      </details>
+        <details className={styles.manual}>
+          <summary>
+            <span>Otro partido o un amistoso, a mano</span>
+            <Flecha />
+          </summary>
+          <div className={styles.manualContenido}>{children}</div>
+        </details>
       )}
     </>
   );

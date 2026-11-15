@@ -146,14 +146,26 @@ export function PaqueteDespues({
       {estado !== "pendiente" && (
         <ul className={s.formatos} aria-label="Imágenes del carrusel">
           {PASOS_DESPUES.map((paso, i) => (
-            <li key={paso} className={s.formato}>
+            <li key={paso} className={s.formatoFila}>
+              <span>
+                {i + 1}. {PASOS[paso].nombre}
+              </span>
               <Button
                 size="sm"
                 variant="secondary"
                 onClick={() => setViendo({ paso, url: urls[i]! })}
                 aria-label={`Ver en grande: ${PASOS[paso].nombre}`}
               >
-                {i + 1}. {PASOS[paso].nombre}
+                Ver
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => ficheros?.[i] && descargarArchivos([ficheros[i]])}
+                disabled={!ficheros || generando}
+                aria-label={`Descargar: ${PASOS[paso].nombre}`}
+              >
+                Descargar
               </Button>
             </li>
           ))}
@@ -185,7 +197,7 @@ export function PaqueteDespues({
               onClick={() => ficheros && descargarArchivos(ficheros)}
               disabled={!ficheros || generando}
             >
-              Descargar
+              Descargar los 2
             </Button>
           </>
         )}

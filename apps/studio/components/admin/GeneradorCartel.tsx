@@ -2,7 +2,6 @@
 
 import { sinConexion } from "@/lib/resultado";
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { LIMITE_INSTAGRAM, textoInstagram } from "@/lib/cartel/instagram";
 
 // UI Components & Hooks
@@ -28,7 +27,8 @@ import { PaqueteAxenda } from "./cartel/PaqueteAxenda";
 import { PaqueteDespues } from "./cartel/PaqueteDespues";
 import { EditorTactico } from "./cartel/EditorTactico";
 import { useDespues } from "./cartel/useDespues";
-import { PlegableMovil } from "./cartel/PlegableMovil";
+import { Flecha, PlegableMovil } from "./cartel/PlegableMovil";
+import { EventosPartido } from "./cartel/EventosPartido";
 import { Select } from "@/components/ui/foundation/Fields";
 import type { FormatoCartel } from "@/lib/cartel2/modelo";
 import type { CartelGuardado, PasoCartel } from "@/lib/cartel2/pasos";
@@ -60,6 +60,7 @@ export default function GeneradorCartel({
   temaInicial = null,
   showToast,
 }: Props) {
+  const studio = useOptionalStudio();
   const {
     form,
     set,
@@ -87,11 +88,17 @@ export default function GeneradorCartel({
     errorDatos,
   } = useCartelForm(partidoInicial, {
     // Desde el catálogo o Inicio el enlace trae la categoría: el formulario empieza por ella.
-    categoria: useOptionalStudio()?.params.get("categoria"),
+    categoria: studio?.params.get("categoria"),
     proximo: (templateId || "partido") === "partido",
   });
 
   const tipo = templateId || "partido";
+  // El partido elegido queda en la dirección: al ir a la ficha de un equipo y volver atrás,
+  // la pantalla abre con el mismo partido.
+  const elegirPartido: typeof loadMatchFromDb = (m) => {
+    loadMatchFromDb(m);
+    studio?.setParams({ partido: m.id }, true);
+  };
   // Fichajes, comunicados y celebraciones son el anuncio con su tema ya puesto.
   useEffect(() => {
     if (tipo === "multiusos" && temaInicial && TEMAS_MULTIUSOS.includes(temaInicial))
@@ -177,6 +184,159 @@ export default function GeneradorCartel({
       .catch(() => showToast("No se pudo copiar el texto", "error"));
   }
 
+  const instagram = (
+    <section className={styles.instagram} aria-label="Texto para Instagram">
+      <div className={styles.instagramCabecera}>
+        <div>
+          <h4>Texto para Instagram</h4>
+          <p>Sale de los datos del cartel. Puedes retocarlo aquí antes de copiarlo.</p>
+        </div>
+        <div className={styles.instagramAcciones}>
+          {retocado && (
+            <Button variant="secondary" size="sm" onClick={() => setEdicion(null)}>
+              Restablecer
+            </Button>
+          )}
+          <Button variant="secondary" size="sm" onClick={handleCopyInstagram}>
+            {copied ? "Copiado" : "Copiar"}
+          </Button>
+        </div>
+      </div>
+      <textarea
+        value={instagramText}
+        onChange={(e) => setEdicion({ base: textoGenerado, texto: e.target.value })}
+        aria-label="Texto para Instagram"
+        rows={Math.min(18, instagramText.split("\n").length + 1)}
+      />
+      <p className={styles.instagramContador} data-excede={instagramText.length > LIMITE_INSTAGRAM}>
+        {instagramText.length} / {LIMITE_INSTAGRAM} caracteres
+      </p>
+    </section>
+  );
+
+  if (tipo === "despues") {
+    const conPartido = Boolean(despues.partidoId);
+    return (
+      <div className={styles.pantalla}>
+        <AvisoError mensaje={errorDatos} />
+        <div className={styles.despues}>
+          <FormCronoloxia
+            form={form}
+            set={set}
+            equipos={equipos}
+            jugadores={jugadores}
+            handleRivalSelect={handleRivalSelect}
+            handleRivalFile={handleRivalFile}
+            addEvent={addEvent}
+            updateEvent={updateEvent}
+            removeEvent={removeEvent}
+            dbMatches={dbMatches}
+            loadMatchFromDb={elegirPartido}
+            tipo="cronoloxia"
+            conEventos={false}
+          />
+          {despues.motivo && !conPartido && <p role="status">{despues.motivo}</p>}
+          {conPartido && (
+            <>
+              <details className={styles.seccion} name="despues">
+                <summary>
+                  <span>Carteles</span>
+                  <Flecha />
+                </summary>
+                <div className={styles.seccionContenido}>
+                  <div className={styles.dosCarteles}>
+                    <PilotoCartel
+                      tipo="despues"
+                      form={despues.formulario}
+                      recursos={assetUrls}
+                      equipos={equipos}
+                      showToast={showToast}
+                      soloVista
+                      titulo="1 · Resultado"
+                    />
+                    <PilotoCartel
+                      tipo="noso11"
+                      form={despues.formulario}
+                      recursos={assetUrls}
+                      equipos={equipos}
+                      showToast={showToast}
+                      soloVista
+                      colocacion={despues.colocacion}
+                      titulo="2 · O Noso 11"
+                    />
+                  </div>
+                  {despues.guardados && (
+                    <PaqueteDespues
+                      key={despues.partidoId}
+                      partidoId={despues.partidoId!}
+                      guardados={despues.guardados}
+                      preparar={despues.preparar}
+                      firma={despues.firma}
+                      antesDeGuardar={async () => {
+                        const error = await despues.guardarFinal();
+                        if (error) showToast(error, "error");
+                        return !error;
+                      }}
+                      texto={instagramText}
+                      motivo={despues.motivo}
+                      showToast={showToast}
+                    />
+                  )}
+                  {despues.jugadores.length > 0 && (
+                    <details className={styles.seccionInterior}>
+                      <summary>
+                        <span>Cambiar el once</span>
+                        <Flecha />
+                      </summary>
+                      {despues.sinActa && (
+                        <p>
+                          Sin acta ni alineación: elige el once desde la plantilla tocando los
+                          huecos del campo.
+                        </p>
+                      )}
+                      <EditorTactico
+                        jugadores={despues.jugadores}
+                        colocacion={despues.colocacion}
+                        onCambio={despues.cambiarColocacion}
+                      />
+                    </details>
+                  )}
+                  {textoGenerado && (
+                    <details className={styles.seccionInterior}>
+                      <summary>
+                        <span>Texto para Instagram</span>
+                        <Flecha />
+                      </summary>
+                      {instagram}
+                    </details>
+                  )}
+                </div>
+              </details>
+              <details className={styles.seccion} name="despues">
+                <summary>
+                  <span>
+                    Eventos <small>{form.events.length}</small>
+                  </span>
+                  <Flecha />
+                </summary>
+                <div className={styles.seccionContenido}>
+                  <EventosPartido
+                    eventos={form.events}
+                    jugadores={jugadores.filter((j) => j.categoria === form.categoria)}
+                    addEvent={addEvent}
+                    updateEvent={updateEvent}
+                    removeEvent={removeEvent}
+                    titulo={false}
+                  />
+                </div>
+              </details>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.pantalla}>
       <AvisoError mensaje={errorDatos} />
@@ -203,7 +363,7 @@ export default function GeneradorCartel({
               handleRivalSelect={handleRivalSelect}
               handleRivalFile={handleRivalFile}
               dbMatches={dbMatches}
-              loadMatchFromDb={loadMatchFromDb}
+              loadMatchFromDb={elegirPartido}
               campos={campos}
               competiciones={competicionesCatalog}
               tipo={tipo}
@@ -217,13 +377,13 @@ export default function GeneradorCartel({
               handleRivalSelect={handleRivalSelect}
               handleRivalFile={handleRivalFile}
               dbMatches={dbMatches}
-              loadMatchFromDb={loadMatchFromDb}
+              loadMatchFromDb={elegirPartido}
               campos={campos}
               competiciones={competicionesCatalog}
               tipo={tipo}
             />
           )}
-          {(tipo === "cronoloxia" || tipo === "despues") && (
+          {tipo === "cronoloxia" && (
             <FormCronoloxia
               form={form}
               set={set}
@@ -235,8 +395,8 @@ export default function GeneradorCartel({
               updateEvent={updateEvent}
               removeEvent={removeEvent}
               dbMatches={dbMatches}
-              loadMatchFromDb={loadMatchFromDb}
-              tipo={tipo === "despues" ? "cronoloxia" : tipo}
+              loadMatchFromDb={elegirPartido}
+              tipo={tipo}
             />
           )}
           {tipo === "proximos" && (
@@ -260,41 +420,9 @@ export default function GeneradorCartel({
               updatePlayer={updatePlayer}
               swapPlayers={swapPlayers}
               dbMatches={dbMatches}
-              loadMatchFromDb={loadMatchFromDb}
+              loadMatchFromDb={elegirPartido}
               tipo={tipo}
             />
-          )}
-          {tipo === "despues" && despues.partidoId && despues.sinActa && (
-            <p>
-              Sin acta ni alineación: elige el once desde la plantilla tocando los huecos del campo.
-            </p>
-          )}
-          {tipo === "despues" && despues.partidoId && despues.jugadores.length > 0 && (
-            <EditorTactico
-              jugadores={despues.jugadores}
-              colocacion={despues.colocacion}
-              onCambio={despues.cambiarColocacion}
-            />
-          )}
-          {tipo === "despues" && despues.partidoId && despues.guardados && (
-            <PaqueteDespues
-              key={despues.partidoId}
-              partidoId={despues.partidoId}
-              guardados={despues.guardados}
-              preparar={despues.preparar}
-              firma={despues.firma}
-              antesDeGuardar={async () => {
-                const error = await despues.guardarFinal();
-                if (error) showToast(error, "error");
-                return !error;
-              }}
-              texto={instagramText}
-              motivo={despues.motivo}
-              showToast={showToast}
-            />
-          )}
-          {tipo === "despues" && despues.motivo && !despues.partidoId && (
-            <p role="status">{despues.motivo}</p>
           )}
           {tipo === "multiusos" && (
             <FormMultiusos form={form} set={set} handleMultiusosFile={handleMultiusosFile} />
@@ -333,89 +461,22 @@ export default function GeneradorCartel({
           </PlegableMovil>
 
           {textoGenerado && (
-            <PlegableMovil titulo="Texto para Instagram">
-              <section className={styles.instagram} aria-label="Texto para Instagram">
-                <div className={styles.instagramCabecera}>
-                  <div>
-                    <h4>Texto para Instagram</h4>
-                    <p>Sale de los datos del cartel. Puedes retocarlo aquí antes de copiarlo.</p>
-                  </div>
-                  <div className={styles.instagramAcciones}>
-                    {retocado && (
-                      <Button variant="secondary" size="sm" onClick={() => setEdicion(null)}>
-                        Restablecer
-                      </Button>
-                    )}
-                    <Button variant="secondary" size="sm" onClick={handleCopyInstagram}>
-                      {copied ? "Copiado" : "Copiar"}
-                    </Button>
-                  </div>
-                </div>
-                <textarea
-                  value={instagramText}
-                  onChange={(e) => setEdicion({ base: textoGenerado, texto: e.target.value })}
-                  aria-label="Texto para Instagram"
-                  rows={Math.min(18, instagramText.split("\n").length + 1)}
-                />
-                <p
-                  className={styles.instagramContador}
-                  data-excede={instagramText.length > LIMITE_INSTAGRAM}
-                >
-                  {instagramText.length} / {LIMITE_INSTAGRAM} caracteres
-                </p>
-              </section>
-            </PlegableMovil>
+            <PlegableMovil titulo="Texto para Instagram">{instagram}</PlegableMovil>
           )}
         </section>
 
         <div className={styles.previsualizacion}>
-          {tipo === "despues" ? (
-            <>
-              <PilotoCartel
-                tipo="despues"
-                form={despues.formulario}
-                recursos={assetUrls}
-                equipos={equipos}
-                showToast={showToast}
-                soloVista
-                titulo="1 · Resultado"
-              />
-              <PilotoCartel
-                tipo="noso11"
-                form={despues.formulario}
-                recursos={assetUrls}
-                equipos={equipos}
-                showToast={showToast}
-                soloVista
-                colocacion={despues.colocacion}
-                titulo="2 · O Noso 11"
-              />
-            </>
-          ) : (
-            <PilotoCartel
-              tipo={tipoForAssets}
-              formato={formato}
-              form={form}
-              recursos={assetUrls}
-              equipos={equipos}
-              showToast={showToast}
-              guardado={guardado}
-              // Próximos se publica solo en carrusel (Axenda): aquí, solo la vista previa.
-              soloVista={tipo === "proximos"}
-            />
-          )}
-          {/* Fichajes, comunicados y lotaría van sin logos: no hay nada que explicar. */}
-          {tipo !== "fichaxe" && tipo !== "comunicado" && tipo !== "loteria" && (
-            <PlegableMovil titulo="Logos y patrocinadores">
-              <div className={styles.pie}>
-                <p>
-                  Los logos de cabecera se cambian en{" "}
-                  <Link href="/admin/ajustes-graficos">Ajustes gráficos</Link>; los de la barra
-                  inferior, en <Link href="/admin/patrocinadores">Patrocinadores y logos</Link>.
-                </p>
-              </div>
-            </PlegableMovil>
-          )}
+          <PilotoCartel
+            tipo={tipoForAssets}
+            formato={formato}
+            form={form}
+            recursos={assetUrls}
+            equipos={equipos}
+            showToast={showToast}
+            guardado={guardado}
+            // Próximos se publica solo en carrusel (Axenda): aquí, solo la vista previa.
+            soloVista={tipo === "proximos"}
+          />
         </div>
       </div>
     </div>

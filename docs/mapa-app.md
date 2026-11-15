@@ -50,7 +50,7 @@ Subnavegación arriba: Partidos · Clasificación · Goleadores · Estadísticas
 | Código | Pantalla | Ruta | Qué se hace | Decisión |
 |---|---|---|---|---|
 | C0 | Catálogo | `carteles` | Lista de carteles por grupos | |
-| C1 | Resultado e O Noso 11 | `carteles?plantilla=despues` | Carrusel de después: eventos + once | compactar (idea A) |
+| C1 | Resultado e O Noso 11 | `carteles?plantilla=despues` | Resultado arriba (equipos → su ficha, ✎ cambiar partido) y dos desplegables: Carteles (vistas, descargar uno o los 2, once, texto) y Eventos | **hecho 15/11**: eventos en una línea con hoja para editar; fuera «Logos y patrocinadores» en todos los carteles |
 | C2 | Cartel de partido | `?plantilla=partido` | Día, hora y campo | |
 | C3 | Próximos partidos | `?plantilla=proximos` | Agenda del finde | |
 | C4 | Clasificación | `?plantilla=clasificacion` | Cartel de la tabla | |
