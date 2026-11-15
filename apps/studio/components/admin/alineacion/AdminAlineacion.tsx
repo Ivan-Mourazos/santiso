@@ -244,6 +244,20 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
       ) : (
         <>
           <AvisosPartido avisos={pantalla.avisos} />
+          {/* El cartel queda al final, tras la plantilla y el campo: desde arriba se llega de un toque. */}
+          {alineacion.titulares.length > 0 && (
+            <Button
+              variant="secondary"
+              className={styles.irCartel}
+              onClick={() =>
+                document
+                  .getElementById("cartel-once")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
+            >
+              {carteles?.length ? "Compartir el cartel del once ↓" : "Generar el cartel del once ↓"}
+            </Button>
+          )}
           <p className={styles.contador} role="status">
             <strong data-completo={alineacion.titulares.length === TITULARES}>
               {alineacion.titulares.length} / {TITULARES} titulares
@@ -314,6 +328,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
               }}
             />
           )}
+          <div id="cartel-once" className={styles.anclaCartel} />
           {carteles === null ? (
             <LoadingState title="Cargando carteles guardados…" />
           ) : (
@@ -322,6 +337,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
               partidoId={partido.id}
               paso="once"
               guardados={carteles}
+              onCambio={setCarteles}
               preparar={prepararCartel}
               motivo={alineacion.titulares.length === 0 ? "Elige al menos un titular." : null}
               showToast={showToast}

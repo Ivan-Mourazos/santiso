@@ -111,9 +111,13 @@
   top: 690px;
   height: 735px;
 }
+.publicacion .camiseta {
+  width: 112px;
+  height: 112px;
+}
 .historia .camiseta {
-  width: 108px;
-  height: 108px;
+  width: 98px;
+  height: 98px;
 }
 .campo {
   position: absolute;
@@ -206,19 +210,16 @@
   border-bottom: 4px solid rgb(255 255 255 / 70%);
 }
 
-/* Cada jugador se pone de pie sobre el césped: se contrarrota para verse de frente. */
+/*
+ * Cada jugador, de pie y de frente, en el punto del césped que le toca (calculado en
+ * `proyectarHueco`) y a la escala de su distancia. Plano, fuera del 3D del campo.
+ */
 .jugador {
   position: absolute;
-  transform: translate(-50%, -100%);
-  transform-style: preserve-3d;
-}
-.erguido {
-  position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
   width: 210px;
-  transform: rotateX(calc(-1 * var(--inclinacion)));
+  transform: translate(-50%, -100%) scale(var(--escala));
   transform-origin: 50% 100%;
 }
 .camiseta {
@@ -240,14 +241,17 @@
   color: var(--amarillo);
   font-size: 22px;
 }
+/* Bajo los pies de su camiseta, en una capa por encima de todas las camisetas. */
 .nombre {
-  margin-top: 4px;
+  position: absolute;
   padding: 2px 12px;
   border: 1px solid rgb(245 197 24 / 50%);
   border-radius: 8px;
   background: rgb(6 8 11 / 88%);
   text-transform: uppercase;
   white-space: nowrap;
+  transform: translate(-50%, 4px) scale(var(--escala));
+  transform-origin: 50% 0;
 }
 
 /* ─── Suplentes ─── */

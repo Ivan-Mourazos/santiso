@@ -257,3 +257,12 @@ span.foto {
   font: 800 0.95rem / 1 var(--ui-font-title);
   letter-spacing: 0.02em;
 }
+
+/* Atajo desde arriba al cartel, que queda al final de la pantalla. */
+.irCartel {
+  width: 100%;
+}
+/* Al saltar al cartel, que no quede tapado por la cabecera fija. */
+.anclaCartel {
+  scroll-margin-top: 80px;
+}

@@ -43,8 +43,11 @@
   gap: 8px;
 }
 .acciones button {
-  flex: 1;
+  /* Cada botón a su ancho, sin partir palabras: si no caben, bajan a otra línea. */
+  flex: 1 0 auto;
   min-height: 44px;
+  white-space: nowrap;
+  hyphens: none;
 }
 .motivo {
   margin: 0;
