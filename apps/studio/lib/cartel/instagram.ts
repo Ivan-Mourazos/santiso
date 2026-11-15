@@ -200,14 +200,21 @@ function textoResultado(f: FormState, conCarrusel: boolean): string {
         ? "Á seguinte! 💪"
         : "Seguimos sumando 💪";
   linhas.push("", peche);
-  if (conCarrusel) linhas.push("👉 Desliza para ver a cronoloxía e o noso once.");
+  if (conCarrusel) {
+    // El carrusel de después del partido: el Resultado y, al deslizar, O Noso 11.
+    linhas.push("👉 Desliza para ver o noso once.");
+    const titulares = f.titulares.filter((p) => p.nome.trim());
+    if (titulares.length) linhas.push("", `📋 O Noso 11: ${titulares.map(nomeOnce).join(", ")}`);
+  }
   linhas.push("", hashtags(f.categoria, esCopa(f.competicion) ? "#Copa" : "", "#Resultado"));
   return linhas.join("\n");
 }
 
+const nomeOnce = (p: Player) =>
+  `${p.dorsal ? `${p.dorsal}. ` : ""}${p.nome.trim()}${p.eCapitan ? " (C)" : ""}`;
+
 function textoOnce(f: FormState): string {
-  const nome = (p: Player) =>
-    `${p.dorsal ? `${p.dorsal}. ` : ""}${p.nome.trim()}${p.eCapitan ? " (C)" : ""}`;
+  const nome = nomeOnce;
   const titulares = f.titulares.filter((p) => p.nome.trim());
   if (titulares.length === 0) return "";
   const suplentes = f.suplentes.filter((p) => p.nome.trim());
@@ -310,6 +317,8 @@ export function textoInstagram(tipo: TemplateId, f: FormState): string {
     case "proximos":
       return textoProximos(f);
     case "resumo":
+      return textoResultado(f, false);
+    case "despues":
       return textoResultado(f, true);
     case "cronoloxia":
       return textoResultado(f, false);

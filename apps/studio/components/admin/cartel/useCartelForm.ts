@@ -3,6 +3,7 @@
  * Hook to manage the poster generator form state and helpers.
  */
 
+import type { Posicion } from "@santiso/domain";
 import { prepararFotoSubida } from "@/lib/cartel2/subida";
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -26,6 +27,7 @@ interface CartelPlayer {
   dorsal?: number | null;
   categoria?: string | null;
   capitan?: boolean;
+  posicion?: Posicion | null;
 }
 
 export interface CartelTeam {
@@ -94,6 +96,8 @@ function toCartelPlayer(player: CartelPlayer): Player {
     dorsal: player.dorsal?.toString() || "",
     nome: getPlayerDisplayName(player),
     eCapitan: Boolean(player.capitan),
+    jugadorId: player.id,
+    posicion: player.posicion ?? null,
   };
 }
 
@@ -452,6 +456,7 @@ export function useCartelForm(
           dorsal: fila.dorsal,
           categoria: fila.categoria,
           capitan: fila.capitan,
+          posicion: fila.posicion,
         });
 
       const titulares = filas

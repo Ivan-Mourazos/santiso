@@ -3,6 +3,7 @@
  * Datos del formulario del generador de carteles (eventos, jugadores, partidos y clasificación).
  * El dibujo está en el motor nuevo: `lib/cartel2` y `components/cartel2`.
  */
+import type { Posicion } from "@santiso/domain";
 
 export interface CronEvent {
   id: string;
@@ -18,6 +19,10 @@ export interface Player {
   dorsal: string;
   nome: string;
   eCapitan: boolean;
+  /** El jugador de la base, si salió del acta o del once guardado (no si se escribió a mano). */
+  jugadorId?: string;
+  /** Su posición en la plantilla: decide su hueco en el campo. */
+  posicion?: Posicion | null;
 }
 
 export interface NextMatch {

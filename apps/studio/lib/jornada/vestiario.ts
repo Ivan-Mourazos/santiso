@@ -121,6 +121,15 @@ function cartel(
   return { estado: "Sin cartel", hecho: false };
 }
 
+/** El carrusel de después: hecho si están sus dos imágenes al día. */
+function carrusel(carteles: CartelesDelPartido): { estado: string; hecho: boolean } {
+  const estados = PASOS_DESPUES.map((paso) => estadoPaso(carteles[paso]));
+  if (estados.every((e) => e === "hecho")) return { estado: "Carrusel guardado", hecho: true };
+  if (estados.includes("desactualizado"))
+    return { estado: "⚠ Carrusel desactualizado", hecho: false };
+  return { estado: "Sin carrusel", hecho: false };
+}
+
 /**
  * Solo los datos guardados prueban un paso: la convocatoria o el once guardados y el cartel
  * guardado con datos al día. Compartirlo pasa fuera del Studio: «guardado» no es «publicado».
@@ -143,9 +152,7 @@ export function progresoPartido(
   const cPartido = cartel(carteles.partido);
   const cConvocatoria = cartel(carteles.convocatoria);
   const cOnce = cartel(carteles.once);
-  const cResultado = cartel(carteles.resultado);
-  const cCronoloxia = cartel(carteles.cronoloxia);
-  const cNoso11 = cartel(carteles.noso11);
+  const cDespues = carrusel(carteles);
   const pasoCartelPartido: PasoPartido = {
     titulo: "Cartel de partido",
     estado: cPartido.estado,
@@ -172,22 +179,10 @@ export function progresoPartido(
           href: e.acta,
         },
         {
-          titulo: "Cartel de resultado",
-          estado: tieneResultado(p) ? cResultado.estado : "Espera resultado",
-          tono: !tieneResultado(p) ? "espera" : cResultado.hecho ? "hecho" : "pendiente",
-          href: e.cartel("resumo"),
-        },
-        {
-          titulo: "Cronoloxía",
-          estado: p.acta ? cCronoloxia.estado : "Espera acta",
-          tono: !p.acta ? "espera" : cCronoloxia.hecho ? "hecho" : "pendiente",
-          href: e.cartel("cronoloxia"),
-        },
-        {
-          titulo: "O Noso 11",
-          estado: cNoso11.estado,
-          tono: cNoso11.hecho ? "hecho" : "pendiente",
-          href: e.cartel("noso11"),
+          titulo: "Resultado e O Noso 11",
+          estado: tieneResultado(p) ? cDespues.estado : "Espera resultado",
+          tono: !tieneResultado(p) ? "espera" : cDespues.hecho ? "hecho" : "pendiente",
+          href: e.cartel("despues"),
         },
       ]
     : !preparaConvocatoria(categoria)
@@ -217,13 +212,9 @@ export function progresoPartido(
             : { titulo: "Anotar resultado", href: e.calendario }
           : !p.acta
             ? { titulo: "Completar acta", href: e.acta }
-            : !cResultado.hecho
-              ? { titulo: "Hacer cartel de resultado", href: e.cartel("resumo") }
-              : !cCronoloxia.hecho
-                ? { titulo: "Hacer cronoloxía", href: e.cartel("cronoloxia") }
-                : !cNoso11.hecho
-                  ? { titulo: "Hacer O Noso 11", href: e.cartel("noso11") }
-                  : { titulo: "Carteles listos: compartir", href: e.cartel("resumo") }
+            : !cDespues.hecho
+              ? { titulo: "Hacer resultado e O Noso 11", href: e.cartel("despues") }
+              : { titulo: "Carteles listos: compartir", href: e.cartel("despues") }
         : !cPartido.hecho
           ? { titulo: "Preparar cartel de partido", href: e.cartel("partido") }
           : !preparaConvocatoria(categoria)

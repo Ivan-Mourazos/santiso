@@ -11,6 +11,7 @@ export const TEMPLATES = [
   { id: "cronoloxia", label: "Cronoloxía", emoji: "📋" },
   { id: "proximos", label: "Próximos partidos", emoji: "📅" },
   { id: "noso11", label: "O Noso 11", emoji: "👕" },
+  { id: "despues", label: "Resultado e O Noso 11", emoji: "📸" },
   { id: "multiusos", label: "Anuncio", emoji: "📢" },
   { id: "clasificacion", label: "Clasificación", emoji: "📈" },
   { id: "fichaxe", label: "Fichaje", emoji: "✍️" },

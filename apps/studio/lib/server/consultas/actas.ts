@@ -176,6 +176,7 @@ export async function participacionesDePartido(partidoId: string) {
       nombre: schema.jugadores.nombre,
       apodo: schema.jugadores.apodo,
       dorsal,
+      posicion: enSuCategoria.posicion,
       categoria: sql<string>`${contexto.categoria}`,
     })
     .from(schema.partidoParticipaciones)
@@ -209,6 +210,7 @@ export async function alineacionPrevistaDePartido(partidoId: string): Promise<Ju
     nombre: schema.jugadores.nombre,
     apodo: schema.jugadores.apodo,
     dorsal,
+    posicion: enSuCategoria.posicion,
   };
 
   const once = await db

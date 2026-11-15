@@ -267,26 +267,6 @@ describe("modelo", () => {
 });
 
 describe("peticionDeFormulario", () => {
-  it("foto del campo ocupa fondo completo y conserva encuadre; retrato sigue disponible", () => {
-    const p = peticionDeFormulario(
-      "noso11",
-      formulario({ jugadorFotoUrl: "/media/campo.webp", noso11FotoModo: "fondo" }),
-      recursos,
-      opciones,
-    );
-    expect(p.plantilla).toBe("once");
-    if (p.plantilla !== "once") throw new Error("plantilla");
-    expect(p.datos.modoFoto).toBe("fondo");
-    expect(p.datos.foto).toEqual({ url: "/media/campo.webp", x: 0.5, y: 0.4, zoom: 1.2 });
-    expect(leerPeticion(p)).toEqual(p);
-    const retrato = peticionDeFormulario(
-      "noso11",
-      formulario({ jugadorFotoUrl: "/media/jugador.webp", noso11FotoModo: "retrato" }),
-      recursos,
-      opciones,
-    );
-    expect(retrato.plantilla === "once" && retrato.datos.modoFoto).toBe("retrato");
-  });
   it("partido: el Santiso de visitante con su amarillo; el rival con el color de su escudo", () => {
     const p = peticionDeFormulario("partido", formulario(), recursos, opciones);
     if (p.plantilla !== "partido") throw new Error("plantilla");
@@ -330,34 +310,41 @@ describe("peticionDeFormulario", () => {
     expect(p.datos.partidos[0]!.local.nombre).toBe("UD Santiso FC Solaina");
   });
 
-  it("once: sin jugadores vacíos; la foto con su encuadre", () => {
-    const p = peticionDeFormulario(
-      "noso11",
-      formulario({ jugadorFotoUrl: "/media/foto.webp" }),
-      recursos,
-      opciones,
-    );
-    if (p.plantilla !== "once") throw new Error("plantilla");
-    expect(p.datos.titulares).toEqual([
-      { dorsal: "1", nombre: "Miguel Pampín", capitan: false },
-      { dorsal: "4", nombre: "Iago SR", capitan: true },
-    ]);
-    expect(p.datos.foto).toEqual({ url: "/media/foto.webp", x: 0.5, y: 0.4, zoom: 1.2 });
+  it("O Noso 11: el campo en publicación, sin jugadores vacíos, con marcador y portero", () => {
+    const p = peticionDeFormulario("noso11", formulario(), recursos, opciones);
+    if (p.plantilla !== "campo") throw new Error("plantilla");
+    expect(p.formato).toBe("publicacion");
+    expect(p.datos.momento).toBe("final");
+    expect(p.datos.huecos.filter(Boolean)).toHaveLength(2);
+    expect(p.datos.huecos[0]).toEqual({ dorsal: "1", nombre: "Miguel Pampín", capitan: false, portero: true });
+    // El Santiso va de visitante: sus goles son los del visitante (3), los del rival los de casa (1).
+    expect([p.datos.golesClub, p.datos.golesRival]).toEqual([3, 1]);
+    expect(p.datos.local).toBe(false);
+    expect(leerPeticion(JSON.parse(JSON.stringify(p)))).not.toBeNull();
+  });
 
-    // Una foto de la galería del partido manda sobre la del jugador, con su foco.
-    const conGaleria = peticionDeFormulario(
-      "noso11",
-      formulario({ jugadorFotoUrl: "/media/foto.webp" }),
-      recursos,
-      { ...opciones, foto: { url: "/media/partidos/g.webp", x: 0.7, y: 0.3, estilo: "color" } },
-    );
-    if (conGaleria.plantilla !== "once") throw new Error("plantilla");
-    expect(conGaleria.datos.foto).toEqual({
-      url: "/media/partidos/g.webp",
-      x: 0.7,
-      y: 0.3,
-      zoom: 1.2,
+  it("O Noso 11: respeta la colocación elegida, por jugador de la base", () => {
+    const f = formulario({
+      titulares: [
+        { id: "fila-1", jugadorId: "j1", dorsal: "1", nome: "Porteiro", eCapitan: false, posicion: "POR" },
+        { id: "fila-2", jugadorId: "j9", dorsal: "9", nome: "Dianteiro", eCapitan: false, posicion: "DC" },
+      ],
     });
+    const huecos = [null, null, null, null, null, null, null, null, null, "j9", "j1"];
+    const p = peticionDeFormulario("noso11", f, recursos, {
+      ...opciones,
+      colocacion: { sistema: "4-3-3", huecos },
+    });
+    if (p.plantilla !== "campo") throw new Error("plantilla");
+    expect(p.datos.sistema).toBe("4-3-3");
+    expect(p.datos.huecos[9]).toMatchObject({ nombre: "Dianteiro", portero: false });
+    expect(p.datos.huecos[10]).toMatchObject({ nombre: "Porteiro" });
+  });
+
+  it("O Noso 11 sin marcador no inventa el resultado", () => {
+    const p = peticionDeFormulario("noso11", formulario({ golesLocal: "", golesRival: "" }), recursos, opciones);
+    if (p.plantilla !== "campo") throw new Error("plantilla");
+    expect([p.datos.golesClub, p.datos.golesRival]).toEqual([null, null]);
   });
 
   it("anuncio: tema e imágenes que hay", () => {
@@ -711,8 +698,9 @@ describe("leerPeticion", () => {
       return p.plantilla;
     });
     // La alineación no sale del formulario del Estudio: tiene su pantalla (lib/alineacion).
+    // «once» es la lista antigua de O Noso 11: solo para reabrir carteles viejos.
     expect(plantillas.sort()).toEqual(
-      PLANTILLAS.filter((p) => !["alineacion", "convocatoria", "campo"].includes(p)).sort(),
+      PLANTILLAS.filter((p) => !["alineacion", "convocatoria", "once"].includes(p)).sort(),
     );
   });
 
@@ -793,13 +781,15 @@ describe("texto de Instagram", () => {
   });
 
   it("resultado: vitoria fóra, goles agrupados con penalti y tarxetas nosas", () => {
-    const texto = textoInstagram("resumo", formulario());
+    const texto = textoInstagram("despues", formulario());
     expect(texto.split("\n")[0]).toBe("✅ VITORIA | Sénior · Xornada 2 · Tercera Futgal - Grupo 3");
     expect(texto).toContain("⚽ C.D. Berres 1-3 UD Santiso FC");
     expect(texto).toContain("💛 Bareto (20', 30' pen.)");
     expect(texto).toContain("C.D. Berres: Rival Uno (10')");
     expect(texto).toContain("🟨 Moncho (40')");
     expect(texto).toContain("Desliza");
+    // El carrusel de después lleva también O Noso 11.
+    expect(texto).toContain("📋 O Noso 11: 1. Miguel Pampín, 4. Iago SR (C)");
     // Cronoloxía: mismo texto sin la invitación a deslizar.
     expect(textoInstagram("cronoloxia", formulario())).not.toContain("Desliza");
   });

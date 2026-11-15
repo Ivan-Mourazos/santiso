@@ -12,6 +12,7 @@ import type { SelectorMatch } from "./Common";
 import type { CartelTeam } from "./useCartelForm";
 import type { FormState, AssetUrls } from "./types";
 import { colorDeEscudo, exportable } from "./PilotoCartel";
+import { compartirArchivos, descargarArchivos } from "./compartirArchivos";
 import s from "./PaqueteAxenda.module.css";
 
 export function PaqueteAxenda({
@@ -105,26 +106,13 @@ export function PaqueteAxenda({
       if (turno === generacion.current) setOcupado(false);
     }
   }
-  function descargar(archivos: File[]) {
-    for (const archivo of archivos) {
-      const url = URL.createObjectURL(archivo);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = archivo.name;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
-  }
+  const descargar = descargarArchivos;
   async function compartir() {
     if (!listo || bloqueo.current) return;
     bloqueo.current = true;
     setCompartiendo(true);
     try {
-      if (navigator.share && navigator.canShare?.({ files: listo }))
-        await navigator.share({ files: listo, title: "Axenda UD Santiso", text: texto });
-      else descargar(listo);
-    } catch (e) {
-      if (!(e instanceof DOMException && e.name === "AbortError")) descargar(listo);
+      await compartirArchivos(listo, "Axenda UD Santiso", texto);
     } finally {
       bloqueo.current = false;
       setCompartiendo(false);

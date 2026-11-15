@@ -24,6 +24,7 @@ import type {
 import { TEMAS_ANUNCIO } from "./modelo";
 import type { FormatoCartel } from "./modelo";
 import type { PreviaCartel } from "./previa";
+import { completar, type Colocacion } from "./tactica";
 
 export interface RecursosCartel {
   /** Escudo del equipo del Santiso de cada categoría (el que se edita en Equipos). */
@@ -44,8 +45,10 @@ export interface OpcionesCartel {
   /** Color `#rrggbb` del escudo de esa URL (o el de reserva si no tiene). */
   color: (url: string | null) => string;
   composicion: Composicion;
-  /** Foto de la galería: fondo del cartel de resultado (con estilo) o foto de «O noso 11». */
+  /** Foto de la galería: fondo del cartel de resultado (con estilo). */
   foto: FotoCartel | null;
+  /** O Noso 11: sistema y huecos elegidos (por id de jugador o de fila). */
+  colocacion?: Colocacion | null;
 }
 
 /** Amarillo de la equipación: el color del Santiso en todos los carteles. */
@@ -246,6 +249,8 @@ export function peticionDeFormulario(
         },
       };
     }
+    // El carrusel de después empieza por el Resultado (la línea de tiempo).
+    case "despues":
     case "cronoloxia":
       return {
         plantilla: "cronoloxia",
@@ -302,47 +307,47 @@ export function peticionDeFormulario(
             }),
         },
       };
-    case "noso11":
+    case "noso11": {
+      // Cada titular por su jugador de la base (o por su fila, si se escribió a mano).
+      const titulares = form.titulares.filter((j) => j.nome.trim()).slice(0, 11);
+      const clave = (j: Player) => j.jugadorId ?? j.id;
+      const porClave = new Map(titulares.map((j) => [clave(j), j]));
+      const sistema = opciones.colocacion?.sistema ?? "4-4-2";
+      const huecos = completar(
+        sistema,
+        opciones.colocacion?.huecos ?? [],
+        titulares.map((j) => ({ id: clave(j), posicion: j.posicion ?? null })),
+      );
+      const [golesClub, golesRival] = partido.santisoLocal
+        ? [form.golesLocal, form.golesRival]
+        : [form.golesRival, form.golesLocal];
+      const conMarcador = form.golesLocal.trim() !== "" && form.golesRival.trim() !== "";
       return {
-        plantilla: "once",
+        plantilla: "campo",
+        formato: "publicacion",
         datos: {
           ...logos,
           ...cabecera,
+          momento: "final",
           club: partido.club,
-          rival: form.rivalNombre.trim() ? partido.rival : null,
+          rival: partido.rival,
+          local: partido.santisoLocal,
           fecha: form.fecha,
+          hora: form.hora,
           campo: form.estadio || form.lugar,
-          titulares: jugadores(form.titulares),
+          golesClub: conMarcador ? numero(golesClub) : null,
+          golesRival: conMarcador ? numero(golesRival) : null,
+          sistema,
+          huecos: huecos.map((id, i) => {
+            const j = id ? porClave.get(id) : undefined;
+            return j
+              ? { dorsal: j.dorsal.trim(), nombre: j.nome.trim(), capitan: j.eCapitan, portero: i === 0 }
+              : null;
+          }),
           suplentes: jugadores(form.suplentes),
-          // Una foto subida a mano (`data:`) manda sobre todo: es la elección más deliberada.
-          // Si no, la de la galería del partido manda sobre la guardada del jugador; se encuadra
-          // por su foco y conserva el zoom del formulario.
-          foto: form.jugadorFotoUrl?.startsWith("data:")
-            ? {
-                url: form.jugadorFotoUrl,
-                x: form.jugadorXOffset,
-                y: form.jugadorYOffset,
-                zoom: form.jugadorZoom,
-              }
-            : opciones.foto
-            ? {
-                url: opciones.foto.url,
-                x: opciones.foto.x,
-                y: opciones.foto.y,
-                zoom: form.jugadorZoom,
-              }
-            : form.jugadorFotoUrl
-              ? {
-                  url: form.jugadorFotoUrl,
-                  x: form.jugadorXOffset,
-                  y: form.jugadorYOffset,
-                  zoom: form.jugadorZoom,
-                }
-              : null,
-          invertido: form.noso11Flip,
-          modoFoto: form.noso11FotoModo ?? "fondo",
         },
       };
+    }
     case "multiusos":
       return {
         plantilla: "anuncio",

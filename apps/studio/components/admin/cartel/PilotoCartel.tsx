@@ -26,6 +26,7 @@ import { recursosDeCartel } from "@/lib/cartel2/recursos";
 import { usePreviasCartel } from "./usePreviasCartel";
 import { CartelesDelPaso } from "./CartelesDelPaso";
 import { PASOS, type CartelGuardado, type PasoCartel } from "@/lib/cartel2/pasos";
+import type { Colocacion } from "@/lib/cartel2/tactica";
 
 /** Color dominante de un escudo, leído en un lienzo pequeño; `null` si no se puede. */
 export async function colorDeEscudo(url: string): Promise<string | null> {
@@ -71,64 +72,16 @@ export async function exportable<T>(valor: T): Promise<T> {
 }
 
 /** Escudos del formulario cuyo color hace falta: el rival y los de «Próximos». */
-function escudosDelFormulario(form: FormState) {
+export function escudosDelFormulario(form: FormState) {
   return [form.rivalEscudoUrl, ...form.matches.map((m) => m.rivalEscudoUrl)].filter(Boolean);
 }
 
 /** Lo que la vista previa tiene que estar quieta en el móvil antes de preparar el PNG sola. */
 const ESPERA_PREPARAR_MS = 1200;
 
-/**
- * Cartel del motor nuevo (HTML/CSS → PNG con Chromium local) para cualquier plantilla. Usa el
- * mismo formulario que el cartel actual; la vista previa es el propio cartel escalado y el PNG
- * lo genera `/api/carteles/png` con los mismos datos.
- */
-
-export default function PilotoCartel({
-  tipo,
-  formato = "publicacion",
-  form,
-  recursos,
-  equipos,
-  showToast,
-  guardado = null,
-}: {
-  tipo: TemplateId;
-  formato?: FormatoCartel;
-  form: FormState;
-  recursos: AssetUrls;
-  /** Equipos del Senior y de Veteranos: de aquí salen el escudo del Santiso y los marcados en 3D. */
-  equipos: CartelTeam[];
-  showToast: (msg: string, type?: "success" | "error") => void;
-  /**
-   * Cartel de un partido concreto: en vez de exportar suelto, se generan y guardan sus formatos
-   * (ver `CartelesDelPaso`). Sin él, el cartel se descarga o comparte sin guardar.
-   */
-  guardado?: { partidoId: string; paso: PasoCartel; guardados: CartelGuardado[] } | null;
-}) {
-  // Un solo diseño de cartel de partido: ya no se elige.
-  const composicion: Composicion = "diagonal";
+/** Color de cada escudo del formulario (`#rrggbb`), leído una vez por URL. */
+export function useColoresEscudos(form: FormState): Record<string, string> {
   const [colores, setColores] = useState<Record<string, string>>({});
-  const [foto, setFoto] = useState<FotoCartel | null>(null);
-  const [galeria, setGaleria] = useState(false);
-  const [hueco, setHueco] = useState({ ancho: 0, alto: 0 });
-  const [enPantalla, setEnPantalla] = useState(false);
-  const [exportando, setExportando] = useState(false);
-  const [png, setPng] = useState<{ clave: string; archivo: File } | null>(null);
-  const [compartiendo, setCompartiendo] = useState(false);
-  const compartiendoRef = useRef(false);
-  const caja = useRef<HTMLDivElement>(null);
-  const panel = useRef<HTMLElement>(null);
-  const [altoPanel, setAltoPanel] = useState<number | null>(null);
-  const previas = usePreviasCartel(
-    tipo === "partido"
-      ? [form.partido_id]
-      : tipo === "proximos"
-        ? form.matches.map((m) => m.partidoId ?? "")
-        : [],
-  );
-
-  // Colores de los escudos del formulario, leídos una vez por URL.
   const pendientes = escudosDelFormulario(form).filter((u) => !(u in colores));
   const clavePendientes = pendientes.join("|");
   useEffect(() => {
@@ -151,6 +104,68 @@ export default function PilotoCartel({
       vigente = false;
     };
   }, [clavePendientes]);
+
+  return colores;
+}
+
+/**
+ * Cartel del motor nuevo (HTML/CSS → PNG con Chromium local) para cualquier plantilla. Usa el
+ * mismo formulario que el cartel actual; la vista previa es el propio cartel escalado y el PNG
+ * lo genera `/api/carteles/png` con los mismos datos.
+ */
+
+export default function PilotoCartel({
+  tipo,
+  formato = "publicacion",
+  form,
+  recursos,
+  equipos,
+  showToast,
+  guardado = null,
+  soloVista = false,
+  colocacion = null,
+  titulo = "Previsualización",
+}: {
+  tipo: TemplateId;
+  formato?: FormatoCartel;
+  form: FormState;
+  recursos: AssetUrls;
+  /** Equipos del Senior y de Veteranos: de aquí salen el escudo del Santiso y los marcados en 3D. */
+  equipos: CartelTeam[];
+  showToast: (msg: string, type?: "success" | "error") => void;
+  /**
+   * Cartel de un partido concreto: en vez de exportar suelto, se generan y guardan sus formatos
+   * (ver `CartelesDelPaso`). Sin él, el cartel se descarga o comparte sin guardar.
+   */
+  guardado?: { partidoId: string; paso: PasoCartel; guardados: CartelGuardado[] } | null;
+  /** Solo la vista previa, sin exportar ni fotos: el carrusel de después lo genera aparte. */
+  soloVista?: boolean;
+  /** O Noso 11: dónde va cada titular en el campo. */
+  colocacion?: Colocacion | null;
+  titulo?: string;
+}) {
+  // Un solo diseño de cartel de partido: ya no se elige.
+  const composicion: Composicion = "diagonal";
+  const [foto, setFoto] = useState<FotoCartel | null>(null);
+  const [galeria, setGaleria] = useState(false);
+  const [hueco, setHueco] = useState({ ancho: 0, alto: 0 });
+  const [enPantalla, setEnPantalla] = useState(false);
+  const [exportando, setExportando] = useState(false);
+  const [png, setPng] = useState<{ clave: string; archivo: File } | null>(null);
+  const [compartiendo, setCompartiendo] = useState(false);
+  const compartiendoRef = useRef(false);
+  const caja = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLElement>(null);
+  const [altoPanel, setAltoPanel] = useState<number | null>(null);
+  const previas = usePreviasCartel(
+    tipo === "partido"
+      ? [form.partido_id]
+      : tipo === "proximos"
+        ? form.matches.map((m) => m.partidoId ?? "")
+        : [],
+  );
+
+  const colores = useColoresEscudos(form);
 
   // Al reabrir el cartel guardado de un partido vuelve la foto elegida a mano con la que se hizo
   // (subida en el momento o de la galería), si no se ha elegido ya otra.
@@ -225,11 +240,12 @@ export default function PilotoCartel({
       peticionDeFormulario(tipo, form, recursosDeCartel(equipos, recursos), {
         color: (url) => (url && colores[url]) || aHex(COLOR_RIVAL_RESERVA),
         composicion,
-        foto,
+        foto: soloVista ? null : foto,
         formato,
         previas: previas.datos,
+        colocacion,
       }),
-    [tipo, form, recursos, equipos, colores, composicion, foto, formato, previas.datos],
+    [tipo, form, recursos, equipos, colores, composicion, foto, formato, previas.datos, colocacion, soloVista],
   );
   const medidas = medidasDe(
     peticion.plantilla,
@@ -304,16 +320,18 @@ export default function PilotoCartel({
   });
   // Tampoco mientras se leen los colores de los escudos: al llegar cambiarían el cartel y el PNG
   // ya preparado no valdría.
-  const previaLista = !previas.cargando && !previas.error && !clavePendientes;
+  const previaLista =
+    !previas.cargando && !previas.error && escudosDelFormulario(form).every((u) => u in colores);
   // Datos y vista previa van en la misma pantalla: el PNG solo se prepara solo cuando el cartel
   // está de verdad a la vista, no mientras se rellenan los datos más arriba.
   const aLaVista = hueco.ancho > 0 && enPantalla;
   useEffect(() => {
-    if (guardado || !esMovil || !aLaVista || !previaLista || pngActual || exportando) return;
+    if (guardado || soloVista || !esMovil || !aLaVista || !previaLista || pngActual || exportando)
+      return;
     if (falloAlPreparar.current === clavePng) return;
     const espera = setTimeout(() => void prepararSolo.current(), ESPERA_PREPARAR_MS);
     return () => clearTimeout(espera);
-  }, [guardado, esMovil, aLaVista, previaLista, pngActual, exportando, clavePng]);
+  }, [guardado, soloVista, esMovil, aLaVista, previaLista, pngActual, exportando, clavePng]);
 
   function guardar(archivo: File) {
     const url = URL.createObjectURL(archivo);
@@ -368,7 +386,8 @@ export default function PilotoCartel({
       )}
       {/* Una sola fila: título, opciones de la plantilla y descarga. Deja el alto al cartel. */}
       <div className={styles.cabecera}>
-        <h3>Previsualización</h3>
+        <h3>{titulo}</h3>
+        {!soloVista && (
         <div className={styles.controles}>
           {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
             <>
@@ -460,8 +479,9 @@ export default function PilotoCartel({
             </>
           )}
         </div>
+        )}
       </div>
-      {foto && (tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
+      {!soloVista && foto && (tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
         <details className={styles.encuadre}>
           <summary>Ajustar la foto</summary>
           <Deslizador

@@ -30,6 +30,9 @@ import { FormComunicado } from "./cartel/FormComunicado";
 import { FormFichaxe } from "./cartel/FormFichaxe";
 import { FormLoteria } from "./cartel/FormLoteria";
 import { PaqueteAxenda } from "./cartel/PaqueteAxenda";
+import { PaqueteDespues } from "./cartel/PaqueteDespues";
+import { EditorTactico } from "./cartel/EditorTactico";
+import { useDespues } from "./cartel/useDespues";
 import { PlegableMovil } from "./cartel/PlegableMovil";
 import { Select } from "@/components/ui/foundation/Fields";
 import type { FormatoCartel } from "@/lib/cartel2/modelo";
@@ -137,6 +140,15 @@ export default function GeneradorCartel({
 
   // ── Texto de Instagram: se genera del formulario y se puede retocar antes de copiarlo. Lo
   // retocado vale mientras el texto generado no cambie; si cambian los datos, manda el nuevo.
+  // «Después del partido»: el Resultado y O Noso 11, juntos en un carrusel.
+  const despues = useDespues({
+    activo: tipo === "despues",
+    form,
+    set,
+    equipos,
+    recursos: assetUrls,
+  });
+
   const textoGenerado = useMemo(() => textoInstagram(tipoForAssets, form), [tipoForAssets, form]);
   const [edicion, setEdicion] = useState<{ base: string; texto: string } | null>(null);
   const instagramText = edicion && edicion.base === textoGenerado ? edicion.texto : textoGenerado;
@@ -199,7 +211,7 @@ export default function GeneradorCartel({
               tipo={tipo}
             />
           )}
-          {tipo === "cronoloxia" && (
+          {(tipo === "cronoloxia" || tipo === "despues") && (
             <FormCronoloxia
               form={form}
               set={set}
@@ -212,7 +224,7 @@ export default function GeneradorCartel({
               removeEvent={removeEvent}
               dbMatches={dbMatches}
               loadMatchFromDb={loadMatchFromDb}
-              tipo={tipo}
+              tipo={tipo === "despues" ? "cronoloxia" : tipo}
             />
           )}
           {tipo === "proximos" && (
@@ -239,6 +251,32 @@ export default function GeneradorCartel({
               loadMatchFromDb={loadMatchFromDb}
               tipo={tipo}
             />
+          )}
+          {tipo === "despues" && despues.partidoId && form.titulares.some((j) => j.nome.trim()) && (
+            <EditorTactico
+              jugadores={despues.jugadores}
+              colocacion={despues.colocacion}
+              onCambio={despues.cambiarColocacion}
+            />
+          )}
+          {tipo === "despues" && despues.partidoId && despues.guardados && (
+            <PaqueteDespues
+              key={despues.partidoId}
+              partidoId={despues.partidoId}
+              guardados={despues.guardados}
+              preparar={despues.preparar}
+              antesDeGuardar={async () => {
+                const error = await despues.guardarFinal();
+                if (error) showToast(error, "error");
+                return !error;
+              }}
+              texto={instagramText}
+              motivo={despues.motivo}
+              showToast={showToast}
+            />
+          )}
+          {tipo === "despues" && despues.motivo && !despues.partidoId && (
+            <p role="status">{despues.motivo}</p>
           )}
           {tipo === "multiusos" && (
             <FormMultiusos
@@ -317,15 +355,41 @@ export default function GeneradorCartel({
         </section>
 
         <div className={styles.previsualizacion}>
-          <PilotoCartel
-            tipo={tipoForAssets}
-            formato={formato}
-            form={form}
-            recursos={assetUrls}
-            equipos={equipos}
-            showToast={showToast}
-            guardado={guardado}
-          />
+          {tipo === "despues" ? (
+            <>
+              <PilotoCartel
+                tipo="despues"
+                form={form}
+                recursos={assetUrls}
+                equipos={equipos}
+                showToast={showToast}
+                soloVista
+                titulo="1 · Resultado"
+              />
+              <PilotoCartel
+                tipo="noso11"
+                form={form}
+                recursos={assetUrls}
+                equipos={equipos}
+                showToast={showToast}
+                soloVista
+                colocacion={despues.colocacion}
+                titulo="2 · O Noso 11"
+              />
+            </>
+          ) : (
+            <PilotoCartel
+              tipo={tipoForAssets}
+              formato={formato}
+              form={form}
+              recursos={assetUrls}
+              equipos={equipos}
+              showToast={showToast}
+              guardado={guardado}
+              // Próximos se publica solo en carrusel (Axenda): aquí, solo la vista previa.
+              soloVista={tipo === "proximos"}
+            />
+          )}
           {/* Fichajes, comunicados y lotaría van sin logos: no hay nada que explicar. */}
           {tipo !== "fichaxe" && tipo !== "comunicado" && tipo !== "loteria" && (
           <PlegableMovil titulo="Logos y patrocinadores">

@@ -110,22 +110,22 @@ describe("mesa de trabajo", () => {
     expect(pasos[0]).toMatchObject({ estado: "⚠ Cartel desactualizado", tono: "pendiente" });
     expect(principal.titulo).toBe("Preparar cartel de partido");
   });
-  it("tras el partido: resultado, acta y los tres carteles de después, uno tras otro", () => {
+  it("tras el partido: marcador, acta y el carrusel de después (resultado y O Noso 11)", () => {
     const acta = { convocados: 18, goleadores: [], golesPropiaRival: 0, amarillas: 0, rojas: 0 };
     const p = partido({ golesSantiso: 2, golesRival: 1, acta });
     const { pasos } = progresoPartido(p, ahora);
     expect(pasos.map((x) => x.titulo)).toEqual([
       "Marcador",
       "Acta",
-      "Cartel de resultado",
-      "Cronoloxía",
-      "O Noso 11",
+      "Resultado e O Noso 11",
     ]);
+    // Con solo una de las dos imágenes, el carrusel sigue pendiente.
     expect(progresoPartido(p, ahora, "Senior", { resultado: guardado() }).principal.titulo).toBe(
-      "Hacer cronoloxía",
+      "Hacer resultado e O Noso 11",
     );
-    const sinActa = progresoPartido({ ...p, acta: null }, ahora).pasos[3];
-    expect(sinActa).toMatchObject({ estado: "Espera acta", tono: "espera" });
+    const listo = progresoPartido(p, ahora, "Senior", { resultado: guardado(), noso11: guardado() });
+    expect(listo.principal).toMatchObject({ titulo: "Carteles listos: compartir" });
+    expect(listo.pasos[2]).toMatchObject({ estado: "Carrusel guardado", tono: "hecho" });
   });
   it("Veteranos no convoca ni alinea: antes del partido solo queda el cartel", () => {
     const { pasos, principal } = progresoPartido(partido(), ahora, "Veteranos");
@@ -164,7 +164,7 @@ describe("mesa de trabajo", () => {
         },
         ahora,
       ).principal.titulo,
-    ).toBe("Hacer cartel de resultado");
+    ).toBe("Hacer resultado e O Noso 11");
   });
   it("mantiene cierre del partido de hoy, sin ocultar siguiente ni último", () => {
     const ultimo = partido({ id: "ultimo", golesSantiso: 1, golesRival: 0 });

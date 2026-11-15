@@ -259,24 +259,9 @@ export default function TarjetaPartido({
           </Acceso>
           {conCarteles && (
             <>
-              <Acceso href={e.cartel("resumo")} disponible={marcado} motivo="Necesita resultado">
-                Cartel de resultado
-              </Acceso>
-              {/* Veteranos no alinea antes del partido: el once se publica después, con el resumen. */}
-              {!preparaConvocatoria(categoria) && (
-                <Acceso href={e.cartel("noso11")} disponible={despues} motivo="Tras el partido">
-                  Cartel del once
-                </Acceso>
-              )}
-              <Acceso
-                href={e.cartel("cronoloxia")}
-                disponible={Boolean(p.acta)}
-                motivo="Necesita acta"
-              >
-                Cronoloxía
-              </Acceso>
-              <Acceso href={e.cartel("noso11")} disponible={Boolean(p.acta)} motivo="Necesita acta">
-                O noso 11
+              {/* Lo de después se publica junto: el Resultado y O Noso 11, en un carrusel. */}
+              <Acceso href={e.cartel("despues")} disponible={marcado} motivo="Necesita resultado">
+                Resultado e O Noso 11
               </Acceso>
             </>
           )}

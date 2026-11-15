@@ -143,11 +143,13 @@ test("las siete plantillas tienen su cartel en el Estudio", async ({ page }) => 
     "cronoloxia",
     "proximos",
     "noso11",
+    "despues",
     "multiusos",
     "clasificacion",
   ]) {
     await page.goto(`/admin/carteles?plantilla=${plantilla}`);
-    const piloto = page.getByRole("region", { name: "Previsualización del cartel" });
+    // «despues» enseña dos: el Resultado y O Noso 11.
+    const piloto = page.getByRole("region", { name: "Previsualización del cartel" }).first();
     await expect(piloto.locator("[data-vista-cartel] [data-cartel]"), plantilla).toBeVisible({
       timeout: 30000,
     });

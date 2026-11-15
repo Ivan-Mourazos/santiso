@@ -160,9 +160,7 @@ export const MENU: readonly PestanaMenu[] = [
       {
         titulo: "Después del partido",
         entradas: [
-          cartel("resumo", "Resultado", "Marcador y goles", I.marcador),
-          cartel("cronoloxia", "Cronoloxía", "Minuto a minuto", I.reloj),
-          cartel("noso11", "O Noso 11", "El once del día", I.equipo),
+          cartel("despues", "Resultado e O Noso 11", "Carrusel con minutos y el once", I.marcador),
         ],
       },
       {

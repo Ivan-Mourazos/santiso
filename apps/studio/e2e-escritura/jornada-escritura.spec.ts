@@ -12,7 +12,7 @@ const RECORRIDO = [
   // La copa está enlazada con la federación: el marcador lo trae ella.
   ["jugado", "2001-06-03", "Esperando a la federación · Traer ahora"],
   ["resultado", "2099-07-05", "Completar acta"],
-  ["acta", "2099-07-12", "Hacer cartel de resultado"],
+  ["acta", "2099-07-12", "Hacer resultado e O Noso 11"],
 ] as const;
 
 const ruta = (paso: string) => {
@@ -42,7 +42,7 @@ test("jornada: los pasos enseñan su estado y tras el acta se abren las publicac
   await expect(page.getByText("Guardada", { exact: true })).toBeVisible({ timeout: 30000 });
   await expect(page.getByText("Empate 0–0", { exact: true })).toBeVisible();
   await page.getByText("Más tareas del partido", { exact: true }).click();
-  for (const nombre of ["Resultado", "Cronoloxía", "O noso 11"])
+  for (const nombre of ["Resultado e O Noso 11"])
     await expect(page.getByRole("link", { name: nombre, exact: false }).last()).toBeVisible();
 });
 

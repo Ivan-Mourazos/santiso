@@ -95,7 +95,8 @@ function enlaceDelPaso(paso: PasoCartel, partidoId: string, categoria: string) {
   const cat = encodeURIComponent(categoria);
   if (paso === "convocatoria") return `/admin/convocatoria?categoria=${cat}&partido=${id}`;
   if (paso === "once") return `/admin/alineacion?categoria=${cat}&partido=${id}`;
-  const plantilla = paso === "resultado" ? "cronoloxia" : paso;
+  // Lo de después se hace junto, en el carrusel.
+  const plantilla = paso === "resultado" || paso === "noso11" ? "despues" : paso;
   return `/admin/carteles?plantilla=${plantilla}&partido=${id}&categoria=${cat}`;
 }
 
