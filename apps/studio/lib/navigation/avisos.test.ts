@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pestanasConAviso, seccionDeRuta } from "./avisos";
+import { categoriasPorConvocar, pestanasConAviso, seccionDeRuta } from "./avisos";
 
 const pendiente = { titulo: "x", estado: "", tono: "pendiente" as const, href: "" };
 const hecho = { ...pendiente, tono: "hecho" as const };
@@ -27,6 +27,26 @@ describe("pestanasConAviso", () => {
       pestanasConAviso([
         { pasos: [hecho], principal: { href: "/admin/carteles?plantilla=partido" } },
         { pasos: [pendiente], principal: { href: "/admin/actas", traerActa: true } },
+      ]).size,
+    ).toBe(0);
+  });
+});
+
+describe("categoriasPorConvocar", () => {
+  it("solo el Senior con el partido por jugar y sin convocados", () => {
+    expect([
+      ...categoriasPorConvocar([
+        { categoria: "Senior", despues: false, convocados: null },
+        { categoria: "Veteranos", despues: false, convocados: null },
+      ]),
+    ]).toEqual(["Senior"]);
+  });
+
+  it("hecha la convocatoria, o jugado el partido, ya no", () => {
+    expect(
+      categoriasPorConvocar([
+        { categoria: "Senior", despues: false, convocados: 18 },
+        { categoria: "Senior", despues: true, convocados: 0 },
       ]).size,
     ).toBe(0);
   });

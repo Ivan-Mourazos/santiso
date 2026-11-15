@@ -262,26 +262,32 @@
   .sidebar {
     display: none;
   }
-  /* Barra flotante de cristal: separada de los bordes, con la pestaña encendida en píldora. */
+  /* Barra pegada abajo, de lado a lado y opaca: no deja ver nada del contenido, ni a los lados
+     ni debajo. La pestaña encendida, en píldora. */
   .tabs {
     display: grid;
     grid-template-columns: repeat(var(--pestanas, 5), minmax(0, 1fr));
     gap: 2px;
     position: fixed;
-    left: max(0.75rem, env(safe-area-inset-left));
-    right: max(0.75rem, env(safe-area-inset-right));
-    bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 50;
-    padding: 6px;
-    border: 1px solid var(--ui-line);
-    border-radius: var(--ui-radius-pill);
-    /* Opaca: con la más mínima transparencia, el iPhone deja leer lo de detrás. La sombra del
-       color de la página difumina el contenido que pasa por debajo. */
-    background: #1c1c1f;
-    box-shadow:
-      0 0 0 10px var(--ui-bg),
-      0 0 28px 18px var(--ui-bg),
-      var(--ui-shadow);
+    padding: 6px max(0.5rem, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom))
+      max(0.5rem, env(safe-area-inset-left));
+    border-top: 1px solid var(--ui-line);
+    background: #161618;
+  }
+  /* Safari pinta la página también detrás de su barra de direcciones: el fondo de la barra sigue
+     hacia abajo para que ahí tampoco asome nada. */
+  .tabs::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 200px;
+    background: #161618;
   }
   .tab {
     display: grid;
@@ -320,7 +326,7 @@
     right: -3px;
     width: 9px;
     height: 9px;
-    border: 2px solid #1c1c1f;
+    border: 2px solid #161618;
     border-radius: 50%;
     background: var(--ui-accent);
   }

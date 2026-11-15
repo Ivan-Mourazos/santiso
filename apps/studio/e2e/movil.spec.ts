@@ -101,7 +101,7 @@ for (const ancho of [360, 390]) {
     const menuBox = (await menuButton.boundingBox())!;
     expect(menuBox.height).toBeGreaterThanOrEqual(44);
     expect(menuBox.y).toBeGreaterThan(650);
-    // La barra flota separada de los bordes, entera dentro de la pantalla y con fondo propio.
+    // La barra va pegada abajo, de lado a lado y opaca: no deja ver nada del contenido.
     const barra = await menuButton.evaluate((boton) => {
       const caja = boton.parentElement!;
       const rect = caja.getBoundingClientRect();
@@ -112,10 +112,10 @@ for (const ancho of [360, 390]) {
         color: getComputedStyle(caja).backgroundColor,
       };
     });
-    expect(barra.izquierda).toBeGreaterThan(0);
-    expect(barra.derecha).toBeLessThan(ancho);
-    expect(barra.fondo).toBeLessThan(844);
-    expect(barra.color).toMatch(/^rgba?\(/);
+    expect(barra.izquierda).toBe(0);
+    expect(barra.derecha).toBe(ancho);
+    expect(barra.fondo).toBe(844);
+    expect(barra.color).toMatch(/^rgb\(/);
     const categories = page.getByRole("group", { name: "Categoría deportiva" });
     for (const category of ["Senior", "Veteranos"]) {
       expect(
@@ -127,12 +127,16 @@ for (const ancho of [360, 390]) {
     expect(
       await campo.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
     ).toBeGreaterThanOrEqual(16);
-    // Equipo lleva primero a la convocatoria; tocada otra vez, abre su hoja desde abajo y
-    // elegir lleva a la pantalla y la cierra.
-    await page.getByRole("button", { name: "Equipo", exact: true }).click();
-    await expect(page).toHaveURL(/\/admin\/convocatoria/);
-    await page.getByRole("button", { name: "Equipo", exact: true }).click();
+    // Equipo lleva a la convocatoria si está por hacer (datos reales: depende de la semana);
+    // hecha, o tocada otra vez, abre su hoja desde abajo y elegir lleva a la pantalla y la cierra.
+    const equipo = page.getByRole("button", { name: "Equipo", exact: true });
     const hoja = page.getByRole("dialog", { name: "Equipo" });
+    const directa = (await equipo.getAttribute("aria-haspopup")) !== "dialog";
+    await equipo.click();
+    if (directa) {
+      await expect(page).toHaveURL(/\/admin\/convocatoria/);
+      await equipo.click();
+    }
     await expect(hoja.getByRole("link", { name: "Jugadores", exact: true })).toBeInViewport();
     await hoja.getByRole("link", { name: "Jugadores", exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/jugadores/);

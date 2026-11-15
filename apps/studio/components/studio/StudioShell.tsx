@@ -108,7 +108,7 @@ export function StudioShell({
   const [hoja, setHoja] = useState<IdPestana | null>(null);
   const pestanaActiva = pestanaDe(section?.id);
   // Los carteles los lleva el delegado: al técnico no se le avisa de ellos.
-  const avisos = useAvisos(section?.id, !tecnico);
+  const { avisos, porConvocar } = useAvisos(section?.id, !tecnico);
   // Solo en sus propias pantallas: en una ficha no quedaría ninguna marcada.
   const subnavLiga = SUBNAV_LIGA.some((item) => item.id === section?.id);
   const contextoLiga = new URLSearchParams(
@@ -165,19 +165,26 @@ export function StudioShell({
   }
   /**
    * Primer toque desde otra pestaña: su pantalla principal. Ya dentro: la hoja con el resto.
-   * Veteranos no convoca, así que «Equipo» le lleva a los jugadores.
+   * «Equipo» lleva a la convocatoria solo mientras está por hacer; hecha, abre la hoja.
+   * Veteranos no convoca, así que le lleva a los jugadores.
    */
-  function tocarPestana(pestana: PestanaMenu) {
+  function entradaDirecta(pestana: PestanaMenu) {
     const destino =
-      pestana.directa === "convocatoria" && !preparaConvocatoria(category)
-        ? "jugadores"
-        : pestana.directa;
-    const entrada =
-      destino && pestana.id !== pestanaActiva
-        ? gruposVisibles(pestana, visibles, tecnico)
-            .flatMap((g) => g.entradas)
-            .find((e) => e.seccion === destino)
-        : undefined;
+      pestana.directa !== "convocatoria"
+        ? pestana.directa
+        : !preparaConvocatoria(category)
+          ? "jugadores"
+          : porConvocar.has(category)
+            ? "convocatoria"
+            : undefined;
+    return destino && pestana.id !== pestanaActiva
+      ? gruposVisibles(pestana, visibles, tecnico)
+          .flatMap((g) => g.entradas)
+          .find((e) => e.seccion === destino)
+      : undefined;
+  }
+  function tocarPestana(pestana: PestanaMenu) {
+    const entrada = entradaDirecta(pestana);
     if (entrada) ir(entrada);
     else setHoja(pestana.id);
   }
@@ -341,7 +348,7 @@ export function StudioShell({
                 type="button"
                 className={styles.tab}
                 data-activa={pestana.id === pestanaActiva}
-                aria-haspopup={pestana.directa && pestana.id !== pestanaActiva ? undefined : "dialog"}
+                aria-haspopup={pestana.grupos && !entradaDirecta(pestana) ? "dialog" : undefined}
                 onClick={() => tocarPestana(pestana)}
                 aria-describedby={avisos.has(pestana.id) ? "aviso-pestana" : undefined}
               >
