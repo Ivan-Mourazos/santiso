@@ -139,3 +139,11 @@
   color: #f5c518;
   font-weight: 800;
 }
+
+/*
+ * Al pulsar, el estilo común encoge el botón con `transform` y borraba el desplazamiento que
+ * centra el hueco en su sitio: la camiseta saltaba. Se encoge sin moverse.
+ */
+.hueco:not(:disabled):active {
+  transform: translate(-50%, -55%) scale(0.97);
+}

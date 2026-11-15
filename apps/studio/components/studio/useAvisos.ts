@@ -1,13 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { hoyLocal } from "@/lib/jornada/semana";
-import { partidoEnMesa, progresoPartido, trasPartido } from "@/lib/jornada/vestiario";
-import { categoriasPorConvocar, pestanasConAviso } from "@/lib/navigation/avisos";
 import type { Seccion } from "@/lib/navigation/contexto";
 import type { IdPestana } from "@/lib/navigation/menu";
-import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados";
-import { cargarPantallaJornada } from "@/lib/server/acciones/jornada";
 
 /** Las pantallas donde se hace un paso del partido: al salir de ellas el aviso puede cambiar. */
 const PANTALLAS_DE_PASO: ReadonlySet<Seccion> = new Set<Seccion>([
@@ -19,15 +14,11 @@ const PANTALLAS_DE_PASO: ReadonlySet<Seccion> = new Set<Seccion>([
 ]);
 
 /**
- * Las acciones del servidor van de una en una: el aviso espera a que la pantalla cargue lo suyo
- * para no ponerse delante.
- */
-const ESPERA_MS = 2000;
-
-/**
  * Las pestañas con algo pendiente de nuestros partidos de la semana: lo mismo que Inicio llama
- * «siguiente paso». Se mira al abrir la app y al salir de una pantalla donde se hace un paso, para
- * que el punto se apague al hacerlo; no en cada cambio de pantalla. Si falla, no hay puntos.
+ * «siguiente paso»; y las categorías con la convocatoria por hacer. Se mira al abrir la app y al
+ * salir de una pantalla donde se hace un paso, para que el punto se apague al hacerlo; no en
+ * cada cambio de pantalla. Va por `GET /api/avisos`, aparte de las acciones de la pantalla, para
+ * no hacerlas esperar. Si falla, no hay puntos.
  */
 export function useAvisos(seccion: Seccion | undefined, conCarteles: boolean) {
   const [avisos, setAvisos] = useState<ReadonlySet<IdPestana>>(new Set());
@@ -40,44 +31,19 @@ export function useAvisos(seccion: Seccion | undefined, conCarteles: boolean) {
     const previa = anterior.current;
     anterior.current = seccion;
     if (cargado.current && !(previa && previa !== seccion && PANTALLAS_DE_PASO.has(previa))) return;
-    let vigente = true;
-    const reloj = setTimeout(() => {
-      void (async () => {
-        const pantalla = await cargarPantallaJornada(hoyLocal());
-        if (!vigente || !pantalla.ok) return;
-        const { momento, categorias } = pantalla.datos;
-        const partidos = categorias.flatMap((c) => {
-          const p = partidoEnMesa(c.proximo, c.ultimo, momento);
-          return p ? [{ categoria: c.categoria, p }] : [];
-        });
-        const carteles = conCarteles
-          ? await cargarCartelesPartido(partidos.map(({ p }) => p.id))
-          : null;
-        if (!vigente) return;
-        cargado.current = true;
-        const guardados = carteles?.ok ? carteles.datos : {};
-        setPorConvocar(
-          categoriasPorConvocar(
-            partidos.map(({ categoria, p }) => ({
-              categoria,
-              despues: trasPartido(p, momento),
-              convocados: p.preparacion.convocatoria,
-            })),
-          ),
-        );
-        setAvisos(
-          pestanasConAviso(
-            partidos.map(({ categoria, p }) =>
-              progresoPartido(p, momento, categoria, guardados[p.id] ?? {}, conCarteles),
-            ),
-          ),
-        );
-      })().catch(() => undefined);
-    }, ESPERA_MS);
-    return () => {
-      vigente = false;
-      clearTimeout(reloj);
-    };
+    const control = new AbortController();
+    void (async () => {
+      const respuesta = await fetch(`/api/avisos?carteles=${conCarteles ? 1 : 0}`, {
+        cache: "no-store",
+        signal: control.signal,
+      });
+      if (!respuesta.ok) return;
+      const datos = (await respuesta.json()) as { pestanas: IdPestana[]; porConvocar: string[] };
+      cargado.current = true;
+      setAvisos(new Set(datos.pestanas));
+      setPorConvocar(new Set(datos.porConvocar));
+    })().catch(() => undefined);
+    return () => control.abort();
   }, [seccion, conCarteles]);
   return { avisos, porConvocar };
 }
