@@ -1,4 +1,9 @@
-import { estadoPaso, type CartelGuardado, type PasoCartel } from "@/lib/cartel2/pasos";
+import {
+  estadoPaso,
+  PASOS_DESPUES,
+  type CartelGuardado,
+  type PasoCartel,
+} from "@/lib/cartel2/pasos";
 import type { PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
 
 /** Carteles guardados de un partido, por paso. */
@@ -46,9 +51,9 @@ export function trasPartido(p: PartidoDeLaSemana, ahora: string) {
 /** Días que el recién jugado sigue en la mesa para cerrarlo, si no tiene aún sus carteles. */
 export const DIAS_PARA_CERRAR = 2;
 
-/** Los carteles de después del partido (resultado, cronoloxía y O Noso 11) ya están guardados. */
+/** El carrusel de después del partido (Resultado y O Noso 11) ya está guardado. */
 export function cierreHecho(carteles: CartelesDelPartido) {
-  return (["resultado", "cronoloxia", "noso11"] as const).every(
+  return PASOS_DESPUES.every(
     (paso) => estadoPaso(carteles[paso]) !== "pendiente",
   );
 }

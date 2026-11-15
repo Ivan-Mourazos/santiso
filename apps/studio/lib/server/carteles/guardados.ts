@@ -34,6 +34,7 @@ export class ErrorPartidoCartel extends Error {
 export function leerPeticionesPaso(paso: PasoCartelPartido, entrada: unknown): PeticionCartel[] {
   if (
     !Object.hasOwn(PASOS, paso) ||
+    PASOS[paso].retirado ||
     !Array.isArray(entrada) ||
     !entrada.length ||
     entrada.length > formatosDe(paso).length

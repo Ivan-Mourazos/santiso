@@ -14,10 +14,14 @@ export const PASOS_CARTEL = [
 ] as const;
 export type PasoCartel = (typeof PASOS_CARTEL)[number];
 
-/** Plantilla técnica de cada paso y formatos que se generan a la vez al pulsar «Generar». */
+/**
+ * Plantilla técnica de cada paso y formatos que se generan a la vez al pulsar «Generar».
+ * `retirado`: ya no se hace (Cronoloxía es ahora el Resultado, 15/11/2026), pero sus carteles
+ * guardados se siguen leyendo.
+ */
 export const PASOS: Record<
   PasoCartel,
-  { plantilla: Plantilla; formatos: readonly FormatoCartel[]; nombre: string }
+  { plantilla: Plantilla; formatos: readonly FormatoCartel[]; nombre: string; retirado?: true }
 > = {
   partido: {
     plantilla: "partido",
@@ -25,11 +29,22 @@ export const PASOS: Record<
     nombre: "Cartel de partido",
   },
   convocatoria: { plantilla: "convocatoria", formatos: ["publicacion"], nombre: "Convocatoria" },
-  once: { plantilla: "alineacion", formatos: ["historia"], nombre: "Once inicial" },
-  resultado: { plantilla: "resultado", formatos: ["publicacion"], nombre: "Resultado" },
-  cronoloxia: { plantilla: "cronoloxia", formatos: ["publicacion"], nombre: "Cronoloxía" },
-  noso11: { plantilla: "once", formatos: ["publicacion"], nombre: "O Noso 11" },
+  once: { plantilla: "campo", formatos: ["historia"], nombre: "Once inicial" },
+  resultado: { plantilla: "cronoloxia", formatos: ["publicacion"], nombre: "Resultado" },
+  cronoloxia: {
+    plantilla: "cronoloxia",
+    formatos: ["publicacion"],
+    nombre: "Cronoloxía",
+    retirado: true,
+  },
+  noso11: { plantilla: "campo", formatos: ["publicacion"], nombre: "O Noso 11" },
 };
+
+/** Los pasos que se hacen hoy, sin los retirados. */
+export const PASOS_VISIBLES: readonly PasoCartel[] = PASOS_CARTEL.filter((p) => !PASOS[p].retirado);
+
+/** Lo de después del partido: se publica junto, en un carrusel (Resultado y O Noso 11). */
+export const PASOS_DESPUES = ["resultado", "noso11"] as const satisfies readonly PasoCartel[];
 
 export const NOMBRE_FORMATO: Record<FormatoCartel, string> = {
   publicacion: "Publicación",

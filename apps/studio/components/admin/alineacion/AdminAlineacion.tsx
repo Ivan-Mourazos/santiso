@@ -101,16 +101,23 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
 
   const peticion = useMemo(() => {
     if (!pantalla || !partido) return null;
-    const p = peticionDeAlineacion(categoria, partido, pantalla.jugadores, alineacion, {
-      institucionales: (recursos.xuntaIsLeft
-        ? [recursos.xunta, recursos.rfgf]
-        : [recursos.rfgf, recursos.xunta]
-      ).filter(Boolean),
-      patrocinadores: recursos.sponsors,
-      colorRival: aHex(COLOR_RIVAL_RESERVA),
-    });
-    return p.plantilla === "alineacion" ? { ...p, datos: { ...p.datos, foto: fotoFondo } } : p;
-  }, [pantalla, partido, categoria, alineacion, recursos, fotoFondo]);
+    // El once en el campo: la colocación guardada, o la automática por posiciones.
+    return peticionDeAlineacion(
+      categoria,
+      partido,
+      pantalla.jugadores,
+      alineacion,
+      {
+        institucionales: (recursos.xuntaIsLeft
+          ? [recursos.xunta, recursos.rfgf]
+          : [recursos.rfgf, recursos.xunta]
+        ).filter(Boolean),
+        patrocinadores: recursos.sponsors,
+        colorRival: aHex(COLOR_RIVAL_RESERVA),
+      },
+      pantalla.colocacion,
+    );
+  }, [pantalla, partido, categoria, alineacion, recursos]);
 
   function tocar(jugadorId: string) {
     if (bloqueada || !pantalla) return;

@@ -149,12 +149,24 @@ const VACIOS = (): Huecos => Array<string | null>(11).fill(null);
  * de atrás adelante. Como mucho once.
  */
 export function colocarAutomatico(sistema: Sistema, jugadores: Jugador[]): Huecos {
-  const huecos = huecosDe(sistema);
-  const res = VACIOS();
+  return completar(sistema, VACIOS(), jugadores);
+}
+
+/**
+ * Respeta lo ya colocado (quitando a quien no está en `jugadores` y los repetidos) y coloca a
+ * los que faltan como `colocarAutomatico`, en los huecos que quedan libres.
+ */
+export function completar(sistema: Sistema, huecos: Huecos, jugadores: Jugador[]): Huecos {
+  const puntos = huecosDe(sistema);
+  const res = depurar(
+    puntos.map((_, i) => huecos[i] ?? null),
+    jugadores.map((j) => j.id),
+  );
   const sobran: Jugador[] = [];
   for (const j of jugadores) {
+    if (res.includes(j.id)) continue;
     const linea = lineaDe(j.posicion);
-    const i = linea ? huecos.findIndex((h, k) => h.linea === linea && res[k] === null) : -1;
+    const i = linea ? puntos.findIndex((h, k) => h.linea === linea && res[k] === null) : -1;
     if (i >= 0) res[i] = j.id;
     else sobran.push(j);
   }

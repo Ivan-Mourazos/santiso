@@ -1,7 +1,8 @@
 import {
   nombreDeCartel,
   ordenarPorDorsal,
-  peticionDeAlineacion,
+  cabeceraDePartido,
+  listaDeCartel,
   type JugadorAlineacion,
   type PartidoAlineacion,
   type RecursosAlineacion,
@@ -87,20 +88,11 @@ export function peticionDeConvocatoria(
   c: Convocatoria,
   recursos: RecursosAlineacion,
 ): PeticionCartel {
-  const base = peticionDeAlineacion(
-    categoria,
-    partido,
-    jugadores,
-    { titulares: c.jugadores, suplentes: [], capitanId: null },
-    recursos,
-  );
-  if (base.plantilla !== "alineacion") throw new Error("Plantilla inesperada");
-  const { titulares, suplentes: _suplentes, ...datos } = base.datos;
   return {
     plantilla: "convocatoria",
     datos: {
-      ...datos,
-      convocados: titulares,
+      ...cabeceraDePartido(categoria, partido, recursos),
+      convocados: listaDeCartel(c.jugadores, jugadores, null),
       horaQuedada: c.horaQuedada,
       lugarQuedada: c.lugarQuedada.trim(),
       equipacion: c.equipacion.trim(),

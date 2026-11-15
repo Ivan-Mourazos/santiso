@@ -41,8 +41,9 @@ const peticion: PeticionCartel = {
     campo: "Campo",
   },
 };
+// El paso «resultado» usa la plantilla de la línea de tiempo (antes «Cronoloxía»).
 const resultado: PeticionCartel = {
-  plantilla: "resultado",
+  plantilla: "cronoloxia",
   datos: {
     ...cabecera,
     local: equipo,
@@ -51,7 +52,7 @@ const resultado: PeticionCartel = {
     campo: "Campo",
     golesLocal: 1,
     golesVisitante: 0,
-    goles: [],
+    eventos: [],
     foto: { url: "data:image/png;base64,aW1hZ2Vu", x: 0.5, y: 0.5, estilo: "color" },
   },
 };
@@ -347,6 +348,39 @@ describe("PNG persistidos", () => {
     ).rejects.toThrow();
     expect(await conexion.db.select().from(s.cartelesPartido)).toEqual([]);
     expect(await readdir(raiz)).toEqual([]);
+  });
+
+  it("el once y O Noso 11 son el cartel del campo; la cronoloxía ya no se guarda", () => {
+    const campo = {
+      plantilla: "campo",
+      formato: "historia",
+      datos: {
+        institucionales: [],
+        patrocinadores: [],
+        categoria: "Senior",
+        competicion: "Liga",
+        jornada: "1",
+        momento: "previa",
+        club: equipo,
+        rival: { ...equipo, nombre: "Rival", propio: false },
+        local: true,
+        fecha: "2026-10-18",
+        hora: "17:00",
+        campo: "Campo",
+        golesClub: null,
+        golesRival: null,
+        sistema: "4-4-2",
+        huecos: Array.from({ length: 11 }, () => null),
+        suplentes: [],
+      },
+    };
+    expect(api.leerPeticionesPaso("once", [campo])).toHaveLength(1);
+    expect(
+      api.leerPeticionesPaso("noso11", [{ ...campo, formato: "publicacion" }]),
+    ).toHaveLength(1);
+    expect(() => api.leerPeticionesPaso("noso11", [campo])).toThrow();
+    expect(() => api.leerPeticionesPaso("cronoloxia", [resultado])).toThrow();
+    expect(api.leerPeticionesPaso("resultado", [resultado])).toHaveLength(1);
   });
 
   it("carga desde acción de servidor con Resultado", async () => {

@@ -16,7 +16,13 @@ import {
   partidoEnMesa,
   preparaConvocatoria,
 } from "@/lib/jornada/vestiario";
-import { estadoPaso, NOMBRE_FORMATO, PASOS, type PasoCartel } from "@/lib/cartel2/pasos";
+import {
+  estadoPaso,
+  NOMBRE_FORMATO,
+  PASOS,
+  PASOS_DESPUES,
+  type PasoCartel,
+} from "@/lib/cartel2/pasos";
 import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados";
 import { cargarPantallaJornada } from "@/lib/server/acciones/jornada";
 import { cargarPartidosLiga, ubicarPartido } from "@/lib/server/acciones/liga";
@@ -89,7 +95,7 @@ function enlaceDelPaso(paso: PasoCartel, partidoId: string, categoria: string) {
   const cat = encodeURIComponent(categoria);
   if (paso === "convocatoria") return `/admin/convocatoria?categoria=${cat}&partido=${id}`;
   if (paso === "once") return `/admin/alineacion?categoria=${cat}&partido=${id}`;
-  const plantilla = paso === "resultado" ? "resumo" : paso;
+  const plantilla = paso === "resultado" ? "cronoloxia" : paso;
   return `/admin/carteles?plantilla=${plantilla}&partido=${id}&categoria=${cat}`;
 }
 
@@ -131,7 +137,7 @@ function CartelesDelPartidoLiga({
   // Jugado, primero lo de después; los técnicos solo hacen convocatoria y once. Ya jugado, la
   // convocatoria y el once no se hacen: solo se ven los carteles que se guardaron.
   const pasos = (
-    jugado ? (["resultado", "cronoloxia", "noso11", ...antes] as PasoCartel[]) : antes
+    jugado ? ([...PASOS_DESPUES, ...antes] as PasoCartel[]) : antes
   )
     .filter((paso) => acceso?.rol !== "tecnico" || paso === "convocatoria" || paso === "once")
     .filter(

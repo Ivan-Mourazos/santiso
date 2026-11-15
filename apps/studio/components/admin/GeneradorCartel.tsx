@@ -39,9 +39,8 @@ import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados"
 /** Plantillas del generador que son un paso del partido: con partido elegido, se guardan. */
 const PASO_DE_PLANTILLA: Partial<Record<TemplateId, PasoCartel>> = {
   partido: "partido",
-  resumo: "resultado",
-  cronoloxia: "cronoloxia",
-  noso11: "noso11",
+  // El Resultado es la línea de tiempo (la antigua Cronoloxía).
+  cronoloxia: "resultado",
 };
 
 interface Props {

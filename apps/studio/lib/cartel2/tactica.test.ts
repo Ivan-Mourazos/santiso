@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   cambiarSistema,
   colocarAutomatico,
+  completar,
   depurar,
   huecosDe,
   lineaDe,
@@ -92,5 +93,19 @@ describe("copia de sistemas en la base", () => {
   it("la base acepta exactamente los mismos sistemas", async () => {
     const { schema } = await import("@santiso/db");
     expect([...schema.SISTEMAS_COLOCACION]).toEqual([...SISTEMAS]);
+  });
+});
+
+describe("completar", () => {
+  it("respeta lo colocado, quita a quien ya no está y coloca a los que faltan", () => {
+    const previos = ["por", "fuera", ...Array<null>(9).fill(null)];
+    const h = completar("4-4-2", previos, [
+      { id: "por", posicion: "POR" },
+      { id: "dc", posicion: "DC" },
+    ]);
+    expect(h[0]).toBe("por");
+    expect(h).not.toContain("fuera");
+    expect(huecosDe("4-4-2")[h.indexOf("dc")]!.linea).toBe("DEL");
+    expect(h).toHaveLength(11);
   });
 });

@@ -83,15 +83,20 @@ describe("elegir la alineación", () => {
 describe("cartel de la alineación", () => {
   const recursos = { institucionales: [], patrocinadores: [], colorRival: "#64748b" };
 
-  it("es una historia 9:16 con el once por dorsal, apodos y capitán", () => {
+  it("es el campo en historia 9:16 con el once colocado, apodos, capitán y portero", () => {
     const alineacion = conCapitan(alternar(alternar(once(), "j16"), "j12"), "j4");
-    const p = peticionDeAlineacion("Senior", partido, jugadores, alineacion, recursos);
-    if (p.plantilla !== "alineacion") throw new Error("plantilla");
-    expect(medidasDe(p.plantilla)).toEqual({ ancho: 1080, alto: 1920 });
-    expect(p.datos.titulares.map((j) => j.dorsal)).toEqual(
-      Array.from({ length: 11 }, (_, i) => String(i + 1)),
+    const conPortero = jugadores.map((j) => (j.id === "j7" ? { ...j, posicion: "POR" as const } : j));
+    const p = peticionDeAlineacion("Senior", partido, conPortero, alineacion, recursos);
+    if (p.plantilla !== "campo") throw new Error("plantilla");
+    expect(medidasDe(p.plantilla, p.formato)).toEqual({ ancho: 1080, alto: 1920 });
+    expect(p.datos.momento).toBe("previa");
+    expect(p.datos.sistema).toBe("4-4-2");
+    expect(p.datos.huecos[0]).toEqual({ dorsal: "7", nombre: "Jugador 7", capitan: false, portero: true });
+    expect(p.datos.huecos.filter((h) => h?.portero)).toHaveLength(1);
+    expect(p.datos.huecos.map((h) => h?.dorsal).sort()).toEqual(
+      Array.from({ length: 11 }, (_, i) => String(i + 1)).sort(),
     );
-    expect(p.datos.titulares[3]).toEqual({ dorsal: "4", nombre: "Iago SR", capitan: true });
+    expect(p.datos.huecos.find((h) => h?.dorsal === "4")).toMatchObject({ nombre: "Iago SR", capitan: true });
     // Suplentes por dorsal; quien no tiene, al final.
     expect(p.datos.suplentes.map((j) => j.dorsal)).toEqual(["12", ""]);
     expect(p.datos).toMatchObject({
@@ -105,6 +110,18 @@ describe("cartel de la alineación", () => {
     expect(leerPeticion(JSON.parse(JSON.stringify(p)))).not.toBeNull();
   });
 
+  it("usa la colocación guardada y quita a quien ya no es titular", () => {
+    const huecos = ["j11", "j99", ...Array<null>(9).fill(null)];
+    const p = peticionDeAlineacion("Senior", partido, jugadores, once(), recursos, {
+      sistema: "4-3-3",
+      huecos,
+    });
+    if (p.plantilla !== "campo") throw new Error("plantilla");
+    expect(p.datos.sistema).toBe("4-3-3");
+    expect(p.datos.huecos[0]).toMatchObject({ dorsal: "11", portero: true });
+    expect(p.datos.huecos.filter(Boolean)).toHaveLength(11);
+  });
+
   it("sin fecha ni campo no inventa nada; el color de Equipos manda", () => {
     const p = peticionDeAlineacion(
       "Veteranos",
@@ -113,7 +130,7 @@ describe("cartel de la alineación", () => {
       once(),
       recursos,
     );
-    if (p.plantilla !== "alineacion") throw new Error("plantilla");
+    if (p.plantilla !== "campo") throw new Error("plantilla");
     expect(p.datos).toMatchObject({ fecha: "", hora: "", campo: "" });
     expect(p.datos.club.nombre).toBe("UD Santiso FC Solaina");
     expect(p.datos.rival.color).toBe("#1d4ed8");

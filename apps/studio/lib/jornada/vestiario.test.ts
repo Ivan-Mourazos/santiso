@@ -189,9 +189,10 @@ describe("mesa de trabajo", () => {
     const hoy = partido({ id: "proximo", fecha: "2026-10-19T17:00" });
     expect(partidoEnMesa(hoy, ultimo, "2026-10-19T12:00")?.id).toBe("proximo");
   });
-  it("el cierre pide resultado, cronoloxía y O Noso 11 guardados", () => {
+  it("el cierre pide el carrusel de después: resultado y O Noso 11; la cronoloxía ya no", () => {
     const g = [{ formato: "publicacion" as const, url: "/x.png", generadoEn: "", desactualizado: false }];
-    expect(cierreHecho({ resultado: g, cronoloxia: g })).toBe(false);
-    expect(cierreHecho({ resultado: g, cronoloxia: g, noso11: g })).toBe(true);
+    expect(cierreHecho({ resultado: g })).toBe(false);
+    expect(cierreHecho({ cronoloxia: g, noso11: g })).toBe(false);
+    expect(cierreHecho({ resultado: g, noso11: g })).toBe(true);
   });
 });

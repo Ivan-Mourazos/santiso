@@ -4,7 +4,7 @@
  */
 import type { Posicion } from "@santiso/domain";
 import type { JugadorOnce, PeticionCartel } from "@/lib/cartel2/modelo";
-import type { Colocacion } from "@/lib/cartel2/tactica";
+import { completar, type Colocacion, type Sistema } from "@/lib/cartel2/tactica";
 import type { AvisoJugador } from "@/lib/liga/avisos";
 
 export const TITULARES = 11;
@@ -120,57 +120,106 @@ export interface RecursosAlineacion {
   colorRival: string;
 }
 
-/** El cartel en formato historia de una alineación. */
+/** Sistema con el que se dibuja un once sin colocación guardada. */
+export const SISTEMA_POR_DEFECTO: Sistema = "4-4-2";
+
+/**
+ * Dónde va cada titular en el campo: lo guardado si lo hay (quitando a quien ya no es titular)
+ * y los que falten colocados por su posición en la plantilla.
+ */
+export function colocacionDeAlineacion(
+  jugadores: JugadorAlineacion[],
+  alineacion: Alineacion,
+  guardada: Colocacion | null,
+): Colocacion {
+  const porId = new Map(jugadores.map((j) => [j.id, j]));
+  const titulares = ordenarPorDorsal(alineacion.titulares, jugadores).map((id) => ({
+    id,
+    posicion: porId.get(id)?.posicion ?? null,
+  }));
+  const sistema = guardada?.sistema ?? SISTEMA_POR_DEFECTO;
+  return { sistema, huecos: completar(sistema, guardada?.huecos ?? [], titulares) };
+}
+
+/** Lo común de los carteles de antes del partido: logos, competición, los dos equipos y cuándo. */
+export function cabeceraDePartido(
+  categoria: string,
+  partido: PartidoAlineacion,
+  recursos: RecursosAlineacion,
+) {
+  const [fecha = "", hora = ""] = (partido.fecha ?? "").split("T");
+  return {
+    institucionales: recursos.institucionales,
+    patrocinadores: recursos.patrocinadores,
+    categoria,
+    competicion: partido.competicion,
+    jornada: String(partido.jornada),
+    club: {
+      nombre: categoria === "Veteranos" ? "UD Santiso FC Solaina" : "UD Santiso FC",
+      escudo: partido.santiso.escudoUrl,
+      propio: true,
+      color: "#f5c518",
+      relieve: !partido.santiso.escudo3d,
+    },
+    rival: {
+      nombre: partido.rival.nombre,
+      escudo: partido.rival.escudoUrl,
+      propio: false,
+      color: partido.rival.color ?? recursos.colorRival,
+      relieve: !partido.rival.escudo3d,
+    },
+    local: partido.santisoLocal,
+    fecha,
+    hora: hora.slice(0, 5),
+    campo: partido.campo ?? "",
+  };
+}
+
+/** Jugadores del cartel por dorsal (sin dorsal, al final), con apodo y capitán. */
+export function listaDeCartel(
+  ids: string[],
+  jugadores: JugadorAlineacion[],
+  capitanId: string | null,
+): JugadorOnce[] {
+  const porId = new Map(jugadores.map((j) => [j.id, j]));
+  return ordenarPorDorsal(ids, jugadores).flatMap((id) => {
+    const j = porId.get(id);
+    return j
+      ? [
+          {
+            dorsal: j.dorsal === null ? "" : String(j.dorsal),
+            nombre: nombreDeCartel(j),
+            capitan: capitanId === id,
+          },
+        ]
+      : [];
+  });
+}
+
+/** El cartel del once inicial: el campo táctico en formato historia (9:16). */
 export function peticionDeAlineacion(
   categoria: string,
   partido: PartidoAlineacion,
   jugadores: JugadorAlineacion[],
   alineacion: Alineacion,
   recursos: RecursosAlineacion,
+  colocacion: Colocacion | null = null,
 ): PeticionCartel {
-  const porId = new Map(jugadores.map((j) => [j.id, j]));
-  const aCartel = (id: string): JugadorOnce | null => {
-    const j = porId.get(id);
-    if (!j) return null;
-    return {
-      dorsal: j.dorsal === null ? "" : String(j.dorsal),
-      nombre: nombreDeCartel(j),
-      capitan: alineacion.capitanId === id,
-    };
-  };
-  const lista = (ids: string[]) =>
-    ordenarPorDorsal(ids, jugadores)
-      .map(aCartel)
-      .filter((j): j is JugadorOnce => j !== null);
-  const [fecha = "", hora = ""] = (partido.fecha ?? "").split("T");
+  const { sistema, huecos } = colocacionDeAlineacion(jugadores, alineacion, colocacion);
   return {
-    plantilla: "alineacion",
+    plantilla: "campo",
+    formato: "historia",
     datos: {
-      institucionales: recursos.institucionales,
-      patrocinadores: recursos.patrocinadores,
-      categoria,
-      competicion: partido.competicion,
-      jornada: String(partido.jornada),
-      club: {
-        nombre: categoria === "Veteranos" ? "UD Santiso FC Solaina" : "UD Santiso FC",
-        escudo: partido.santiso.escudoUrl,
-        propio: true,
-        color: "#f5c518",
-        relieve: !partido.santiso.escudo3d,
-      },
-      rival: {
-        nombre: partido.rival.nombre,
-        escudo: partido.rival.escudoUrl,
-        propio: false,
-        color: partido.rival.color ?? recursos.colorRival,
-        relieve: !partido.rival.escudo3d,
-      },
-      local: partido.santisoLocal,
-      fecha,
-      hora: hora.slice(0, 5),
-      campo: partido.campo ?? "",
-      titulares: lista(alineacion.titulares),
-      suplentes: lista(alineacion.suplentes),
+      ...cabeceraDePartido(categoria, partido, recursos),
+      momento: "previa",
+      golesClub: null,
+      golesRival: null,
+      sistema,
+      huecos: huecos.map((id, i) => {
+        const [j] = id ? listaDeCartel([id], jugadores, alineacion.capitanId) : [];
+        return j ? { ...j, portero: i === 0 } : null;
+      }),
+      suplentes: listaDeCartel(alineacion.suplentes, jugadores, alineacion.capitanId),
     },
   };
 }
