@@ -9,6 +9,9 @@ import {
   categoriaCartel,
   fechaCartel,
   goleadores,
+  medidasDe,
+  MEDIDAS,
+  MEDIDAS_HISTORIA,
   nombreDeCartel,
   PLANTILLAS,
   urlFoto,
@@ -598,6 +601,57 @@ describe("escudos del club y relieve", () => {
   });
 });
 
+describe("cartel de alineación en el campo", () => {
+  const equipo = { nombre: "Santiso", escudo: null, propio: true, color: "#f5c518", relieve: false };
+  const huecos = Array.from({ length: 11 }, (_, i) =>
+    i === 3 ? null : { dorsal: String(i + 1), nombre: `Xogador ${i + 1}`, capitan: i === 5, portero: i === 0 },
+  );
+  const campo = (formato: "publicacion" | "historia", cambios: Record<string, unknown> = {}) => ({
+    plantilla: "campo",
+    formato,
+    datos: {
+      institucionales: [],
+      patrocinadores: [],
+      categoria: "Senior",
+      competicion: "Liga",
+      jornada: "10",
+      momento: formato === "historia" ? "previa" : "final",
+      club: equipo,
+      rival: { ...equipo, nombre: "Rival", propio: false },
+      local: true,
+      fecha: "2026-11-16",
+      hora: "16:30",
+      campo: "A Cañoteira",
+      golesClub: formato === "historia" ? null : 2,
+      golesRival: formato === "historia" ? null : 0,
+      sistema: "4-4-2",
+      huecos,
+      suplentes: [{ dorsal: "2", nombre: "Tono", capitan: false }],
+      ...cambios,
+    },
+  });
+
+  it("admite publicación e historia, con huecos vacíos", () => {
+    for (const formato of ["publicacion", "historia"] as const) {
+      const leida = leerPeticion(campo(formato));
+      expect(leida?.plantilla, formato).toBe("campo");
+      expect(leida?.plantilla === "campo" && leida.datos.huecos[3]).toBeNull();
+    }
+  });
+
+  it("rechaza menos de 11 huecos, sistema desconocido o sin formato", () => {
+    expect(leerPeticion(campo("publicacion", { huecos: huecos.slice(0, 10) }))).toBeNull();
+    expect(leerPeticion(campo("publicacion", { sistema: "2-3-5" }))).toBeNull();
+    const { formato: _sin, ...sinFormato } = campo("publicacion");
+    expect(leerPeticion(sinFormato)).toBeNull();
+  });
+
+  it("mide 4:5 en publicación y 9:16 en historia", () => {
+    expect(medidasDe("campo", "publicacion")).toEqual(MEDIDAS);
+    expect(medidasDe("campo", "historia")).toEqual(MEDIDAS_HISTORIA);
+  });
+});
+
 describe("leerPeticion", () => {
   it("once inicial admite foto de campo sin perder foco ni zoom y rechaza encuadre inválido", () => {
     const base = peticionDeFormulario("partido", formulario(), recursos, opciones);
@@ -640,7 +694,7 @@ describe("leerPeticion", () => {
     });
     // La alineación no sale del formulario del Estudio: tiene su pantalla (lib/alineacion).
     expect(plantillas.sort()).toEqual(
-      PLANTILLAS.filter((p) => p !== "alineacion" && p !== "convocatoria").sort(),
+      PLANTILLAS.filter((p) => !["alineacion", "convocatoria", "campo"].includes(p)).sort(),
     );
   });
 

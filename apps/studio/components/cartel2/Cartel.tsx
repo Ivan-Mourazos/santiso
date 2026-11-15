@@ -1,5 +1,6 @@
 import type { PeticionCartel } from "@/lib/cartel2/modelo";
 import { CartelAlineacion } from "./CartelAlineacion";
+import { CartelCampo } from "./CartelCampo";
 import { CartelConvocatoria } from "./CartelConvocatoria";
 import { CartelAnuncio } from "./CartelAnuncio";
 import { CartelClasificacion } from "./CartelClasificacion";
@@ -35,6 +36,8 @@ export function Cartel({ peticion }: { peticion: PeticionCartel }) {
       return <CartelAnuncio datos={peticion.datos} />;
     case "clasificacion":
       return <CartelClasificacion datos={peticion.datos} />;
+    case "campo":
+      return <CartelCampo datos={peticion.datos} formato={peticion.formato} />;
     case "alineacion":
       return <CartelAlineacion datos={peticion.datos} />;
     case "convocatoria":

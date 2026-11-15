@@ -3,6 +3,7 @@
  * Mismas formas que `modelo.ts`; los límites solo evitan peticiones absurdas.
  */
 import { z } from "zod";
+import { SISTEMAS } from "./tactica";
 import {
   COMPOSICIONES,
   ESTILOS_FOTO,
@@ -195,6 +196,29 @@ const alineacion = z.object({
   }),
 });
 
+const campo = z.object({
+  plantilla: z.literal("campo"),
+  formato: z.enum(["publicacion", "historia"]),
+  datos: z.object({
+    ...logos,
+    ...cabecera,
+    momento: z.enum(["previa", "final"]),
+    club: equipo,
+    rival: equipo,
+    local: z.boolean(),
+    fecha: texto(10),
+    hora: texto(5),
+    campo: texto(),
+    golesClub: entero.nullable(),
+    golesRival: entero.nullable(),
+    sistema: z.enum(SISTEMAS),
+    huecos: z
+      .array(jugador.extend({ portero: z.boolean() }).nullable())
+      .length(11),
+    suplentes: z.array(jugador).max(12),
+  }),
+});
+
 const convocatoria = z.object({
   plantilla: z.literal("convocatoria"),
   datos: z.object({
@@ -339,6 +363,7 @@ const peticion = z.discriminatedUnion("plantilla", [
   clasificacion,
   alineacion,
   convocatoria,
+  campo,
 ]);
 
 /** La petición validada, o `null` si no tiene la forma de ningún cartel. */

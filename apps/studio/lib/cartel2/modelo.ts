@@ -3,6 +3,7 @@
  * resuelto: los componentes no consultan nada y la exportación a PNG recibe exactamente lo mismo
  * que la vista previa. De dónde sale cada dato (el formulario del Estudio) está en `formulario.ts`.
  */
+import type { Sistema } from "./tactica";
 
 /** Composiciones del cartel de partido; la primera es la de por defecto. */
 export const COMPOSICIONES = [
@@ -35,6 +36,7 @@ export const PLANTILLAS = [
   "fichaxe",
   "comunicado",
   "loteria",
+  "campo",
 ] as const;
 export type Plantilla = (typeof PLANTILLAS)[number];
 
@@ -42,7 +44,7 @@ export type Plantilla = (typeof PLANTILLAS)[number];
 export type FormatoCartel = "publicacion" | "historia";
 export function medidasDe(plantilla: Plantilla, formato?: FormatoCartel) {
   return plantilla === "alineacion" ||
-    (["partido", "proximos"].includes(plantilla) && formato === "historia")
+    (["partido", "proximos", "campo"].includes(plantilla) && formato === "historia")
     ? MEDIDAS_HISTORIA
     : MEDIDAS;
 }
@@ -217,6 +219,36 @@ export interface DatosAlineacion extends Logos, Competicion {
 }
 
 /** Cartel privado 4:5 para el grupo de WhatsApp. */
+/** Un titular dibujado en el campo: camiseta con su dorsal y su nombre debajo. */
+export interface JugadorCampo {
+  dorsal: string;
+  nombre: string;
+  capitan: boolean;
+  /** El portero lleva la camiseta rosa. */
+  portero: boolean;
+}
+
+/**
+ * Alineación sobre el campo táctico. `previa`: «Once inicial» (historia, antes del partido);
+ * `final`: «O Noso 11» (publicación, después, con el marcador). `huecos` va en el orden de
+ * `huecosDe(sistema)`; un hueco vacío no se dibuja.
+ */
+export interface DatosCampo extends Logos, Competicion {
+  momento: "previa" | "final";
+  club: EquipoCartel;
+  rival: EquipoCartel;
+  /** El Santiso juega en casa. */
+  local: boolean;
+  fecha: string;
+  hora: string;
+  campo: string;
+  golesClub: number | null;
+  golesRival: number | null;
+  sistema: Sistema;
+  huecos: (JugadorCampo | null)[];
+  suplentes: JugadorOnce[];
+}
+
 export interface DatosConvocatoria extends Omit<DatosAlineacion, "titulares" | "suplentes"> {
   convocados: JugadorOnce[];
   horaQuedada: string;
@@ -356,7 +388,8 @@ export type PeticionCartel =
   | { plantilla: "convocatoria"; datos: DatosConvocatoria }
   | { plantilla: "fichaxe"; datos: DatosFichaxe }
   | { plantilla: "comunicado"; datos: DatosComunicado }
-  | { plantilla: "loteria"; datos: DatosLoteria };
+  | { plantilla: "loteria"; datos: DatosLoteria }
+  | { plantilla: "campo"; formato: FormatoCartel; datos: DatosCampo };
 
 const DIAS = ["DOMINGO", "LUNS", "MARTES", "MÉRCORES", "XOVES", "VENRES", "SÁBADO"];
 const MESES = ["XAN", "FEB", "MAR", "ABR", "MAI", "XUÑ", "XUL", "AGO", "SET", "OUT", "NOV", "DEC"];
