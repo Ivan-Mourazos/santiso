@@ -1818,3 +1818,19 @@ html:active-view-transition-type(recorrido-adelante)::view-transition-new(root) 
     animation: none !important;
   }
 }
+
+/*
+ * En el iPhone, pulsar una foto o un dibujo dentro de un botón hace que Safari lo «levante» para
+ * arrastrarlo y el toque no llega al botón (pasaba al elegir el once). Lo de dentro de un botón
+ * no se arrastra ni recibe el toque: lo recibe el botón, sin esperar al doble toque.
+ */
+button {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+button img,
+button svg {
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: none;
+}
