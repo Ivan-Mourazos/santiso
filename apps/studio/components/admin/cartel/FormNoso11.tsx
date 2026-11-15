@@ -217,7 +217,7 @@ export const FormNoso11: React.FC<Props> = ({
       <datalist id="jugadores-categoria-list">
         {jugadoresCategoria.map((j) => (
           <option key={j.id} value={getDisplayName(j)}>
-            #{j.dorsal || "-"} {j.nombre}
+            #{j.dorsal || "-"}
           </option>
         ))}
       </datalist>

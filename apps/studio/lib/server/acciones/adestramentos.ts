@@ -59,9 +59,7 @@ export async function cargarAdestramentos(categoria: Categoria) {
             clave,
             id: (a.jugadorId ?? a.staffId)!,
             tipo: a.jugadorId ? "jugador" : "staff",
-            nombre: nombreJugador
-              ? `${nombreJugador}${apodoJugador?.trim() ? ` (${apodoJugador.trim()})` : ""}`
-              : nombreStaff!,
+            nombre: nombreJugador ? apodoJugador?.trim() || nombreJugador : nombreStaff!,
             detalle: "Fuera de la plantilla actual",
             adestrador: !!a.staffId,
           });

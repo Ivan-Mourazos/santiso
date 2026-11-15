@@ -72,7 +72,7 @@ describe("multas del club", () => {
     expect(primera.conceptos).toHaveLength(13);
     expect(primera.conceptos.filter((c) => c.grupo === "partido")).toHaveLength(11);
     expect(primera.personas.map((p) => [p.nombre, p.detalle, p.adestrador])).toEqual([
-      ["Brais Rei (Bareto)", "Senior · 9", false],
+      ["Bareto", "Senior · 9", false],
       ["Manuel Adestrador", "Senior · Entrenador", true],
     ]);
     expect((await pantalla(acciones)).conceptos).toHaveLength(13);

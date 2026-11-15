@@ -7,6 +7,7 @@ import { cartelesDePartidos } from "@/lib/server/carteles/guardados";
 import { semanaDe, type Semana } from "@/lib/jornada/semana";
 import { urlMedia } from "@/lib/media";
 import { clasificacionDeCompeticion } from "@/lib/server/consultas/clasificacion";
+import { nombreDelClub } from "@/lib/liga/apodos";
 import { avisosDeLiga } from "@/lib/server/consultas/liga";
 import { temporadaActivaId } from "@/lib/server/consultas/temporadas";
 import { obtenerDb } from "@/lib/server/db";
@@ -229,6 +230,16 @@ export async function pantallaJornada(
       avisosPor.set(f.competicionId, await avisosDeLiga(f.competicionId));
     }
   }
+  // Los avisos de los nuestros salen por su apodo.
+  const plantillaClub = [...avisosPor.values()].some((l) => l.length)
+    ? await db
+        .select({
+          id: schema.jugadores.id,
+          nombre: schema.jugadores.nombre,
+          apodo: schema.jugadores.apodo,
+        })
+        .from(schema.jugadores)
+    : [];
   const cambios = ids.length
     ? await db
         .select({
@@ -296,7 +307,8 @@ export async function pantallaJornada(
           ? (avisosPor.get(f.competicionId) ?? [])
               .filter((a) => a.equipoId === f.localId || a.equipoId === f.visitanteId)
               .map((a) => ({
-                persona: a.persona,
+                persona:
+                  a.equipoId === idSantiso ? nombreDelClub(a.persona, plantillaClub) : a.persona,
                 propio: a.equipoId === idSantiso,
                 situacion: a.situacion ?? "",
                 motivo: a.motivo,

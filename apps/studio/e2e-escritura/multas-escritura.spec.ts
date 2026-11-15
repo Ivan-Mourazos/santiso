@@ -89,7 +89,7 @@ test("poner una multa, cobrarla y gestionar gastos del bote a 360 px", async ({
   await page.getByRole("button", { name: "Nueva multa", exact: true }).click();
   await alta
     .getByLabel("A quién")
-    .selectOption({ label: "Dous Aliñación Ficticio (Dous) · Senior · 2" });
+    .selectOption({ label: "Dous · Senior · 2" });
   await alta
     .getByLabel("Motivo", { exact: true })
     .selectOption({ label: "Otro motivo (escribirlo)…" });

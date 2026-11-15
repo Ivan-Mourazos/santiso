@@ -2,6 +2,7 @@ import "server-only";
 import { schema } from "@santiso/db";
 import { aliasedTable, and, eq, isNotNull } from "drizzle-orm";
 import type { JugadorPlantilla } from "@/lib/actas/enlazar";
+import { nombreDelClub } from "@/lib/liga/apodos";
 import { avisosDePlantilla, type AvisoJugador } from "@/lib/liga/avisos";
 import {
   disciplina,
@@ -28,8 +29,15 @@ export interface PantallaLiga {
   propios: string[];
 }
 
-/** Goleadores y tarjetas de toda una competición, a partir de las actas ya cargadas. */
-export async function pantallaLiga(competicionId: string): Promise<PantallaLiga> {
+/**
+ * Goleadores y tarjetas de toda una competición, a partir de las actas ya cargadas. Para
+ * enseñar, los del club salen por su apodo; `apodos: false` deja el nombre de la federación,
+ * que es con el que se reconoce luego al jugador en la plantilla.
+ */
+export async function pantallaLiga(
+  competicionId: string,
+  { apodos = true }: { apodos?: boolean } = {},
+): Promise<PantallaLiga> {
   const { db } = await obtenerDb();
   const [competicion] = await db
     .select({ ciclo: schema.competiciones.amarillasCiclo })
@@ -106,23 +114,39 @@ export async function pantallaLiga(competicionId: string): Promise<PantallaLiga>
   ).length;
   const cargados = jugados.filter((p) => bajados.has(p.id)).length - sinLeer;
 
+  const propios = new Set(filas.filter((f) => f.propio).map((f) => f.equipoId));
+  const plantilla =
+    apodos && propios.size
+      ? await db
+          .select({
+            id: schema.jugadores.id,
+            nombre: schema.jugadores.nombre,
+            apodo: schema.jugadores.apodo,
+          })
+          .from(schema.jugadores)
+      : [];
+  const verNombre = <T extends { persona: string; equipoId: string }>(fila: T): T =>
+    plantilla.length && propios.has(fila.equipoId)
+      ? { ...fila, persona: nombreDelClub(fila.persona, plantilla) }
+      : fila;
+
   return {
     ciclo,
-    goleadores: goleadores(eventos),
-    disciplina: disciplina(eventos, ciclo, ultimaJornada),
+    goleadores: goleadores(eventos).map(verNombre),
+    disciplina: disciplina(eventos, ciclo, ultimaJornada).map(verNombre),
     partidosJugados: jugados.length,
     partidosCargados: cargados,
     partidosSinLeer: sinLeer,
     jornadasPorTraer: [
       ...new Set(jugados.filter((p) => !bajados.has(p.id)).map((p) => p.jornada)),
     ].sort((a, b) => b - a),
-    propios: [...new Set(filas.filter((f) => f.propio).map((f) => f.equipoId))],
+    propios: [...propios],
   };
 }
 
 /** Solo quien tiene algo que contar (apercibido, sancionado o expulsado) en una competición. */
 export async function avisosDeLiga(competicionId: string): Promise<Disciplina[]> {
-  return (await pantallaLiga(competicionId)).disciplina.filter((d) => d.situacion !== null);
+  return (await pantallaLiga(competicionId, { apodos: false })).disciplina.filter((d) => d.situacion !== null);
 }
 
 /**

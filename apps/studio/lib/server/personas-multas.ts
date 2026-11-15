@@ -50,14 +50,20 @@ export async function personas(
     .orderBy(asc(schema.staff.nombre));
 
   const lista = new Map<string, PersonaMulta>();
-  for (const j of jugadores) {
+  // Por categoría y, dentro, por el nombre que se ve (el apodo).
+  const visible = (j: (typeof jugadores)[number]) => j.apodo?.trim() || j.nombre;
+  const ordenados = [...jugadores].sort(
+    (a, b) => a.categoria.localeCompare(b.categoria) || visible(a).localeCompare(visible(b), "es"),
+  );
+  for (const j of ordenados) {
     const clave = `jugador:${j.id}`;
     if (lista.has(clave)) continue;
     lista.set(clave, {
       clave,
       tipo: "jugador",
       id: j.id,
-      nombre: j.apodo?.trim() ? `${j.nombre} (${j.apodo.trim()})` : j.nombre,
+      // Fuera de la ficha, el jugador sale por su apodo.
+      nombre: visible(j),
       detalle: `${j.categoria}${j.dorsal === null ? "" : ` · ${j.dorsal}`}`,
       adestrador: false,
     });

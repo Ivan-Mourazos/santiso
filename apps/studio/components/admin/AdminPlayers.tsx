@@ -41,6 +41,11 @@ type EstadoEditor = { clave: number; jugador: JugadorDto | null } | null;
 const nombrePosicion = (posicion: string | null) =>
   posicion ? (ETIQUETAS_POSICION[posicion as keyof typeof ETIQUETAS_POSICION] ?? posicion) : "—";
 
+/** Fuera de la ficha, cada jugador sale por su apodo; el nombre completo, solo si no tiene. */
+function apodo(j: { nombre: string; apodo: string | null }) {
+  return j.apodo?.trim() || j.nombre;
+}
+
 export default function AdminPlayers({ showToast, showConfirm, categoria }: AdminPlayersProps) {
   const { setParams } = useStudio();
   // La temporada que se consulta sale de la URL (`?temporada=`); sin ella, la activa.
@@ -127,8 +132,8 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
     () =>
       (candidatos?.jugadores ?? []).map((j) => ({
         clave: j.inscripcion_id,
-        nombre: j.nombre,
-        detalle: [j.categoria !== categoria ? j.categoria : null, j.posicion, j.apodo]
+        nombre: apodo(j),
+        detalle: [j.categoria !== categoria ? j.categoria : null, j.posicion]
           .filter(Boolean)
           .join(" · "),
         foto_url: j.foto_url,
@@ -310,7 +315,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
                       <img className={styles.foto} src={j.foto_url} alt="" />
                     ) : (
                       <span className={styles.foto} aria-hidden="true">
-                        {iniciales(j.nombre)}
+                        {iniciales(apodo(j))}
                       </span>
                     )}
                   </td>
@@ -330,11 +335,10 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
                       type="button"
                       className={styles.abrirFicha}
                       aria-haspopup="dialog"
-                      aria-label={`Ver ficha de ${j.nombre}`}
+                      aria-label={`Ver ficha de ${apodo(j)}`}
                       onClick={() => setFicha(j)}
                     >
-                      <strong>{j.nombre}</strong>
-                      {j.apodo && <span>{j.apodo}</span>}
+                      <strong>{apodo(j)}</strong>
                       <span className={styles.soloMovil}>{nombrePosicion(j.posicion)}</span>
                     </button>
                   </td>
@@ -345,7 +349,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
                         variant="secondary"
                         onClick={() => abrirEditor(j)}
                         size="sm"
-                        aria-label={`Editar a ${j.nombre}`}
+                        aria-label={`Editar a ${apodo(j)}`}
                       >
                         Editar
                       </Button>

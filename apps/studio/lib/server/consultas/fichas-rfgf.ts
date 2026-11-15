@@ -6,6 +6,7 @@ import { schema } from "@santiso/db";
 import { claveEquipo, claveNombre, normalizarNombreEquipo, type Categoria } from "@santiso/domain";
 import { aliasedTable, and, asc, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import type { FichaJugador } from "@/lib/estadisticas/ficha";
+import { nombreDelClub } from "@/lib/liga/apodos";
 import { personaDeActa } from "@/lib/liga/eventos";
 import { urlMedia } from "@/lib/media";
 import { coloresDeEquipacion } from "@/lib/rfgf/colores";
@@ -256,6 +257,15 @@ export async function jugadoresVistosDeEquipo(equipoId: string): Promise<Jugador
     );
 }
 
+/** Los nuestros, por su apodo (o su nombre del Studio) en vez del nombre de la federación. */
+async function conApodos(vistos: JugadorVisto[]): Promise<JugadorVisto[]> {
+  const { db } = await obtenerDb();
+  const plantilla = await db
+    .select({ id: schema.jugadores.id, nombre: schema.jugadores.nombre, apodo: schema.jugadores.apodo })
+    .from(schema.jugadores);
+  return vistos.map((v) => ({ ...v, persona: nombreDelClub(v.persona, plantilla) }));
+}
+
 /** Totales desde el Santiso de una lista de partidos (solo los que tienen marcador). */
 export function totalesCaraACara(partidos: readonly PartidoCaraACara[]): TotalesCaraACara {
   const totales: TotalesCaraACara = {
@@ -474,7 +484,9 @@ export async function fichaDeEquipo(equipoId: string): Promise<FichaDeEquipo | n
     campoHabitual: campo ? { ...campo, partidos: Number(campo.partidos) } : null,
     temporada,
     contraSantiso: { partidos, totales: totalesCaraACara(partidos) },
-    jugadoresVistos: await jugadoresVistosDeEquipo(equipoId),
+    jugadoresVistos: equipo.propio
+      ? await conApodos(await jugadoresVistosDeEquipo(equipoId))
+      : await jugadoresVistosDeEquipo(equipoId),
   };
 }
 
