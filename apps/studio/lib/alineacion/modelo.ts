@@ -2,7 +2,9 @@
  * Alineación anunciada antes del partido: lo que se elige en pantalla (móvil) y el cartel en
  * formato historia que sale de ello. Puro: sin base de datos ni navegador.
  */
+import type { Posicion } from "@santiso/domain";
 import type { JugadorOnce, PeticionCartel } from "@/lib/cartel2/modelo";
+import type { Colocacion } from "@/lib/cartel2/tactica";
 import type { AvisoJugador } from "@/lib/liga/avisos";
 
 export const TITULARES = 11;
@@ -28,6 +30,8 @@ export interface JugadorAlineacion {
   apodo: string | null;
   dorsal: number | null;
   fotoUrl: string | null;
+  /** Posición en la plantilla de la temporada: decide su hueco en el dibujo táctico. */
+  posicion: Posicion | null;
   /** Primer capitán de la plantilla: el que se propone al elegirlo de titular. */
   capitan: boolean;
 }
@@ -46,6 +50,8 @@ export interface PantallaAlineacion {
   alineacion: Alineacion;
   /** Sanciones y apercibidos de la liga para el partido elegido. */
   avisos: AvisoJugador[];
+  /** Dónde va cada titular en el campo, si ya se guardó. */
+  colocacion: Colocacion | null;
 }
 
 export const ALINEACION_VACIA: Alineacion = { titulares: [], suplentes: [], capitanId: null };

@@ -9,6 +9,7 @@ import {
   type PantallaAlineacion,
   type PartidoAlineacion,
 } from "@/lib/alineacion/modelo";
+import type { Colocacion, MomentoColocacion } from "@/lib/cartel2/tactica";
 import { urlMedia } from "@/lib/media";
 import { avisosDelPartido } from "@/lib/server/consultas/liga";
 import { temporadaActivaId } from "@/lib/server/consultas/temporadas";
@@ -116,6 +117,7 @@ export async function plantilla(
       apodo: schema.jugadores.apodo,
       dorsal: schema.jugadoresTemporada.dorsal,
       foto: schema.jugadoresTemporada.foto,
+      posicion: schema.jugadoresTemporada.posicion,
       capitania: schema.jugadoresTemporada.capitania,
     })
     .from(schema.jugadoresTemporada)
@@ -137,6 +139,7 @@ export async function plantilla(
     apodo: f.apodo,
     dorsal: f.dorsal,
     fotoUrl: f.foto ? urlMedia(f.foto) : null,
+    posicion: f.posicion,
     capitan: f.capitania === 1,
   }));
 }
@@ -160,6 +163,28 @@ export async function alineacionDePartido(partidoId: string): Promise<Alineacion
   };
 }
 
+/** Sistema y huecos guardados de un partido en ese momento, o `null` si no hay. */
+export async function colocacionDePartido(
+  partidoId: string,
+  momento: MomentoColocacion,
+): Promise<Colocacion | null> {
+  const { db } = await obtenerDb();
+  const fila = await db
+    .select({
+      sistema: schema.partidoColocaciones.sistema,
+      huecos: schema.partidoColocaciones.huecos,
+    })
+    .from(schema.partidoColocaciones)
+    .where(
+      and(
+        eq(schema.partidoColocaciones.partidoId, partidoId),
+        eq(schema.partidoColocaciones.momento, momento),
+      ),
+    )
+    .get();
+  return fila ?? null;
+}
+
 /**
  * Todo lo que pinta la pantalla de alineación: próximos partidos de la categoría, el elegido
  * (el pedido o el primero por jugar), la plantilla y lo que ya hubiera guardado.
@@ -177,6 +202,7 @@ export async function pantallaAlineacion(
       jugadores: [],
       alineacion: ALINEACION_VACIA,
       avisos: [],
+      colocacion: null,
     };
   }
   const [partidos, jugadores] = await Promise.all([
@@ -198,5 +224,6 @@ export async function pantallaAlineacion(
     jugadores: disponibles,
     alineacion,
     avisos: elegido ? await avisosDelPartido(elegido.id, jugadores) : [],
+    colocacion: elegido ? await colocacionDePartido(elegido.id, "previa") : null,
   };
 }

@@ -200,3 +200,23 @@ export function depurar(huecos: Huecos, disponibles: readonly string[]): Huecos 
     return id;
   });
 }
+
+/** Sistema y huecos guardados de un partido. */
+export interface Colocacion {
+  sistema: Sistema;
+  huecos: Huecos;
+}
+
+/** `previa`: el once anunciado antes del partido. `final`: el de O Noso 11, después. */
+export type MomentoColocacion = "previa" | "final";
+
+/** Por qué no vale una colocación, o `null` si vale: sistema conocido, 11 huecos, sin repetir. */
+export function errorDeColocacion(c: Colocacion): string | null {
+  if (!(SISTEMAS as readonly string[]).includes(c.sistema)) return "Sistema desconocido.";
+  if (!Array.isArray(c.huecos) || c.huecos.length !== huecosDe(c.sistema).length)
+    return "La colocación debe tener 11 huecos.";
+  const ids = c.huecos.filter((id): id is string => id !== null);
+  if (ids.some((id) => typeof id !== "string" || !id)) return "Hueco no válido.";
+  if (new Set(ids).size !== ids.length) return "Un jugador no puede ir en dos huecos.";
+  return null;
+}

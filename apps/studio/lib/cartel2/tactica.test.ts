@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   cambiarSistema,
   colocarAutomatico,
@@ -86,4 +86,11 @@ it("cambiarSistema conserva a los once", () => {
 
 it("depurar quita no disponibles y duplicados", () => {
   expect(depurar(["a", "a", "z", ...Array(8).fill(null)], ["a"]).filter(Boolean)).toEqual(["a"]);
+});
+
+describe("copia de sistemas en la base", () => {
+  it("la base acepta exactamente los mismos sistemas", async () => {
+    const { schema } = await import("@santiso/db");
+    expect([...schema.SISTEMAS_COLOCACION]).toEqual([...SISTEMAS]);
+  });
 });

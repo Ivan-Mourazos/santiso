@@ -66,6 +66,7 @@ describe("convocatoria", () => {
     apodo: i === 0 ? "Brais" : null,
     dorsal: 22 - i,
     fotoUrl: null,
+    posicion: null,
     capitan: false,
   }));
   it("texto WhatsApp incluye solo convocados, por dorsal, con apodo y quedada", () => {

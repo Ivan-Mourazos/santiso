@@ -19,6 +19,7 @@ const jugadores: JugadorAlineacion[] = Array.from({ length: 16 }, (_, i) => ({
   apodo: i === 3 ? "Iago SR" : null,
   dorsal: i === 15 ? null : i + 1,
   fotoUrl: null,
+  posicion: null,
   capitan: i === 3,
 }));
 

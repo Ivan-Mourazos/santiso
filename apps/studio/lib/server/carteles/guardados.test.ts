@@ -180,24 +180,37 @@ describe("huellas de datos visibles", () => {
     expect(await api.huellaPaso(partidoId, "noso11")).not.toBe(noso11);
   });
 
-  it("resultado detecta goles; cronología también tarjetas; minutos solo afectan cronología", async () => {
+  it("la colocación previa cambia el once y la final O Noso 11, cada una la suya", async () => {
+    const once = await api.huellaPaso(partidoId, "once");
+    const noso11 = await api.huellaPaso(partidoId, "noso11");
+    const huecos = [jugadorId, ...Array<null>(10).fill(null)];
+    await conexion.db
+      .insert(s.partidoColocaciones)
+      .values({ partidoId, momento: "final", sistema: "4-4-2", huecos });
+    expect(await api.huellaPaso(partidoId, "once")).toBe(once);
+    const final = await api.huellaPaso(partidoId, "noso11");
+    expect(final).not.toBe(noso11);
+    await conexion.db
+      .insert(s.partidoColocaciones)
+      .values({ partidoId, momento: "previa", sistema: "4-3-3", huecos });
+    expect(await api.huellaPaso(partidoId, "once")).not.toBe(once);
+    expect(await api.huellaPaso(partidoId, "noso11")).toBe(final);
+    expect(await conexion.db.select().from(s.partidoAlineaciones)).toHaveLength(0);
+  });
+
+  it("resultado cambia con goles, tarjetas y minutos, como la cronología", async () => {
     const resultado = await api.huellaPaso(partidoId, "resultado");
-    const cronoloxia = await api.huellaPaso(partidoId, "cronoloxia");
     await conexion.db
       .insert(s.partidoEventos)
       .values({ partidoId, jugadorId, tipo: "tarjeta_amarilla", lado: "propio", minuto: 10 });
-    expect(await api.huellaPaso(partidoId, "resultado")).toBe(resultado);
-    expect(await api.huellaPaso(partidoId, "cronoloxia")).not.toBe(cronoloxia);
-    await conexion.db
-      .insert(s.partidoEventos)
-      .values({ partidoId, jugadorId, tipo: "gol", lado: "propio", minuto: 12 });
-    const gol = await api.huellaPaso(partidoId, "resultado");
-    expect(gol).not.toBe(resultado);
+    const tarjeta = await api.huellaPaso(partidoId, "resultado");
+    expect(tarjeta).not.toBe(resultado);
+    expect(tarjeta).toBe(await api.huellaPaso(partidoId, "cronoloxia"));
     await conexion.db
       .update(s.partidoEventos)
       .set({ minuto: 15 })
-      .where(eq(s.partidoEventos.tipo, "gol"));
-    expect(await api.huellaPaso(partidoId, "resultado")).toBe(gol);
+      .where(eq(s.partidoEventos.partidoId, partidoId));
+    expect(await api.huellaPaso(partidoId, "resultado")).not.toBe(tarjeta);
   });
 });
 

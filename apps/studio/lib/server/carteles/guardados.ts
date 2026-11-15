@@ -139,6 +139,15 @@ async function huellasDe(ids: string[]): Promise<Map<string, Record<PasoCartelPa
     .select()
     .from(schema.partidoParticipaciones)
     .where(inArray(schema.partidoParticipaciones.partidoId, ids));
+  const colocaciones = await db
+    .select({
+      partidoId: schema.partidoColocaciones.partidoId,
+      momento: schema.partidoColocaciones.momento,
+      sistema: schema.partidoColocaciones.sistema,
+      huecos: schema.partidoColocaciones.huecos,
+    })
+    .from(schema.partidoColocaciones)
+    .where(inArray(schema.partidoColocaciones.partidoId, ids));
   const eventos = await db
     .select({
       partidoId: schema.partidoEventos.partidoId,
@@ -156,6 +165,7 @@ async function huellasDe(ids: string[]): Promise<Map<string, Record<PasoCartelPa
     ...new Set(
       [...convocados, ...alineaciones, ...participaciones, ...eventos]
         .flatMap((f) => [f.jugadorId, "jugadorSaleId" in f ? f.jugadorSaleId : null])
+        .concat(colocaciones.flatMap((c) => c.huecos))
         .filter((id): id is string => !!id),
     ),
   ];
@@ -203,6 +213,7 @@ async function huellasDe(ids: string[]): Promise<Map<string, Record<PasoCartelPa
   const alineacionesPorPartido = agrupar(alineaciones);
   const participacionesPorPartido = agrupar(participaciones);
   const eventosPorPartido = agrupar(eventos);
+  const colocacionesPorPartido = agrupar(colocaciones);
   return new Map(
     partidos.map((p) => {
       const base = {
@@ -252,21 +263,25 @@ async function huellasDe(ids: string[]): Promise<Map<string, Record<PasoCartelPa
         jugador: f.jugadorId ? nombres.get(f.jugadorId) : f.nombreRival,
         sale: f.jugadorSaleId ? nombres.get(f.jugadorSaleId) : null,
       }));
-      // Resultado solo muestra goleadores y número de goles, nunca minutos ni tarjetas.
-      const goles = listaEstable(
-        eventos
-          .filter((e) => e.tipo === "gol")
-          .map((e) => ({ tipo: e.tipo, lado: e.lado, propia: e.propia, jugador: e.jugador })),
-      );
+      // Dónde va cada uno en el campo. Sin colocación guardada la huella no la menciona, para
+      // no dar por desactualizados los carteles hechos antes de que existiera.
+      const colocacion = (momento: "previa" | "final") => {
+        const fila = colocacionesPorPartido.get(p.id)?.find((c) => c.momento === momento);
+        return fila
+          ? { colocacion: { sistema: fila.sistema, huecos: fila.huecos.map((id) => id && jugador(id)) } }
+          : {};
+      };
+      // El Resultado es la línea de tiempo: marcador, goles, tarjetas y cambios con su minuto.
+      const linea = hash({ base, marcador, eventos: listaEstable(eventos) });
       return [
         p.id,
         {
           partido: hash(base),
           convocatoria: hash({ base, convocatoria }),
-          once: hash({ base, alineacion }),
-          resultado: hash({ base, marcador, goles }),
-          cronoloxia: hash({ base, marcador, eventos: listaEstable(eventos) }),
-          noso11: hash({ base, jugadores: onceActa }),
+          once: hash({ base, alineacion, ...colocacion("previa") }),
+          resultado: linea,
+          cronoloxia: linea,
+          noso11: hash({ base, jugadores: onceActa, ...colocacion("final") }),
         },
       ];
     }),

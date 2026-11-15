@@ -66,6 +66,7 @@ async function entorno() {
       categoria: "Senior" as const,
       dorsal: i + 1,
       capitania: i === 3 ? 1 : null,
+      posicion: i === 0 ? ("POR" as const) : null,
     })),
   );
   cerrar();
@@ -106,6 +107,22 @@ describe("alineación anunciada", () => {
     );
     expect(pantalla.datos.jugadores.filter((j) => j.capitan).map((j) => j.dorsal)).toEqual([4]);
     expect(pantalla.datos.alineacion).toEqual({ titulares: [], suplentes: [], capitanId: null });
+    expect(pantalla.datos.jugadores[0]!.posicion).toBe("POR");
+    expect(pantalla.datos.colocacion).toBeNull();
+  });
+
+  it("trae la colocación previa guardada, no la final", async () => {
+    const { proximoId, ids } = await entorno();
+    const colocacion = await import("./colocacion");
+    const previa = { sistema: "4-3-3" as const, huecos: ids.slice(0, 11) };
+    await colocacion.guardarColocacion(proximoId, "final", {
+      sistema: "5-3-2",
+      huecos: ids.slice(1, 12),
+    });
+    await colocacion.guardarColocacion(proximoId, "previa", previa);
+    const { cargarPantallaAlineacion } = await import("./alineacion");
+    const pantalla = await cargarPantallaAlineacion("Senior", proximoId);
+    expect(pantalla.ok && pantalla.datos.colocacion).toEqual(previa);
   });
 
   it("guarda y recupera la alineación en su orden, sin crear convocatoria de acta", async () => {
