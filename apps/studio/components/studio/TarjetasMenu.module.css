@@ -21,7 +21,7 @@
 .tarjeta {
   display: flex;
   align-items: center;
-  gap: var(--ui-space-3);
+  gap: var(--ui-space-2);
   min-height: 64px;
   padding: var(--ui-space-2) var(--ui-space-3);
   border: 1px solid var(--ui-line);
@@ -40,12 +40,15 @@
   display: grid;
   gap: 2px;
   min-width: 0;
-  overflow-wrap: anywhere;
+  /* Partir por sílabas («Adestra-mentos»), no por cualquier letra. */
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 .tarjeta small {
   color: var(--ui-muted);
   font-size: var(--ui-text-xs);
   font-weight: 600;
+  hyphens: manual;
 }
 .icono {
   flex: none;

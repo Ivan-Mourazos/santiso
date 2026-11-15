@@ -32,6 +32,11 @@ export interface PestanaMenu {
   icono: string;
   /** Sin grupos, la pestaña lleva directa a su sección. */
   grupos?: GrupoMenu[];
+  /**
+   * La pantalla a la que lleva el primer toque desde otra pestaña; estando ya dentro, el toque
+   * abre la hoja con el resto. Sin ella, la pestaña abre siempre la hoja.
+   */
+  directa?: Seccion;
 }
 
 const I = {
@@ -83,6 +88,7 @@ export const MENU: readonly PestanaMenu[] = [
     id: "liga",
     label: "Liga",
     icono: I.liga,
+    directa: "partidos",
     grupos: [
       {
         titulo: "Competición",
@@ -120,6 +126,7 @@ export const MENU: readonly PestanaMenu[] = [
     id: "equipo",
     label: "Equipo",
     icono: I.equipo,
+    directa: "convocatoria",
     grupos: [
       {
         titulo: "Esta semana",

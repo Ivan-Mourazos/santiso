@@ -35,7 +35,9 @@ for (const [ancho, alto] of [
     await expect(carteles).toBeHidden();
     await sinDeslizar(page);
 
-    // Liga lleva a goleadores; Más, a la federación.
+    // Liga lleva primero a Partidos y, tocada otra vez, abre su hoja; Más, a la federación.
+    await pestanas.getByRole("button", { name: "Liga", exact: true }).tap();
+    await expect(page).toHaveURL(/\/admin\/partidos/);
     await pestanas.getByRole("button", { name: "Liga", exact: true }).tap();
     await page
       .getByRole("dialog", { name: "Liga" })

@@ -127,7 +127,10 @@ for (const ancho of [360, 390]) {
     expect(
       await campo.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
     ).toBeGreaterThanOrEqual(16);
-    // Cada pestaña abre su hoja desde abajo; elegir lleva a la pantalla y la cierra.
+    // Equipo lleva primero a la convocatoria; tocada otra vez, abre su hoja desde abajo y
+    // elegir lleva a la pantalla y la cierra.
+    await page.getByRole("button", { name: "Equipo", exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/convocatoria/);
     await page.getByRole("button", { name: "Equipo", exact: true }).click();
     const hoja = page.getByRole("dialog", { name: "Equipo" });
     await expect(hoja.getByRole("link", { name: "Jugadores", exact: true })).toBeInViewport();

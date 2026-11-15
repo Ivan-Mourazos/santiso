@@ -38,10 +38,13 @@ test("fichas: de la plantilla a la ficha completa de un jugador", async ({ page 
 
 test("fichas: el archivo de temporadas pasadas está en la hoja de Liga", async ({ page }) => {
   await page.goto("/admin/inicio");
-  await page
+  const liga = page
     .getByRole("navigation", { name: "Accesos rápidos" })
-    .getByRole("button", { name: "Liga", exact: true })
-    .tap();
+    .getByRole("button", { name: "Liga", exact: true });
+  // El primer toque lleva a Partidos; ya dentro, el segundo abre la hoja.
+  await liga.tap();
+  await expect(page).toHaveURL(/\/admin\/partidos/);
+  await liga.tap();
   await page.getByRole("dialog", { name: "Liga" }).getByRole("link", { name: "Archivo" }).tap();
   await expect(page).toHaveURL(/\/admin\/archivo/);
   await expect(page.getByRole("heading", { level: 1, name: "Archivo" })).toBeVisible();

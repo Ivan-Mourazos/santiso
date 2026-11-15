@@ -19,13 +19,16 @@ import {
   pestanasVisibles,
   type EntradaMenu,
   type IdPestana,
+  type PestanaMenu,
 } from "@/lib/navigation/menu";
+import { preparaConvocatoria } from "@/lib/jornada/vestiario";
 import { cerrarSesionYSalir } from "@/components/acceso/salir";
 import { TEMPLATES } from "@/components/admin/cartel/types";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { useStudio } from "./StudioContext";
 import { TarjetasMenu } from "./TarjetasMenu";
+import { useAvisos } from "./useAvisos";
 import styles from "./StudioShell.module.css";
 const TITULO_TEMA: Record<string, string> = {
   fichaje: "Fichaje",
@@ -104,6 +107,8 @@ export function StudioShell({
   // La hoja abierta: la de la pestaña tocada, o ninguna.
   const [hoja, setHoja] = useState<IdPestana | null>(null);
   const pestanaActiva = pestanaDe(section?.id);
+  // Los carteles los lleva el delegado: al técnico no se le avisa de ellos.
+  const avisos = useAvisos(section?.id, !tecnico);
   // Solo en sus propias pantallas: en una ficha no quedaría ninguna marcada.
   const subnavLiga = SUBNAV_LIGA.some((item) => item.id === section?.id);
   const contextoLiga = new URLSearchParams(
@@ -157,6 +162,24 @@ export function StudioShell({
   function ir(entrada: EntradaMenu, alElegir?: () => void) {
     alElegir?.();
     if (!esActual(entrada)) navigate(rutaEntrada(entrada), "nav-tab");
+  }
+  /**
+   * Primer toque desde otra pestaña: su pantalla principal. Ya dentro: la hoja con el resto.
+   * Veteranos no convoca, así que «Equipo» le lleva a los jugadores.
+   */
+  function tocarPestana(pestana: PestanaMenu) {
+    const destino =
+      pestana.directa === "convocatoria" && !preparaConvocatoria(category)
+        ? "jugadores"
+        : pestana.directa;
+    const entrada =
+      destino && pestana.id !== pestanaActiva
+        ? gruposVisibles(pestana, visibles, tecnico)
+            .flatMap((g) => g.entradas)
+            .find((e) => e.seccion === destino)
+        : undefined;
+    if (entrada) ir(entrada);
+    else setHoja(pestana.id);
   }
   /** Lateral de escritorio: las mismas pestañas y entradas que la barra del móvil. */
   function navigation() {
@@ -303,6 +326,9 @@ export function StudioShell({
             </>
           )}
         </main>
+        <span id="aviso-pestana" className={styles.oculto}>
+          Tiene una tarea pendiente
+        </span>
         <nav
           aria-label="Accesos rápidos"
           className={styles.tabs}
@@ -315,10 +341,14 @@ export function StudioShell({
                 type="button"
                 className={styles.tab}
                 data-activa={pestana.id === pestanaActiva}
-                aria-haspopup="dialog"
-                onClick={() => setHoja(pestana.id)}
+                aria-haspopup={pestana.directa && pestana.id !== pestanaActiva ? undefined : "dialog"}
+                onClick={() => tocarPestana(pestana)}
+                aria-describedby={avisos.has(pestana.id) ? "aviso-pestana" : undefined}
               >
-                <Icono trazo={pestana.icono} />
+                <span className={styles.tabIcono}>
+                  <Icono trazo={pestana.icono} />
+                  {avisos.has(pestana.id) && <span className={styles.punto} aria-hidden="true" />}
+                </span>
                 {pestana.label}
               </button>
             ) : (
