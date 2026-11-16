@@ -147,3 +147,20 @@
 .hueco:not(:disabled):active {
   transform: translate(-50%, -55%) scale(0.97);
 }
+
+/* Capitán: «C» en la esquina de su camiseta. */
+.capitan {
+  position: absolute;
+  top: 0;
+  right: 18%;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #f5c518;
+  color: #0b0b0c;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}

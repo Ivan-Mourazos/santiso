@@ -36,9 +36,9 @@ Subnavegación arriba: Partidos · Clasificación · Goleadores · Estadísticas
 
 | Código | Pantalla | Ruta | Qué se hace | Decisión |
 |---|---|---|---|---|
-| E1 | Convocatoria | `convocatoria` | Marcar quién va, avisos de sanción, cartel de convocatoria | |
-| E2 | Once inicial | `alineacion` | Titulares, capitán, campo táctico, cartel del once | |
-| E2.1 | Elegir jugador del hueco | hoja | Entra / cambiar de sitio / quitar del campo | |
+| E1 | Convocatoria | `convocatoria` | Marcar quién va, avisos de sanción, cartel de convocatoria | **hecho 16/11**: un solo botón «Guardar y pasar al once», no convocados apagados, sin casilla de logos |
+| E2 | Once inicial | `alineacion` | Campo con huecos, banquillo, cartel del once | **hecho 16/11**: el campo es la pantalla (sin lista ni sanciones repetidas); capitán desde el hueco |
+| E2.1 | Elegir jugador del hueco | hoja | Entra / cambiar de sitio / quitar del campo / hacer capitán | **hecho 16/11** |
 | E3 | Jugadores | `jugadores` | Plantilla de la temporada, buscador, plantilla frente a actas | |
 | E3.1 | Editor de jugador | diálogo | Nombre, apodo, dorsal, posición, foto, historial | |
 | E3.2 | Añadir de temporada anterior | diálogo | Traer jugadores del año pasado | |

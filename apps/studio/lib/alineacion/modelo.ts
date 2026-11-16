@@ -240,3 +240,15 @@ export function aplicarColocacion(alineacion: Alineacion, huecos: Huecos): Aline
       alineacion.capitanId && enCampo.includes(alineacion.capitanId) ? alineacion.capitanId : null,
   };
 }
+
+/**
+ * Un toque en el banquillo: quien no es titular entra o sale de los suplentes (como mucho
+ * `MAX_SUPLENTES`). A los titulares no les afecta: salen del once desde el campo.
+ */
+export function alternarSuplente(alineacion: Alineacion, jugadorId: string): Alineacion {
+  if (alineacion.titulares.includes(jugadorId)) return alineacion;
+  if (alineacion.suplentes.includes(jugadorId))
+    return { ...alineacion, suplentes: alineacion.suplentes.filter((id) => id !== jugadorId) };
+  if (alineacion.suplentes.length >= MAX_SUPLENTES) return alineacion;
+  return { ...alineacion, suplentes: [...alineacion.suplentes, jugadorId] };
+}

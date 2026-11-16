@@ -65,6 +65,12 @@
   line-height: 1.15;
   overflow-wrap: anywhere;
 }
+.jugadores button[aria-pressed="false"] {
+  opacity: 0.5;
+}
+.jugadores button[aria-pressed="false"] b {
+  color: var(--ui-muted, #9ca3af);
+}
 .jugadores button[aria-pressed="true"] {
   border-color: var(--ui-accent, #f5c518);
   background: color-mix(in srgb, var(--ui-accent, #f5c518) 14%, #1a1a1a);
@@ -131,24 +137,6 @@
   min-height: 44px;
   flex: 1;
 }
-.barra {
-  position: fixed;
-  z-index: 20;
-  bottom: 0;
-  left: 216px;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-top: 1px solid var(--ui-border, #444);
-  background: var(--ui-bg, #0b0b0c);
-}
-.barra button {
-  flex: 1;
-  max-width: 16rem;
-  min-height: 44px;
-}
 .png {
   display: grid;
   gap: 10px;
@@ -160,17 +148,6 @@
 }
 @media (max-width: 900px) {
   .panel {
-    padding-bottom: 10rem;
-  }
-  /* La acción flota justo encima de la barra de pestañas, sin franja propia. */
-  .barra {
-    left: 0;
-    bottom: var(--studio-barra-abajo);
-    border-top: 0;
-    background: none;
-    backdrop-filter: none;
-  }
-  .barra button {
-    box-shadow: var(--ui-shadow);
+    padding-bottom: calc(var(--studio-barra-abajo) + 16px);
   }
 }

@@ -41,18 +41,23 @@ function Opcion({ j, onElegir }: { j: JugadorTactico; onElegir: (id: string) => 
  * El once en el campo, como en las apps de fantasy: se elige el sistema, se toca un hueco y se
  * elige quién va; tocando a uno ya colocado se cambia por otro o se quita. Sin arrastrar.
  * `jugadores` son todos los que se pueden poner (titulares y banco); quién entra o sale del
- * once lo decide quien recibe `onCambio`.
+ * once lo decide quien recibe `onCambio`. Con `onCapitan`, al tocar a uno colocado se le
+ * puede dar o quitar la capitanía (la «C» sobre su camiseta).
  */
 export function EditorTactico({
   jugadores,
   colocacion,
   onCambio,
   soloLectura = false,
+  capitanId = null,
+  onCapitan,
 }: {
   jugadores: JugadorTactico[];
   colocacion: Colocacion;
   onCambio: (c: Colocacion) => void;
   soloLectura?: boolean;
+  capitanId?: string | null;
+  onCapitan?: (jugadorId: string) => void;
 }) {
   const [elegido, setElegido] = useState<number | null>(null);
   const porId = new Map(jugadores.map((j) => [j.id, j]));
@@ -113,7 +118,7 @@ export function EditorTactico({
               data-vacio={!j || undefined}
               disabled={soloLectura}
               onClick={() => setElegido(i)}
-              aria-label={j ? `${LINEA[p.linea]}: ${nombre}. Cambiar` : `${LINEA[p.linea]}: vacío. Elegir jugador`}
+              aria-label={j ? `${LINEA[p.linea]}: ${nombre}${id === capitanId ? " (capitán)" : ""}. Cambiar` : `${LINEA[p.linea]}: vacío. Elegir jugador`}
             >
               {j ? (
                 <Camiseta
@@ -126,7 +131,12 @@ export function EditorTactico({
                   +
                 </span>
               )}
-              <span className={s.nombre}>{j ? nombre : LINEA[p.linea]}</span>
+              {j && id === capitanId && (
+                <span className={s.capitan} aria-hidden="true">
+                  C
+                </span>
+              )}
+              <span className={s.nombre}>{j ? nombre : p.linea}</span>
             </button>
           );
         })}
@@ -145,9 +155,22 @@ export function EditorTactico({
         mobilePresentation="sheet"
         footer={
           ocupante ? (
-            <Button variant="secondary" onClick={quitar}>
-              Quitar del campo
-            </Button>
+            <>
+              {onCapitan && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    onCapitan(ocupante);
+                    setElegido(null);
+                  }}
+                >
+                  {ocupante === capitanId ? "Quitar capitanía" : "Hacer capitán"}
+                </Button>
+              )}
+              <Button variant="secondary" onClick={quitar}>
+                Quitar del campo
+              </Button>
+            </>
           ) : undefined
         }
       >

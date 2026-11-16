@@ -65,21 +65,3 @@ export function estadoPaso(guardados: readonly CartelGuardado[] | undefined) {
   return guardados.some((g) => g.desactualizado) ? ("desactualizado" as const) : ("hecho" as const);
 }
 
-/** Qué logos lleva el cartel: los de arriba (federación, Xunta) y los patrocinadores de abajo. */
-export interface LogosElegidos {
-  institucionales: boolean;
-  patrocinadores: boolean;
-}
-
-/** La petición sin los logos que se han quitado. Los carteles sin esos logos los omiten. */
-export function conLogos<T extends { datos: object }>(peticion: T, logos: LogosElegidos): T {
-  const datos = peticion.datos as { institucionales?: string[]; patrocinadores?: string[] };
-  return {
-    ...peticion,
-    datos: {
-      ...peticion.datos,
-      ...(datos.institucionales && !logos.institucionales ? { institucionales: [] } : {}),
-      ...(datos.patrocinadores && !logos.patrocinadores ? { patrocinadores: [] } : {}),
-    },
-  };
-}

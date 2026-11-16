@@ -280,7 +280,7 @@ export default function AdminConvocatoria({
           Copiar texto
         </Button>
         <Button
-          variant="secondary"
+          variant={!persistida || sucio ? "primary" : "secondary"}
           disabled={noGuardar}
           onClick={() =>
             void ejecutar(async () => {
@@ -309,19 +309,6 @@ export default function AdminConvocatoria({
           showToast={showToast}
         />
       )}
-      <div className={s.barra} aria-label="Acciones de convocatoria">
-        <Button
-          variant="secondary"
-          disabled={noGuardar || (persistida && !sucio)}
-          onClick={() =>
-            void ejecutar(async () => {
-              if (await guardar()) showToast("Convocatoria guardada");
-            })
-          }
-        >
-          Guardar
-        </Button>
-      </div>
     </div>
   );
 }

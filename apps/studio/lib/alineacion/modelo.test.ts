@@ -9,6 +9,7 @@ import {
   papelDe,
   peticionDeAlineacion,
   aplicarColocacion,
+  alternarSuplente,
   type Alineacion,
   type JugadorAlineacion,
   type PartidoAlineacion,
@@ -158,5 +159,20 @@ describe("cambios desde el campo", () => {
     const r = aplicarColocacion(base, ["a", "b", "c", "nuevo", ...Array<null>(7).fill(null)]);
     expect(r.titulares).toEqual(["a", "b", "c", "nuevo"]);
     expect(r.capitanId).toBe("b");
+  });
+});
+
+describe("banquillo", () => {
+  const base: Alineacion = { titulares: ["a"], suplentes: ["s1"], capitanId: null };
+
+  it("un toque pone o quita del banco a quien no es titular", () => {
+    expect(alternarSuplente(base, "x").suplentes).toEqual(["s1", "x"]);
+    expect(alternarSuplente(base, "s1").suplentes).toEqual([]);
+  });
+
+  it("no toca a los titulares ni pasa del máximo de suplentes", () => {
+    expect(alternarSuplente(base, "a")).toBe(base);
+    const lleno = { ...base, suplentes: Array.from({ length: 12 }, (_, i) => `s${i}`) };
+    expect(alternarSuplente(lleno, "x")).toBe(lleno);
   });
 });

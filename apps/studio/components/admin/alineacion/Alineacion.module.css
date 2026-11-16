@@ -61,32 +61,43 @@
   color: var(--ui-success, #4ade80);
 }
 
-/* ─── Plantilla ─── */
+/* ─── Banquillo: los convocados fuera del campo; amarillo, los suplentes ─── */
 
-.jugadores {
+.banco {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.5rem;
+}
+
+.banco h4 {
+  margin: 0;
+  color: var(--ui-muted, #aaa);
+  font-size: var(--ui-text-sm);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.banco ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.jugadores li {
-  display: flex;
-  align-items: stretch;
-  gap: 0.35rem;
+.banco li {
+  min-width: 0;
 }
 
-.jugador {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 2.25rem 2.5rem minmax(0, 1fr) auto;
+.banco button {
+  display: flex;
   align-items: center;
-  gap: 0.6rem;
-  min-height: 3.25rem;
-  padding: 0.35rem 0.75rem;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 8px;
   border: 1px solid var(--ui-border, #444);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-sm);
   background: var(--ui-control-face, #242424);
   color: var(--ui-text, #fff);
   font: inherit;
@@ -94,84 +105,32 @@
   cursor: pointer;
 }
 
-.jugador:disabled {
-  cursor: default;
-  opacity: 0.85;
+.banco button[aria-pressed="false"] {
+  opacity: 0.5;
 }
 
-.dorsal {
-  font: 900 var(--ui-text-xl) var(--ui-font-title, sans-serif);
+.banco button[aria-pressed="true"] {
+  border-color: var(--ui-accent, #f5c518);
+  background: color-mix(in srgb, var(--ui-accent, #f5c518) 14%, #1a1a1a);
+}
+
+.banco button:focus-visible {
+  outline: 3px solid var(--ui-accent, #f5c518);
+  outline-offset: 2px;
+}
+
+.banco b {
+  flex: none;
+  width: 22px;
   color: var(--ui-accent, #f5c518);
-  text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-.foto {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: var(--ui-radius-sm);
-  object-fit: cover;
-  object-position: top;
-  background: rgb(255 255 255 / 6%);
-}
-
-.nombre {
-  font-weight: 800;
-  overflow-wrap: anywhere;
-}
-
-.papel {
-  min-width: 4.75rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--ui-radius-pill);
-  color: var(--ui-muted, #aaa);
+.banco span {
+  font-weight: 700;
   font-size: var(--ui-text-sm);
-  font-weight: 800;
-  text-align: center;
-}
-
-/* Titular: en amarillo, hundido. Suplente: marcado sin gritar. */
-li[data-papel="titular"] .jugador {
-  border-color: var(--ui-accent, #f5c518);
-  background: color-mix(in srgb, var(--ui-accent, #f5c518) 14%, #1a1a1a);
-  box-shadow: var(--ui-control-pressed, none);
-}
-
-li[data-papel="titular"] .papel {
-  background: var(--ui-accent, #f5c518);
-  color: var(--ui-on-accent, #000);
-}
-
-li[data-papel="suplente"] .jugador {
-  border-color: rgb(255 255 255 / 45%);
-}
-
-li[data-papel="suplente"] .papel {
-  background: rgb(255 255 255 / 14%);
-  color: var(--ui-text, #fff);
-}
-
-.capitan {
-  flex: none;
-  width: 3.25rem;
-  border: 1px solid var(--ui-border, #444);
-  border-radius: var(--ui-radius);
-  background: var(--ui-control-face, #242424);
-  color: var(--ui-muted, #aaa);
-  font: 900 var(--ui-text-lg) var(--ui-font-title, sans-serif);
-  cursor: pointer;
-}
-
-.capitan[aria-pressed="true"] {
-  border-color: var(--ui-accent, #f5c518);
-  background: var(--ui-accent, #f5c518);
-  color: var(--ui-on-accent, #000);
-}
-
-.jugador:focus-visible,
-.capitan:focus-visible {
-  outline: 3px solid var(--ui-accent, #f5c518);
-  outline-offset: 2px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 /* ─── Barra de acciones: fija abajo, por encima de la zona segura del iPhone ─── */
@@ -204,7 +163,6 @@ li[data-papel="suplente"] .papel {
   }
 }
 
-/* En móvil el botón «Menú» del marco va fijo abajo: la barra se coloca justo encima. */
 /* En móvil, la acción flota justo encima de la barra de pestañas, sin franja propia. */
 @media (max-width: 900px) {
   .panel {
@@ -249,16 +207,6 @@ li[data-papel="suplente"] .papel {
 
 .acciones > button {
   min-height: 2.9rem;
-}
-
-/* Sin foto: las iniciales en letra de marcador, en vez de un cuadro vacío. */
-span.foto {
-  display: grid;
-  place-items: center;
-  background: var(--ui-control);
-  color: var(--ui-muted);
-  font: 800 0.95rem / 1 var(--ui-font-title);
-  letter-spacing: 0.02em;
 }
 
 /* Atajo desde arriba al cartel, que queda al final de la pantalla. */

@@ -65,28 +65,3 @@
 .generar {
   min-height: 48px;
 }
-.logos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-.logos legend {
-  width: 100%;
-  margin-bottom: 4px;
-  font-size: var(--ui-text-sm);
-  font-weight: 700;
-  color: var(--ui-muted);
-}
-.logos label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-}
-.logos input {
-  width: 22px;
-  height: 22px;
-}

@@ -1,10 +1,8 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- fotos de la plantilla en /media: sin optimizador */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CartelesDelPaso } from "@/components/admin/cartel/CartelesDelPaso";
 import { useCartelAssets } from "@/components/admin/cartel/useCartelAssets";
-import { AvisosPartido, avisoDe, MarcaAviso } from "@/components/admin/liga/AvisosPartido";
 import { EditorTactico } from "@/components/admin/cartel/EditorTactico";
 import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
@@ -12,12 +10,11 @@ import { Select } from "@/components/ui/foundation/Fields";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import {
   ALINEACION_VACIA,
-  alternar,
   aplicarColocacion,
+  alternarSuplente,
   colocacionDeAlineacion,
   conCapitan,
   nombreDeCartel,
-  papelDe,
   peticionDeAlineacion,
   TITULARES,
   type Alineacion,
@@ -33,7 +30,6 @@ import {
   cargarCartelesPartido,
 } from "@/lib/server/acciones/carteles-guardados";
 import styles from "./Alineacion.module.css";
-import { iniciales } from "@/lib/iniciales";
 
 interface Props {
   categoria: string;
@@ -42,12 +38,10 @@ interface Props {
   showToast: (msg: string, type?: "success" | "error") => void;
 }
 
-const ETIQUETA = { titular: "Titular", suplente: "Suplente", fuera: "—" } as const;
-
 /**
- * Alineación antes del partido, pensada para hacerla con el móvil en el campo: se toca a cada
- * jugador (titular → suplente → fuera), se marca al capitán y se genera la historia de
- * Instagram (9:16), que queda guardada con el partido. Se guarda aparte del acta.
+ * Alineación antes del partido, pensada para hacerla con el móvil en el campo: se toca un hueco
+ * del campo y se elige quién va (y si es el capitán); debajo, el banquillo. Genera la historia
+ * de Instagram (9:16), que queda guardada con el partido. Se guarda aparte del acta.
  */
 export default function AdminAlineacion({ categoria, partidoInicial, showToast }: Props) {
   const [pantalla, setPantalla] = useState<PantallaAlineacion | null>(null);
@@ -128,18 +122,14 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
     );
   }, [pantalla, partido, categoria, alineacion, recursos, enCampo]);
 
-  function tocar(jugadorId: string) {
-    if (bloqueada || !pantalla) return;
-    setAlineacion((antes) => {
-      let despues = alternar(antes, jugadorId);
-      // El capitán de la plantilla se propone solo al entrar en el once.
-      const jugador = pantalla.jugadores.find((j) => j.id === jugadorId);
-      if (jugador?.capitan && !despues.capitanId && despues.titulares.includes(jugadorId)) {
-        despues = conCapitan(despues, jugadorId);
-      }
-      return despues;
-    });
+  /** El capitán de la plantilla se propone solo en cuanto entra en el once. */
+  function conCapitanDePlantilla(a: Alineacion): Alineacion {
+    if (a.capitanId || !pantalla) return a;
+    const capitan = pantalla.jugadores.find((j) => j.capitan && a.titulares.includes(j.id));
+    return capitan ? conCapitan(a, capitan.id) : a;
   }
+  // Los convocados que no están en el campo: se tocan para ponerlos o quitarlos del banco.
+  const banco = pantalla?.jugadores.filter((j) => !alineacion.titulares.includes(j.id)) ?? [];
 
   async function guardar(): Promise<boolean> {
     if (!partido) return false;
@@ -243,8 +233,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
         />
       ) : (
         <>
-          <AvisosPartido avisos={pantalla.avisos} />
-          {/* El cartel queda al final, tras la plantilla y el campo: desde arriba se llega de un toque. */}
+          {/* El cartel queda al final, tras el campo y el banco: desde arriba se llega de un toque. */}
           {alineacion.titulares.length > 0 && (
             <Button
               variant="secondary"
@@ -267,52 +256,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
               {alineacion.suplentes.length === 1 ? "suplente" : "suplentes"}
             </span>
           </p>
-          <ul className={styles.jugadores} aria-label={`Plantilla ${categoria}`}>
-            {pantalla.jugadores.map((j) => {
-              const papel = papelDe(alineacion, j.id);
-              const nombre = nombreDeCartel(j);
-              const aviso = avisoDe(pantalla.avisos, j.id);
-              return (
-                <li key={j.id} data-papel={papel}>
-                  <button
-                    type="button"
-                    className={styles.jugador}
-                    onClick={() => tocar(j.id)}
-                    disabled={bloqueada || ocupada}
-                    aria-label={`${nombre}: ${ETIQUETA[papel] === "—" ? "fuera" : ETIQUETA[papel]}${aviso ? `, ${aviso.situacion}` : ""}`}
-                  >
-                    <span className={styles.dorsal}>{j.dorsal ?? ""}</span>
-                    {j.fotoUrl ? (
-                      <img className={styles.foto} src={`${j.fotoUrl}?ancho=480`} alt="" />
-                    ) : (
-                      <span className={styles.foto} aria-hidden="true">
-                        {iniciales(nombre)}
-                      </span>
-                    )}
-                    <span className={styles.nombre}>
-                      {nombre}
-                      <MarcaAviso aviso={aviso} />
-                    </span>
-                    <span className={styles.papel}>{ETIQUETA[papel]}</span>
-                  </button>
-                  {papel === "titular" && (
-                    <button
-                      type="button"
-                      className={styles.capitan}
-                      aria-pressed={alineacion.capitanId === j.id}
-                      aria-label={`Capitán: ${nombre}`}
-                      disabled={bloqueada || ocupada}
-                      onClick={() => setAlineacion((antes) => conCapitan(antes, j.id))}
-                    >
-                      C
-                    </button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-
-          {enCampo && alineacion.titulares.length > 0 && (
+          {enCampo && (
             <EditorTactico
               jugadores={pantalla.jugadores.map((j) => ({
                 id: j.id,
@@ -322,11 +266,38 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
               }))}
               colocacion={enCampo}
               soloLectura={bloqueada || ocupada}
+              capitanId={alineacion.capitanId}
+              onCapitan={(id) => setAlineacion((antes) => conCapitan(antes, id))}
               onCambio={(c) => {
                 setColocacion(c);
-                setAlineacion((antes) => aplicarColocacion(antes, c.huecos));
+                setAlineacion((antes) => conCapitanDePlantilla(aplicarColocacion(antes, c.huecos)));
               }}
             />
+          )}
+          {banco.length > 0 && (
+            <section className={styles.banco} aria-label="Banquillo">
+              <h4>Banquillo</h4>
+              <ul>
+                {banco.map((j) => {
+                  const nombre = nombreDeCartel(j);
+                  const suplente = alineacion.suplentes.includes(j.id);
+                  return (
+                    <li key={j.id}>
+                      <button
+                        type="button"
+                        aria-pressed={suplente}
+                        aria-label={`Suplente: ${nombre}`}
+                        disabled={bloqueada || ocupada}
+                        onClick={() => setAlineacion((antes) => alternarSuplente(antes, j.id))}
+                      >
+                        <b>{j.dorsal ?? ""}</b>
+                        <span>{nombre}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
           )}
           <div id="cartel-once" className={styles.anclaCartel} />
           {carteles === null ? (

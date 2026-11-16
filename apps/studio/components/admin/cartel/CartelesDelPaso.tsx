@@ -5,12 +5,10 @@ import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import type { PeticionCartel } from "@/lib/cartel2/modelo";
 import {
-  conLogos,
   estadoPaso,
   NOMBRE_FORMATO,
   PASOS,
   type CartelGuardado,
-  type LogosElegidos,
   type PasoCartel,
 } from "@/lib/cartel2/pasos";
 import s from "./CartelesDelPaso.module.css";
@@ -57,7 +55,6 @@ export function CartelesDelPaso({
   const [guardados, setGuardados] = useState(iniciales);
   const [generando, setGenerando] = useState(false);
   const [viendo, setViendo] = useState<CartelGuardado | null>(null);
-  const [logos, setLogos] = useState<LogosElegidos>({ institucionales: true, patrocinadores: true });
   // Los PNG ya descargados como fichero: compartir en iOS solo funciona justo tras el toque,
   // sin esperar a la red, así que se bajan antes.
   const [ficheros, setFicheros] = useState<Record<string, File>>({});
@@ -92,7 +89,7 @@ export function CartelesDelPaso({
     try {
       const preparadas = await preparar();
       if (!preparadas) return;
-      const peticiones = preparadas.map((p) => conLogos(p, logos));
+      const peticiones = preparadas;
       const respuesta = await fetch("/api/carteles/guardar", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -204,25 +201,6 @@ export function CartelesDelPaso({
           />
         )}
       </Dialog>
-      <fieldset className={s.logos}>
-        <legend>Logos del cartel</legend>
-        <label>
-          <input
-            type="checkbox"
-            checked={logos.institucionales}
-            onChange={(e) => setLogos({ ...logos, institucionales: e.target.checked })}
-          />
-          Federación y Xunta (arriba)
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={logos.patrocinadores}
-            onChange={(e) => setLogos({ ...logos, patrocinadores: e.target.checked })}
-          />
-          Patrocinadores (abajo)
-        </label>
-      </fieldset>
       {motivo && <p className={s.motivo}>{motivo}</p>}
       <Button
         className={s.generar}
