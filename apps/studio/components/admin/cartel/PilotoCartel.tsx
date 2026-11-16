@@ -8,7 +8,6 @@ import { useEsMovil } from "@/components/ui/foundation/FiltrosMovil";
 import { Cartel } from "@/components/cartel2/Cartel";
 import { Button } from "@/components/ui/foundation/Button";
 import { aHex, COLOR_RIVAL_RESERVA, colorDominante } from "@/lib/cartel2/color";
-import GaleriaPartido from "@/components/admin/fotos/GaleriaPartido";
 import { peticionDeFormulario } from "@/lib/cartel2/formulario";
 import {
   ESTILOS_FOTO,
@@ -147,7 +146,6 @@ export default function PilotoCartel({
   // Un solo diseño de cartel de partido: ya no se elige.
   const composicion: Composicion = "diagonal";
   const [foto, setFoto] = useState<FotoCartel | null>(null);
-  const [galeria, setGaleria] = useState(false);
   const [hueco, setHueco] = useState({ ancho: 0, alto: 0 });
   const [enPantalla, setEnPantalla] = useState(false);
   const [exportando, setExportando] = useState(false);
@@ -391,12 +389,6 @@ export default function PilotoCartel({
         <div className={styles.controles}>
           {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
             <>
-              {/* De la galería del partido cargado, o cualquier foto subida en el momento. */}
-              {form.partido_id && (
-                <Button size="sm" variant="secondary" onClick={() => setGaleria(true)}>
-                  Fotos del partido
-                </Button>
-              )}
               <label className={styles.botonFoto}>
                 {foto ? "Subir otra foto" : "Subir foto de fondo"}
                 <input
@@ -436,18 +428,11 @@ export default function PilotoCartel({
               )}
             </>
           )}
-          {/* O noso 11: en vez de la foto del jugador, una de la galería del partido cargado. */}
-          {tipo === "noso11" && form.partido_id && (
-            <>
-              <Button size="sm" variant="secondary" onClick={() => setGaleria(true)}>
-                {foto ? "Cambiar foto del partido" : "Foto del partido"}
-              </Button>
-              {foto && (
-                <Button variant="secondary" size="sm" onClick={() => setFoto(null)}>
-                  Quitar foto
-                </Button>
-              )}
-            </>
+          {/* O noso 11 guardado antes con foto del partido: solo se puede quitar. */}
+          {tipo === "noso11" && foto && (
+            <Button variant="secondary" size="sm" onClick={() => setFoto(null)}>
+              Quitar foto
+            </Button>
           )}
           {!guardado && (
             <>
@@ -524,23 +509,6 @@ export default function PilotoCartel({
           </div>
         )}
       </div>
-      {galeria && form.partido_id && (
-        <GaleriaPartido
-          partidoId={form.partido_id}
-          partido={`${form.rivalNombre ? `Santiso – ${form.rivalNombre}` : "Partido"}${form.fecha ? ` · ${form.fecha}` : ""}`}
-          onCerrar={() => setGaleria(false)}
-          showToast={showToast}
-          onElegir={(elegida) => {
-            setFoto({
-              url: elegida.url,
-              x: elegida.foco_x,
-              y: elegida.foco_y,
-              estilo: foto?.estilo ?? "color",
-            });
-            setGaleria(false);
-          }}
-        />
-      )}
     </section>
     {guardado && (
       <CartelesDelPaso

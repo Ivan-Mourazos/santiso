@@ -4,7 +4,6 @@ import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fechaPartido } from "@/lib/jornada/fecha";
-import GaleriaPartido from "@/components/admin/fotos/GaleriaPartido";
 import { useStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
@@ -282,12 +281,10 @@ function Detalle({
   categoria,
   competicion,
   onNovedades,
-  onFotos,
   onClose,
 }: {
   partido: PartidoDeLiga | null;
   jornada: number | null;
-  onFotos: (p: PartidoDeLiga) => void;
   categoria: string;
   competicion: PartidosDeLiga["competicion"];
   onNovedades: () => void;
@@ -348,9 +345,6 @@ function Detalle({
               >
                 Directo
               </Link>
-              <button type="button" onClick={() => onFotos(p)}>
-                Fotos
-              </button>
               {pasado && (
                 <TraerActa partido={p} competicion={competicion} onNovedades={onNovedades} />
               )}
@@ -378,7 +372,7 @@ function Detalle({
  * primero; cada uno abre su hoja. Sin pasos ni tareas: los carteles se hacen desde la hoja.
  */
 export default function AdminPartidos({ categoria }: { categoria: string }) {
-  const { params, setParams, showToast } = useStudio();
+  const { params, setParams } = useStudio();
   const {
     selectedCompetitionId,
     setSelectedCompetitionId,
@@ -392,8 +386,6 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
   const [datos, setDatos] = useState<PartidosDeLiga | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [abierto, setAbierto] = useState<PartidoDeLiga | null>(null);
-  // La galería de fotos de un partido: se abre cerrando su hoja (no dos diálogos a la vez).
-  const [galeria, setGaleria] = useState<PartidoDeLiga | null>(null);
   const generacion = useRef(0);
 
   const cargar = useCallback(async (competicionId: string, numero: number | null) => {
@@ -542,20 +534,8 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
         categoria={categoria}
         competicion={datos.competicion}
         onNovedades={() => void cargar(selectedCompetitionId, pedida)}
-        onFotos={(p) => {
-          setAbierto(null);
-          setGaleria(p);
-        }}
         onClose={() => setAbierto(null)}
       />
-      {galeria && (
-        <GaleriaPartido
-          partidoId={galeria.id}
-          partido={`${galeria.local.nombre} – ${galeria.visitante.nombre} · ${fechaPartido(galeria.fecha).dia}`}
-          onCerrar={() => setGaleria(null)}
-          showToast={showToast}
-        />
-      )}
     </div>
   );
 }

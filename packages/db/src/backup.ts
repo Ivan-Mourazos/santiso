@@ -92,7 +92,6 @@ async function inspeccionarBd(ruta: string) {
       UNION SELECT foto FROM copia.jugadores_temporada WHERE foto IS NOT NULL
       UNION SELECT foto FROM copia.staff_temporada WHERE foto IS NOT NULL
       UNION SELECT logo FROM copia.patrocinadores WHERE logo IS NOT NULL
-      UNION SELECT clave FROM copia.fotos_partido
       UNION SELECT json_extract(valor, '$') FROM copia.ajustes
         WHERE id IN ('club.escudo', 'cartel.logo_xunta', 'cartel.logo_rfgf')
     `);

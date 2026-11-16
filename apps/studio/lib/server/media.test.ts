@@ -5,8 +5,6 @@ import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 import {
   anchoDeVariante,
-  focoDeFoto,
-  guardarFotoPartido,
   guardarImagen,
   leerImagenDeFormulario,
   resolverRutaMedia,
@@ -205,38 +203,7 @@ async function fotoCon(ancho: number, alto: number, x: number, y: number) {
     .toBuffer();
 }
 
-describe("fotos de partido", () => {
-  it("el foco sigue al motivo: en horizontal, en el eje X", async () => {
-    const derecha = await focoDeFoto(await fotoCon(1600, 900, 1250, 450));
-    expect(derecha.focoX).toBeGreaterThan(0.6);
-    expect(derecha.focoY).toBe(0.5);
-    const izquierda = await focoDeFoto(await fotoCon(1600, 900, 350, 450));
-    expect(izquierda.focoX).toBeLessThan(0.4);
-  });
-
-  it("en vertical alargada, en el eje Y", async () => {
-    const abajo = await focoDeFoto(await fotoCon(800, 1800, 400, 1450));
-    expect(abajo.focoX).toBe(0.5);
-    expect(abajo.focoY).toBeGreaterThan(0.6);
-  });
-
-  it("si ya es 4:5 no hay recorte: foco por defecto", async () => {
-    expect(await focoDeFoto(await fotoCon(800, 1000, 700, 900))).toEqual({
-      focoX: 0.5,
-      focoY: 0.4,
-    });
-  });
-
-  it("guarda la foto entera, sin margen, a 3000 px como mucho", async () => {
-    const raiz = raizTemporal();
-    const foto = await guardarFotoPartido(await fotoCon(4000, 2250, 3000, 1100), raiz);
-    expect(foto.clave).toMatch(/^partidos\/[0-9a-f-]{36}\.webp$/);
-    expect([foto.ancho, foto.alto]).toEqual([3000, 1688]);
-    const meta = await sharp(readFileSync(path.join(raiz, foto.clave))).metadata();
-    expect([meta.width, meta.height, meta.format]).toEqual([3000, 1688, "webp"]);
-    expect(foto.focoX).toBeGreaterThan(0.6);
-  });
-
+describe("variantes de imagen", () => {
   it("las variantes usan anchos fijos y no amplían", async () => {
     expect(anchoDeVariante(100)).toBe(480);
     expect(anchoDeVariante(1080)).toBe(1080);

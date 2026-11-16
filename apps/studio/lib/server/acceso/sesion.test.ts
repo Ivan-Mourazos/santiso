@@ -74,10 +74,9 @@ describe("acceso con usuario y contraseña", () => {
     expect(await temporadas.cargarTemporadas()).toMatchObject({ ok: false });
     expect((await sesion.respuestaSinSesion())?.status).toBe(401);
     // Tampoco se guarda nada en disco: las acciones se pueden llamar desde la página de entrada.
-    const { guardarImagen, guardarFotoPartido } = await import("@/lib/server/media");
+    const { guardarImagen } = await import("@/lib/server/media");
     const dir = process.env.SANTISO_DATA_DIR!;
     await expect(guardarImagen(new Uint8Array(4), "escudos", dir)).rejects.toThrow(/contraseña/);
-    await expect(guardarFotoPartido(new Uint8Array(4), dir)).rejects.toThrow(/contraseña/);
     expect(existsSync(path.join(dir, "escudos"))).toBe(false);
     // Una cookie inventada tampoco vale.
     navegador.cookie = "inventada";

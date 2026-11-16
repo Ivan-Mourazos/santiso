@@ -22,8 +22,8 @@ Subnavegación arriba: Partidos · Clasificación · Goleadores · Estadísticas
 |---|---|---|---|---|
 | L1 | Partidos | `partidos` | Competición, jornada ‹ ›, lista de la jornada con el nuestro el primero | **hecho 15/11**: sin mesa ni pasos |
 | L1.1 | Mesa del partido | — | (Siguiente tarea, sanciones, «Más tareas», Directo) | **eliminada de L1 15/11**; solo queda en O4 |
-| L1.2 | Fotos del partido | diálogo | Galería del partido, desde «Fotos» en L1.3 | |
-| L1.3 | Detalle de partido | diálogo | Equipos (a su ficha), día·hora·campo, árbitro, Directo, Fotos, Traer acta (si falta), carteles en una línea, goles y tarjetas por separado | **hecho 15/11**: sin corregir/meter acta a mano (manda la federación) |
+| L1.2 | Fotos del partido | — | (Galería del partido) | **eliminada 16/11**: fuera de L1.3 y de los carteles; en los carteles queda «Subir foto de fondo» |
+| L1.3 | Detalle de partido | diálogo | Equipos (a su ficha), día·hora·campo, árbitro, Directo, Traer acta (si falta), carteles en una línea, goles y tarjetas por separado | **hecho 15/11**: sin corregir/meter acta a mano (manda la federación) |
 | L2 | Clasificación | `clasificacion` | Tabla de la competición | |
 | L2.1 | Ficha rápida de equipo | diálogo | Resumen del equipo, enlace a O2 | |
 | L2.2 | Opciones / Zonas | diálogos | Zonas de ascenso/descenso; actualizar con la federación (admin) | |

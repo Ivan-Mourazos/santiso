@@ -232,6 +232,13 @@
       "when": 1794727443016,
       "tag": "0032_colocaciones",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1794807458824,
+      "tag": "0033_quitar-fotos-partido",
+      "breakpoints": true
     }
   ]
 }

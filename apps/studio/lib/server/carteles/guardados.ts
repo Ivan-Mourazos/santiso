@@ -478,8 +478,8 @@ export async function peticionGuardada(
 
 /**
  * La foto elegida a mano con la que se guardó el cartel de un paso: una subida en el momento
- * (guardada en `carteles/<partido>/fotos/`) o una de la galería del partido. Al reabrir el
- * cartel vuelve a salir la misma. La del jugador no cuenta: sale sola del formulario.
+ * (guardada en `carteles/<partido>/fotos/`). Al reabrir el cartel vuelve a salir la misma.
+ * La del jugador no cuenta: sale sola del formulario.
  */
 export async function fotoGuardada(
   partidoId: string,
@@ -490,8 +490,7 @@ export async function fotoGuardada(
   if (!foto || typeof foto !== "object") return null;
   const { url, x, y, zoom, estilo } = foto as Partial<FotoCartel>;
   if (typeof url !== "string" || typeof x !== "number" || typeof y !== "number") return null;
-  if (!url.startsWith(`/media/carteles/${partidoId}/fotos/`) && !url.startsWith("/media/partidos/"))
-    return null;
+  if (!url.startsWith(`/media/carteles/${partidoId}/fotos/`)) return null;
   return {
     url,
     x,

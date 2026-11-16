@@ -1,0 +1,1 @@
+DROP TABLE `fotos_partido`;
