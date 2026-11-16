@@ -383,11 +383,13 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
         {listo && jugadores.length > 0 && (
           <div className={styles.acciones}>
             {hayCandidatos && (
-              <Button variant="secondary" onClick={() => setIncorporando(true)}>
+              <Button variant="secondary" size="sm" onClick={() => setIncorporando(true)}>
                 Añadir de {candidatos?.origen}
               </Button>
             )}
-            <Button onClick={() => abrirEditor(null)}>Añadir jugador</Button>
+            <Button size="sm" aria-label="Añadir jugador" onClick={() => abrirEditor(null)}>
+              + Jugador
+            </Button>
           </div>
         )}
       </div>

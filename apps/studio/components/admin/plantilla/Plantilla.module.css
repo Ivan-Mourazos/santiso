@@ -106,7 +106,8 @@
   background: var(--ui-raised, #242424);
 }
 .dorsal {
-  font: 900 var(--ui-text-lg) var(--ui-font-title, sans-serif);
+  /* Dorsal en letra gruesa: con la de marcador el 1 parecía una raya. */
+  font: 800 var(--ui-text-lg) var(--ui-font-body, sans-serif);
   color: var(--ui-accent);
   font-variant-numeric: tabular-nums;
 }
@@ -550,11 +551,34 @@
   min-height: 44px;
   display: flex;
   align-items: center;
+  /* Flecha pegada al texto, no al otro extremo: se asocia mejor (guía de Chrome). */
+  gap: var(--ui-space-2);
+  list-style: none;
   padding: 0 var(--ui-space-4);
   color: var(--ui-muted);
   font-size: var(--ui-text-sm);
   font-weight: 700;
   cursor: pointer;
+}
+.frenteSinActas > summary::-webkit-details-marker {
+  display: none;
+}
+/* La flecha amarilla de los plegables: se ve que se abre. */
+.frenteSinActas > summary::after {
+  content: "";
+  flex: none;
+  width: 14px;
+  height: 14px;
+  background: var(--ui-accent);
+  mask: var(--icono-chevron) center / contain no-repeat;
+}
+.frenteSinActas[open] > summary::after {
+  rotate: 180deg;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .frenteSinActas > summary::after {
+    transition: rotate var(--ui-duration) var(--ui-ease);
+  }
 }
 .frenteSinActas > p {
   margin: 0;
@@ -562,12 +586,11 @@
   font-size: var(--ui-text-sm);
 }
 
-/* Sin foto: las iniciales en letra de marcador, en vez de un cuadro vacío. */
+/* Sin foto: las iniciales en letra gruesa, en vez de un cuadro vacío. */
 span.foto {
   display: grid;
   place-items: center;
   background: var(--ui-control);
   color: var(--ui-muted);
-  font: 800 0.95rem / 1 var(--ui-font-title);
-  letter-spacing: 0.02em;
+  font: 800 0.95rem / 1 var(--ui-font-body, sans-serif);
 }

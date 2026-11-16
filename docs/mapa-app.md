@@ -39,10 +39,10 @@ Subnavegación arriba: Partidos · Clasificación · Goleadores · Estadísticas
 | E1 | Convocatoria | `convocatoria` | Marcar quién va, avisos de sanción, cartel de convocatoria | **hecho 16/11**: un solo botón «Guardar y pasar al once», no convocados apagados, sin casilla de logos |
 | E2 | Once inicial | `alineacion` | Campo con huecos, banquillo, cartel del once | **hecho 16/11**: el campo es la pantalla (sin lista ni sanciones repetidas); capitán desde el hueco |
 | E2.1 | Elegir jugador del hueco | hoja | Entra / cambiar de sitio / quitar del campo / hacer capitán | **hecho 16/11** |
-| E3 | Jugadores | `jugadores` | Plantilla de la temporada, buscador, plantilla frente a actas | |
+| E3 | Jugadores | `jugadores` | Plantilla de la temporada, buscador, plantilla frente a actas | **hecho 17/11**: «+ Jugador» compacto, flecha en el aviso de actas, números en letra gruesa |
 | E3.1 | Editor de jugador | diálogo | Nombre, apodo, dorsal, posición, foto, historial | |
 | E3.2 | Añadir de temporada anterior | diálogo | Traer jugadores del año pasado | |
-| E3.3 | Ficha rápida de jugador | diálogo | La misma que L4.1 | |
+| E3.3 | Ficha rápida de jugador | diálogo | La misma que L4.1 | **hecho 17/11**: sin recuadro de federación repetido, plurales, iniciales sin foto |
 | E4 | Cuerpo técnico | `tecnicos` | Lista, editor, añadir de temporada | |
 
 ## C · Carteles (solo admin)

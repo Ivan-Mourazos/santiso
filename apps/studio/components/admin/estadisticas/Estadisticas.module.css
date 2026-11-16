@@ -329,6 +329,12 @@
   object-position: top;
   background: var(--ui-raised, #242424);
 }
+span.fichaFoto {
+  display: grid;
+  place-items: center;
+  color: var(--ui-muted);
+  font: 800 1.25rem / 1 var(--ui-font-body, sans-serif);
+}
 .fichaTotales {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -352,7 +358,8 @@
 }
 .fichaTotales dd {
   margin: 0;
-  font: 900 var(--ui-text-xl) var(--ui-font-title, sans-serif);
+  /* Cifras en letra gruesa: con la de marcador el 1 parecía una raya. */
+  font: 800 var(--ui-text-xl) var(--ui-font-body, sans-serif);
   color: var(--ui-accent, #f5c518);
   font-variant-numeric: tabular-nums;
 }

@@ -16,7 +16,29 @@ import {
 } from "@/lib/estadisticas/ficha";
 import { filasDeHistorial } from "@/lib/plantilla/historial";
 import { cargarFichaJugador } from "@/lib/server/acciones/estadisticas";
+import { iniciales } from "@/lib/iniciales";
 import styles from "./Estadisticas.module.css";
+
+/** «1 convocatoria · 0 de titular · …», con singular y plural. */
+function cifrasOficiales(c: {
+  convocados: number | null;
+  titular: number | null;
+  jugados: number | null;
+  goles: number | null;
+  amarillas: number | null;
+  rojas: number | null;
+}) {
+  const n = (v: number | null, uno: string, varios: string) =>
+    `${v ?? 0} ${v === 1 ? uno : varios}`;
+  return [
+    n(c.convocados, "convocatoria", "convocatorias"),
+    `${c.titular ?? 0} de titular`,
+    n(c.jugados, "jugado", "jugados"),
+    n(c.goles, "gol", "goles"),
+    n(c.amarillas, "amarilla", "amarillas"),
+    n(c.rojas, "roja", "rojas"),
+  ].join(" · ");
+}
 
 interface Props {
   jugadorId: string;
@@ -100,7 +122,9 @@ export default function FichaJugador({
             {ficha.jugador.fotoUrl ? (
               <img className={styles.fichaFoto} src={`${ficha.jugador.fotoUrl}?ancho=480`} alt="" />
             ) : (
-              <span className={styles.fichaFoto} aria-hidden="true" />
+              <span className={styles.fichaFoto} aria-hidden="true">
+                {iniciales(ficha.jugador.apodo || ficha.jugador.nombre)}
+              </span>
             )}
             <div>
               <strong>{ficha.jugador.nombre}</strong>
@@ -141,6 +165,17 @@ export default function FichaJugador({
               competicionId === oficial.competicionId
                 ? diferenciasConOficial(totales, oficial)
                 : null;
+            // Si es la única competición y da lo mismo que los totales de arriba, sobra.
+            const repetido =
+              !diferencias &&
+              ficha.oficial.length === 1 &&
+              oficial.convocados === totales.convocados &&
+              oficial.titular === totales.titularidades &&
+              oficial.jugados === totales.jugados &&
+              oficial.goles === totales.goles &&
+              oficial.amarillas === totales.amarillas &&
+              oficial.rojas === totales.rojas;
+            if (repetido) return null;
             return (
               <div
                 key={oficial.competicionId}
@@ -150,11 +185,7 @@ export default function FichaJugador({
                 <p>
                   <strong>Federación · {oficial.competicion}</strong>
                 </p>
-                <p>
-                  {oficial.convocados} convocatorias · {oficial.titular} de titular ·{" "}
-                  {oficial.jugados} jugados · {oficial.goles} goles · {oficial.amarillas} amarillas
-                  · {oficial.rojas} rojas
-                </p>
+                <p>{cifrasOficiales(oficial)}</p>
                 {diferencias &&
                   (diferencias.length === 0 ? (
                     <p>Coincide con lo apuntado aquí.</p>
@@ -174,11 +205,7 @@ export default function FichaJugador({
                     <span>
                       {anterior.competicion} · {anterior.grupo}
                     </span>
-                    <span>
-                      {anterior.convocados} convocatorias · {anterior.titular} de titular ·{" "}
-                      {anterior.jugados} jugados · {anterior.goles} goles · {anterior.amarillas}{" "}
-                      amarillas · {anterior.rojas} rojas
-                    </span>
+                    <span>{cifrasOficiales(anterior)}</span>
                   </li>
                 ))}
               </ul>
