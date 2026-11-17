@@ -1,5 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
+// En WebKit para Windows, la preparación del PNG a veces no arranca a tiempo (cada vez en una
+// prueba distinta; en Android pasan siempre). Un fallo de verdad falla también al reintentar.
+test.describe.configure({ retries: 2 });
+
 const PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aXioAAAAASUVORK5CYII=",
   "base64",
