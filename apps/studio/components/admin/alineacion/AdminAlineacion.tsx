@@ -314,12 +314,13 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
               showToast={showToast}
             />
           )}
-          {!bloqueada && (
+          {/* Flota sobre el campo: solo aparece con algo que guardar, para no tapar defensas. */}
+          {!bloqueada && (sucio || ocupada) && (
             <div className={styles.barra}>
               <Button
                 variant="secondary"
                 onClick={() => void guardarSolo()}
-                disabled={!sucio || ocupada}
+                disabled={ocupada}
               >
                 Guardar
               </Button>
