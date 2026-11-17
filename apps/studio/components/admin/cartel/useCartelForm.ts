@@ -288,6 +288,10 @@ export function useCartelForm(
   }
 
   function resetForm() {
+    // Limpiar gana a lo que siga cargando: ni el próximo partido automático ni una carga a
+    // medias vuelven a rellenar el formulario después.
+    partidoInicialRef.current = null;
+    cargaPartido.current++;
     const cat = catalogRef.current;
     const id = pickDefaultCompetitionId(cat, categoriaInicialRef.current);
     const row = cat.find((c) => c.id === id);

@@ -3,7 +3,7 @@ import type { PeticionCartel } from "../lib/cartel2/modelo";
 
 // Solo lectura: ninguna acción de guardar ni llamada a Gemini.
 for (const ancho of [360, 390]) {
-  test(`convocatoria a ${ancho}px: fichas compactas, controles de 44px y barra sobre pestañas`, async ({
+  test(`convocatoria a ${ancho}px: fichas compactas, controles de 44px y nada tapado por las pestañas`, async ({
     page,
   }) => {
     await page.setViewportSize({ width: ancho, height: 844 });
@@ -36,8 +36,15 @@ for (const ancho of [360, 390]) {
       .all()) {
       expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     }
-    const barra = page.getByLabel("Acciones de convocatoria");
-    const caja = (await barra.boundingBox())!;
+    // Desde el 16/11/2026 no hay barra flotante: la acción es «Guardar y pasar al once
+    // inicial», en el formulario. Bajando del todo, lo último (los carteles) no queda tapado
+    // por las pestañas.
+    await expect(
+      page.getByRole("button", { name: "Guardar y pasar al once inicial" }),
+    ).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const ultimo = page.getByRole("region", { name: "Convocatoria: carteles guardados" });
+    const caja = (await ultimo.boundingBox())!;
     const pestanas = (await page
       .getByRole("navigation", { name: "Accesos rápidos" })
       .boundingBox())!;

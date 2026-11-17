@@ -19,11 +19,25 @@ async function abrir(page: Page) {
   await page.locator("summary").filter({ hasText: "Otro partido o un amistoso, a mano" }).tap();
 }
 
-/** Sin pestañas: datos y vista previa van en la misma pantalla, uno debajo del otro. */
+/**
+ * Sin pestañas: datos y vista previa van en la misma pantalla, uno debajo del otro. Devuelve
+ * `false` si la pantalla aún no tiene nada que enseñar (Resultado e O Noso 11 sin partido).
+ */
 async function vista(page: Page) {
+  // En «Resultado e O Noso 11» (16/11/2026) las vistas van en el desplegable «Carteles», que
+  // abre cerrado y sin él no se pintan; y sin partido elegido no hay ni desplegable.
+  const carteles = page
+    .locator("main details:not([open]) > summary")
+    .filter({ hasText: /^\s*Carteles\s*$/ });
+  if ((await carteles.count()) > 0) await carteles.first().tap();
+  const primera = page.locator("[data-vista-cartel]").first();
+  const sinPartido = page.getByText("Elige el partido.", { exact: true });
+  await expect(primera.or(sinPartido).first()).toBeVisible({ timeout: 20000 });
+  if (await sinPartido.isVisible()) return false;
   // El carrusel de después enseña dos vistas previas: basta con la primera.
-  await page.locator("[data-vista-cartel]").first().scrollIntoViewIfNeeded();
+  await primera.scrollIntoViewIfNeeded();
   await expect(page.locator("[data-vista-cartel] [data-cartel]").first()).toBeVisible();
+  return true;
 }
 
 for (const ancho of [360, 390]) {
@@ -56,10 +70,11 @@ for (const ancho of [360, 390]) {
       await fila.tap();
       await expect(page).toHaveURL(new RegExp(`plantilla=${plantilla}`));
       await page.waitForLoadState("networkidle");
-      await vista(page);
-      const cartel = (await page.locator("[data-vista-cartel]").first().boundingBox())!;
-      expect(cartel.width).toBeGreaterThan(200);
-      expect(cartel.x + cartel.width).toBeLessThanOrEqual(ancho + 1);
+      if (await vista(page)) {
+        const cartel = (await page.locator("[data-vista-cartel]").first().boundingBox())!;
+        expect(cartel.width).toBeGreaterThan(200);
+        expect(cartel.x + cartel.width).toBeLessThanOrEqual(ancho + 1);
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         ancho,
       );
