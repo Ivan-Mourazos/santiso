@@ -19,8 +19,9 @@ test("guardar convocatoria, generar y guardar su cartel, y pasar convocados al o
   await page.getByLabel("Lugar de quedada", { exact: true }).fill("Campo Calendario");
   await page.getByLabel("Equipación", { exact: true }).fill("Amarela");
   await page.getByLabel("Nota", { exact: true }).fill("Puntualidade");
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
-  await expect(page.getByText("Convocatoria guardada", { exact: true })).toBeVisible();
+  // Desde el 16/11/2026 no hay «Guardar» suelto: se guarda al pasar al once.
+  await page.getByRole("button", { name: "Guardar y pasar al once inicial", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/alineacion\?.*partido=convocatoria-e2e/);
   await page.goto(ruta);
   await expect(page.getByText("2 convocados / 3")).toBeVisible({ timeout: 30000 });
   await expect(page.getByLabel("Hora de quedada", { exact: true })).toHaveValue("16:00");
@@ -50,20 +51,21 @@ test("guardar convocatoria, generar y guardar su cartel, y pasar convocados al o
   await expect(panel.getByRole("button", { name: "Ver en grande: Publicación" })).toBeVisible();
   // Cambiar un dato que sale en el cartel lo deja desactualizado, pero se conserva el anterior.
   await page.getByLabel("Hora de quedada", { exact: true }).fill("16:30");
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
-  await expect(page.getByText("Convocatoria guardada", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Guardar y pasar al once inicial", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/alineacion\?.*partido=convocatoria-e2e/);
   await page.goto(ruta);
   await expect(panel.getByText(/Han cambiado los datos/)).toBeVisible({ timeout: 30000 });
   await expect(panel.getByRole("button", { name: "Actualizar cartel", exact: true })).toBeVisible();
   await expect(panel.getByRole("button", { name: "Ver en grande: Publicación" })).toBeVisible();
   await page.getByRole("button", { name: "Pasar al once inicial", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/alineacion\?.*partido=convocatoria-e2e/);
-  const ali = page.getByRole("list", { name: "Plantilla Senior" });
-  await expect(ali.getByRole("button", { name: /^Uno Aliñación Ficticio:/ })).toBeVisible({
+  // En el once, los convocados esperan en el banquillo; el no convocado no sale.
+  const banco = page.getByRole("region", { name: "Banquillo" });
+  await expect(banco.getByRole("button", { name: /^Suplente: Uno Aliñación Ficticio/ })).toBeVisible({
     timeout: 30000,
   });
-  await expect(ali.getByRole("button", { name: /^Dous:/ })).toBeVisible();
-  await expect(ali.getByRole("button", { name: /^Tres Aliñación Ficticio:/ })).toHaveCount(0);
+  await expect(banco.getByRole("button", { name: /^Suplente: Dous/ })).toBeVisible();
+  await expect(banco.getByRole("button", { name: /^Suplente: Tres Aliñación Ficticio/ })).toHaveCount(0);
   expect(errores).toEqual([]);
 });
 
@@ -104,7 +106,7 @@ test("guardado pendiente no redirige tras abandonar convocatoria", async ({ page
   await expect(page).toHaveURL(/\/admin\/partidos/);
 });
 
-test("avisa de expulsados y apercibidos al convocar y al alinear", async ({ page }) => {
+test("avisa de expulsados y apercibidos al convocar", async ({ page }) => {
   const errores: string[] = [];
   page.on("pageerror", (e) => errores.push(e.message));
   await page.setViewportSize({ width: 360, height: 780 });
@@ -122,14 +124,6 @@ test("avisa de expulsados y apercibidos al convocar y al alinear", async ({ page
   ).toContainText("Apercibido");
   await expect(plantilla.getByRole("button", { name: "Convocar: Dous", exact: true })).toBeVisible();
 
-  await page.goto("/admin/alineacion?partido=convocatoria-e2e");
-  await expect(page.getByRole("region", { name: "Sanciones y apercibidos" })).toBeVisible({
-    timeout: 30000,
-  });
-  await expect(
-    page
-      .getByRole("list", { name: "Plantilla Senior" })
-      .getByRole("button", { name: /^Uno Aliñación Ficticio: .*, expulsado$/ }),
-  ).toContainText("Expulsado");
+  // Desde el 16/11/2026 el once ya no repite las sanciones: se avisan aquí, al convocar.
   expect(errores).toEqual([]);
 });

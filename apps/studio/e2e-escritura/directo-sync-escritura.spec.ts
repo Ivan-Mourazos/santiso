@@ -17,6 +17,8 @@ async function golDeUno(page: Page, minuto: string) {
 }
 
 test("dos móviles: se ve lo del otro sin recargar y avisa del repetido", async ({ browser }) => {
+  // Dos móviles y varias vueltas de sincronización: no cabe en los 30 s por defecto.
+  test.setTimeout(90_000);
   const delegado = await (await browser.newContext()).newPage();
   const mister = await (await browser.newContext()).newPage();
   await abrir(delegado);

@@ -41,6 +41,13 @@ test("después del partido: resultado y O Noso 11 juntos, con el once en el camp
     expect(id).toBeTruthy();
     await page.goto(`/admin/carteles?plantilla=despues&partido=${id}`);
 
+    // Desde el 16/11/2026 el carrusel y el campo van plegados: «Carteles» y, dentro, «Cambiar
+    // el once».
+    const abrirPlegables = async () => {
+      await page.locator("main details > summary").filter({ hasText: /^\s*Carteles\s*$/ }).click();
+      await page.locator("main details > summary").filter({ hasText: "Cambiar el once" }).click();
+    };
+    await abrirPlegables();
     // Los dos titulares del acta ya salen colocados en el campo.
     const campo = page.getByRole("region", { name: "Once en el campo" });
     await expect(campo).toBeVisible({ timeout: 30000 });
@@ -57,6 +64,7 @@ test("después del partido: resultado y O Noso 11 juntos, con el once en el camp
 
     // Al volver: el carrusel sigue guardado y la colocación de después también.
     await page.reload();
+    await abrirPlegables();
     await expect(carrusel.getByText(/Carrusel generado/)).toBeVisible({ timeout: 30000 });
     await expect(campo.getByLabel("Sistema")).toHaveValue("4-3-3");
     expect(errores).toEqual([]);

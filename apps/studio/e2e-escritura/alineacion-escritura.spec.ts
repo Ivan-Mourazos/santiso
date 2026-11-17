@@ -16,28 +16,34 @@ test("elegir titulares, suplente y capitán, generar la historia y recuperarla a
     page.getByRole("heading", { name: /Norte Convocatoria – Sur Convocatoria/ }),
   ).toBeVisible({ timeout: 30000 });
   await expect(page.getByRole("group", { name: "Categoría deportiva" })).toHaveCount(0);
-  const plantilla = page.getByRole("list", { name: "Plantilla Senior" });
-  const jugador = (nombre: string) => plantilla.getByRole("button", { name: new RegExp(`^${nombre}:`) });
-
-  // Un toque: titular. Dos: suplente.
-  await jugador("Uno Aliñación Ficticio").click();
-  await jugador("Dous").click();
-  await jugador("Tres Aliñación Ficticio").click();
-  await jugador("Tres Aliñación Ficticio").click();
+  // Desde el 16/11/2026 el once se hace en el campo: se toca un hueco y se elige en la hoja.
+  const campo = page.getByRole("region", { name: "Once en el campo" });
+  const hoja = page.getByRole("dialog");
+  const colocar = async (hueco: string, nombre: string) => {
+    await campo.getByRole("button", { name: `${hueco}: vacío. Elegir jugador` }).first().click();
+    await hoja.getByRole("button", { name: new RegExp(nombre) }).click();
+    await expect(hoja).toBeHidden();
+  };
+  const enCampo = (nombre: string) =>
+    campo.getByRole("button", { name: new RegExp(`: ${nombre}( \\(capitán\\))?\\. Cambiar$`) });
+  await colocar("Portero", "Uno Aliñación Ficticio");
+  await colocar("Defensa", "Dous");
+  // El banquillo: un toque pone de suplente.
+  const tres = page
+    .getByRole("region", { name: "Banquillo" })
+    .getByRole("button", { name: /^Suplente: Tres/ });
+  await tres.click();
+  await expect(tres).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("2 / 11 titulares")).toBeVisible();
   await expect(page.getByText("1 suplente", { exact: true })).toBeVisible();
-  await expect(jugador("Tres Aliñación Ficticio")).toHaveAccessibleName(/: Suplente(, apercibido)?$/);
 
-  // El capitán de la plantilla (Dous) se propone solo al entrar en el once; se puede cambiar.
-  await expect(plantilla.getByRole("button", { name: "Capitán: Dous" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  await plantilla.getByRole("button", { name: "Capitán: Uno Aliñación Ficticio" }).click();
-  await expect(plantilla.getByRole("button", { name: "Capitán: Dous" })).toHaveAttribute(
-    "aria-pressed",
-    "false",
-  );
+  // El capitán de la plantilla (Dous) se propone solo al entrar en el once; se puede cambiar
+  // tocando a otro colocado.
+  await expect(enCampo("Dous")).toHaveAccessibleName(/\(capitán\)/);
+  await enCampo("Uno Aliñación Ficticio").click();
+  await hoja.getByRole("button", { name: "Hacer capitán" }).click();
+  await expect(enCampo("Uno Aliñación Ficticio")).toHaveAccessibleName(/\(capitán\)/);
+  await expect(enCampo("Dous")).not.toHaveAccessibleName(/\(capitán\)/);
 
   // «Generar cartel» guarda la alineación y la historia 9:16, que queda guardada con el partido.
   const panel = page.getByRole("region", { name: "Once inicial: carteles guardados" });
@@ -61,11 +67,7 @@ test("elegir titulares, suplente y capitán, generar la historia y recuperarla a
     timeout: 30000,
   });
   await expect(page.getByText("2 / 11 titulares")).toBeVisible({ timeout: 30000 });
-  await expect(
-    page
-      .getByRole("list", { name: "Plantilla Senior" })
-      .getByRole("button", { name: "Capitán: Uno Aliñación Ficticio" }),
-  ).toHaveAttribute("aria-pressed", "true");
+  await expect(enCampo("Uno Aliñación Ficticio")).toHaveAccessibleName(/\(capitán\)/);
   expect(errores).toEqual([]);
 });
 

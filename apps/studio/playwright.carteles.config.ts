@@ -22,9 +22,9 @@ export default defineConfig({
         : ["**/carteles.spec.ts"],
   })),
   webServer: {
-    command: `pnpm exec next dev --webpack -H 127.0.0.1 -p ${new URL(url).port || "3300"}`,
+    command: `pnpm exec next build --webpack && pnpm exec next start -H 127.0.0.1 -p ${new URL(url).port || "3300"}`,
     url: `${url}/api/estado`,
     reuseExistingServer: false,
-    timeout: 120000,
+    timeout: 300000,
   },
 });
