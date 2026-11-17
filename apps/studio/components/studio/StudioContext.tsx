@@ -182,14 +182,19 @@ export function StudioProvider({
       const next = cambiarParametros(new URLSearchParams(current.query), patch).toString();
       if (next === current.query) return true;
       const href = current.pathname + (next ? `?${next}` : "");
+      // La dirección nueva vale ya para el siguiente cambio, aunque Next aún no la haya aplicado:
+      // si no, dos cambios seguidos (p. ej. ir al partido pedido y fijar la temporada) parten
+      // de la misma dirección vieja y el segundo borra el primero. Pasaba en Safari.
       if (replace) {
         // Con un salto a otra pantalla en marcha, la corrección se deja: al volver se repite.
         if (destinoRef.current && destinoRef.current !== current.pathname) return true;
+        locationRef.current = { pathname: current.pathname, query: next };
         router.replace(href, { scroll: false });
         return true;
       }
       if (!authorize()) return false;
       drafts.current.clear();
+      locationRef.current = { pathname: current.pathname, query: next };
       router.push(href, { scroll: false });
       return true;
     },
