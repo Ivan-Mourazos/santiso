@@ -24,7 +24,7 @@ export default defineConfig({
   use: { baseURL: URL_BASE, trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `pnpm exec tsx e2e-escritura/sembrar.ts && pnpm exec next dev -H 127.0.0.1 -p ${PUERTO}`,
+    command: `pnpm exec tsx e2e-escritura/sembrar.ts && pnpm exec next dev --webpack -H 127.0.0.1 -p ${PUERTO}`,
     // La pantalla de entrada es lo único que responde sin sesión.
     url: `${URL_BASE}/entrar`,
     reuseExistingServer: false,

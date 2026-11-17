@@ -33,7 +33,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm exec next dev -H 127.0.0.1 -p ${new URL(URL_BASE).port || "3000"}`,
+    command: `pnpm exec next dev --webpack -H 127.0.0.1 -p ${new URL(URL_BASE).port || "3000"}`,
     url: `${URL_BASE}/api/estado`,
     reuseExistingServer: false,
     timeout: 120_000,

@@ -19,7 +19,7 @@ export default defineConfig({
   use: { baseURL: URL_BASE, trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `pnpm exec tsx e2e-escritura/sembrar.ts && pnpm exec next dev -H 127.0.0.1 -p ${PUERTO_ESCRITURA}`,
+    command: `pnpm exec tsx e2e-escritura/sembrar.ts && pnpm exec next dev --webpack -H 127.0.0.1 -p ${PUERTO_ESCRITURA}`,
     url: `${URL_BASE}/api/estado`,
     reuseExistingServer: false,
     timeout: 180_000,
