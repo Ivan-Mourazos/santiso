@@ -33,9 +33,11 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm exec next dev --webpack -H 127.0.0.1 -p ${new URL(URL_BASE).port || "3000"}`,
+    // La app compilada, como la usa el móvil: en desarrollo, la primera compilación de cada ruta
+    // recarga la página a mitad de prueba y se pierde lo que se estaba haciendo.
+    command: `pnpm exec next build --webpack && pnpm exec next start -H 127.0.0.1 -p ${new URL(URL_BASE).port || "3000"}`,
     url: `${URL_BASE}/api/estado`,
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 300_000,
   },
 });

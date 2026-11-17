@@ -82,7 +82,8 @@ test("partidos: nuestro partido de otra jornada lleva sus carteles", async ({ pa
   await expect(elegido).toContainText("Veteranos");
   const categorias = page.getByRole("group", { name: "Categoría" });
   await expect(categorias).toBeHidden();
-  await page.getByText("Cambiar partido o editar datos").click();
+  // Desde el 16/11/2026 se abre con el lápiz ✎ de la tarjeta; el texto queda para lectores.
+  await page.locator("summary", { hasText: "Cambiar partido o editar datos" }).click();
   // Un solo selector de partido: el de arriba, dentro del plegable, ya en Veteranos.
   await expect(categorias.getByRole("button", { name: "Veteranos" })).toHaveAttribute(
     "aria-pressed",
