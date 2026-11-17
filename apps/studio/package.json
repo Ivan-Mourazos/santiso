@@ -14,6 +14,7 @@
     "e2e:acceso": "playwright test -c playwright.acceso.config.ts"
   },
   "dependencies": {
+    "@libsql/client": "catalog:",
     "@santiso/actas": "workspace:*",
     "@santiso/db": "workspace:*",
     "@santiso/domain": "workspace:*",
