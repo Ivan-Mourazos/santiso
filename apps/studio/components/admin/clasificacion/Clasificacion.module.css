@@ -208,6 +208,7 @@
   .verDetalle {
     min-height: 44px;
   }
+}
 
 /* Solo para lector de pantalla. */
 .oculto {
