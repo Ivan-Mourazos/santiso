@@ -14,9 +14,6 @@
   color: var(--ui-muted);
   font-size: var(--ui-text-body);
 }
-.traer button {
-  min-height: 44px;
-}
 .vacio {
   margin: 0;
   padding: 1rem 0;

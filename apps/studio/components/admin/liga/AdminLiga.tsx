@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select } from "@/components/ui/foundation/Fields";
@@ -8,13 +9,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation
 import { Tabs } from "@/components/ui/foundation/Tabs";
 import type { Disciplina, Goleador } from "@/lib/liga/tablas";
 import { cargarLiga, guardarCicloAmarillas } from "@/lib/server/acciones/liga";
-import { ProblemasFederacion } from "@/components/admin/federacion/ProblemasFederacion";
-import {
-  cargarEstadoRfgf,
-  comprobarRfgfAhora,
-  reintentarActaRfgf,
-  type ActaPorRevisar,
-} from "@/lib/server/acciones/rfgf";
+import { useStudio } from "@/components/studio/StudioContext";
 import type { PantallaLiga } from "@/lib/server/consultas/liga";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import styles from "./Liga.module.css";
@@ -94,7 +89,8 @@ function Tarjetas({ filas, propios }: { filas: Disciplina[]; propios: Set<string
 
 /**
  * Goleadores y tarjetas de toda la liga, de todos los equipos. Salen de las actas que la
- * sincronización con la federación va cargando sola; aquí solo se consultan.
+ * sincronización con la federación va cargando sola; aquí solo se consultan. Lo que falte se
+ * trae en Federación, que es donde está «Ponerse al día».
  */
 export default function AdminLiga({ categoria, showToast }: Props) {
   const {
@@ -105,15 +101,15 @@ export default function AdminLiga({ categoria, showToast }: Props) {
     errorCompeticiones,
     loadCompeticiones,
   } = useCompeticiones(categoria, true);
+  const { acceso } = useStudio();
+  const admin = acceso?.rol !== "tecnico";
   const [pantalla, setPantalla] = useState<PantallaLiga | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
-  const [pestana, setPestana] = useState("avisos");
+  const [pestana, setPestana] = useState("goleadores");
   const [soloRival, setSoloRival] = useState("");
   const [ciclo, setCiclo] = useState("");
   const [guardando, setGuardando] = useState(false);
-  const [trayendo, setTrayendo] = useState(false);
-  const [problemas, setProblemas] = useState<ActaPorRevisar[]>([]);
   const generacion = useRef(0);
 
   const cargar = useCallback(async (competicionId: string) => {
@@ -129,14 +125,6 @@ export default function AdminLiga({ categoria, showToast }: Props) {
       }
       setPantalla(resultado.datos);
       setCiclo(String(resultado.datos.ciclo));
-      // Qué partidos de esta competición no se trajeron bien, con su motivo.
-      const federacion = await cargarEstadoRfgf();
-      if (esta !== generacion.current) return;
-      setProblemas(
-        federacion.ok
-          ? (federacion.datos.find((c) => c.competicionId === competicionId)?.revisar ?? [])
-          : [],
-      );
     } catch {
       if (esta === generacion.current) setError("No se pudieron cargar los datos de la liga.");
     } finally {
@@ -146,30 +134,6 @@ export default function AdminLiga({ categoria, showToast }: Props) {
   useEffect(() => {
     if (selectedCompetitionId) void cargar(selectedCompetitionId);
   }, [selectedCompetitionId, cargar]);
-
-  async function traerAhora() {
-    if (!selectedCompetitionId || trayendo) return;
-    setTrayendo(true);
-    try {
-      const resultado = await comprobarRfgfAhora();
-      showToast(
-        resultado.ok ? resultado.datos : resultado.error,
-        resultado.ok ? "success" : "error",
-      );
-      await cargar(selectedCompetitionId);
-    } catch {
-      showToast("No se pudo consultar la federación.", "error");
-    } finally {
-      setTrayendo(false);
-    }
-  }
-
-  async function reintentar(codActa: string) {
-    if (!selectedCompetitionId || trayendo) return;
-    const preparado = await reintentarActaRfgf(codActa);
-    if (!preparado.ok) return showToast(preparado.error, "error");
-    await traerAhora();
-  }
 
   async function guardarCiclo() {
     if (!selectedCompetitionId || guardando) return;
@@ -246,44 +210,45 @@ export default function AdminLiga({ categoria, showToast }: Props) {
             </Button>
           }
         />
-      ) : !pantalla || (cargando && !trayendo) ? (
+      ) : !pantalla || cargando ? (
         <LoadingState title="Cargando la liga…" />
       ) : (
         <>
           <p className={styles.estado} role="status">
-            {pantalla.partidosJugados === 0
-              ? "Todavía no se ha jugado ningún partido."
-              : pantalla.partidosCargados < pantalla.partidosJugados
-                ? `Cargadas las actas de ${pantalla.partidosCargados} de ${pantalla.partidosJugados} partidos jugados.${
-                    pantalla.jornadasPorTraer.length
-                      ? ` Falta por traer: jornada${pantalla.jornadasPorTraer.length > 1 ? "s" : ""} ${pantalla.jornadasPorTraer.join(", ")}. Lo de esas jornadas todavía no sale aquí.`
-                      : ""
-                  }`
-                : `Al día: ${pantalla.partidosJugados} partidos jugados.`}
+            {pantalla.partidosJugados === 0 ? (
+              "Todavía no se ha jugado ningún partido."
+            ) : pantalla.partidosCargados < pantalla.partidosJugados ? (
+              <>
+                {pantalla.jornadasPorTraer.length
+                  ? `Faltan las actas de ${pantalla.jornadasPorTraer.map((j) => `J${j}`).join(", ")}: lo de esas jornadas todavía no sale aquí. Se traen solas.`
+                  : `Actas de ${pantalla.partidosCargados} de ${pantalla.partidosJugados} partidos jugados.`}
+                {admin && (
+                  <>
+                    {" "}
+                    <Link href="/admin/federacion">Ir a Federación</Link>
+                  </>
+                )}
+              </>
+            ) : (
+              `Al día: ${pantalla.partidosJugados} partidos jugados.`
+            )}
           </p>
-          <ProblemasFederacion
-            actas={problemas}
-            ocupado={trayendo}
-            onReintentar={(codActa) => void reintentar(codActa)}
-          />
-          {pantalla.partidosCargados + pantalla.partidosSinLeer < pantalla.partidosJugados && (
-            <div className={styles.traer}>
-              <Button
-                variant="secondary"
-                pending={trayendo}
-                pendingLabel="Mirando la federación…"
-                onClick={() => void traerAhora()}
-              >
-                Traer ahora las jornadas que faltan (dos cada vez)
-              </Button>
-            </div>
-          )}
           <Tabs
             variant="segmentado"
             label="Datos de la liga"
             value={pestana}
             onValueChange={setPestana}
             items={[
+              {
+                value: "goleadores",
+                label: "Goleadores",
+                content: (
+                  <Goleadores
+                    filas={pantalla.goleadores.filter((g) => !soloRival || g.equipo === soloRival)}
+                    propios={propios}
+                  />
+                ),
+              },
               {
                 value: "avisos",
                 label: `Avisos${avisos.length ? ` (${avisos.length})` : ""}`,
@@ -296,16 +261,6 @@ export default function AdminLiga({ categoria, showToast }: Props) {
                   ) : (
                     <Tarjetas filas={avisos} propios={propios} />
                   ),
-              },
-              {
-                value: "goleadores",
-                label: "Goleadores",
-                content: (
-                  <Goleadores
-                    filas={pantalla.goleadores.filter((g) => !soloRival || g.equipo === soloRival)}
-                    propios={propios}
-                  />
-                ),
               },
               {
                 value: "tarjetas",
@@ -321,25 +276,27 @@ export default function AdminLiga({ categoria, showToast }: Props) {
               partido de su equipo se pierde al menos el siguiente. Cuántos partidos caen por una
               roja lo decide el comité y no está en las actas: compruébalo.
             </p>
-            <div className={styles.ciclo}>
-              <Field
-                label="Amarillas por ciclo"
-                type="number"
-                inputMode="numeric"
-                min={2}
-                max={20}
-                value={ciclo}
-                onChange={(e) => setCiclo(e.target.value)}
-              />
-              <Button
-                variant="secondary"
-                pending={guardando}
-                disabled={Number(ciclo) === pantalla.ciclo}
-                onClick={() => void guardarCiclo()}
-              >
-                Guardar
-              </Button>
-            </div>
+            {admin && (
+              <div className={styles.ciclo}>
+                <Field
+                  label="Amarillas por ciclo"
+                  type="number"
+                  inputMode="numeric"
+                  min={2}
+                  max={20}
+                  value={ciclo}
+                  onChange={(e) => setCiclo(e.target.value)}
+                />
+                <Button
+                  variant="secondary"
+                  pending={guardando}
+                  disabled={Number(ciclo) === pantalla.ciclo}
+                  onClick={() => void guardarCiclo()}
+                >
+                  Guardar
+                </Button>
+              </div>
+            )}
           </details>
         </>
       )}

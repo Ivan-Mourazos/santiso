@@ -24,13 +24,13 @@ Subnavegación arriba: Partidos · Clasificación · Goleadores · Estadísticas
 | L1.1 | Mesa del partido | — | (Siguiente tarea, sanciones, «Más tareas», Directo) | **eliminada de L1 15/11**; solo queda en O4 |
 | L1.2 | Fotos del partido | — | (Galería del partido) | **eliminada 16/11**: fuera de L1.3 y de los carteles; en los carteles queda «Subir foto de fondo» |
 | L1.3 | Detalle de partido | diálogo | Equipos (a su ficha), día·hora·campo, árbitro, Directo, Traer acta (si falta), carteles en una línea, goles y tarjetas por separado | **hecho 15/11**: sin corregir/meter acta a mano (manda la federación) |
-| L2 | Clasificación | `clasificacion` | Tabla de la competición | |
-| L2.1 | Ficha rápida de equipo | diálogo | Resumen del equipo, enlace a O2 | |
-| L2.2 | Opciones / Zonas | diálogos | Zonas de ascenso/descenso; actualizar con la federación (admin) | |
-| L3 | Goleadores | `liga` | Pestañas Avisos · Goleadores · Tarjetas; traer jornadas que faltan | |
-| L4 | Estadísticas | `estadisticas` | Tabla de jugadores con buscador, filtros y orden | |
+| L2 | Clasificación | `clasificacion` | Tabla de la competición | **hecho 18/11**: aviso de la federación solo si no cuadra; botón «Zonas» directo |
+| L2.1 | Ficha rápida de equipo | diálogo | Resumen del equipo, enlace a O2 | **se queda 18/11** (con los 5 goleadores del rival) |
+| L2.2 | Opciones / Zonas | diálogos | Zonas de ascenso/descenso; actualizar con la federación (admin) | **18/11**: fuera la hoja de opciones; «Actualizar» solo en Federación |
+| L3 | Goleadores | `liga` | Pestañas Avisos · Goleadores · Tarjetas; traer jornadas que faltan | **hecho 18/11**: fuera «Traer ahora» y problemas (en Federación); abre en Goleadores; ciclo de amarillas solo admin |
+| L4 | Estadísticas | `estadisticas` | Tabla de jugadores con buscador, filtros y orden | **se queda 18/11**: ya compacta; «Ordenar por» sigue porque en móvil hay columnas ocultas |
 | L4.1 | Ficha rápida de jugador | diálogo | Resumen del jugador, enlace a O1 | |
-| L5 | Archivo | `archivo` | Temporadas pasadas: clasificaciones finales y partidos | |
+| L5 | Archivo | `archivo` | Temporadas pasadas: clasificaciones finales y partidos | **hecho 18/11**: fuera «Traer los partidos» (se piden en Federación); la tabla ya cabía a 360 px |
 
 ## E · Equipo
 

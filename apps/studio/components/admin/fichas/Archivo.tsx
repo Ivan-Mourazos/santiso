@@ -8,30 +8,20 @@ import {
   ordenarCompeticiones,
 } from "@/lib/archivo-historico";
 import { sinConexion } from "@/lib/resultado";
-import { useCallback, useEffect, useState } from "react";
-import { useStudio } from "@/components/studio/StudioContext";
-import { Button } from "@/components/ui/foundation/Button";
+import { useEffect, useState } from "react";
 import { EmptyState, LoadingState } from "@/components/ui/foundation/States";
 import { cargarArchivoHistorico } from "@/lib/server/acciones/fichas-rfgf";
-import { pedirPartidosHistoricosRfgf } from "@/lib/server/acciones/rfgf";
-import type { ArchivoHistorico, GrupoDeArchivo } from "@/lib/server/consultas/fichas-rfgf";
+import type { ArchivoHistorico } from "@/lib/server/consultas/fichas-rfgf";
 import { Resultado, fechaCorta } from "./comunes";
 import styles from "./Fichas.module.css";
 
 /**
  * Archivo de temporadas pasadas: por temporada, los grupos en los que jugó el club y sus partidos
- * traídos de la federación. Los partidos de un grupo se piden aquí y llegan poco a poco.
+ * traídos de la federación. Se completan solos; si falta alguno, se pide en Federación.
  */
 export default function Archivo({ categoria }: { categoria: string }) {
-  const { acceso, showToast } = useStudio();
   const [archivo, setArchivo] = useState<ArchivoHistorico | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pidiendo, setPidiendo] = useState<string | null>(null);
-  const cargar = useCallback(async () => {
-    const r = await cargarArchivoHistorico();
-    if (r.ok) setArchivo(r.datos);
-    else setError(r.error);
-  }, []);
   useEffect(() => {
     let vigente = true;
     void cargarArchivoHistorico()
@@ -59,17 +49,6 @@ export default function Archivo({ categoria }: { categoria: string }) {
         detail="Se traen solas de la federación, poco a poco, en la copia de uso diario."
       />
     );
-  const admin = acceso?.rol !== "tecnico";
-
-  async function pedir(g: GrupoDeArchivo) {
-    setPidiendo(g.codGrupo);
-    const r = await pedirPartidosHistoricosRfgf(g.codGrupo).catch(sinConexion);
-    setPidiendo(null);
-    if (!r.ok) return showToast(r.error, "error");
-    showToast("Pedidos. Llegarán poco a poco, unas horas por temporada.");
-    await cargar();
-  }
-
   return (
     <div className={styles.ficha}>
       {temporadas.map((t, i) => (
@@ -133,20 +112,6 @@ export default function Archivo({ categoria }: { categoria: string }) {
                       </ul>
                     ) : (
                       <p className={styles.nota}>Sin partidos traídos todavía.</p>
-                    )}
-                    {admin && g.archivo.estado === "no_pedido" && (
-                      <div className={styles.acciones}>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          pending={pidiendo === g.codGrupo}
-                          disabled={pidiendo !== null}
-                          pendingLabel="Pidiendo…"
-                          onClick={() => void pedir(g)}
-                        >
-                          Traer los partidos de esta temporada
-                        </Button>
-                      </div>
                     )}
                   </div>
                 </details>

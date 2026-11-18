@@ -57,19 +57,15 @@ for (const ancho of [360, 1280]) {
     await expect(copa.locator("summary")).toContainText("Llegó a Octavos");
     await expect(copa.getByRole("button")).not.toBeVisible();
     await copa.locator("summary").click();
-    await expect(
-      copa.getByRole("button", { name: "Traer los partidos de esta temporada", exact: true }),
-    ).toHaveCount(1);
-    await expect(copa.getByRole("button")).toBeVisible();
+    // Los partidos que falten se piden en Federación, no aquí.
+    await expect(copa.getByRole("button")).toHaveCount(0);
     await copa.locator("summary").click();
     await temporada.locator(":scope > summary").click();
     await expect(detalles.first().locator("summary")).not.toBeVisible();
     await temporada.locator(":scope > summary").click();
     await anterior.locator(":scope > summary").click();
     await anterior.locator("details > summary").click();
-    await expect(
-      anterior.getByRole("button", { name: "Traer los partidos de esta temporada", exact: true }),
-    ).toBeVisible();
+    await expect(anterior.getByRole("button")).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       ancho,
     );

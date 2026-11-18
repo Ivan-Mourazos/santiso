@@ -10,13 +10,11 @@ import {
 } from "react";
 import { esEquipoPropio, type ReglaClasificacion } from "@santiso/domain";
 import { Button } from "@/components/ui/foundation/Button";
-import { Dialog } from "@/components/ui/foundation/Dialog";
 import { Select } from "@/components/ui/foundation/Fields";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import type { FilaClasificacion, PantallaClasificacion } from "@/lib/dto";
 import { cargarPantallaClasificacion } from "@/lib/server/acciones/clasificacion";
 import { useStudio } from "@/components/studio/StudioContext";
-import { actualizarClasificacionRfgf } from "@/lib/server/acciones/rfgf";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import DialogoZonas from "./DialogoZonas";
 import FichaEquipo from "./FichaEquipo";
@@ -46,14 +44,8 @@ const conColor = (color: string) => ({ "--color-regla": color }) as CSSPropertie
  * La pantalla no calcula nada: pinta la tabla y marca las zonas que define la competición.
  */
 export default function AdminClasificacion({ categoria }: Props) {
-  const { setParams, showToast, acceso } = useStudio();
-  const [actualizando, setActualizando] = useState(false);
-  // Por qué no cuadra, según la última «Actualizar» de esta competición.
-  const [motivos, setMotivos] = useState<{ competicionId: string; lista: string[] } | null>(
-    null,
-  );
+  const { setParams, showToast } = useStudio();
   const [editandoZonas, setEditandoZonas] = useState(false);
-  const [opciones, setOpciones] = useState(false);
   const {
     temporadas,
     selectedSeasonId,
@@ -279,35 +271,23 @@ export default function AdminClasificacion({ categoria }: Props) {
         </p>
       </div>
 
-      {oficial && competicionCargada === selectedCompetitionId && (
-        <div
-          className={styles.oficial}
-          role="status"
-          data-cuadra={oficial.diferencias.length === 0}
-        >
-          {oficial.diferencias.length === 0 ? (
-            <p>Coincide con la clasificación oficial de la federación (jornada {oficial.jornada}).</p>
-          ) : (
-            <>
-              <p>
-                <strong>
-                  No cuadra con la clasificación oficial de la federación (jornada {oficial.jornada}):
-                </strong>
-              </p>
-              <ul>
-                {oficial.diferencias.map((diferencia, i) => (
-                  <li key={diferencia}>
-                    {diferencia}
-                    {motivos?.competicionId === selectedCompetitionId && motivos.lista[i] && (
-                      <em> — {motivos.lista[i]}</em>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
-      )}
+      {/* Coincidir con la federación es lo normal: solo se avisa cuando no cuadra. */}
+      {oficial &&
+        competicionCargada === selectedCompetitionId &&
+        oficial.diferencias.length > 0 && (
+          <div className={styles.oficial} role="status" data-cuadra="false">
+            <p>
+              <strong>
+                No cuadra con la clasificación oficial de la federación (jornada {oficial.jornada}):
+              </strong>
+            </p>
+            <ul>
+              {oficial.diferencias.map((diferencia) => (
+                <li key={diferencia}>{diferencia}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
       <div className={styles.selectores}>
         {/* La temporada vive en la URL, como en el resto del panel: la de una temporada pasada
@@ -349,68 +329,16 @@ export default function AdminClasificacion({ categoria }: Props) {
             <Button
               size="sm"
               variant="secondary"
-              aria-label="Más opciones de la clasificación"
               aria-haspopup="dialog"
-              pending={actualizando}
-              pendingLabel="…"
-              onClick={() => setOpciones(true)}
+              aria-label="Zonas de la clasificación"
+              onClick={() => setEditandoZonas(true)}
+              disabled={cargando || competicionCargada !== selectedCompetitionId}
             >
-              ⋯
+              Zonas
             </Button>
           </div>
         )}
       </div>
-
-      {/* Lo de vez en cuando, fuera de la vista: la tabla empieza antes. */}
-      <Dialog
-        open={opciones}
-        onClose={() => setOpciones(false)}
-        title="Clasificación"
-        closeLabel="Cerrar opciones"
-        mobilePresentation="sheet"
-      >
-        <div className={styles.opciones}>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setOpciones(false);
-              setEditandoZonas(true);
-            }}
-            disabled={cargando || competicionCargada !== selectedCompetitionId}
-          >
-            Zonas de la clasificación
-          </Button>
-          {/* Compara con la oficial; si no cuadra, trae los resultados que falten. */}
-          {acceso?.rol !== "tecnico" && competicion && (
-            <Button
-              variant="secondary"
-              disabled={actualizando || cargando || competicionCargada !== selectedCompetitionId}
-              onClick={() => {
-                const id = competicion.id;
-                setOpciones(false);
-                setActualizando(true);
-                showToast("Comparando con la federación…");
-                void actualizarClasificacionRfgf(id)
-                  .then(async (r) => {
-                    if (!r.ok) return showToast(r.error, "error");
-                    setMotivos({ competicionId: id, lista: r.datos.motivos });
-                    showToast(
-                      r.datos.cuadra
-                        ? "Coincide con la federación ✓"
-                        : "No coincide con la federación: mira el detalle arriba.",
-                      r.datos.cuadra ? "success" : "error",
-                    );
-                    await cargar(id);
-                  })
-                  .catch(() => showToast("No se pudo hablar con la federación.", "error"))
-                  .finally(() => setActualizando(false));
-              }}
-            >
-              Actualizar con la federación
-            </Button>
-          )}
-        </div>
-      </Dialog>
 
       {contenido}
 

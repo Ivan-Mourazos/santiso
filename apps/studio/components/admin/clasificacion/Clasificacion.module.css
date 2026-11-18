@@ -354,11 +354,6 @@
   font-size: var(--ui-text-body);
   overflow-wrap: anywhere;
 }
-.oficial[data-cuadra="true"] {
-  border-color: color-mix(in srgb, var(--ui-success) 45%, transparent);
-  background: color-mix(in srgb, var(--ui-success) 8%, transparent);
-  color: var(--ui-muted);
-}
 .oficial p {
   margin: 0;
 }
@@ -502,8 +497,4 @@
 }
 .accionZonas {
   flex: none;
-}
-.opciones {
-  display: grid;
-  gap: var(--ui-space-2);
 }
