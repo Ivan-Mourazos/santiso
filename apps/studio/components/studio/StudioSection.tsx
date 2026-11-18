@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import { useSyncExternalStore, ViewTransition, type ReactNode } from "react";
 import type { Seccion } from "@/lib/navigation/contexto";
 import { categoriaDe } from "@/lib/navigation/contexto";
-import { TEMPLATES } from "@/components/admin/cartel/types";
+import { plantillaDeDireccion } from "@/components/admin/cartel/types";
 import { EmptyState, LoadingState } from "@/components/ui/foundation/States";
 import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
@@ -74,7 +74,7 @@ export function StudioSection({ section }: { section: Seccion }) {
       ? `${section}:${category}:${params.get("temporada") ?? ""}`
       : `${section}:${category}`;
   // Sin plantilla elegida, Carteles enseña el catálogo.
-  const template = TEMPLATES.find((t) => t.id === params.get("plantilla"))?.id ?? null;
+  const template = plantillaDeDireccion(params.get("plantilla"))?.id ?? null;
   if (!hydrated) return <LoadingState title="Preparando sección…" />;
   return (
     <div key={key} className={styles.panel}>

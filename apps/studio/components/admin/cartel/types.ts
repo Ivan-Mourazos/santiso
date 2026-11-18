@@ -21,6 +21,17 @@ export const TEMPLATES = [
 
 export type TemplateId = (typeof TEMPLATES)[number]["id"];
 
+/**
+ * Plantilla que abre `?plantilla=`. Resultado, Cronoloxía y O Noso 11 sueltos se retiraron el
+ * 18/11/2026 (eran restos sin menú): un enlace guardado abre «Resultado e O Noso 11», que los
+ * hace. Siguen en `TEMPLATES` porque ese carrusel los usa por dentro para dibujar.
+ */
+const RETIRADAS: readonly string[] = ["resumo", "cronoloxia", "noso11"];
+export function plantillaDeDireccion(valor: string | null) {
+  const id = valor && RETIRADAS.includes(valor) ? "despues" : valor;
+  return TEMPLATES.find((t) => t.id === id) ?? null;
+}
+
 export type MultiusosTema = "celebracion" | "medico" | "fichaje" | "despedida" | "formal";
 export const TEMAS_MULTIUSOS: readonly string[] = [
   "celebracion",

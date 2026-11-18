@@ -23,7 +23,7 @@ import {
 } from "@/lib/navigation/menu";
 import { preparaConvocatoria } from "@/lib/jornada/vestiario";
 import { cerrarSesionYSalir } from "@/components/acceso/salir";
-import { TEMPLATES } from "@/components/admin/cartel/types";
+import { plantillaDeDireccion } from "@/components/admin/cartel/types";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { useStudio } from "./StudioContext";
@@ -99,9 +99,7 @@ export function StudioShell({
       ?.scrollIntoView({ block: "nearest", inline: "center" });
   }, [section?.id]);
   const plantilla =
-    section?.id === "carteles"
-      ? (TEMPLATES.find((t) => t.id === params.get("plantilla")) ?? null)
-      : null;
+    section?.id === "carteles" ? plantillaDeDireccion(params.get("plantilla")) : null;
   // El anuncio abierto desde el catálogo se titula por lo que es, no «Anuncio».
   const tituloCartel =
     plantilla?.id === "multiusos"

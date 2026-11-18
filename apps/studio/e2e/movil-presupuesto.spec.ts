@@ -68,10 +68,7 @@ for (const seccion of SECCIONES) {
 
 const PLANTILLAS_CARTEL = [
   "partido",
-  "resumo",
-  "cronoloxia",
   "proximos",
-  "noso11",
   "multiusos",
   "clasificacion",
 ];

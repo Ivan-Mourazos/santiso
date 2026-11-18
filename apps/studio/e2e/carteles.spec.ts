@@ -90,7 +90,7 @@ test("la clasificación en modo manual se dibuja sin errores", async ({ page }) 
   await expect(lienzo(page)).toBeVisible({ timeout: 20000 });
   // Hasta el arreglo, las filas manuales guardaban «puntos» y la plantilla leía «pts»: el
   // dibujo reventaba con cada fila.
-  await page.getByRole("button", { name: "A mano", exact: true }).click();
+  await page.getByRole("button", { name: "Hacerla a mano (copas y torneos)", exact: true }).click();
   await page.waitForTimeout(2000);
   expect(errores).toEqual([]);
 });
@@ -140,7 +140,7 @@ test("el cartel se previsualiza y se descarga en PNG a 2160×2700", async ({ pag
   expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([2160, 2700]);
 });
 
-test("las siete plantillas tienen su cartel en el Estudio", async ({ page }) => {
+test("cada plantilla tiene su cartel en el Estudio", async ({ page }) => {
   test.setTimeout(120000);
   for (const plantilla of [
     "partido",
@@ -153,8 +153,11 @@ test("las siete plantillas tienen su cartel en el Estudio", async ({ page }) => 
     "clasificacion",
   ]) {
     await page.goto(`/admin/carteles?plantilla=${plantilla}`);
-    // «despues» (16/11/2026): sin partido elegido aún no hay cartel que enseñar.
-    if (plantilla === "despues") {
+    // «despues» (16/11/2026): sin partido elegido aún no hay cartel que enseñar. Resultado,
+    // Cronoloxía y O Noso 11 sueltos se retiraron el 18/11/2026: sus enlaces abren «despues».
+    if (["despues", "resumo", "cronoloxia", "noso11"].includes(plantilla)) {
+      await expect(page.getByRole("heading", { name: "Resultado e O Noso 11" }), plantilla)
+        .toBeVisible({ timeout: 30000 });
       await expect(page.getByText("Elige el partido.", { exact: true }), plantilla).toBeVisible({
         timeout: 30000,
       });
@@ -178,7 +181,7 @@ test("la categoría del enlace manda al abrir el cartel", async ({ page }) => {
   await expect(
     page.getByRole("group", { name: "Categoría" }).getByRole("button", { name: "Veteranos" }),
   ).toHaveAttribute("aria-pressed", "true");
-  await page.goto("/admin/carteles?plantilla=resumo&categoria=Veteranos");
+  await page.goto("/admin/carteles?plantilla=despues&categoria=Veteranos");
   // Sin partido en el enlace, la lista de jugados empieza por esa categoría.
   const lista = page.getByRole("group", { name: "Categoría" });
   await expect(lista.getByRole("button", { name: "Veteranos" })).toHaveAttribute(

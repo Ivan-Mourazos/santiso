@@ -13,11 +13,9 @@ import AvisoError from "./AvisoError";
 import styles from "./cartel/Cartel.module.css";
 import { useCartelAssets } from "./cartel/useCartelAssets";
 import { FormPartido } from "./cartel/FormPartido";
-import { FormResumo } from "./cartel/FormResumo";
 import { FormCronoloxia } from "./cartel/FormCronoloxia";
 import { FormProximos } from "./cartel/FormProximos";
 import PilotoCartel from "./cartel/PilotoCartel";
-import { FormNoso11 } from "./cartel/FormNoso11";
 import { FormMultiusos, TEMAS } from "./cartel/FormMultiusos";
 import { Toggle } from "./cartel/Common";
 import { FormClasificacion } from "./cartel/FormClasificacion";
@@ -38,8 +36,6 @@ import { cargarCartelesPartido } from "@/lib/server/acciones/carteles-guardados"
 /** Plantillas del generador que son un paso del partido: con partido elegido, se guardan. */
 const PASO_DE_PLANTILLA: Partial<Record<TemplateId, PasoCartel>> = {
   partido: "partido",
-  // El Resultado es la línea de tiempo (la antigua Cronoloxía).
-  cronoloxia: "resultado",
 };
 
 interface Props {
@@ -74,8 +70,6 @@ export default function GeneradorCartel({
     handleJugadorFile,
     handleMultiusosFile,
     handleLoteriaFile,
-    updatePlayer,
-    swapPlayers,
     addEvent,
     updateEvent,
     removeEvent,
@@ -370,36 +364,6 @@ export default function GeneradorCartel({
               tipo={tipo}
             />
           )}
-          {tipo === "resumo" && (
-            <FormResumo
-              form={form}
-              set={set}
-              equipos={equipos}
-              handleRivalSelect={handleRivalSelect}
-              handleRivalFile={handleRivalFile}
-              dbMatches={dbMatches}
-              loadMatchFromDb={elegirPartido}
-              campos={campos}
-              competiciones={competicionesCatalog}
-              tipo={tipo}
-            />
-          )}
-          {tipo === "cronoloxia" && (
-            <FormCronoloxia
-              form={form}
-              set={set}
-              equipos={equipos}
-              jugadores={jugadores}
-              handleRivalSelect={handleRivalSelect}
-              handleRivalFile={handleRivalFile}
-              addEvent={addEvent}
-              updateEvent={updateEvent}
-              removeEvent={removeEvent}
-              dbMatches={dbMatches}
-              loadMatchFromDb={elegirPartido}
-              tipo={tipo}
-            />
-          )}
           {tipo === "proximos" && (
             <FormProximos
               form={form}
@@ -409,20 +373,6 @@ export default function GeneradorCartel({
               equipos={equipos}
               dbMatches={dbMatches}
               rellenarAlAbrir={rellenarProximos}
-            />
-          )}
-          {tipo === "noso11" && (
-            <FormNoso11
-              form={form}
-              set={set}
-              jugadores={jugadores}
-              jugFileName={jugFileName}
-              handleJugadorFile={handleJugadorFile}
-              updatePlayer={updatePlayer}
-              swapPlayers={swapPlayers}
-              dbMatches={dbMatches}
-              loadMatchFromDb={elegirPartido}
-              tipo={tipo}
             />
           )}
           {tipo === "multiusos" && (

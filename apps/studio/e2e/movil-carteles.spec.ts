@@ -87,10 +87,8 @@ for (const ancho of [360, 390]) {
         .evaluateAll((controles) => controles.map((el) => el.getBoundingClientRect().height));
       // En Android la densidad de píxeles es fraccionaria: 44 px salen como 43,99999.
       expect(Math.round(Math.min(...altos))).toBeGreaterThanOrEqual(44);
-      if (plantilla === "cronoloxia")
-        await page.getByRole("button", { name: "+ Evento", exact: true }).tap();
       if (plantilla === "clasificacion")
-        await page.getByRole("button", { name: "A mano", exact: true }).tap();
+        await page.getByRole("button", { name: "Hacerla a mano (copas y torneos)", exact: true }).tap();
       // Las opciones móviles están plegadas; se revisan también sus controles al abrirlas.
       // Se abren solo los cerrados, de uno en uno: al abrir uno aparecen los que lleva dentro,
       // y tocar uno ya abierto lo cerraría.

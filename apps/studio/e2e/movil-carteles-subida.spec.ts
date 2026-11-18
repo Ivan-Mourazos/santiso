@@ -3,14 +3,9 @@ import sharp from "sharp";
 
 /**
  * Subir una foto propia desde el móvil: una grande (como las de la cámara) se reduce sola, se
- * ve de fondo, se puede encuadrar y viaja en la exportación. Nada se guarda: la exportación se
- * responde aquí.
+ * ve de fondo, se puede encuadrar y viaja en la exportación. Nada se guarda: la petición de guardar
+ * se responde aquí.
  */
-const PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-  "base64",
-);
-
 async function fotoGrande() {
   // 4000 × 3000 con ruido: varios MB, como una foto de móvil.
   const ruido = Buffer.alloc(4000 * 3000 * 3);
@@ -20,16 +15,20 @@ async function fotoGrande() {
     .toBuffer();
 }
 
-for (const plantilla of ["cronoloxia", "resumo"]) {
-  test(`carteles: foto propia de fondo en ${plantilla}, reducida y encuadrable`, async ({
-    page,
-  }) => {
+// Resultado y Cronoloxía sueltos se retiraron el 18/11/2026: la foto de fondo queda en el cartel
+// de partido. Con el próximo partido elegido, ese cartel se guarda en el partido en vez de
+// prepararse solo: la petición de guardar se intercepta y nunca llega al servidor.
+test("carteles: foto propia de fondo en partido, reducida y encuadrable", async ({ page }) => {
     const peticiones: { datos: { foto?: { url: string; zoom?: number } | null } }[] = [];
-    await page.route("**/api/carteles/png", async (ruta) => {
-      peticiones.push(ruta.request().postDataJSON());
-      await ruta.fulfill({ status: 200, contentType: "image/png", body: PNG });
+    await page.route("**/api/carteles/guardar", async (ruta) => {
+      peticiones.push(...ruta.request().postDataJSON().peticiones);
+      await ruta.fulfill({
+        status: 422,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Prueba: no se guarda." }),
+      });
     });
-    await page.goto(`/admin/carteles?plantilla=${plantilla}`);
+    await page.goto("/admin/carteles?plantilla=partido");
     await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
     await page
       .locator("label", { hasText: "Subir foto de fondo" })
@@ -47,14 +46,15 @@ for (const plantilla of ["cronoloxia", "resumo"]) {
     await page.getByLabel("Acercar").fill("2");
     await expect(fondo).toHaveCSS("transform", /matrix\(2, 0, 0, 2/);
 
-    // Con toda la batería en marcha el servidor de desarrollo tarda en compilar el render.
+    await page
+      .getByRole("button", { name: /^(Generar cartel|Actualizar cartel|Volver a generar)$/ })
+      .tap();
     await expect.poll(() => peticiones.length, { timeout: 30000 }).toBeGreaterThan(0);
     const ultima = peticiones.at(-1)!.datos.foto!;
     expect(ultima.url.startsWith("data:image/jpeg")).toBe(true);
     expect(ultima.url.length).toBeLessThan(6_000_000);
     const ancho = await page.evaluate(() => document.documentElement.scrollWidth);
     expect(ancho).toBeLessThanOrEqual(page.viewportSize()!.width);
-  });
-}
+});
 
 // O Noso 11 es ahora el campo con las camisetas del club: va sin fotos (15/11/2026).
