@@ -437,7 +437,7 @@ span.fichaFoto {
 
 /* Historial deportivo dentro de la ficha: plegado, para no empujar los partidos. */
 .fichaHistorial summary {
-  min-height: 36px;
+  min-height: 44px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -485,7 +485,7 @@ span.fichaFoto {
 
 /* Temporadas pasadas según la federación: plegadas, una tarjeta por competición. */
 .fichaAnteriores summary {
-  min-height: 36px;
+  min-height: 44px;
   font-weight: 800;
   cursor: pointer;
 }

@@ -93,6 +93,27 @@ export function StudioShell({
   );
   // A 360 px la pestaña marcada puede quedar fuera: se desplaza hasta verla.
   const subnavRef = useRef<HTMLElement>(null);
+  const [hayPestanasAlInicio, setHayPestanasAlInicio] = useState(false);
+  const [hayPestanasAlFinal, setHayPestanasAlFinal] = useState(false);
+  useEffect(() => {
+    const nav = subnavRef.current;
+    const primera = nav?.firstElementChild;
+    const ultima = nav?.lastElementChild;
+    if (!primera || !ultima) return;
+
+    const bordes = new IntersectionObserver(
+      (entradas) => {
+        for (const { target, intersectionRatio } of entradas) {
+          if (target === primera) setHayPestanasAlInicio(intersectionRatio < 1);
+          else setHayPestanasAlFinal(intersectionRatio < 1);
+        }
+      },
+      { root: nav, threshold: 1 },
+    );
+    bordes.observe(primera);
+    bordes.observe(ultima);
+    return () => bordes.disconnect();
+  }, [subnavLiga, sinPermiso]);
   useEffect(() => {
     subnavRef.current
       ?.querySelector('[aria-current="page"]')
@@ -236,7 +257,12 @@ export function StudioShell({
         )}
       </aside>
       <div className={styles.main}>
-        <header className={styles.header}>
+        <header
+          className={styles.header}
+          data-titulo-largo={
+            section?.id === "tecnicos" || section?.id === "adestramentos" || undefined
+          }
+        >
           <div className={styles.heading}>
             {section?.id !== "inicio" && (
               <button
@@ -288,22 +314,28 @@ export function StudioShell({
           ) : (
             <>
               {subnavLiga && (
-                <nav aria-label="Liga" className={styles.subnav} ref={subnavRef}>
-                  {SUBNAV_LIGA.map((item) => (
-                    <Link
-                      key={item.id}
-                      href={rutaSeccion(item.id, contextoLiga)}
-                      aria-current={item.id === section?.id ? "page" : undefined}
-                      onNavigate={(event) => {
-                        event.preventDefault();
-                        if (item.id !== section?.id)
-                          navigate(rutaSeccion(item.id, contextoLiga), "nav-tab");
-                      }}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </nav>
+                <div
+                  className={styles.subnavMarco}
+                  data-hay-inicio={hayPestanasAlInicio || undefined}
+                  data-hay-final={hayPestanasAlFinal || undefined}
+                >
+                  <nav aria-label="Liga" className={styles.subnav} ref={subnavRef}>
+                    {SUBNAV_LIGA.map((item) => (
+                      <Link
+                        key={item.id}
+                        href={rutaSeccion(item.id, contextoLiga)}
+                        aria-current={item.id === section?.id ? "page" : undefined}
+                        onNavigate={(event) => {
+                          event.preventDefault();
+                          if (item.id !== section?.id)
+                            navigate(rutaSeccion(item.id, contextoLiga), "nav-tab");
+                        }}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </nav>
+                </div>
               )}
               {children}
             </>

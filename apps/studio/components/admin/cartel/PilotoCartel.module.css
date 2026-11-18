@@ -152,7 +152,7 @@
   border-radius: var(--ui-radius);
 }
 .encuadre summary {
-  min-height: 32px;
+  min-height: 44px;
   font-weight: 700;
   cursor: pointer;
 }

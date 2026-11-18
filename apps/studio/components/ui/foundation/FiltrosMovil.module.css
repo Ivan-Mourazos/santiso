@@ -20,6 +20,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.resumen[data-ajustar] span {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
 .resumen svg {
   flex-shrink: 0;
   color: var(--ui-accent);

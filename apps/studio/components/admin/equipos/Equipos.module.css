@@ -276,9 +276,6 @@
   .tabla td:nth-child(4) {
     display: none;
   }
-  .tabla .abrir {
-    min-height: 0;
-  }
   .tabla .abrir .nombre {
     display: block;
     overflow: hidden;

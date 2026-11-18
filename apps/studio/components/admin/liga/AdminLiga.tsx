@@ -172,13 +172,14 @@ export default function AdminLiga({ categoria, showToast }: Props) {
   return (
     <div className={styles.panel}>
       <div className={styles.selectores}>
-        {/* En el móvil, los dos filtros en una sola línea que abre su hoja, como en Estadísticas. */}
+        {/* El equipo elegido tiene prioridad en el resumen; la hoja muestra ambos filtros. */}
         <FiltrosMovil
-          resumen={[
-            competicionesEnCategoria.find((c) => c.id === selectedCompetitionId)?.nombre ??
-              "Competición",
-            soloRival || "Todos los equipos",
-          ].join(" · ")}
+          ajustarResumen
+          resumen={
+            soloRival ||
+            (competicionesEnCategoria.find((c) => c.id === selectedCompetitionId)?.nombre ??
+              "Competición")
+          }
         >
           <Select
             label="Competición"

@@ -1,5 +1,6 @@
 /* La hoja de cada pestaña: grupos con tarjetas de dos en dos; ajustes, en pastillas. */
 .hoja {
+  container-type: inline-size;
   display: grid;
   gap: var(--ui-space-4);
 }
@@ -40,9 +41,16 @@
   display: grid;
   gap: 2px;
   min-width: 0;
-  /* Partir por sílabas («Adestra-mentos»), no por cualquier letra. */
   overflow-wrap: break-word;
   hyphens: auto;
+}
+@container (width < 380px) {
+  .tarjeta[data-ancha] {
+    grid-column: 1 / -1;
+  }
+}
+.tarjeta[data-ancha] .texto {
+  hyphens: none;
 }
 .tarjeta small {
   color: var(--ui-muted);
@@ -63,6 +71,9 @@
 .tarjeta[aria-current="page"] {
   border-color: var(--ui-accent);
   background: var(--ui-accent-soft);
+}
+.tarjeta[aria-current="page"] small {
+  color: var(--ui-text);
 }
 .tarjeta:active,
 .pastilla:active {

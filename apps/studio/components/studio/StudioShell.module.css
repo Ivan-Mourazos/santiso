@@ -1,7 +1,9 @@
 .shell {
   display: flex;
   min-height: 100dvh;
-  background: var(--ui-halo) no-repeat, var(--ui-bg);
+  background:
+    var(--ui-halo) no-repeat,
+    var(--ui-bg);
   color: var(--ui-text);
 }
 /* En escritorio (≥ 1280 × 720) el menú entero cabe sin desplazarse. */
@@ -130,13 +132,35 @@
   color: var(--ui-on-accent);
 }
 /* Pestañas de la competición, bajo la cabecera. */
+.subnavMarco {
+  position: relative;
+  margin-bottom: var(--ui-space-3);
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--ui-line);
+}
+/* Las señales quedan debajo de los enlaces, fuera del texto y del foco. */
+.subnavMarco[data-hay-inicio]::before,
+.subnavMarco[data-hay-final]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 2rem;
+  height: 3px;
+  pointer-events: none;
+}
+.subnavMarco[data-hay-inicio]::before {
+  left: 0;
+  background: linear-gradient(to right, var(--ui-muted), transparent);
+}
+.subnavMarco[data-hay-final]::after {
+  right: 0;
+  background: linear-gradient(to left, var(--ui-muted), transparent);
+}
 .subnav {
   display: flex;
   gap: var(--ui-space-1);
-  margin: 0 0 var(--ui-space-3);
   overflow-x: auto;
   scrollbar-width: none;
-  border-bottom: 1px solid var(--ui-line);
 }
 .subnav a {
   flex: none;
@@ -313,7 +337,7 @@
   /* Lo que mide la cabecera fija: quien se quede pegado debajo (pestañas, cabeceras de tabla)
      lo usa para no esconderse tras ella. */
   .shell {
-/* Con muesca (app instalada en el iPhone), el sistema difumina lo que queda justo bajo la
+    /* Con muesca (app instalada en el iPhone), el sistema difumina lo que queda justo bajo la
        barra de la hora: el título baja 14 px más para salir de esa franja. Sin muesca, nada. */
     --studio-aire: min(env(safe-area-inset-top, 0px), 14px);
     --studio-cabecera: calc(52px + env(safe-area-inset-top, 0px) + var(--studio-aire));
@@ -336,8 +360,7 @@
     height: var(--studio-cabecera);
     min-height: 0;
     padding: calc(0.25rem + env(safe-area-inset-top) + var(--studio-aire))
-      max(0.75rem, env(safe-area-inset-right)) 0.25rem
-      max(0.75rem, env(safe-area-inset-left));
+      max(0.75rem, env(safe-area-inset-right)) 0.25rem max(0.75rem, env(safe-area-inset-left));
   }
   .main {
     padding-top: var(--studio-cabecera);
@@ -393,6 +416,15 @@
     min-width: 0;
     padding-inline: var(--ui-space-3);
     font-size: var(--ui-text-sm);
+  }
+  .header[data-titulo-largo] h1 {
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: normal;
+    text-overflow: clip;
+  }
+  .header[data-titulo-largo] .categories button {
+    padding-inline: var(--ui-space-2);
   }
   .template {
     flex: 0 1 13rem;

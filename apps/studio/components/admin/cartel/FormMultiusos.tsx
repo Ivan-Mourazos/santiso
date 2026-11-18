@@ -25,11 +25,7 @@ export const TEMAS: { id: MultiusosTema; label: string; icon: string }[] = [
   { id: "formal", label: "Aviso o comunicado", icon: "📢" },
 ];
 
-export const FormMultiusos: React.FC<Props> = ({
-  form,
-  set,
-  handleMultiusosFile,
-}) => {
+export const FormMultiusos: React.FC<Props> = ({ form, set, handleMultiusosFile }) => {
   return (
     <>
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
@@ -55,7 +51,7 @@ export const FormMultiusos: React.FC<Props> = ({
 
       <PlegableMovil titulo="Imágenes">
         <SectionLabel>Imágenes Enmarcadas (Opcional)</SectionLabel>
-        <p style={{ fontSize: "0.75rem", color: "#888", marginBottom: "1rem" }}>
+        <p className={styles.ayudaImagenes}>
           Sube capturas (ej. tabla de clasificación, cuadrante de eliminatorias o foto de
           celebración). Se integrarán con bordes redondeados y sombras premium de forma automática.
         </p>
@@ -103,9 +99,10 @@ export const FormMultiusos: React.FC<Props> = ({
                 />
               </label>
               {form.multiusosImg1Url && (
-                <Button size="sm" variant="danger"
+                <Button
+                  size="sm"
+                  variant="danger"
                   onClick={() => handleMultiusosFile(1, null)}
-                  
                   title="Quitar"
                 >
                   ✕
@@ -170,9 +167,10 @@ export const FormMultiusos: React.FC<Props> = ({
                 />
               </label>
               {form.multiusosImg2Url && (
-                <Button size="sm" variant="danger"
+                <Button
+                  size="sm"
+                  variant="danger"
                   onClick={() => handleMultiusosFile(2, null)}
-                  
                   title="Quitar"
                 >
                   ✕

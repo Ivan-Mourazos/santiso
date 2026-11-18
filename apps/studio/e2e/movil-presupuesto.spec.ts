@@ -66,12 +66,59 @@ for (const seccion of SECCIONES) {
   });
 }
 
-const PLANTILLAS_CARTEL = [
-  "partido",
-  "proximos",
-  "multiusos",
-  "clasificacion",
-];
+for (const ancho of [360, 390]) {
+  test(`cabeceras de Cuerpo técnico y Adestramentos enteras a ${ancho}px`, async ({ page }) => {
+    await page.setViewportSize({ width: ancho, height: 800 });
+    for (const seccion of ["tecnicos", "adestramentos"]) {
+      await abrir(page, seccion);
+      const titulo = page.getByRole("heading", { level: 1 });
+      expect(await titulo.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+      const categoria = page.getByRole("group", { name: "Categoría deportiva" });
+      const a = (await titulo.boundingBox())!;
+      const b = (await categoria.boundingBox())!;
+      expect(a.x + a.width).toBeLessThanOrEqual(b.x);
+    }
+  });
+
+  test(`Goleadores: resumen entero y extremos de Liga visibles a ${ancho}px`, async ({ page }) => {
+    await page.setViewportSize({ width: ancho, height: 800 });
+    await abrir(page, "liga");
+    const resumen = page.getByRole("button", { name: /^Filtros:/ }).locator("span");
+    expect(await resumen.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+    const nav = page.getByRole("navigation", { name: "Liga", exact: true });
+    const marco = nav.locator("..");
+    for (const [desplazamiento, borde, opuesto] of [
+      [0, "final", "inicio"],
+      [1000, "inicio", "final"],
+    ] as const) {
+      await nav.evaluate((el, x) => (el.scrollLeft = x), desplazamiento);
+      await expect(marco).toHaveAttribute(`data-hay-${borde}`, "true");
+      await expect(marco).not.toHaveAttribute(`data-hay-${opuesto}`, "true");
+    }
+  });
+
+  test(`Más: Adestramentos ocupa una fila y mantiene su nombre entero a ${ancho}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: ancho, height: 800 });
+    await abrir(page, "inicio");
+    await page.getByRole("button", { name: "Más", exact: true }).tap();
+    const enlace = page.getByRole("dialog").getByRole("link", { name: "Adestramentos" });
+    await expect(enlace).toBeVisible();
+    const medidas = await enlace.evaluate((el) => {
+      const texto = el.lastElementChild!;
+      const rango = document.createRange();
+      rango.selectNodeContents(texto.firstChild!);
+      return {
+        lineas: rango.getClientRects().length,
+        diferencia: el.parentElement!.clientWidth - (el as HTMLElement).offsetWidth,
+      };
+    });
+    expect(medidas).toEqual({ lineas: 1, diferencia: 0 });
+  });
+}
+
+const PLANTILLAS_CARTEL = ["partido", "proximos", "multiusos", "clasificacion"];
 for (const ancho of [360, 390]) {
   for (const plantilla of PLANTILLAS_CARTEL) {
     test(`carteles ${plantilla}: presupuesto de formulario y vista debajo a ${ancho}px`, async ({

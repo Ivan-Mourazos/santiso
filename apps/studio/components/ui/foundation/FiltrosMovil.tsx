@@ -24,15 +24,18 @@ export function useEsMovil() {
 
 /**
  * En escritorio pinta los filtros tal cual. En móvil los guarda en una hoja inferior y deja
- * a la vista una sola línea con lo elegido, para que los filtros no se coman la pantalla.
+ * a la vista un resumen de lo elegido, para que los filtros no se coman la pantalla.
  */
 export function FiltrosMovil({
   resumen,
+  ajustarResumen = false,
   titulo = "Filtros",
   children,
 }: {
-  /** Lo elegido ahora, en una línea: «2026/27 · Tercera · J1». */
+  /** Lo elegido ahora: «2026/27 · Tercera · J1». */
   resumen: string;
+  /** Permite que el resumen ocupe varias líneas. */
+  ajustarResumen?: boolean;
   titulo?: string;
   children: ReactNode;
 }) {
@@ -44,6 +47,7 @@ export function FiltrosMovil({
       <button
         type="button"
         className={styles.resumen}
+        data-ajustar={ajustarResumen || undefined}
         aria-haspopup="dialog"
         aria-label={`${titulo}: ${resumen}`}
         onClick={(evento) => {
