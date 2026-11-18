@@ -112,18 +112,21 @@ export default function VistaAdestramentos({
       <ul className={styles.lista} aria-label="Entrenamientos">
         {datos.entrenamientos.map((e) => {
           const marcas = datos.marcas.filter((a) => a.asistencia.entrenamientoId === e.id);
+          const cuenta = (estado: string) =>
+            marcas.filter((a) => a.asistencia.estado === estado).length;
+          const cuando = `${fechaLocal(e.fecha)}${e.hora ? ` · ${e.hora}` : ""}`;
+          const importe = euros(marcas.reduce((s, a) => s + (a.importeCentimos ?? 0), 0));
           return (
             <li key={e.id} className={styles.entreno}>
-              <button className={styles.abrirEntreno} onClick={() => onDetalle(e.id)}>
-                <strong>
-                  {fechaLocal(e.fecha)}
-                  {e.hora ? ` · ${e.hora}` : ""}
-                </strong>
+              <button
+                className={styles.abrirEntreno}
+                onClick={() => onDetalle(e.id)}
+                // En pantalla va abreviado (✓ · T · F); leído, con palabras.
+                aria-label={`${cuando}: ${cuenta("presente")} presentes, ${cuenta("tarde")} tarde, ${cuenta("ausente")} faltas, ${importe} en multas`}
+              >
+                <strong>{cuando}</strong>
                 <span>
-                  {marcas.filter((a) => a.asistencia.estado === "presente").length} ✓ ·{" "}
-                  {marcas.filter((a) => a.asistencia.estado === "tarde").length} T ·{" "}
-                  {marcas.filter((a) => a.asistencia.estado === "ausente").length} F ·{" "}
-                  {euros(marcas.reduce((s, a) => s + (a.importeCentimos ?? 0), 0))}
+                  {cuenta("presente")} ✓ · {cuenta("tarde")} T · {cuenta("ausente")} F · {importe}
                 </span>
               </button>
               <Copiar texto={textoWhatsapp(e, categoria, datos.personas, registros)} />
