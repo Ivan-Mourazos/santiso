@@ -31,7 +31,14 @@ test("la pantalla monta el cartel y las acciones de cada plantilla", async ({ pa
   await expect(page.getByRole("heading", { level: 1, name: "Cartel de partido" })).toBeVisible();
   await expect(lienzo(page)).toBeVisible({ timeout: 20000 });
 
-  await expect(page.getByRole("button", { name: "Descargar PNG" })).toBeVisible();
+  // Abre con el próximo partido cargado: ese cartel se guarda con el partido («Generar
+  // cartel»); sin partido, se descarga a mano.
+  await expect(
+    page
+      .getByRole("region", { name: "Cartel de partido: carteles guardados" })
+      .getByRole("button", { name: "Generar cartel" })
+      .or(page.getByRole("button", { name: "Descargar PNG" })),
+  ).toBeVisible();
   await expect(page.getByRole("button", { name: "Limpiar datos" })).toBeVisible();
 
   expect(errores).toEqual([]);
@@ -146,7 +153,13 @@ test("las siete plantillas tienen su cartel en el Estudio", async ({ page }) => 
     "clasificacion",
   ]) {
     await page.goto(`/admin/carteles?plantilla=${plantilla}`);
-    // «despues» enseña dos: el Resultado y O Noso 11.
+    // «despues» (16/11/2026): sin partido elegido aún no hay cartel que enseñar.
+    if (plantilla === "despues") {
+      await expect(page.getByText("Elige el partido.", { exact: true }), plantilla).toBeVisible({
+        timeout: 30000,
+      });
+      continue;
+    }
     const piloto = page.getByRole("region", { name: "Previsualización del cartel" }).first();
     await expect(piloto.locator("[data-vista-cartel] [data-cartel]"), plantilla).toBeVisible({
       timeout: 30000,

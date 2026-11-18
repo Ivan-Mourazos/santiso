@@ -18,7 +18,8 @@ export default defineConfig({
     // Las pruebas de pantalla conservan su ámbito; el motor se verifica en los tres.
     testIgnore:
       p.name === "chromium"
-        ? ["**/movil-carteles.spec.ts", "**/movil-axenda.spec.ts"]
+        ? // La subida de foto prepara el PNG sola solo en el móvil.
+          ["**/movil-carteles.spec.ts", "**/movil-axenda.spec.ts", "**/movil-carteles-subida.spec.ts"]
         : ["**/carteles.spec.ts"],
   })),
   webServer: {
