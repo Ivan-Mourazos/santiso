@@ -84,6 +84,12 @@
   text-decoration: none;
   white-space: nowrap;
 }
+/* Mide 28 px de alto: un área invisible la lleva a 44 px de toque sin mover nada. */
+.puesto::before {
+  content: "";
+  position: absolute;
+  inset: -8px -4px;
+}
 .puesto strong {
   color: var(--ui-text);
   font: 900 var(--ui-text-base) / 1 var(--ui-font-title);
