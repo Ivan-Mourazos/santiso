@@ -19,10 +19,17 @@ interface Datos {
 function datosDe(pantalla: PantallaJornada): Datos {
   return {
     momento: pantalla.momento,
-    partidos: pantalla.categorias.flatMap((c) => {
-      const partido = partidoEnMesa(c.proximo, c.ultimo, pantalla.momento);
-      return partido ? [{ categoria: c.categoria, partido }] : [];
-    }),
+    // Por fecha, no por categoría: el que se juega antes, arriba. Sin fecha, al final.
+    partidos: pantalla.categorias
+      .flatMap((c) => {
+        const partido = partidoEnMesa(c.proximo, c.ultimo, pantalla.momento);
+        return partido ? [{ categoria: c.categoria, partido }] : [];
+      })
+      .sort((a, b) => {
+        const fa = a.partido.fecha ?? "~";
+        const fb = b.partido.fecha ?? "~";
+        return fa < fb ? -1 : fa > fb ? 1 : 0;
+      }),
   };
 }
 
