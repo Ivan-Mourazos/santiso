@@ -239,6 +239,8 @@ export const MENU: readonly PestanaMenu[] = [
 const PESTANA_DE_OCULTA: Partial<Record<Seccion, IdPestana>> = {
   equipo: "liga",
   jugador: "equipo",
+  // Se abre desde el partido en Liga → Partidos.
+  directo: "liga",
 };
 
 /** La pestaña que se enciende estando en esa sección. */

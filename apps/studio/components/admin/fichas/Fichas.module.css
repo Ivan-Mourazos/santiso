@@ -488,3 +488,16 @@
     width: 2rem;
   }
 }
+
+/* «Ver todos» bajo una lista recortada. */
+.verTodos {
+  min-height: 44px;
+  margin-top: var(--ui-space-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ui-accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}

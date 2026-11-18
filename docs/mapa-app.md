@@ -99,9 +99,9 @@ Todas comparten: formulario + vista previa + formato (4:5 / 9:16) + texto para I
 
 | Código | Pantalla | Ruta | Desde dónde se llega | Decisión |
 |---|---|---|---|---|
-| O1 | Ficha de jugador | `jugador?id=` | Ficha rápida (L4.1 / E3.3); «Traer cifras de esta temporada» (admin) | |
-| O2 | Ficha de equipo | `equipo?id=` | L1.3, L2.1, «Otros equipos» de O1 | |
-| O3 | Directo (libreta) | `directo?partido=` | L1.1, L1.3 | |
+| O1 | Ficha de jugador | `jugador?id=` | Ficha rápida (L4.1 / E3.3); «Traer cifras de esta temporada» (admin) || **se queda 18/11** |
+| O2 | Ficha de equipo | `equipo?id=` | L1.3, L2.1, «Otros equipos» de O1 || **hecho 18/11**: partidos contra el Santiso (3) y sus jugadores (5) recortados con «Ver todos» |
+| O3 | Directo (libreta) | `directo?partido=` | L1.1, L1.3 || **se queda 18/11**; abajo se enciende «Liga», no «Más» |
 | O4 | Jornada | — | (Mesa del partido con pasos) | **eliminada 15/11** (redirige a Inicio) |
 
 Fuera del panel: `/entrar` (login) y `/render/cartel` (interna, para hacer los PNG).

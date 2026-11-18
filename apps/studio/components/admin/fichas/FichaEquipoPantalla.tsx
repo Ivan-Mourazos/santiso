@@ -8,6 +8,40 @@ import type { FichaDeEquipo } from "@/lib/server/consultas/fichas-rfgf";
 import { Resultado, fechaCorta } from "./comunes";
 import styles from "./Fichas.module.css";
 
+/**
+ * Una lista larga, recortada a sus primeras filas con «Ver todos»: la ficha medía más de tres
+ * pantallas por los partidos de otras temporadas y los 25 jugadores del rival.
+ */
+function Recortada<T>({
+  filas,
+  primeras,
+  nombre,
+  fila,
+}: {
+  filas: T[];
+  primeras: number;
+  nombre: string;
+  fila: (f: T) => React.ReactNode;
+}) {
+  const [todas, setTodas] = useState(false);
+  const vistas = todas ? filas : filas.slice(0, primeras);
+  return (
+    <>
+      <ul className={styles.lista}>{vistas.map(fila)}</ul>
+      {filas.length > primeras && (
+        <button
+          type="button"
+          className={styles.verTodos}
+          aria-expanded={todas}
+          onClick={() => setTodas((v) => !v)}
+        >
+          {todas ? "Ver menos" : `Ver ${nombre} (${filas.length})`}
+        </button>
+      )}
+    </>
+  );
+}
+
 /** «Amarilla · negro · negras» con las bolitas de color delante. */
 function Equipacion({ club }: { club: NonNullable<FichaDeEquipo["club"]> }) {
   const e = club.equipacion;
@@ -150,8 +184,11 @@ export default function FichaEquipoPantalla({ equipoId }: { equipoId: string | n
                   </div>
                 ))}
               </div>
-              <ul className={styles.lista}>
-                {f.contraSantiso.partidos.map((p) => (
+              <Recortada
+                filas={f.contraSantiso.partidos}
+                primeras={3}
+                nombre="todos los partidos"
+                fila={(p) => (
                   <li key={p.id}>
                     <span>
                       {p.local} – {p.visitante}
@@ -164,8 +201,8 @@ export default function FichaEquipoPantalla({ equipoId }: { equipoId: string | n
                       <Resultado r={p.resultado} />
                     </span>
                   </li>
-                ))}
-              </ul>
+                )}
+              />
             </>
           )}
         </section>
@@ -174,8 +211,11 @@ export default function FichaEquipoPantalla({ equipoId }: { equipoId: string | n
       {f.jugadoresVistos.length > 0 && (
         <section className={styles.bloque} aria-label="Jugadores vistos en actas">
           <h3>Sus jugadores esta temporada</h3>
-          <ul className={styles.lista}>
-            {f.jugadoresVistos.map((j) => (
+          <Recortada
+            filas={f.jugadoresVistos}
+            primeras={5}
+            nombre="todos los jugadores"
+            fila={(j) => (
               <li key={j.persona}>
                 <span>
                   {j.dorsal !== null ? `${j.dorsal} · ` : ""}
@@ -196,8 +236,8 @@ export default function FichaEquipoPantalla({ equipoId }: { equipoId: string | n
                   </span>
                 )}
               </li>
-            ))}
-          </ul>
+            )}
+          />
         </section>
       )}
 
