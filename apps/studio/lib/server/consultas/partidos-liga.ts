@@ -2,6 +2,7 @@ import "server-only";
 import { schema } from "@santiso/db";
 import { aliasedTable, and, asc, eq, inArray, sql } from "drizzle-orm";
 import { cierreHecho, momentoLocal, sigueEnMesa } from "@/lib/jornada/vestiario";
+import { hoyLocal } from "@/lib/jornada/semana";
 import { cartelesDePartidos } from "@/lib/server/carteles/guardados";
 import { urlMedia } from "@/lib/media";
 import { grupoDeEnlace, urlActaWeb } from "@/lib/rfgf/enlace";
@@ -285,10 +286,19 @@ export interface FichaEquipo {
   tarjetas: { amarillas: number; rojas: number };
 }
 
+/**
+ * Si un partido sin resultado cuenta como «por jugar»: sin fecha, o de hoy en adelante. Uno ya
+ * pasado sin resultado (aplazado o sin acta todavía) no es el próximo.
+ */
+export function porJugarDesde(fecha: string | null, hoy: string): boolean {
+  return !fecha || fecha.slice(0, 10) >= hoy;
+}
+
 /** La ficha de un equipo en una competición: resultados, lo que le queda y sus goleadores. */
 export async function fichaEquipo(
   competicionId: string,
   equipoId: string,
+  hoy: string = hoyLocal(),
 ): Promise<FichaEquipo | null> {
   const filas = await filasDeCompeticion(competicionId);
   const suyas = filas.filter((f) => f.localId === equipoId || f.visitanteId === equipoId);
@@ -332,7 +342,7 @@ export async function fichaEquipo(
         golesRival: (casa(f) ? f.golesVisitante : f.golesLocal)!,
       })),
     pendientes: suyas
-      .filter((f) => !jugado(f) && f.estado !== "cancelado")
+      .filter((f) => !jugado(f) && f.estado !== "cancelado" && porJugarDesde(f.fecha, hoy))
       .map((f) => ({
         id: f.id,
         jornada: f.jornada,

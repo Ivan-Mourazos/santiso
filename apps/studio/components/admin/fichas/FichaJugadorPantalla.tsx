@@ -200,7 +200,8 @@ export default function FichaJugadorPantalla({ jugadorId }: { jugadorId: string 
                         {g.competicion}
                         <br />
                         <small className={styles.nota}>
-                          {g.categoria} · {g.grupo}
+                          {/* Sin grupo (liga de grupo único) no queda un «·» colgando. */}
+                          {[g.categoria, g.grupo].filter(Boolean).join(" · ")}
                         </small>
                       </td>
                       {g.cifras ? (

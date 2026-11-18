@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-const { jornadaActual } = await import("./partidos-liga");
+const { jornadaActual, porJugarDesde } = await import("./partidos-liga");
 
 const p = (jornada: number, fecha: string | null, jugado: boolean) => ({ jornada, fecha, jugado });
 
@@ -33,5 +33,16 @@ describe("jornadaActual", () => {
   });
   it("sin partidos del Santiso, ninguna", () => {
     expect(jornadaActual([], "2026-10-15T10:00")).toBeNull();
+  });
+});
+
+describe("porJugarDesde", () => {
+  it("de hoy en adelante, o sin fecha, está por jugar", () => {
+    expect(porJugarDesde("2026-11-22T17:00", "2026-11-18")).toBe(true);
+    expect(porJugarDesde("2026-11-18", "2026-11-18")).toBe(true);
+    expect(porJugarDesde(null, "2026-11-18")).toBe(true);
+  });
+  it("uno ya pasado sin resultado no es el próximo", () => {
+    expect(porJugarDesde("2026-11-15T12:00", "2026-11-18")).toBe(false);
   });
 });
