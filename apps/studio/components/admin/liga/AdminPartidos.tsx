@@ -334,7 +334,9 @@ function Detalle({
           </div>
           <p className={styles.cuando}>
             {cuando.dia}
-            {cuando.hora ? ` · ${cuando.hora}` : ""} · {p.campo ?? "Campo por confirmar"}
+            {/* Sin marcador, la hora ya sale en grande arriba: no se repite. */}
+            {cuando.hora && marcadorDe(p) ? ` · ${cuando.hora}` : ""} ·{" "}
+            {p.campo ?? "Campo por confirmar"}
             {p.arbitro && <small>Árbitro: {p.arbitro}</small>}
           </p>
           {propio && (
@@ -466,10 +468,14 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
   const fechaJornada = datos.jornadas[posicion]?.fecha ?? null;
   const ir = (numero: number | undefined) =>
     numero !== undefined && setParams({ j: numero === datos.actual ? null : String(numero) });
-  // El nuestro, el primero.
+  // El nuestro, el primero; los demás por día y hora, y los que aún no tienen hora al final de
+  // su día (antes salían en el orden de la federación: un «—» delante de las 12:00).
+  const orden = (p: PartidoDeLiga) =>
+    !p.fecha ? "~" : fechaPartido(p.fecha).hora ? p.fecha : `${p.fecha.slice(0, 10)}~`;
   const filas = [...datos.partidos].sort(
     (a, b) =>
-      Number(b.local.propio || b.visitante.propio) - Number(a.local.propio || a.visitante.propio),
+      Number(b.local.propio || b.visitante.propio) - Number(a.local.propio || a.visitante.propio) ||
+      orden(a).localeCompare(orden(b)),
   );
 
   return (
