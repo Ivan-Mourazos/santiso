@@ -1,7 +1,8 @@
 "use client";
 import { etiquetaMinuto } from "@/lib/directo/reloj";
 import type { EventoDirecto, PantallaDirecto } from "@/lib/directo/tipos";
-import { descripcion, ICONO, marcador, NOMBRE_TIPO } from "./modelo";
+import { ICONO, NOMBRE_TIPO } from "../eventos-presentacion";
+import { descripcion, marcador } from "./modelo";
 import s from "./Directo.module.css";
 
 /** Lo apuntado, en orden, para repasarlo con el árbitro al cerrar el acta. */

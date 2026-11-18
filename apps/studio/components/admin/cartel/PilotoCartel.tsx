@@ -123,7 +123,6 @@ export default function PilotoCartel({
   guardado = null,
   soloVista = false,
   colocacion = null,
-  titulo,
 }: {
   tipo: TemplateId;
   formato?: FormatoCartel;
@@ -141,7 +140,6 @@ export default function PilotoCartel({
   soloVista?: boolean;
   /** O Noso 11: dónde va cada titular en el campo. */
   colocacion?: Colocacion | null;
-  titulo?: string;
 }) {
   // Un solo diseño de cartel de partido: ya no se elige.
   const composicion: Composicion = "diagonal";
@@ -195,7 +193,7 @@ export default function PilotoCartel({
   // se vea entero nada más abrir la pantalla (y siga a la vista al desplazarse: es «sticky»).
   useEffect(() => {
     const nodo = panel.current;
-    if (!nodo) return;
+    if (!nodo || soloVista) return;
     const medir = () => {
       const arriba = nodo.getBoundingClientRect().top + window.scrollY;
       setAltoPanel(
@@ -205,7 +203,7 @@ export default function PilotoCartel({
     medir();
     window.addEventListener("resize", medir);
     return () => window.removeEventListener("resize", medir);
-  }, []);
+  }, [soloVista]);
 
   // La vista previa se ajusta al hueco (alto de la ventana y ancho de la columna): el cartel
   // se ve entero sin desplazarse.
@@ -371,6 +369,7 @@ export default function PilotoCartel({
     <section
       ref={panel}
       className={styles.piloto}
+      data-solo-vista={soloVista || undefined}
       aria-label="Previsualización del cartel"
       style={altoPanel ? { height: altoPanel } : undefined}
     >
@@ -383,10 +382,8 @@ export default function PilotoCartel({
         </div>
       )}
       {/* Una sola fila: título, opciones de la plantilla y descarga. Deja el alto al cartel. */}
+      {!soloVista && (
       <div className={styles.cabecera}>
-        {/* El cartel se entiende solo: el título, solo cuando hay dos (Resultado y O Noso 11). */}
-        {titulo && <h3>{titulo}</h3>}
-        {!soloVista && (
         <div className={styles.controles}>
           {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
             <>
@@ -465,8 +462,8 @@ export default function PilotoCartel({
             </>
           )}
         </div>
-        )}
       </div>
+      )}
       {!soloVista && foto && (tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
         <details className={styles.encuadre}>
           <summary>Ajustar la foto</summary>

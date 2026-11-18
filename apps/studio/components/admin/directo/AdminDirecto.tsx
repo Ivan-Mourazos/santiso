@@ -17,7 +17,8 @@ import { posibleDuplicado, repetidos } from "@/lib/directo/duplicados";
 import type { EventoDirecto, OperacionDirecto, PantallaDirecto } from "@/lib/directo/tipos";
 import { aplicarDirecto, cargarDirecto } from "@/lib/server/acciones/directo";
 import { CierreActa } from "./CierreActa";
-import { descripcion, ICONO, marcador, NOMBRE_TIPO } from "./modelo";
+import { ICONO, NOMBRE_TIPO } from "../eventos-presentacion";
+import { descripcion, marcador } from "./modelo";
 import { PanelEvento } from "./PanelEvento";
 import s from "./Directo.module.css";
 

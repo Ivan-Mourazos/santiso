@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- PNG guardado en /media, sin optimizador */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { archivosActuales, estadoCarrusel } from "@/lib/cartel2/despues";
@@ -17,6 +17,11 @@ const FICHERO: Record<PasoDespues, string> = {
   resultado: "1-resultado.png",
   noso11: "2-o-noso-11.png",
 };
+const ESTADO = {
+  pendiente: "Falta",
+  hecho: "Lista",
+  desactualizado: "Hay cambios",
+} as const;
 
 /**
  * Lo de después del partido, que se publica junto: el Resultado y O Noso 11 en un carrusel.
@@ -33,18 +38,20 @@ export function PaqueteDespues({
   motivo,
   showToast,
   onCambio,
+  previa,
 }: {
   partidoId: string;
   guardados: GuardadosDespues;
   /** Las peticiones de las dos imágenes, o `null` si aún no se puede. */
   preparar: () => Promise<Record<PasoDespues, PeticionCartel> | null>;
-  /** Lo que hay que guardar antes (la colocación de O Noso 11); `false` si falló. */
-  antesDeGuardar?: () => Promise<boolean>;
-  firma: string;
+  /** Guarda la colocación de O Noso 11. Devuelve el mensaje si falla. */
+  antesDeGuardar: () => Promise<string | null>;
+  firma: Record<PasoDespues, string>;
   texto: string;
   motivo?: string | null;
   showToast: (msg: string, type?: "success" | "error") => void;
   onCambio?: (guardados: GuardadosDespues) => void;
+  previa: (paso: PasoDespues) => ReactNode;
 }) {
   const [guardados, setGuardados] = useState(iniciales);
   const [generando, setGenerando] = useState(false);
@@ -53,10 +60,14 @@ export function PaqueteDespues({
   // Los PNG ya bajados: compartir en iOS solo funciona justo tras el toque, sin esperar a la red.
   const [descargados, setDescargados] = useState<{ clave: string; archivos: File[] } | null>(null);
   const [firmaGenerada, setFirmaGenerada] = useState(firma);
+  const [error, setError] = useState<{ paso: PasoDespues; mensaje: string } | null>(null);
   const bloqueo = useRef(false);
 
-  const estados = PASOS_DESPUES.map((p) => estadoPaso(guardados[p]));
-  const estado = estadoCarrusel(estados, firma, firmaGenerada);
+  const estados = PASOS_DESPUES.map((paso) => {
+    const estado = estadoPaso(guardados[paso]);
+    return estado === "hecho" && firma[paso] !== firmaGenerada[paso] ? "desactualizado" : estado;
+  });
+  const estado = estadoCarrusel(estados, JSON.stringify(firma), JSON.stringify(firmaGenerada));
   const urls = PASOS_DESPUES.map((p) => guardados[p][0]?.url ?? null);
   const claveUrls = urls.join("|");
   const ficheros = archivosActuales(descargados, claveUrls);
@@ -89,13 +100,22 @@ export function PaqueteDespues({
     if (bloqueo.current) return;
     bloqueo.current = true;
     setGenerando(true);
+    setError(null);
     const firmaEnviada = firma;
+    const mensajeGeneracion = "No se pudo generar. Vuelve a intentarlo.";
+    let pasoEnCurso: PasoDespues | null = null;
     try {
       const peticiones = await preparar();
       if (!peticiones) return;
-      if (antesDeGuardar && !(await antesDeGuardar())) return;
+      pasoEnCurso = "noso11";
+      const errorColocacion = await antesDeGuardar();
+      if (errorColocacion) {
+        setError({ paso: pasoEnCurso, mensaje: errorColocacion });
+        return;
+      }
       const nuevos = { ...guardados };
       for (const paso of PASOS_DESPUES) {
+        pasoEnCurso = paso;
         const respuesta = await fetch("/api/carteles/guardar", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -103,20 +123,18 @@ export function PaqueteDespues({
         });
         if (!respuesta.ok) {
           const aviso = (await respuesta.json().catch(() => null)) as { error?: string } | null;
-          showToast(
-            `${PASOS[paso].nombre}: ${aviso?.error ?? "no se pudo generar. Vuelve a intentarlo."}`,
-            "error",
-          );
+          setError({ paso, mensaje: aviso?.error ?? mensajeGeneracion });
           return;
         }
         nuevos[paso] = (await respuesta.json()) as CartelGuardado[];
         setGuardados({ ...nuevos });
+        setFirmaGenerada((anterior) => ({ ...anterior, [paso]: firmaEnviada[paso] }));
       }
-      setFirmaGenerada(firmaEnviada);
       onCambio?.(nuevos);
       showToast(estado === "pendiente" ? "Carrusel generado y guardado" : "Carrusel actualizado");
     } catch {
-      showToast("No se pudo generar el carrusel. Vuelve a intentarlo.", "error");
+      if (pasoEnCurso) setError({ paso: pasoEnCurso, mensaje: mensajeGeneracion });
+      else showToast("No se pudo generar el carrusel. Vuelve a intentarlo.", "error");
     } finally {
       bloqueo.current = false;
       setGenerando(false);
@@ -136,42 +154,49 @@ export function PaqueteDespues({
   }
 
   return (
-    <section className={s.panel} aria-label="Después del partido: carrusel" data-estado={estado}>
-      <p className={s.estado} role="status">
-        {estado === "pendiente" && "Todavía sin generar."}
-        {estado === "hecho" && "✓ Carrusel generado: Resultado y O Noso 11."}
-        {estado === "desactualizado" &&
-          "⚠ Han cambiado los datos desde que se generó. Sigue guardado el anterior hasta que lo actualices."}
-      </p>
-      {estado !== "pendiente" && (
-        <ul className={s.formatos} aria-label="Imágenes del carrusel">
-          {PASOS_DESPUES.map((paso, i) => (
-            <li key={paso} className={s.formatoFila}>
-              <span>
-                {i + 1}. {PASOS[paso].nombre}
-              </span>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setViendo({ paso, url: urls[i]! })}
-                aria-label={`Ver en grande: ${PASOS[paso].nombre}`}
-              >
-                Ver
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => ficheros?.[i] && descargarArchivos([ficheros[i]])}
-                disabled={!ficheros || generando}
-                aria-label={`Descargar: ${PASOS[paso].nombre}`}
-              >
-                Descargar
-              </Button>
+    <section className={s.carrusel} aria-label="Después del partido: carrusel" data-estado={estado}>
+      <ol className={s.piezas} aria-label="Imágenes del carrusel">
+        {PASOS_DESPUES.map((paso, i) => {
+          const nombre = PASOS[paso].nombre;
+          const url = urls[i];
+          const estadoPieza = estados[i]!;
+          return (
+            <li key={paso} className={s.pieza}>
+              <h3>{i + 1} · {nombre}</h3>
+              <p className={s.piezaEstado} role="status" data-estado={estadoPieza}>
+                {ESTADO[estadoPieza]}
+              </p>
+              {paso === "noso11" && motivo && <p className={s.motivo}>{motivo}</p>}
+              {error?.paso === paso && <p className={s.errorPieza} role="alert">{error.mensaje}</p>}
+              {previa(paso)}
+              {url && (
+                <div className={s.accionesPieza}>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setViendo({ paso, url })}
+                    aria-label={`Ver en grande: ${nombre}`}
+                  >
+                    Ver
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => ficheros?.[i] && descargarArchivos([ficheros[i]])}
+                    disabled={!ficheros || generando}
+                    aria-label={`Descargar: ${nombre}`}
+                  >
+                    Descargar
+                  </Button>
+                </div>
+              )}
             </li>
-          ))}
-        </ul>
+          );
+        })}
+      </ol>
+      {estado === "desactualizado" && (
+        <p className={s.motivo}>Los archivos anteriores siguen disponibles hasta que actualices el carrusel.</p>
       )}
-      {motivo && <p className={s.motivo}>{motivo}</p>}
       <div className={s.acciones}>
         <Button
           variant={estado === "hecho" ? "secondary" : "primary"}
@@ -187,6 +212,7 @@ export function PaqueteDespues({
         {estado !== "pendiente" && (
           <>
             <Button
+              variant={estado === "desactualizado" ? "secondary" : "primary"}
               onClick={() => void compartir()}
               disabled={!ficheros || compartiendo || generando}
             >

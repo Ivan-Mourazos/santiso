@@ -36,6 +36,7 @@ export function CartelesDelPaso({
   showToast,
   onCambio,
   cambios = null,
+  generarSecundario = false,
 }: {
   partidoId: string;
   paso: PasoCartel;
@@ -51,6 +52,7 @@ export function CartelesDelPaso({
    * ya no vale aunque los datos del partido sigan iguales. Vacío si no hay cambios.
    */
   cambios?: string | null;
+  generarSecundario?: boolean;
 }) {
   const [guardados, setGuardados] = useState(iniciales);
   const [generando, setGenerando] = useState(false);
@@ -204,7 +206,7 @@ export function CartelesDelPaso({
       {motivo && <p className={s.motivo}>{motivo}</p>}
       <Button
         className={s.generar}
-        variant={estado === "hecho" ? "secondary" : "primary"}
+        variant={generarSecundario || estado === "hecho" ? "secondary" : "primary"}
         pending={generando}
         pendingLabel="Generando…"
         disabled={Boolean(motivo)}

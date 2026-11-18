@@ -67,15 +67,13 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-/* Fila de 56 px: hora · local / visitante · marcador. */
+/* Cada fila comparte el cruce y los datos de la hoja. */
 .fila {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--ui-space-3);
+  gap: var(--ui-space-1);
   width: 100%;
   min-height: var(--ui-row);
-  padding: var(--ui-space-2) var(--ui-space-4) var(--ui-space-2) var(--ui-space-3);
+  padding: var(--ui-space-2) var(--ui-space-3);
   border: 0;
   border-bottom: 1px solid var(--ui-line);
   background: transparent;
@@ -102,29 +100,28 @@
   outline: 3px solid var(--ui-accent);
   outline-offset: -3px;
 }
-.hora {
-  color: var(--ui-muted);
-  font-weight: 700;
-  font-size: var(--ui-text-sm);
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-}
-.equipos {
+.cruce {
   display: grid;
-  gap: 2px;
-  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ui-space-3);
 }
-.equipos > span {
+.marcador {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px var(--ui-space-2);
+}
+.equipo {
+  grid-column: 1;
   display: flex;
   align-items: center;
   gap: var(--ui-space-2);
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   font-size: var(--ui-text-body);
 }
-.equipos > span[data-propio] {
+.equipo[data-propio] {
   font-weight: 800;
 }
 .escudo {
@@ -133,15 +130,23 @@
   height: 18px;
   object-fit: contain;
 }
-.goles {
-  display: grid;
-  gap: 2px;
-  justify-items: end;
-  font: 800 var(--ui-text-base) / 22px var(--ui-font-title);
+.tantos,
+.hora {
+  font: 800 var(--ui-text-lg) / 1 var(--ui-font-title);
   font-variant-numeric: tabular-nums;
 }
-.goles span {
-  min-height: 22px;
+.tantos {
+  grid-column: 2;
+  text-align: end;
+}
+.hora {
+  min-width: 3rem;
+  text-align: end;
+  color: var(--ui-accent);
+}
+.hora[data-final] {
+  color: var(--ui-muted);
+  font: 700 var(--ui-text-sm) / 1 var(--ui-font-body);
 }
 
 /* ── Detalle en hoja ─────────────────────────────────────────────── */
@@ -149,43 +154,43 @@
   display: grid;
   gap: var(--ui-space-4);
 }
-.marcador {
+.cabeceraPartido {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--ui-space-3);
-  text-align: center;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
 }
-.marcador > span,
-.marcador > a {
-  display: grid;
-  justify-items: center;
-  gap: var(--ui-space-1);
-  font-weight: 800;
+.equipo:is(a) {
+  min-height: 44px;
+  width: fit-content;
+  max-width: 100%;
+  color: var(--ui-text);
+  text-decoration: none;
+}
+.cabeceraPartido .escudo {
+  width: 28px;
+  height: 28px;
+}
+.cabeceraPartido :is(.tantos, .hora:not([data-final])) {
+  font-size: var(--ui-text-xl);
+}
+.cuando {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--ui-space-2);
+  min-width: 0;
+  color: var(--ui-muted);
   font-size: var(--ui-text-sm);
   overflow-wrap: anywhere;
 }
-.marcador .escudo {
-  width: 40px;
-  height: 40px;
+.cuando > :first-child {
+  font-weight: 700;
 }
-.marcador strong {
-  font: 800 var(--ui-text-2xl) / 1 var(--ui-font-title);
-  font-variant-numeric: tabular-nums;
-}
-/* Día, hora y campo en una línea; el árbitro debajo, en pequeño. */
-.cuando {
-  display: grid;
-  gap: 2px;
-  margin: 0;
-  color: var(--ui-text);
-  font-size: var(--ui-text-body);
-  text-align: center;
-}
-.cuando::first-letter {
+.cuando > :first-child::first-letter {
   text-transform: uppercase;
 }
-.cuando small {
+.arbitro {
   color: var(--ui-muted);
   font-size: var(--ui-text-sm);
 }
@@ -213,7 +218,7 @@
   outline: 3px solid var(--ui-accent);
   outline-offset: 2px;
 }
-/* Goles y tarjetas: minuto, icono, nombre y el escudo de su equipo a la derecha. */
+/* Goles y tarjetas: minuto, equipo y suceso, con sitio para nombres largos. */
 .eventos {
   display: grid;
   gap: var(--ui-space-2);
@@ -229,8 +234,8 @@
 }
 .eventos li {
   display: grid;
-  grid-template-columns: 2.25rem 1.5rem minmax(0, 1fr) auto;
-  align-items: center;
+  grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, 1.5fr);
+  align-items: start;
   gap: var(--ui-space-2);
   min-height: 28px;
   color: var(--ui-muted);
@@ -245,14 +250,18 @@
   font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
-.persona {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.lado,
+.suceso {
+  display: flex;
+  align-items: start;
+  gap: var(--ui-space-1);
+  overflow-wrap: anywhere;
 }
 .lado {
-  display: grid;
+  font-size: var(--ui-text-sm);
+}
+.suceso > :first-child {
+  flex: none;
 }
 .nota {
   margin: 0;
@@ -338,103 +347,6 @@
   outline: 3px solid var(--ui-accent);
   outline-offset: 2px;
 }
-.marcador > a {
-  display: grid;
-  justify-items: center;
-  gap: var(--ui-space-1);
-  font-weight: 800;
-  font-size: var(--ui-text-sm);
-  overflow-wrap: anywhere;
-}
-.marcador .escudo {
-  width: 40px;
-  height: 40px;
-}
-.marcador strong {
-  font: 800 var(--ui-text-2xl) / 1 var(--ui-font-title);
-  font-variant-numeric: tabular-nums;
-}
-/* Día, hora y campo en una línea; el árbitro debajo, en pequeño. */
-.cuando {
-  display: grid;
-  gap: 2px;
-  margin: 0;
-  color: var(--ui-text);
-  font-size: var(--ui-text-body);
-  text-align: center;
-}
-.cuando::first-letter {
-  text-transform: uppercase;
-}
-.cuando small {
-  color: var(--ui-muted);
-  font-size: var(--ui-text-sm);
-}
-/* Lo que se hace con nuestro partido: botones del mismo tamaño, de dos en dos. */
-.acciones {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--ui-space-2);
-}
-.acciones > a,
-.acciones > button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 var(--ui-space-3);
-  border-radius: var(--ui-radius-sm);
-  background: var(--ui-control);
-  color: var(--ui-text);
-  font-weight: 800;
-  font-size: var(--ui-text-sm);
-  text-decoration: none;
-}
-.acciones > a:focus-visible {
-  outline: 3px solid var(--ui-accent);
-  outline-offset: 2px;
-}
-/* Goles y tarjetas: minuto, icono, nombre y el escudo de su equipo a la derecha. */
-.eventos {
-  display: grid;
-  gap: var(--ui-space-2);
-  padding-top: var(--ui-space-3);
-  border-top: 1px solid var(--ui-line);
-}
-.eventos ol {
-  display: grid;
-  gap: var(--ui-space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.eventos li {
-  display: grid;
-  grid-template-columns: 2.25rem 1.5rem minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--ui-space-2);
-  min-height: 28px;
-  color: var(--ui-muted);
-  font-size: var(--ui-text-body);
-}
-.eventos li[data-propio] {
-  color: var(--ui-text);
-  font-weight: 700;
-}
-.minuto {
-  color: var(--ui-muted);
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-}
-.persona {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.lado {
-  display: grid;
-}
 .nota {
   margin: 0;
   color: var(--ui-muted);
@@ -513,16 +425,4 @@
 .accionesCartel a[download] {
   background: var(--ui-accent);
   color: #0b0b0c;
-}
-.marcador > a {
-  min-height: 44px;
-  color: var(--ui-muted);
-  text-decoration: none;
-}
-.marcador > a[data-propio] {
-  color: var(--ui-text);
-}
-.marcador > a:focus-visible {
-  outline: 3px solid var(--ui-accent);
-  outline-offset: 2px;
 }

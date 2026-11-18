@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/foundation/Button";
 import { Dialog } from "@/components/ui/foundation/Dialog";
 import { parteDeMinuto } from "@/lib/directo/reloj";
 import type { EventoDirecto, JugadorDirecto } from "@/lib/directo/tipos";
-import { NOMBRE_TIPO } from "./modelo";
+import { NOMBRE_TIPO } from "../eventos-presentacion";
 import s from "./Directo.module.css";
 
 /** Elegir jugador: rejilla de dorsales de los nuestros o teclado de dorsal del rival. */

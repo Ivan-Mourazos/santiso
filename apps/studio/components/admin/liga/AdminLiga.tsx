@@ -12,6 +12,7 @@ import { cargarLiga, guardarCicloAmarillas } from "@/lib/server/acciones/liga";
 import { useStudio } from "@/components/studio/StudioContext";
 import type { PantallaLiga } from "@/lib/server/consultas/liga";
 import { useCompeticiones } from "@/lib/useCompeticiones";
+import { ICONO, NOMBRE_TIPO } from "../eventos-presentacion";
 import styles from "./Liga.module.css";
 
 interface Props {
@@ -41,6 +42,7 @@ function Goleadores({ filas, propios }: { filas: Goleador[]; propios: Set<string
             <small>{g.equipo}</small>
           </span>
           <span className={styles.cifra} aria-label={`${g.goles} goles`}>
+            <span aria-hidden="true">{ICONO.gol}</span>
             {g.goles}
           </span>
         </li>
@@ -70,13 +72,13 @@ function Tarjetas({ filas, propios }: { filas: Disciplina[]; propios: Set<string
             )}
           </span>
           <span className={styles.tarjetas}>
-            <span aria-label={`${d.amarillas} amarillas`}>
-              <i className={styles.amarilla} aria-hidden="true" />
+            <span aria-label={`${NOMBRE_TIPO.tarjeta_amarilla}: ${d.amarillas}`}>
+              <span aria-hidden="true">{ICONO.tarjeta_amarilla}</span>
               {d.amarillas}
             </span>
             {d.expulsiones > 0 && (
               <span aria-label={`${d.expulsiones} expulsiones`}>
-                <i className={styles.roja} aria-hidden="true" />
+                <span aria-hidden="true">{ICONO.tarjeta_roja}</span>
                 {d.expulsiones}
               </span>
             )}

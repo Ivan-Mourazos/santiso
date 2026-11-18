@@ -110,7 +110,10 @@ export function useDespues({
     resultado: peticionDeFormulario("cronoloxia", formulario, r, opciones),
     noso11: peticionDeFormulario("noso11", formulario, r, { ...opciones, colocacion }),
   };
-  const firma = JSON.stringify(peticiones);
+  const firma = {
+    resultado: JSON.stringify(peticiones.resultado),
+    noso11: JSON.stringify(peticiones.noso11),
+  };
   const listo =
     jugadoresPartidoId === partidoId &&
     datos !== null &&

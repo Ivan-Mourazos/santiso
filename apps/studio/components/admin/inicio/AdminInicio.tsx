@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import NuestrosPartidos from "./NuestrosPartidos";
 import styles from "./Inicio.module.css";
 
@@ -10,6 +11,10 @@ import styles from "./Inicio.module.css";
 export default function AdminInicio() {
   return (
     <section className={styles.inicio} aria-label="Inicio">
+      <p className={styles.firma}>
+        <Image src="/logos/app-192.png" alt="" width={24} height={24} />
+        U.D. Santiso
+      </p>
       <NuestrosPartidos />
     </section>
   );

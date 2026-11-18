@@ -26,14 +26,6 @@
   display: grid;
   gap: 6px;
 }
-/* Cada imagen del carrusel en una línea: nombre, ver y descargar solo esa. */
-.formatoFila {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 6px;
-  font-weight: 700;
-}
 .formato small {
   font-weight: 400;
   color: var(--ui-muted);
@@ -64,4 +56,58 @@
 }
 .generar {
   min-height: 48px;
+}
+
+.carrusel,
+.piezas {
+  display: grid;
+  gap: var(--ui-space-3);
+  min-width: 0;
+}
+.piezas {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pieza {
+  display: grid;
+  align-content: start;
+  gap: var(--ui-space-2);
+  min-width: 0;
+  padding: var(--ui-space-2);
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+}
+.pieza h3 {
+  margin: 0;
+  font-size: var(--ui-text-base);
+}
+.piezaEstado,
+.errorPieza {
+  margin: 0;
+  font-size: var(--ui-text-sm);
+}
+.piezaEstado {
+  color: var(--ui-muted);
+  font-weight: 800;
+}
+.piezaEstado[data-estado="hecho"] {
+  color: var(--ui-success);
+}
+.piezaEstado[data-estado="desactualizado"] {
+  color: var(--ui-warning);
+}
+.errorPieza {
+  color: var(--ui-danger);
+  overflow-wrap: anywhere;
+}
+.accionesPieza {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-1);
+}
+.accionesPieza button {
+  min-height: 44px;
 }

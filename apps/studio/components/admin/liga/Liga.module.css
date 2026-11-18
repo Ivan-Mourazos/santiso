@@ -71,8 +71,14 @@
   color: var(--ui-warning);
 }
 .cifra {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1);
   font: 800 var(--ui-text-xl) var(--ui-font-title);
   font-variant-numeric: tabular-nums;
+}
+.cifra > span {
+  font-size: var(--ui-text-sm);
 }
 .tarjetas {
   display: flex;
@@ -85,17 +91,6 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-}
-.amarilla,
-.roja {
-  display: inline-block;
-  width: 0.7rem;
-  height: 0.95rem;
-  border-radius: 2px;
-  background: #f5c518;
-}
-.roja {
-  background: #ef4444;
 }
 .ajuste {
   max-width: 44rem;

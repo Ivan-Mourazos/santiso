@@ -2,7 +2,7 @@
 
 import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useId, useRef, useState } from "react";
 import { fechaPartido } from "@/lib/jornada/fecha";
 import { useStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
@@ -23,14 +23,15 @@ import { cargarPartidosLiga, ubicarPartido } from "@/lib/server/acciones/liga";
 import { traerActaRfgf } from "@/lib/server/acciones/rfgf";
 import type { PartidoDeLiga, PartidosDeLiga } from "@/lib/server/consultas/partidos-liga";
 import { useCompeticiones } from "@/lib/useCompeticiones";
+import { ICONO, NOMBRE_TIPO } from "../eventos-presentacion";
 import styles from "./Partidos.module.css";
 
 const EVENTO = {
-  gol: "⚽",
-  gol_propia: "⚽ (p.p.)",
-  amarilla: "🟨",
-  doble_amarilla: "🟨🟥",
-  roja: "🟥",
+  gol: { icono: ICONO.gol, nombre: NOMBRE_TIPO.gol },
+  gol_propia: { icono: ICONO.gol, nombre: "Gol en propia puerta" },
+  amarilla: { icono: ICONO.tarjeta_amarilla, nombre: NOMBRE_TIPO.tarjeta_amarilla },
+  doble_amarilla: { icono: ICONO.tarjeta_amarilla + ICONO.tarjeta_roja, nombre: "Doble amarilla" },
+  roja: { icono: ICONO.tarjeta_roja, nombre: NOMBRE_TIPO.tarjeta_roja },
 } as const;
 
 function Escudo({ url }: { url: string | null }) {
@@ -48,36 +49,81 @@ function marcadorDe(p: PartidoDeLiga) {
     : null;
 }
 
-/** Fila de un partido: hora · local / visitante · marcador. Al tocarla se abre su detalle. */
-function Fila({ partido: p, onAbrir }: { partido: PartidoDeLiga; onAbrir: () => void }) {
-  const propio = p.local.propio || p.visitante.propio;
+function EquipoMarcador({
+  equipo,
+  enlazar,
+}: {
+  equipo: PartidoDeLiga["local"];
+  enlazar: boolean;
+}) {
+  const contenido = (
+    <>
+      <Escudo url={equipo.escudoUrl} />
+      {equipo.nombre}
+    </>
+  );
+  const propio = equipo.propio || undefined;
+  return enlazar ? (
+    <Link
+      className={styles.equipo}
+      href={`/admin/equipo?id=${encodeURIComponent(equipo.id)}`}
+      transitionTypes={["nav-forward"]}
+      aria-label={`Ficha de ${equipo.nombre}`}
+      data-propio={propio}
+    >
+      {contenido}
+    </Link>
+  ) : (
+    <span className={styles.equipo} data-propio={propio}>
+      {contenido}
+    </span>
+  );
+}
+
+/** El mismo orden y las mismas posiciones en la fila y en la hoja. */
+function MarcadorPartido({ partido: p, enlazar = false }: { partido: PartidoDeLiga; enlazar?: boolean }) {
   const resultado = marcadorDe(p);
-  const cuando = fechaPartido(p.fecha);
+  const hora = fechaPartido(p.fecha).hora;
+  return (
+    <span className={styles.cruce}>
+      <span className={styles.marcador}>
+        <EquipoMarcador equipo={p.local} enlazar={enlazar} />
+        {resultado && <strong className={styles.tantos}>{p.golesLocal}</strong>}
+        <EquipoMarcador equipo={p.visitante} enlazar={enlazar} />
+        {resultado && <strong className={styles.tantos}>{p.golesVisitante}</strong>}
+      </span>
+      <span className={styles.hora} data-final={Boolean(resultado) || undefined}>
+        {p.estado === "aplazado" ? "Apl." : resultado ? "Final" : hora || "—"}
+      </span>
+    </span>
+  );
+}
+
+function ContextoPartido({ partido: p, id }: { partido: PartidoDeLiga; id?: string }) {
+  const { dia, hora } = fechaPartido(p.fecha);
+  return (
+    <span className={styles.cuando} id={id}>
+      <span>
+        {dia}{hora && marcadorDe(p) ? ` · ${hora}` : ""}
+      </span>
+      <span>{p.campo ?? "Campo por confirmar"}</span>
+    </span>
+  );
+}
+
+function Fila({ partido: p, onAbrir }: { partido: PartidoDeLiga; onAbrir: () => void }) {
+  const contextoId = useId();
   return (
     <button
       type="button"
       className={styles.fila}
-      data-propio={propio || undefined}
+      data-propio={p.local.propio || p.visitante.propio || undefined}
       onClick={onAbrir}
-      aria-label={`${p.local.nombre} ${resultado ?? "contra"} ${p.visitante.nombre}`}
+      aria-label={`${p.local.nombre} ${marcadorDe(p) ?? "contra"} ${p.visitante.nombre}`}
+      aria-describedby={contextoId}
     >
-      <span className={styles.hora}>
-        {p.estado === "aplazado" ? "Apl." : resultado ? "Final" : cuando.hora || "—"}
-      </span>
-      <span className={styles.equipos}>
-        <span data-propio={p.local.propio || undefined}>
-          <Escudo url={p.local.escudoUrl} />
-          {p.local.nombre}
-        </span>
-        <span data-propio={p.visitante.propio || undefined}>
-          <Escudo url={p.visitante.escudoUrl} />
-          {p.visitante.nombre}
-        </span>
-      </span>
-      <span className={styles.goles}>
-        <span>{p.golesLocal ?? ""}</span>
-        <span>{p.golesVisitante ?? ""}</span>
-      </span>
+      <MarcadorPartido partido={p} />
+      <ContextoPartido partido={p} id={contextoId} />
     </button>
   );
 }
@@ -242,7 +288,7 @@ function TraerActa({
   );
 }
 
-/** Goles o tarjetas del partido, en orden: minuto, qué, quién y el escudo de su equipo. */
+/** Goles o tarjetas del partido, en columnas de minuto, equipo y suceso. */
 function Eventos({
   titulo,
   eventos,
@@ -259,13 +305,19 @@ function Eventos({
       <ol>
         {eventos.map((e, i) => {
           const equipo = e.lado === "local" ? p.local : p.visitante;
+          const evento = EVENTO[e.tipo];
           return (
             <li key={i} data-propio={equipo.propio || undefined}>
-              <span className={styles.minuto}>{e.minuto ? `${e.minuto}'` : ""}</span>
-              <span aria-hidden="true">{EVENTO[e.tipo]}</span>
-              <span className={styles.persona}>{e.persona}</span>
-              <span className={styles.lado} aria-label={equipo.nombre}>
+              <span className={styles.minuto}>{e.minuto !== null ? `${e.minuto}′` : "—"}</span>
+              <span className={styles.lado}>
                 <Escudo url={equipo.escudoUrl} />
+                {equipo.nombre}
+              </span>
+              <span className={styles.suceso}>
+                <span aria-hidden="true">{evento.icono}</span>
+                <span>
+                  {evento.nombre}{e.persona ? ` · ${e.persona}` : ""}
+                </span>
               </span>
             </li>
           );
@@ -290,7 +342,6 @@ function Detalle({
   onNovedades: () => void;
   onClose: () => void;
 }) {
-  const cuando = fechaPartido(p?.fecha ?? null);
   const pasado =
     p !== null &&
     partidoJugado(
@@ -310,35 +361,11 @@ function Detalle({
     >
       {p && (
         <div className={styles.detalle}>
-          <div className={styles.marcador}>
-            {/* Tocar un equipo abre su ficha. */}
-            <Link
-              href={`/admin/equipo?id=${encodeURIComponent(p.local.id)}`}
-              transitionTypes={["nav-forward"]}
-              aria-label={`Ficha de ${p.local.nombre}`}
-              data-propio={p.local.propio || undefined}
-            >
-              <Escudo url={p.local.escudoUrl} />
-              {p.local.nombre}
-            </Link>
-            <strong>{marcadorDe(p) ?? (cuando.hora || "—")}</strong>
-            <Link
-              href={`/admin/equipo?id=${encodeURIComponent(p.visitante.id)}`}
-              transitionTypes={["nav-forward"]}
-              aria-label={`Ficha de ${p.visitante.nombre}`}
-              data-propio={p.visitante.propio || undefined}
-            >
-              <Escudo url={p.visitante.escudoUrl} />
-              {p.visitante.nombre}
-            </Link>
+          <div className={styles.cabeceraPartido}>
+            <MarcadorPartido partido={p} enlazar />
+            <ContextoPartido partido={p} />
+            {p.arbitro && <small className={styles.arbitro}>Árbitro: {p.arbitro}</small>}
           </div>
-          <p className={styles.cuando}>
-            {cuando.dia}
-            {/* Sin marcador, la hora ya sale en grande arriba: no se repite. */}
-            {cuando.hora && marcadorDe(p) ? ` · ${cuando.hora}` : ""} ·{" "}
-            {p.campo ?? "Campo por confirmar"}
-            {p.arbitro && <small>Árbitro: {p.arbitro}</small>}
-          </p>
           {propio && (
             <div className={styles.acciones}>
               <Link

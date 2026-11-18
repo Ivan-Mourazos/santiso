@@ -11,7 +11,7 @@
 /* Cabecera fija: marcador y cronómetro siempre a la vista mientras se apunta. */
 .cabecera {
   position: sticky;
-  top: 0;
+  top: var(--studio-cabecera, 0px);
   z-index: 2;
   display: grid;
   gap: 8px;

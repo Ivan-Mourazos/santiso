@@ -37,11 +37,13 @@
 }
 .jugadores li {
   min-width: 0;
+  display: grid;
 }
 .jugadores button {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1.4rem minmax(0, 1fr) 1rem;
   align-items: center;
-  gap: 8px;
+  gap: var(--ui-space-1);
   width: 100%;
   min-height: 52px;
   padding: 6px 8px;
@@ -54,26 +56,32 @@
   cursor: pointer;
 }
 .jugadores b {
-  flex: none;
-  width: 22px;
-  color: var(--ui-accent, #f5c518);
+  color: var(--ui-muted);
   font-variant-numeric: tabular-nums;
 }
-.jugadores span {
+.identidad {
+  min-width: 0;
+}
+.nombre {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   font-weight: 700;
   font-size: var(--ui-text-sm);
-  line-height: 1.15;
+  line-height: 1.2;
   overflow-wrap: anywhere;
 }
 .jugadores button[aria-pressed="false"] {
-  opacity: 0.5;
-}
-.jugadores button[aria-pressed="false"] b {
-  color: var(--ui-muted, #9ca3af);
+  color: var(--ui-muted);
 }
 .jugadores button[aria-pressed="true"] {
-  border-color: var(--ui-accent, #f5c518);
-  background: color-mix(in srgb, var(--ui-accent, #f5c518) 14%, #1a1a1a);
+  border-color: color-mix(in srgb, var(--ui-muted) 75%, var(--ui-surface));
+  background: color-mix(in srgb, var(--ui-accent) 7%, var(--ui-control));
+}
+.marcaSeleccion {
+  color: var(--ui-text);
+  font-weight: 800;
 }
 .jugadores button:focus-visible,
 .detalles summary:focus-visible {

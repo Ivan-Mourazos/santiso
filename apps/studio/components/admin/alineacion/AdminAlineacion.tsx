@@ -208,8 +208,7 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
           >
             {pantalla.partidos.map((p) => (
               <option key={p.id} value={p.id}>
-                J{p.jornada} · {p.rival.nombre}
-                {p.fecha ? ` · ${fechaCorta(p.fecha.slice(0, 10))}` : ""}
+                J{p.jornada} · {p.fecha ? fechaCorta(p.fecha.slice(0, 10)) : "Sin fecha"} · {p.rival.nombre}
                 {p.finalizado ? " (jugado)" : ""}
               </option>
             ))}
@@ -247,36 +246,41 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
               {carteles?.length ? "Compartir el cartel del once ↓" : "Generar el cartel del once ↓"}
             </Button>
           )}
-          <p className={styles.contador} role="status">
-            <strong data-completo={alineacion.titulares.length === TITULARES}>
-              {alineacion.titulares.length} / {TITULARES} titulares
-            </strong>
-            <span>
-              {alineacion.suplentes.length}{" "}
-              {alineacion.suplentes.length === 1 ? "suplente" : "suplentes"}
-            </span>
-          </p>
           {enCampo && (
-            <EditorTactico
-              jugadores={pantalla.jugadores.map((j) => ({
-                id: j.id,
-                nombre: nombreDeCartel(j),
-                dorsal: j.dorsal,
-                posicion: j.posicion,
-              }))}
-              colocacion={enCampo}
-              soloLectura={bloqueada || ocupada}
-              capitanId={alineacion.capitanId}
-              onCapitan={(id) => setAlineacion((antes) => conCapitan(antes, id))}
-              onCambio={(c) => {
-                setColocacion(c);
-                setAlineacion((antes) => conCapitanDePlantilla(aplicarColocacion(antes, c.huecos)));
-              }}
-            />
+            <div className={styles.titulares}>
+              <h4 className={styles.tituloGrupo}>
+                Titulares
+                <span className={styles.contador} role="status" data-completo={alineacion.titulares.length === TITULARES}>
+                  {alineacion.titulares.length} / {TITULARES} titulares
+                </span>
+              </h4>
+              <EditorTactico
+                jugadores={pantalla.jugadores.map((j) => ({
+                  id: j.id,
+                  nombre: nombreDeCartel(j),
+                  dorsal: j.dorsal,
+                  posicion: j.posicion,
+                }))}
+                colocacion={enCampo}
+                soloLectura={bloqueada || ocupada}
+                capitanId={alineacion.capitanId}
+                onCapitan={(id) => setAlineacion((antes) => conCapitan(antes, id))}
+                onCambio={(c) => {
+                  setColocacion(c);
+                  setAlineacion((antes) => conCapitanDePlantilla(aplicarColocacion(antes, c.huecos)));
+                }}
+              />
+            </div>
           )}
           {banco.length > 0 && (
             <section className={styles.banco} aria-label="Banquillo">
-              <h4>Banquillo</h4>
+              <h4 className={styles.tituloGrupo}>
+                Banquillo
+                <span className={styles.contador} role="status">
+                  {alineacion.suplentes.length}{" "}
+                  {alineacion.suplentes.length === 1 ? "suplente" : "suplentes"}
+                </span>
+              </h4>
               <ul>
                 {banco.map((j) => {
                   const nombre = nombreDeCartel(j);
@@ -299,6 +303,13 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
               </ul>
             </section>
           )}
+          {!bloqueada && (sucio || ocupada) && (
+            <div className={styles.barra}>
+              <Button onClick={() => void guardarSolo()} disabled={ocupada}>
+                Guardar
+              </Button>
+            </div>
+          )}
           <div id="cartel-once" className={styles.anclaCartel} />
           {carteles === null ? (
             <LoadingState title="Cargando carteles guardados…" />
@@ -307,24 +318,13 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
               key={partido.id}
               partidoId={partido.id}
               paso="once"
+              generarSecundario={sucio || ocupada}
               guardados={carteles}
               onCambio={setCarteles}
               preparar={prepararCartel}
               motivo={alineacion.titulares.length === 0 ? "Elige al menos un titular." : null}
               showToast={showToast}
             />
-          )}
-          {/* Flota sobre el campo: solo aparece con algo que guardar, para no tapar defensas. */}
-          {!bloqueada && (sucio || ocupada) && (
-            <div className={styles.barra}>
-              <Button
-                variant="secondary"
-                onClick={() => void guardarSolo()}
-                disabled={ocupada}
-              >
-                Guardar
-              </Button>
-            </div>
           )}
         </>
       )}

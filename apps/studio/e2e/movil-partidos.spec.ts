@@ -74,7 +74,7 @@ test("partidos: nuestro partido de otra jornada lleva sus carteles", async ({ pa
     expect(caja.height).toBeGreaterThanOrEqual(44);
   await resultado.click();
   await expect(
-    page.getByRole("banner").getByRole("heading", { level: 1, name: "Resultado" }),
+    page.getByRole("banner").getByRole("heading", { level: 1, name: "Resultado e O Noso 11" }),
   ).toBeVisible();
   // Llega con el partido puesto: su tarjeta arriba y los campos plegados para retocar.
   const elegido = page.getByRole("region", { name: "Partido del cartel" });

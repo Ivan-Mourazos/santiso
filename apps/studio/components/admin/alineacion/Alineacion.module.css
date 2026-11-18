@@ -1,6 +1,6 @@
 /*
  * Alineación antes del partido. Pensada primero para el móvil: una columna, filas grandes
- * para tocar con el pulgar y la barra de acciones siempre a mano, abajo.
+ * para tocar con el pulgar y la barra de acciones tras el banquillo.
  */
 
 .panel {
@@ -9,18 +9,22 @@
   width: 100%;
   max-width: 40rem;
   margin: 0 auto;
-  /* Hueco para la barra fija de abajo. */
-  padding-bottom: 5rem;
+  min-width: 0;
 }
 
 .partido {
   display: grid;
+  min-width: 0;
   gap: 0.35rem;
   padding: 1rem;
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: var(--ui-radius-lg);
   background: var(--ui-panel-face, var(--ui-surface, #171717));
   box-shadow: var(--ui-panel-shadow, none);
+}
+.partido select {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .cruce {
@@ -42,38 +46,33 @@
   font-weight: 700;
 }
 
-.contador {
+.tituloGrupo {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
+  gap: var(--ui-space-1) var(--ui-space-2);
   margin: 0;
-  padding: 0 0.25rem;
-  color: var(--ui-muted, #aaa);
-  font-variant-numeric: tabular-nums;
-}
-
-.contador strong {
-  color: var(--ui-text, #fff);
   font-size: var(--ui-text-base);
 }
-
-.contador strong[data-completo="true"] {
-  color: var(--ui-success, #4ade80);
+.contador {
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.contador[data-completo="true"] {
+  color: var(--ui-success);
 }
 
 /* ─── Banquillo: los convocados fuera del campo; amarillo, los suplentes ─── */
 
+.titulares,
 .banco {
   display: grid;
-  gap: 0.5rem;
-}
-
-.banco h4 {
-  margin: 0;
-  color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm);
-  font-weight: 800;
-  text-transform: uppercase;
+  gap: var(--ui-space-2);
+  padding-top: var(--ui-space-2);
+  border-top: 1px solid var(--ui-line);
 }
 
 .banco ul {
@@ -133,53 +132,20 @@
   overflow-wrap: anywhere;
 }
 
-/* ─── Barra de acciones: fija abajo, por encima de la zona segura del iPhone ─── */
-
 .barra {
-  position: fixed;
-  z-index: 20;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid var(--ui-border, #444);
-  background: color-mix(in srgb, var(--ui-bg, #0b0b0c) 92%, transparent);
-  backdrop-filter: blur(8px);
+  display: grid;
+  justify-items: start;
 }
-
 .barra > button {
-  flex: 1;
-  max-width: 16rem;
-  min-height: 2.9rem;
+  min-width: min(16rem, 100%);
+  min-height: var(--ui-control-h);
 }
-
-/* En escritorio el menú lateral ocupa la izquierda: la barra se queda bajo el contenido. */
-@media (min-width: 901px) {
-  .barra {
-    left: 216px;
-  }
-}
-
-/* En móvil, la acción flota justo encima de la barra de pestañas, sin franja propia. */
 @media (max-width: 900px) {
-  .panel {
-    padding-bottom: 10rem;
-  }
-  .barra {
-    bottom: var(--studio-barra-abajo);
-    padding: 0 max(0.75rem, env(safe-area-inset-right)) 0.5rem max(0.75rem, env(safe-area-inset-left));
-    border-top: 0;
-    background: none;
-    backdrop-filter: none;
-    /* La franja es transparente: a los lados del botón, el toque llega a la lista de debajo. */
-    pointer-events: none;
-  }
   .barra > button {
-    box-shadow: var(--ui-shadow);
-    pointer-events: auto;
+    width: 100%;
+  }
+  .panel :is(button, select) {
+    scroll-margin-block: var(--studio-cabecera) var(--studio-barra-abajo);
   }
 }
 
@@ -215,5 +181,5 @@
 }
 /* Al saltar al cartel, que no quede tapado por la cabecera fija. */
 .anclaCartel {
-  scroll-margin-top: 80px;
+  scroll-margin-top: calc(var(--studio-cabecera, 0px) + var(--ui-space-3));
 }

@@ -107,7 +107,7 @@ export default function VistaAdestramentos({
     window.history.replaceState(null, "", url);
   }
   const listado = (
-    <>
+    <div className={styles.listadoEntrenos}>
       <Button onClick={onCrear}>Crear entrenamiento</Button>
       <ul className={styles.lista} aria-label="Entrenamientos">
         {datos.entrenamientos.map((e) => {
@@ -139,7 +139,7 @@ export default function VistaAdestramentos({
         })}
       </ul>
       {!datos.entrenamientos.length && <p>No hay entrenamientos todavía.</p>}
-    </>
+    </div>
   );
   const contenidoDetalle = detalle && (
     <section aria-label="Detalle del entrenamiento" className={styles.detalle}>

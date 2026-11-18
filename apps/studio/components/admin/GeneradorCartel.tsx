@@ -9,6 +9,7 @@ import { TEMAS_MULTIUSOS, TEMPLATES, type MultiusosTema, type TemplateId } from 
 import { useCartelForm } from "./cartel/useCartelForm";
 import { useOptionalStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
+import { LoadingState } from "@/components/ui/foundation/States";
 import AvisoError from "./AvisoError";
 import styles from "./cartel/Cartel.module.css";
 import { useCartelAssets } from "./cartel/useCartelAssets";
@@ -239,43 +240,31 @@ export default function GeneradorCartel({
                   <Flecha />
                 </summary>
                 <div className={styles.seccionContenido}>
-                  <div className={styles.dosCarteles}>
-                    <PilotoCartel
-                      tipo="despues"
-                      form={despues.formulario}
-                      recursos={assetUrls}
-                      equipos={equipos}
-                      showToast={showToast}
-                      soloVista
-                      titulo="1 · Resultado"
-                    />
-                    <PilotoCartel
-                      tipo="noso11"
-                      form={despues.formulario}
-                      recursos={assetUrls}
-                      equipos={equipos}
-                      showToast={showToast}
-                      soloVista
-                      colocacion={despues.colocacion}
-                      titulo="2 · O Noso 11"
-                    />
-                  </div>
-                  {despues.guardados && (
+                  {despues.guardados ? (
                     <PaqueteDespues
                       key={despues.partidoId}
                       partidoId={despues.partidoId!}
                       guardados={despues.guardados}
                       preparar={despues.preparar}
                       firma={despues.firma}
-                      antesDeGuardar={async () => {
-                        const error = await despues.guardarFinal();
-                        if (error) showToast(error, "error");
-                        return !error;
-                      }}
+                      antesDeGuardar={despues.guardarFinal}
                       texto={instagramText}
                       motivo={despues.motivo}
                       showToast={showToast}
+                      previa={(paso) => (
+                        <PilotoCartel
+                          tipo={paso === "resultado" ? "despues" : "noso11"}
+                          form={despues.formulario}
+                          recursos={assetUrls}
+                          equipos={equipos}
+                          showToast={showToast}
+                          soloVista
+                          colocacion={paso === "noso11" ? despues.colocacion : null}
+                        />
+                      )}
                     />
+                  ) : (
+                    <LoadingState title="Cargando carteles del partido…" />
                   )}
                   {despues.jugadores.length > 0 && (
                     <details className={styles.seccionInterior}>

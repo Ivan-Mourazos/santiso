@@ -197,6 +197,10 @@
   max-width: 100%;
   overflow-x: auto;
 }
+/* El marcador pegajoso de Directo sigue el desplazamiento de la página. */
+.panel[data-desplazamiento-pagina] {
+  overflow: visible;
+}
 .modes {
   margin-bottom: 1rem;
   max-width: 24rem;

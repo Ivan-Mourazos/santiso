@@ -77,7 +77,7 @@ export function StudioSection({ section }: { section: Seccion }) {
   const template = plantillaDeDireccion(params.get("plantilla"))?.id ?? null;
   if (!hydrated) return <LoadingState title="Preparando sección…" />;
   return (
-    <div key={key} className={styles.panel}>
+    <div key={key} className={styles.panel} data-desplazamiento-pagina={section === "directo" || undefined}>
       {section === "inicio" && <Home />}
       {section === "partidos" && <Matches categoria={category} />}
       {section === "calendario" && <Calendar {...feedback} categoria={category} />}

@@ -206,25 +206,29 @@ export default function AdminConvocatoria({
       <ul className={s.jugadores} aria-label={`Plantilla ${categoria}`}>
         {pantalla.jugadores.map((j) => {
           const aviso = avisoDe(pantalla.avisos, j.id);
+          const seleccionado = c.jugadores.includes(j.id);
           return (
             <li key={j.id}>
               <button
                 type="button"
-                aria-pressed={c.jugadores.includes(j.id)}
+                aria-pressed={seleccionado}
                 aria-label={`Convocar: ${nombreDeCartel(j)}${aviso ? `, ${aviso.situacion}` : ""}`}
                 disabled={ocupada || bloqueada}
                 onClick={() =>
                   cambiar({
-                    jugadores: c.jugadores.includes(j.id)
+                    jugadores: seleccionado
                       ? c.jugadores.filter((id) => id !== j.id)
                       : [...c.jugadores, j.id],
                   })
                 }
               >
                 <b>{j.dorsal ?? "—"}</b>
-                <span>
-                  {nombreDeCartel(j)}
+                <span className={s.identidad}>
+                  <span className={s.nombre}>{nombreDeCartel(j)}</span>
                   <MarcaAviso aviso={aviso} />
+                </span>
+                <span className={s.marcaSeleccion} aria-hidden="true">
+                  {seleccionado ? "✓" : ""}
                 </span>
               </button>
             </li>
@@ -301,6 +305,7 @@ export default function AdminConvocatoria({
           key={partido.id}
           partidoId={partido.id}
           paso="convocatoria"
+          generarSecundario={!persistida || sucio}
           guardados={carteles}
           preparar={prepararCartel}
           motivo={

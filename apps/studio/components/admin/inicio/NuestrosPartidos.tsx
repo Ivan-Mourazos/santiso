@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 import { fechaPartido } from "@/lib/jornada/fecha";
 import { Button } from "@/components/ui/foundation/Button";
 import { ErrorState } from "@/components/ui/foundation/States";
+import { TITULARES } from "@/lib/alineacion/modelo";
 import { hoyLocal } from "@/lib/jornada/semana";
-import { marcador, partidoEnMesa, trasPartido } from "@/lib/jornada/vestiario";
+import { marcador, partidoEnMesa, preparaConvocatoria, trasPartido } from "@/lib/jornada/vestiario";
 import { cargarPantallaJornada } from "@/lib/server/acciones/jornada";
 import type { PantallaJornada, PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
 import styles from "./Inicio.module.css";
@@ -31,6 +32,14 @@ function datosDe(pantalla: PantallaJornada): Datos {
         return fa < fb ? -1 : fa > fb ? 1 : 0;
       }),
   };
+}
+
+function tarea(p: PartidoDeLaSemana, categoria: string, despues: boolean) {
+  if (despues) return p.cierreHecho ? "Carrusel listo" : null;
+  if (!preparaConvocatoria(categoria)) return null;
+  const { titulares, convocatoria } = p.preparacion;
+  if (titulares > 0) return `Once inicial · ${titulares}/${TITULARES}`;
+  return convocatoria ? `${convocatoria} convocados` : null;
 }
 
 /**
@@ -108,7 +117,8 @@ export default function NuestrosPartidos() {
           { nombre: p.rival.nombre, escudo: p.rival.escudoUrl, goles: p.golesRival, propio: false },
         ];
         if (!p.santisoLocal) equipos.reverse();
-        const jugado = p.golesSantiso !== null && p.golesRival !== null;
+        const resultado = marcador(p);
+        const estadoTarea = tarea(p, categoria, despues);
         return (
           <section
             key={p.id}
@@ -133,7 +143,7 @@ export default function NuestrosPartidos() {
                 ) : null}
               </p>
               <div className={styles.cruce}>
-                <ul>
+                <ul aria-label={resultado ? `Resultado ${resultado.cifras}` : undefined}>
                   {equipos.map((e) => (
                     <li key={e.nombre} data-propio={e.propio || undefined}>
                       {e.escudo ? (
@@ -142,21 +152,12 @@ export default function NuestrosPartidos() {
                       ) : (
                         <span className={styles.sinEscudo} aria-hidden="true" />
                       )}
-                      <span>{e.nombre}</span>
+                      <span className={styles.nombreEquipo}>{e.nombre}</span>
+                      {resultado && <span className={styles.gol}>{e.goles}</span>}
                     </li>
                   ))}
                 </ul>
-                {jugado ? (
-                  <p className={styles.goles} aria-label={`Resultado ${marcador(p)?.cifras ?? ""}`}>
-                    {equipos.map((e) => (
-                      <span key={e.nombre} data-propio={e.propio || undefined}>
-                        {e.goles}
-                      </span>
-                    ))}
-                  </p>
-                ) : (
-                  <p className={styles.hora}>{cuando.hora || "—"}</p>
-                )}
+                {!resultado && <p className={styles.hora}>{cuando.hora || "—"}</p>}
               </div>
               <p className={styles.partidoCuando}>
                 <Link
@@ -165,10 +166,11 @@ export default function NuestrosPartidos() {
                   aria-label={`Abrir el partido de ${categoria} contra ${p.rival.nombre}: ${cuando.dia}${p.campo ? `, ${p.campo}` : ""}`}
                   data-abrir-partido
                 >
-                  {cuando.dia}
-                  {p.campo ? ` · ${p.campo}` : ""}
+                  <span>{cuando.dia}</span>
+                  {p.campo && <span className={styles.campo}>{p.campo}</span>}
                 </Link>
               </p>
+              {estadoTarea && <p className={styles.tarea}>{estadoTarea}</p>}
             </article>
           </section>
         );
