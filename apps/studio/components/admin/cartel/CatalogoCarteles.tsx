@@ -58,9 +58,11 @@ export default function CatalogoCarteles() {
       {GRUPOS.map((grupo) => {
         const entradas = grupo.entradas.filter((e) => !(tecnico && e.admin));
         if (entradas.length === 0) return null;
+        // Sin espacios: `aria-labelledby` los toma como separadores de varios ids.
+        const id = `carteles-${grupo.titulo.replace(/\s+/g, "-")}`;
         return (
-          <section key={grupo.titulo} aria-labelledby={`carteles-${grupo.titulo}`}>
-            <h2 id={`carteles-${grupo.titulo}`} className={styles.grupo}>
+          <section key={grupo.titulo} aria-labelledby={id}>
+            <h2 id={id} className={styles.grupo}>
               {grupo.titulo}
             </h2>
             <div className={styles.lista}>
