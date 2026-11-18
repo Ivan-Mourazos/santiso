@@ -2,7 +2,7 @@
 
 import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { fechaPartido } from "@/lib/jornada/fecha";
 import { useStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
@@ -472,10 +472,11 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
   // su día (antes salían en el orden de la federación: un «—» delante de las 12:00).
   const orden = (p: PartidoDeLiga) =>
     !p.fecha ? "~" : fechaPartido(p.fecha).hora ? p.fecha : `${p.fecha.slice(0, 10)}~`;
+  const variosDias = new Set(datos.partidos.map((p) => fechaPartido(p.fecha).dia)).size > 1;
   const filas = [...datos.partidos].sort(
     (a, b) =>
       Number(b.local.propio || b.visitante.propio) - Number(a.local.propio || a.visitante.propio) ||
-      orden(a).localeCompare(orden(b)),
+      (orden(a) < orden(b) ? -1 : orden(a) > orden(b) ? 1 : 0),
   );
 
   return (
@@ -527,9 +528,18 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
       </nav>
       {filas.length > 0 ? (
         <div className={styles.lista} aria-label={`Partidos de la jornada ${datos.numero ?? ""}`}>
-          {filas.map((p) => (
-            <Fila key={p.id} partido={p} onAbrir={() => setAbierto(p)} />
-          ))}
+          {filas.map((p, i) => {
+            // Jornada repartida en varios días: el día encima de cada grupo (la fila solo lleva
+            // la hora). Con un solo día ya sale bajo «Jornada N».
+            const dia = fechaPartido(p.fecha).dia;
+            const nuevoDia = variosDias && (i === 0 || fechaPartido(filas[i - 1]!.fecha).dia !== dia);
+            return (
+              <Fragment key={p.id}>
+                {nuevoDia && <h3 className={styles.dia}>{dia}</h3>}
+                <Fila partido={p} onAbrir={() => setAbierto(p)} />
+              </Fragment>
+            );
+          })}
         </div>
       ) : (
         <EmptyState title="Esta jornada no tiene partidos." />

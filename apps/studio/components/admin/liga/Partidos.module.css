@@ -58,6 +58,15 @@
   background: var(--ui-surface);
   overflow: hidden;
 }
+/* Día de un grupo de partidos, cuando la jornada se reparte en varios días. */
+.dia {
+  margin: 0;
+  padding: var(--ui-space-3) var(--ui-space-4) var(--ui-space-1);
+  color: var(--ui-muted);
+  font: 700 var(--ui-text-sm) / 1.2 var(--ui-font-body);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 /* Fila de 56 px: hora · local / visitante · marcador. */
 .fila {
   display: grid;
