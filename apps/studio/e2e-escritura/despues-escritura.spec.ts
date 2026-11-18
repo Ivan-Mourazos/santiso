@@ -60,7 +60,7 @@ test("después del partido: resultado y O Noso 11 juntos, con el once en el camp
       timeout: 120000,
     });
     await expect(carrusel.getByRole("button", { name: "Ver en grande: O Noso 11" })).toBeVisible();
-    await expect(carrusel.getByRole("button", { name: "Guardar o compartir" })).toBeVisible();
+    await expect(carrusel.getByRole("button", { name: "Compartir" })).toBeVisible();
 
     // Al volver: el carrusel sigue guardado y la colocación de después también.
     await page.reload();

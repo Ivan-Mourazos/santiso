@@ -10,7 +10,6 @@ import Link from "next/link";
 import React, { useId } from "react";
 import { useOptionalStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
-import { Select } from "@/components/ui/foundation/Fields";
 import { porJugarDeCategoria } from "@/lib/jornada/proximos";
 import { formatLiteralMatchDate } from "@/lib/match-date-time";
 import cartel from "./Cartel.module.css";
@@ -21,15 +20,25 @@ export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children
   <h4 className={styles.seccion}>{children}</h4>
 );
 
+/** Senior o Veteranos en una sola línea: dos botones, como el cambio de la cabecera. */
 export const CategorySelector: React.FC<{
   value: string;
   onChange: (v: string) => void;
 }> = ({ value, onChange }) => (
-  <div className={styles.campo}>
-    <Select label="Categoría" value={value} onChange={(e) => onChange(e.target.value)}>
-      <option value="Senior">Senior</option>
-      <option value="Veteranos">Veteranos</option>
-    </Select>
+  <div className={styles.campo} role="group" aria-label="Categoría">
+    <div className={styles.categorias}>
+      {["Senior", "Veteranos"].map((c) => (
+        <Button
+          key={c}
+          size="sm"
+          variant={value === c ? "primary" : "secondary"}
+          aria-pressed={value === c}
+          onClick={() => onChange(c)}
+        >
+          {c}
+        </Button>
+      ))}
+    </div>
   </div>
 );
 

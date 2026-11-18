@@ -71,7 +71,7 @@ for (const ancho of [360, 390]) {
     await expect(
       page
         .getByRole("region", { name: "Carrusel Axenda" })
-        .getByRole("button", { name: "Guardar o compartir", exact: true }),
+        .getByRole("button", { name: "Compartir", exact: true }),
     ).toBeVisible();
     // Las tres últimas son las láminas del carrusel. Antes puede haber otra: con la vista previa
     // a la vista, el móvil prepara solo el PNG suelto del cartel.
@@ -88,7 +88,7 @@ for (const ancho of [360, 390]) {
     await caption.fill("Axenda editada 💛🖤");
     await page
       .getByRole("region", { name: "Carrusel Axenda" })
-      .getByRole("button", { name: "Guardar o compartir", exact: true })
+      .getByRole("button", { name: "Compartir", exact: true })
       .tap();
     expect(
       await page.evaluate(
@@ -113,7 +113,7 @@ for (const ancho of [360, 390]) {
     await expect(
       page
         .getByRole("region", { name: "Carrusel Axenda" })
-        .getByRole("button", { name: "Guardar o compartir", exact: true }),
+        .getByRole("button", { name: "Compartir", exact: true }),
     ).toBeHidden();
     await page.locator("[data-vista-cartel]").scrollIntoViewIfNeeded();
     await expect(page.locator("[data-vista-cartel] [data-cartel]")).toBeVisible();

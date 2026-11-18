@@ -20,7 +20,7 @@ const FICHERO: Record<PasoDespues, string> = {
 
 /**
  * Lo de después del partido, que se publica junto: el Resultado y O Noso 11 en un carrusel.
- * «Generar» hace y guarda los dos; «Guardar o compartir» los entrega a la vez, en orden, con
+ * «Generar» hace y guarda los dos; «Compartir» los entrega a la vez, en orden, con
  * el texto de Instagram. Si cambian los datos, se avisa y se ofrece actualizarlos.
  */
 export function PaqueteDespues({
@@ -190,7 +190,7 @@ export function PaqueteDespues({
               onClick={() => void compartir()}
               disabled={!ficheros || compartiendo || generando}
             >
-              {compartiendo ? "Abriendo…" : "Guardar o compartir"}
+              {compartiendo ? "Abriendo…" : "Compartir"}
             </Button>
             <Button
               variant="secondary"

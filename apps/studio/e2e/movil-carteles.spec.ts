@@ -154,7 +154,7 @@ for (const modo of ["compartir", "sin-api", "no-admite", "cancelar", "error"] as
     await abrir(page);
     await vista(page);
     // Sin tocar nada: el PNG se prepara solo y el botón ya es el de guardar.
-    const compartir = page.getByRole("button", { name: "Guardar o compartir", exact: true });
+    const compartir = page.getByRole("button", { name: "Compartir", exact: true });
     await expect(compartir).toBeEnabled();
     const descargas: string[] = [];
     page.on("download", (d) => descargas.push(d.suggestedFilename()));
@@ -210,11 +210,11 @@ test("carteles: PNG móvil real conserva medidas de exportación", async ({ page
   test.setTimeout(120000);
   await abrir(page);
   await vista(page);
-  await expect(page.getByRole("button", { name: "Guardar o compartir", exact: true })).toBeEnabled({
+  await expect(page.getByRole("button", { name: "Compartir", exact: true })).toBeEnabled({
     timeout: 90000,
   });
   const descarga = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Descargar PNG", exact: true }).tap();
+  await page.getByRole("button", { name: "Descargar", exact: true }).tap();
   const flujo = await (await descarga).createReadStream();
   const trozos: Buffer[] = [];
   for await (const trozo of flujo) trozos.push(trozo as Buffer);
@@ -239,7 +239,7 @@ test("carteles: respuesta PNG tardía no habilita compartir datos antiguos", asy
   await vista(page);
   soltar[0]!();
   // Llega el PNG de los datos viejos: no vale, y se pide otro con los nuevos.
-  const compartir = page.getByRole("button", { name: "Guardar o compartir", exact: true });
+  const compartir = page.getByRole("button", { name: "Compartir", exact: true });
   await expect.poll(() => peticiones, { timeout: 15000 }).toBe(2);
   await expect(compartir).toBeHidden();
   soltar[1]!();
@@ -258,7 +258,7 @@ test("carteles: exportación fallida permite reintentar", async ({ page }) => {
   await abrir(page);
   await vista(page);
   // La preparación automática falla: se avisa y no se reintenta sola, queda el botón.
-  const preparar = page.getByRole("button", { name: "Preparar PNG", exact: true });
+  const preparar = page.getByRole("button", { name: "Preparar", exact: true });
   await expect(
     page.getByText("No se pudo generar el PNG. Vuelve a intentarlo.", { exact: true }),
   ).toBeVisible();
@@ -267,6 +267,6 @@ test("carteles: exportación fallida permite reintentar", async ({ page }) => {
   expect(peticiones).toBe(1);
   await preparar.tap();
   await expect(
-    page.getByRole("button", { name: "Guardar o compartir", exact: true }),
+    page.getByRole("button", { name: "Compartir", exact: true }),
   ).toBeEnabled();
 });

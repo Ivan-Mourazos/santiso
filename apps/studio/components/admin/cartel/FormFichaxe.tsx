@@ -4,7 +4,7 @@
  */
 import React from "react";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
-import { Deslizador, Toggle } from "./Common";
+import { Deslizador } from "./Common";
 import styles from "./Formularios.module.css";
 import type { FormState } from "./types";
 
@@ -34,8 +34,8 @@ export const FormFichaxe: React.FC<Props> = ({ form, set, jugFileName, handleJug
         onChange={(e) => set("fichaxeNombre", e.target.value)}
       />
       <Field
-        label="Apellidos o apodo (en grande)"
-        placeholder="Cea Amor"
+        label="En grande"
+        placeholder="Apellidos o apodo: Cea Amor"
         value={form.fichaxeApellido}
         onChange={(e) => set("fichaxeApellido", e.target.value)}
       />
@@ -100,12 +100,5 @@ export const FormFichaxe: React.FC<Props> = ({ form, set, jugFileName, handleJug
         />
       </div>
     )}
-    <div className={styles.interruptores}>
-      <Toggle
-        label="Escudo pequeño arriba"
-        active={form.fichaxeConEscudo}
-        onClick={() => set("fichaxeConEscudo", !form.fichaxeConEscudo)}
-      />
-    </div>
   </>
 );

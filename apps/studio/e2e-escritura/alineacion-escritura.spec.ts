@@ -58,7 +58,7 @@ test("elegir titulares, suplente y capitán, generar la historia y recuperarla a
   ]);
   expect(medidas).toEqual([2160, 3840]);
   await page.getByRole("button", { name: "Cerrar diálogo" }).click();
-  await expect(panel.getByRole("button", { name: "Guardar o compartir: Historia" })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Compartir: Historia" })).toBeVisible();
   await expect(panel.getByRole("button", { name: "Descargar: Historia" })).toBeVisible();
 
   // Al volver a entrar siguen ahí la alineación y su historia.

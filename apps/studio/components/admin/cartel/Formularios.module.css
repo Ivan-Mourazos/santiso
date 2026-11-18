@@ -524,3 +524,16 @@ button.partidoElegido:focus-visible {
   outline-offset: 2px;
 }
 
+
+/* Acción secundaria al pie del formulario (p. ej. pasar la clasificación a mano). */
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+}
+
+/* Senior | Veteranos en el formulario de un cartel. */
+.categorias {
+  display: flex;
+  gap: var(--ui-space-2);
+}

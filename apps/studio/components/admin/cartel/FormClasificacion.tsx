@@ -112,86 +112,69 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
     set("clasificacionData", reindexed);
   };
 
+  // Una copa o un torneo que no está en la federación: la tabla se escribe a mano.
+  const pasarAMano = () => {
+    setModoManual(true);
+    if (!form.clasificacionData || form.clasificacionData.length === 0) {
+      set("clasificacionNombre", form.clasificacionNombre || "LIGA DA COSTA");
+      set("clasificacionTipo", "liga");
+      set("clasificacionData", [
+        {
+          id: "1",
+          posicion: 1,
+          nombre: "UD Santiso FC",
+          pts: 15,
+          pj: 5,
+          pg: 5,
+          pe: 0,
+          pp: 0,
+          gf: 14,
+          gc: 2,
+        },
+        {
+          id: "2",
+          posicion: 2,
+          nombre: "SD Dubra",
+          pts: 12,
+          pj: 5,
+          pg: 4,
+          pe: 0,
+          pp: 1,
+          gf: 10,
+          gc: 4,
+        },
+        {
+          id: "3",
+          posicion: 3,
+          nombre: "CF Dumbría",
+          pts: 10,
+          pj: 5,
+          pg: 3,
+          pe: 1,
+          pp: 1,
+          gf: 8,
+          gc: 5,
+        },
+        {
+          id: "4",
+          posicion: 4,
+          nombre: "Oroso CF",
+          pts: 9,
+          pj: 5,
+          pg: 3,
+          pe: 0,
+          pp: 2,
+          gf: 7,
+          gc: 6,
+        },
+      ]);
+    }
+  };
+
   return (
     <>
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
       <AvisoError mensaje={errorCompeticiones} />
-
-      <SectionLabel>Modo de datos</SectionLabel>
-      <div style={{ display: "flex", gap: "0.8rem", marginBottom: "1.2rem" }}>
-        <Button size="sm" variant={!modoManual ? "primary" : "secondary"}
- aria-pressed={!modoManual}
-          onClick={() => {
-            setModoManual(false);
-          }}
-          
-        >
-          De la liga
-        </Button>
-        <Button size="sm" variant={modoManual ? "primary" : "secondary"}
- aria-pressed={modoManual}
-          onClick={() => {
-            setModoManual(true);
-            if (!form.clasificacionData || form.clasificacionData.length === 0) {
-              set("clasificacionNombre", form.clasificacionNombre || "LIGA DA COSTA");
-              set("clasificacionTipo", "liga");
-              set("clasificacionData", [
-                {
-                  id: "1",
-                  posicion: 1,
-                  nombre: "UD Santiso FC",
-                  pts: 15,
-                  pj: 5,
-                  pg: 5,
-                  pe: 0,
-                  pp: 0,
-                  gf: 14,
-                  gc: 2,
-                },
-                {
-                  id: "2",
-                  posicion: 2,
-                  nombre: "SD Dubra",
-                  pts: 12,
-                  pj: 5,
-                  pg: 4,
-                  pe: 0,
-                  pp: 1,
-                  gf: 10,
-                  gc: 4,
-                },
-                {
-                  id: "3",
-                  posicion: 3,
-                  nombre: "CF Dumbría",
-                  pts: 10,
-                  pj: 5,
-                  pg: 3,
-                  pe: 1,
-                  pp: 1,
-                  gf: 8,
-                  gc: 5,
-                },
-                {
-                  id: "4",
-                  posicion: 4,
-                  nombre: "Oroso CF",
-                  pts: 9,
-                  pj: 5,
-                  pg: 3,
-                  pe: 0,
-                  pp: 2,
-                  gf: 7,
-                  gc: 6,
-                },
-              ]);
-            }
-          }}
-          
-        >
-          A mano
-        </Button>
-      </div>
 
       {modoManual ? (
         <div style={{ marginBottom: "1.5rem" }}>
@@ -325,34 +308,24 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
             </Select>
           </div>
 
-          <SectionLabel>Previsualización de Datos</SectionLabel>
-          <div
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              padding: "1rem",
-              borderRadius: "10px",
-              border: "1px solid var(--border)",
-              fontSize: "0.8rem",
-              color: "#ccc",
-            }}
-          >
-            {loading ? (
-              <p>Cargando clasificación...</p>
-            ) : form.clasificacionData && form.clasificacionData.length > 0 ? (
-              <p>
-                Se cargaron <strong>{form.clasificacionData.length}</strong>{" "}
-                {form.clasificacionTipo === "copa"
-                  ? "rondas para este cuadro."
-                  : "equipos para esta tabla."}
-              </p>
-            ) : (
-              <p style={{ color: "#f87171" }}>
-                No hay datos para esta categoría y competición. Puedes usar el modo Manual arriba.
-              </p>
-            )}
-          </div>
+          {loading ? (
+            <p className={styles.nota}>Cargando clasificación…</p>
+          ) : !form.clasificacionData?.length ? (
+            <p className={styles.nota}>No hay datos para esta categoría y competición.</p>
+          ) : null}
         </>
       )}
+      <div className={styles.acciones}>
+        {modoManual ? (
+          <Button size="sm" variant="ghost" onClick={() => setModoManual(false)}>
+            Usar la de la federación
+          </Button>
+        ) : (
+          <Button size="sm" variant="ghost" onClick={pasarAMano}>
+            Hacerla a mano (copas y torneos)
+          </Button>
+        )}
+      </div>
     </>
   );
 };

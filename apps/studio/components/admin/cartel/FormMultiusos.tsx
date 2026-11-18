@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
+import { Field, Textarea } from "@/components/ui/foundation/Fields";
 import { CategorySelector, SectionLabel } from "./Common";
 import { Button } from "@/components/ui/foundation/Button";
 import styles from "./Formularios.module.css";
@@ -17,7 +17,7 @@ interface Props {
   handleMultiusosFile: (num: 1 | 2, file: File | null) => void;
 }
 
-const TEMAS: { id: MultiusosTema; label: string; icon: string }[] = [
+export const TEMAS: { id: MultiusosTema; label: string; icon: string }[] = [
   { id: "celebracion", label: "Celebración (títulos y ascensos)", icon: "🏆" },
   { id: "medico", label: "Parte médico", icon: "🏥" },
   { id: "fichaje", label: "Nueva incorporación", icon: "✍️" },
@@ -33,20 +33,6 @@ export const FormMultiusos: React.FC<Props> = ({
   return (
     <>
       <CategorySelector value={form.categoria} onChange={(v: string) => set("categoria", v)} />
-
-      <div className={styles.campo}>
-        <Select
-          label="Tema visual"
-          value={form.multiusosTema}
-          onChange={(e) => set("multiusosTema", e.target.value as MultiusosTema)}
-        >
-          {TEMAS.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.label}
-            </option>
-          ))}
-        </Select>
-      </div>
 
       <div className={styles.campo}>
         <Field

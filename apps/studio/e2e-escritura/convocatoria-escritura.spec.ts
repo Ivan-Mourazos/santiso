@@ -44,7 +44,7 @@ test("guardar convocatoria, generar y guardar su cartel, y pasar convocados al o
   ).toEqual([2160, 2700]);
   await page.getByRole("button", { name: "Cerrar diálogo" }).click();
   await expect(
-    panel.getByRole("button", { name: "Guardar o compartir: Publicación", exact: true }),
+    panel.getByRole("button", { name: "Compartir: Publicación", exact: true }),
   ).toBeVisible();
   await page.goto(ruta);
   await expect(panel.getByText(/^✓ Generado/)).toBeVisible({ timeout: 30000 });

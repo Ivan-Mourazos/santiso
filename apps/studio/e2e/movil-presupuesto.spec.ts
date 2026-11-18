@@ -91,10 +91,8 @@ for (const ancho of [360, 390]) {
       // Presupuesto por bloque de edición: depende de campos, no de filas de una temporada.
       expect((await datos.boundingBox())!.height).toBeLessThanOrEqual(1100);
       if (plantilla === "proximos") {
-        for (const nombre of [
-          "Preparar carrusel Axenda",
-          "Rellenar con los partidos de esta jornada",
-        ]) {
+        // Se rellena solo con los partidos de la federación: no hay botón de rellenar.
+        for (const nombre of ["Preparar carrusel Axenda"]) {
           const accion = (await page
             .getByRole("button", { name: nombre, exact: true })
             .boundingBox())!;

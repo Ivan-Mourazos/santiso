@@ -37,7 +37,7 @@ test("la pantalla monta el cartel y las acciones de cada plantilla", async ({ pa
     page
       .getByRole("region", { name: "Cartel de partido: carteles guardados" })
       .getByRole("button", { name: "Generar cartel" })
-      .or(page.getByRole("button", { name: "Descargar PNG" })),
+      .or(page.getByRole("button", { name: "Descargar" })),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Limpiar datos" })).toBeVisible();
 
@@ -130,7 +130,7 @@ test("el cartel se previsualiza y se descarga en PNG a 2160×2700", async ({ pag
   await expect(piloto.locator("[data-cartel]")).toHaveClass(/diagonal/);
 
   const descarga = page.waitForEvent("download", { timeout: 90000 });
-  await piloto.getByRole("button", { name: "Descargar PNG" }).click();
+  await piloto.getByRole("button", { name: "Descargar" }).click();
   const fichero = await (await descarga).createReadStream();
   const trozos: Buffer[] = [];
   for await (const trozo of fichero) trozos.push(trozo as Buffer);

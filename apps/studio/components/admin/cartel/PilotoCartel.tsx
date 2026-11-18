@@ -123,7 +123,7 @@ export default function PilotoCartel({
   guardado = null,
   soloVista = false,
   colocacion = null,
-  titulo = "Previsualización",
+  titulo,
 }: {
   tipo: TemplateId;
   formato?: FormatoCartel;
@@ -384,7 +384,8 @@ export default function PilotoCartel({
       )}
       {/* Una sola fila: título, opciones de la plantilla y descarga. Deja el alto al cartel. */}
       <div className={styles.cabecera}>
-        <h3>{titulo}</h3>
+        {/* El cartel se entiende solo: el título, solo cuando hay dos (Resultado y O Noso 11). */}
+        {titulo && <h3>{titulo}</h3>}
         {!soloVista && (
         <div className={styles.controles}>
           {(tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
@@ -439,7 +440,7 @@ export default function PilotoCartel({
           <div className={styles.movil}>
             {pngActual ? (
               <Button size="sm" onClick={() => void compartir()} disabled={compartiendo}>
-                {compartiendo ? "Abriendo…" : "Guardar o compartir"}
+                {compartiendo ? "Abriendo…" : "Compartir"}
               </Button>
             ) : (
               <Button
@@ -447,7 +448,7 @@ export default function PilotoCartel({
                 onClick={() => void generar()}
                 disabled={exportando || previas.cargando || !!previas.error}
               >
-                {exportando ? "Preparando…" : "Preparar PNG"}
+                {exportando ? "Preparando…" : "Preparar"}
               </Button>
             )}
           </div>
@@ -458,7 +459,7 @@ export default function PilotoCartel({
               onClick={() => void descargar()}
               disabled={exportando || compartiendo || previas.cargando || !!previas.error}
             >
-              {exportando ? "Generando…" : "Descargar PNG"}
+              {exportando ? "Generando…" : "Descargar"}
             </Button>
           </div>
             </>

@@ -9,7 +9,7 @@ import { Field, Select } from "@/components/ui/foundation/Fields";
 import type { NextMatch } from "@/lib/cartel/types";
 import { huecoProximo } from "@/lib/jornada/proximos";
 import { elegirAxenda } from "@/lib/cartel2/seleccion-axenda";
-import { SectionLabel, Toggle, type SelectorMatch } from "./Common";
+import { Toggle, type SelectorMatch } from "./Common";
 import styles from "./Formularios.module.css";
 import { PlegableMovil } from "./PlegableMovil";
 import type { FormState } from "./types";
@@ -51,7 +51,8 @@ export const FormProximos: React.FC<Props> = ({
   rellenarAlAbrir = false,
 }) => {
   const [aviso, setAviso] = useState("");
-  const pendienteRef = useRef(rellenarAlAbrir);
+  // Se rellena solo con los partidos de la federación al abrir desde Jornada o si está vacío.
+  const pendienteRef = useRef(rellenarAlAbrir || !form.matches.some((m) => m.rival));
 
   const handleAutoFill = () => {
     const elegidos = elegirAxenda(dbMatches, new Date());
@@ -77,21 +78,11 @@ export const FormProximos: React.FC<Props> = ({
 
   return (
     <>
-      <div className={styles.desdeLiga}>
-        <h4 className={styles.seccion}>Autocompletar desde la liga</h4>
-        <Button onClick={handleAutoFill}>Rellenar con los partidos de esta jornada</Button>
-        {aviso && (
-          <p role="status" className={styles.nota}>
-            {aviso}
-          </p>
-        )}
-      </div>
-      <PlegableMovil titulo="Ayuda para rellenar">
-        <SectionLabel>Sénior y veteranos</SectionLabel>
-        <p className={styles.nota}>
-          Un partido sin rival no sale en el cartel: déjalo vacío si esa categoría descansa.
+      {aviso && (
+        <p role="status" className={styles.nota}>
+          {aviso}
         </p>
-      </PlegableMovil>
+      )}
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {form.matches.map((m, i) => (
           <PlegableMovil
@@ -264,6 +255,9 @@ export const FormProximos: React.FC<Props> = ({
           Añadir partido
         </Button>
       )}
+      <p className={styles.nota}>
+        Un partido sin rival no sale en el cartel: déjalo vacío si esa categoría descansa.
+      </p>
     </>
   );
 };

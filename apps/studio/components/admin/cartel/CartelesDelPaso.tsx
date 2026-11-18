@@ -77,7 +77,7 @@ export function CartelesDelPaso({
         if (vigente) setFicheros(Object.fromEntries(pares));
       })
       .catch(() => {
-        // Sin fichero, «Guardar o compartir» descarga desde la URL: sigue funcionando.
+        // Sin fichero, «Compartir» descarga desde la URL: sigue funcionando.
       });
     return () => {
       vigente = false;
@@ -160,9 +160,9 @@ export function CartelesDelPaso({
               <div className={s.acciones}>
                 <Button
                   onClick={() => void compartir(g)}
-                  aria-label={`Guardar o compartir: ${NOMBRE_FORMATO[g.formato]}`}
+                  aria-label={`Compartir: ${NOMBRE_FORMATO[g.formato]}`}
                 >
-                  Guardar o compartir
+                  Compartir
                 </Button>
                 <Button
                   variant="secondary"
@@ -189,7 +189,7 @@ export function CartelesDelPaso({
         title={viendo ? `${nombre} · ${NOMBRE_FORMATO[viendo.formato]}` : nombre}
         footer={
           viendo && (
-            <Button onClick={() => void compartir(viendo)}>Guardar o compartir</Button>
+            <Button onClick={() => void compartir(viendo)}>Compartir</Button>
           )
         }
       >

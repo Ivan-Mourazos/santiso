@@ -136,7 +136,7 @@ export function PaqueteAxenda({
         {listo && (
           <>
             <Button onClick={() => void compartir()} disabled={compartiendo}>
-              {compartiendo ? "Abriendo…" : "Guardar o compartir"}
+              {compartiendo ? "Abriendo…" : "Compartir"}
             </Button>
             <Button variant="secondary" onClick={() => descargar(listo)} disabled={compartiendo}>
               Descargar carrusel

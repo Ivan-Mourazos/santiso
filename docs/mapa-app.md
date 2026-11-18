@@ -49,15 +49,15 @@ Subnavegación arriba: Partidos · Clasificación · Goleadores · Estadísticas
 
 | Código | Pantalla | Ruta | Qué se hace | Decisión |
 |---|---|---|---|---|
-| C0 | Catálogo | `carteles` | Lista de carteles por grupos | |
+| C0 | Catálogo | `carteles` | Lista de carteles por grupos || **se queda 18/11**: la Lotaría ya va la última de su grupo |
 | C1 | Resultado e O Noso 11 | `carteles?plantilla=despues` | Resultado arriba (equipos → su ficha, ✎ cambiar partido) y dos desplegables: Carteles (vistas, descargar uno o los 2, once, texto) y Eventos | **hecho 15/11**: eventos en una línea con hoja para editar; fuera «Logos y patrocinadores» en todos los carteles |
-| C2 | Cartel de partido | `?plantilla=partido` | Día, hora y campo | |
-| C3 | Próximos partidos | `?plantilla=proximos` | Agenda del finde | |
-| C4 | Clasificación | `?plantilla=clasificacion` | Cartel de la tabla | |
-| C5 | Fichaje | `?plantilla=fichaxe` | Altas y renovaciones | |
-| C6 | Comunicado | `?plantilla=comunicado` | Aviso del club | |
-| C7 | Celebración | `?plantilla=multiusos&tema=celebracion` | Títulos y fiestas | |
-| C8 | Lotaría | `?plantilla=loteria` | Nadal e Neno | |
+| C2 | Cartel de partido | `?plantilla=partido` | Día, hora y campo || **hecho 18/11**: sin título «Previsualización»; botones «Compartir» / «Descargar» |
+| C3 | Próximos partidos | `?plantilla=proximos` | Agenda del finde || **hecho 18/11**: se rellena solo al abrir si está vacío; fuera «Rellenar…» y «Ayuda para rellenar» |
+| C4 | Clasificación | `?plantilla=clasificacion` | Cartel de la tabla || **hecho 18/11**: Senior/Veteranos en dos botones; fuera «Modo de datos» y «Previsualización de datos»; «Hacerla a mano» al pie. Pendiente: con 14 equipos sale «O contido non cabe» |
+| C5 | Fichaje | `?plantilla=fichaxe` | Altas y renovaciones || **hecho 18/11**: «Escudo pequeño arriba» a Más opciones; rótulo «En grande» |
+| C6 | Comunicado | `?plantilla=comunicado` | Aviso del club || **hecho 18/11**: fecha de hoy por defecto |
+| C7 | Celebración | `?plantilla=multiusos&tema=celebracion` | Títulos y fiestas || **hecho 18/11**: «Tema visual» a Más opciones; Senior/Veteranos en dos botones |
+| C8 | Lotaría | `?plantilla=loteria` | Nadal e Neno || **se queda 18/11**: solo los nombres de botón comunes |
 | C9 | Restos sin menú | `?plantilla=resumo` / `cronoloxia` / `noso11` | Plantillas viejas, solo por dirección | |
 
 Todas comparten: formulario + vista previa + formato (4:5 / 9:16) + texto para Instagram.

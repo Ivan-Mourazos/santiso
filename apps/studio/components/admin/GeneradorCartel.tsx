@@ -18,7 +18,8 @@ import { FormCronoloxia } from "./cartel/FormCronoloxia";
 import { FormProximos } from "./cartel/FormProximos";
 import PilotoCartel from "./cartel/PilotoCartel";
 import { FormNoso11 } from "./cartel/FormNoso11";
-import { FormMultiusos } from "./cartel/FormMultiusos";
+import { FormMultiusos, TEMAS } from "./cartel/FormMultiusos";
+import { Toggle } from "./cartel/Common";
 import { FormClasificacion } from "./cartel/FormClasificacion";
 import { FormComunicado } from "./cartel/FormComunicado";
 import { FormFichaxe } from "./cartel/FormFichaxe";
@@ -451,6 +452,29 @@ export default function GeneradorCartel({
               >
                 <option value="publicacion">Publicación · 4:5</option>
                 <option value="historia">Historia · 9:16</option>
+              </Select>
+            )}
+            {tipo === "fichaxe" && (
+              <div className={styles.acciones}>
+                <Toggle
+                  label="Escudo pequeño arriba"
+                  active={form.fichaxeConEscudo}
+                  onClick={() => set("fichaxeConEscudo", !form.fichaxeConEscudo)}
+                />
+              </div>
+            )}
+            {/* Celebración llega con su tema desde el catálogo; los demás, aquí. */}
+            {tipo === "multiusos" && (
+              <Select
+                label="Tema visual"
+                value={form.multiusosTema}
+                onChange={(e) => set("multiusosTema", e.target.value as MultiusosTema)}
+              >
+                {TEMAS.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
+                  </option>
+                ))}
               </Select>
             )}
             <div className={styles.acciones}>
