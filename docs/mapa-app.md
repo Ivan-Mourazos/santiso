@@ -53,7 +53,7 @@ Subnavegación arriba: Partidos · Clasificación · Goleadores · Estadísticas
 | C1 | Resultado e O Noso 11 | `carteles?plantilla=despues` | Resultado arriba (equipos → su ficha, ✎ cambiar partido) y dos desplegables: Carteles (vistas, descargar uno o los 2, once, texto) y Eventos | **hecho 15/11**: eventos en una línea con hoja para editar; fuera «Logos y patrocinadores» en todos los carteles |
 | C2 | Cartel de partido | `?plantilla=partido` | Día, hora y campo || **hecho 18/11**: sin título «Previsualización»; botones «Compartir» / «Descargar» |
 | C3 | Próximos partidos | `?plantilla=proximos` | Agenda del finde || **hecho 18/11**: se rellena solo al abrir si está vacío; fuera «Rellenar…» y «Ayuda para rellenar» |
-| C4 | Clasificación | `?plantilla=clasificacion` | Cartel de la tabla || **hecho 18/11**: Senior/Veteranos en dos botones; fuera «Modo de datos» y «Previsualización de datos»; «Hacerla a mano» al pie. Pendiente: con 14 equipos sale «O contido non cabe» |
+| C4 | Clasificación | `?plantilla=clasificacion` | Cartel de la tabla || **hecho 18/11**: Senior/Veteranos en dos botones; fuera «Modo de datos» y «Previsualización de datos»; «Hacerla a mano» al pie; ya no sale el «non cabe» falso en el móvil |
 | C5 | Fichaje | `?plantilla=fichaxe` | Altas y renovaciones || **hecho 18/11**: «Escudo pequeño arriba» a Más opciones; rótulo «En grande» |
 | C6 | Comunicado | `?plantilla=comunicado` | Aviso del club || **hecho 18/11**: fecha de hoy por defecto |
 | C7 | Celebración | `?plantilla=multiusos&tema=celebracion` | Títulos y fiestas || **hecho 18/11**: «Tema visual» a Más opciones; Senior/Veteranos en dos botones |
