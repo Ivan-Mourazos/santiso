@@ -169,7 +169,6 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
                 <th scope="col">Logo</th>
                 <th scope="col">Nombre</th>
                 <th scope="col">En carteles</th>
-                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -184,7 +183,16 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
                     )}
                   </td>
                   <td className={`${styles.nombre} ${styles.celdaNombre}`}>
-                    <strong>{p.nombre}</strong>
+                    {/* El nombre abre el editor; «Eliminar» va dentro, no en cada fila. */}
+                    <button
+                      type="button"
+                      className={styles.abrir}
+                      aria-haspopup="dialog"
+                      aria-label={`Editar ${p.nombre}`}
+                      onClick={() => abrirEditor(p)}
+                    >
+                      <strong>{p.nombre}</strong>
+                    </button>
                     {p.web_url && (
                       <a href={p.web_url} target="_blank" rel="noreferrer noopener">
                         {p.web_url}
@@ -197,26 +205,6 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
                     >
                       {p.en_carteles ? "En cartel" : "Fuera"}
                     </span>
-                  </td>
-                  <td className={styles.celdaAcciones}>
-                    <div className={styles.filaAcciones}>
-                      <Button
-                        variant="secondary"
-                        onClick={() => abrirEditor(p)}
-                        size="sm"
-                        aria-label={`Editar ${p.nombre}`}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        onClick={() => setDialogo({ tipo: "borrar", registro: p })}
-                        size="sm"
-                        aria-label={`Eliminar ${p.nombre}`}
-                      >
-                        Eliminar
-                      </Button>
-                    </div>
                   </td>
                 </tr>
               ))}
@@ -261,6 +249,11 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
             void recargar();
           }}
           onAbrirExistente={(fila) => abrirEditor(fila)}
+          onEliminar={
+            dialogo.registro
+              ? () => setDialogo({ tipo: "borrar", registro: dialogo.registro! })
+              : undefined
+          }
         />
       )}
 

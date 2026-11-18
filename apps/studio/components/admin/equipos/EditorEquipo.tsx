@@ -16,8 +16,13 @@ interface Props {
   destino: { categoria: string; competicionId?: string; competicionNombre?: string };
   onCerrar: () => void;
   onGuardado: () => void;
+  /** Quitarlo de la competición abierta y darlo de baja: van aquí, no en cada fila. */
+  bajas?: {
+    quitar?: { etiqueta: string; onClick: () => void };
+    eliminar: { etiqueta: string; texto: string; onClick: () => void };
+  };
 }
-export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: Props) {
+export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado, bajas }: Props) {
   const { showConfirm } = useStudio();
   const [inicial] = useState(() => borradorDeEquipo(equipo));
   const [nombre, setNombre] = useState(inicial.nombre);
@@ -80,6 +85,26 @@ export default function EditorEquipo({ equipo, destino, onCerrar, onGuardado }: 
       title={equipo ? `Editar a ${equipo.nombre}` : "Crear equipo"}
       footer={
         <>
+          {equipo && bajas?.quitar && (
+            <Button
+              variant="secondary"
+              onClick={bajas.quitar.onClick}
+              disabled={pendiente}
+              aria-label={bajas.quitar.etiqueta}
+            >
+              Quitar
+            </Button>
+          )}
+          {equipo && bajas && (
+            <Button
+              variant="danger"
+              onClick={bajas.eliminar.onClick}
+              disabled={pendiente}
+              aria-label={bajas.eliminar.etiqueta}
+            >
+              {bajas.eliminar.texto}
+            </Button>
+          )}
           <Button variant="secondary" onClick={cerrar} disabled={pendiente}>
             Cancelar
           </Button>

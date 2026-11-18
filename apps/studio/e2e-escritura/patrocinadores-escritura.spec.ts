@@ -80,6 +80,8 @@ test("activar mete el logo al final de la barra y las flechas lo colocan", async
 test("quitar del cartel conserva la ficha; eliminar la borra entera", async ({ page }) => {
   await abrir(page);
 
+  // «Eliminar» va dentro del editor, no en la fila.
+  await page.getByRole("button", { name: "Editar Concello Ficticio" }).click();
   await page.getByRole("button", { name: "Eliminar Concello Ficticio" }).click();
   const aviso = page.getByRole("dialog", { name: "Eliminar «Concello Ficticio»" });
   await aviso.getByRole("button", { name: "Quitar del cartel sin borrar" }).click();
@@ -94,6 +96,8 @@ test("quitar del cartel conserva la ficha; eliminar la borra entera", async ({ p
     /Deporte Ficticio/,
   ]);
 
+  // «Eliminar» va dentro del editor, no en la fila.
+  await page.getByRole("button", { name: "Editar Talleres Ficticio" }).click();
   await page.getByRole("button", { name: "Eliminar Talleres Ficticio" }).click();
   const borrado = page.getByRole("dialog", { name: "Eliminar «Talleres Ficticio»" });
   await borrado.getByRole("button", { name: "Eliminar del catálogo" }).click();

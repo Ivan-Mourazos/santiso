@@ -27,6 +27,8 @@ interface Props {
   onGuardado: (fila: PatrocinadorDto, alta: boolean) => void;
   /** Abre la ficha que ya usaba ese nombre, descartando lo escrito aquí. */
   onAbrirExistente: (fila: PatrocinadorDto) => void;
+  /** Eliminar la ficha: va aquí y no en cada fila de la lista. */
+  onEliminar?: () => void;
 }
 
 type Errores = Partial<Record<"nombre" | "webUrl", string>>;
@@ -40,6 +42,7 @@ export default function EditorPatrocinador({
   onCerrar,
   onGuardado,
   onAbrirExistente,
+  onEliminar,
 }: Props) {
   const { showConfirm } = useStudio();
   const alta = registro === null;
@@ -135,6 +138,16 @@ export default function EditorPatrocinador({
       title={alta ? "Nuevo patrocinador o logo" : `Editar «${inicial.nombre}»`}
       footer={
         <>
+          {!alta && onEliminar && (
+            <Button
+              variant="danger"
+              onClick={onEliminar}
+              disabled={pendiente}
+              aria-label={`Eliminar ${inicial.nombre}`}
+            >
+              Eliminar
+            </Button>
+          )}
           <Button variant="secondary" onClick={cerrar} disabled={pendiente}>
             Cancelar
           </Button>

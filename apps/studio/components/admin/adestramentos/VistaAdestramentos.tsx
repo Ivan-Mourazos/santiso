@@ -121,15 +121,16 @@ export default function VistaAdestramentos({
               <button
                 className={styles.abrirEntreno}
                 onClick={() => onDetalle(e.id)}
-                // En pantalla va abreviado (✓ · T · F); leído, con palabras.
-                aria-label={`${cuando}: ${cuenta("presente")} presentes, ${cuenta("tarde")} tarde, ${cuenta("ausente")} faltas, ${importe} en multas`}
               >
                 <strong>{cuando}</strong>
+                {/* Con palabras: «7 ✓ · 11 T · 8 F» había que saber leerlo. «Copiar» para
+                    WhatsApp está dentro de cada entreno. */}
                 <span>
-                  {cuenta("presente")} ✓ · {cuenta("tarde")} T · {cuenta("ausente")} F · {importe}
+                  {cuenta("presente")} {cuenta("presente") === 1 ? "va" : "van"} ·{" "}
+                  {cuenta("tarde")} tarde · {cuenta("ausente")}{" "}
+                  {cuenta("ausente") === 1 ? "falta" : "faltan"} · {importe}
                 </span>
               </button>
-              <Copiar texto={textoWhatsapp(e, categoria, datos.personas, registros)} />
               <span className={styles.chevron} aria-hidden="true">
                 ›
               </span>

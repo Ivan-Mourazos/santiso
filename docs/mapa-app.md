@@ -80,20 +80,20 @@ Todas comparten: formulario + vista previa + formato (4:5 / 9:16) + texto para I
 
 | Código | Pantalla | Ruta | Qué se hace | Decisión |
 |---|---|---|---|---|
-| M4 | Adestramentos | `adestramentos` | Entrenos y cuadrante de asistencia (crea multas solas) | |
-| M5 | Multas | `multas` | Multas · Resumen · Normas; nueva multa | |
-| M6 | Directiva | `directiva` | Lista y editor (mismo componente que E4) | |
+| M4 | Adestramentos | `adestramentos` | Entrenos y cuadrante de asistencia (crea multas solas) || **hecho 18/11**: «7 van · 11 tarde · 8 faltan»; «Copiar» solo dentro del entreno; Senior/Veteranos en la cabecera |
+| M5 | Multas | `multas` | Multas · Resumen · Normas; nueva multa || **hecho 18/11**: pendientes agrupadas por persona (21 filas, no 60) con «Cobrar todo»; fuera el filtro de persona |
+| M6 | Directiva | `directiva` | Lista y editor (mismo componente que E4) || **hecho 18/11**: la fila abre el editor; «Quitar» dentro |
 
 ### Club y ajustes
 
 | Código | Pantalla | Ruta | Qué se hace | Decisión |
 |---|---|---|---|---|
-| M7 | Equipos | `equipos` | Competiciones, equipos, enlazar con la federación, escudos | |
-| M8 | Patrocinadores y logos | `patrocinadores` | Catálogo de logos y orden de la barra del cartel | |
-| M9 | Temporadas (admin) | `temporadas` | Lista y nueva temporada | |
-| M10 | Ajustes gráficos (admin) | `ajustes-graficos` | Logos de Xunta y RFGF | |
-| M11 | Usuarios (admin) | `usuarios` | Altas, rol, cambiar contraseña | |
-| M12 | Mi cuenta | `cuenta` | Mi contraseña, cerrar sesión | |
+| M7 | Equipos | `equipos` | Competiciones, equipos, enlazar con la federación, escudos || **hecho 18/11**: la fila abre el editor; «Quitar» y «Eliminar» dentro; en móvil añadir y crear equipo bajo «Más opciones» |
+| M8 | Patrocinadores y logos | `patrocinadores` | Catálogo de logos y orden de la barra del cartel || **hecho 18/11**: el nombre abre el editor; «Eliminar» dentro |
+| M9 | Temporadas (admin) | `temporadas` | Lista y nueva temporada || **se queda 18/11** |
+| M10 | Ajustes gráficos (admin) | `ajustes-graficos` | Logos de Xunta y RFGF || **se queda 18/11** |
+| M11 | Usuarios (admin) | `usuarios` | Altas, rol, cambiar contraseña || **hecho 18/11**: «Nuevo usuario» plegado tras «Añadir usuario» |
+| M12 | Mi cuenta | `cuenta` | Mi contraseña, cerrar sesión || **se queda 18/11** |
 
 ## O · Pantallas sin entrada en el menú
 

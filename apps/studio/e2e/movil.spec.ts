@@ -199,6 +199,8 @@ test("categoría conserva contexto y diálogo de edición cabe en móvil", async
     "aria-pressed",
     "true",
   );
+  // En el móvil, crear equipo va bajo «Más opciones»: los equipos llegan de la federación.
+  await page.getByRole("button", { name: "Más opciones", exact: true }).click();
   await page.getByRole("button", { name: "Crear equipo", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Crear equipo", exact: true });
   await expect(dialog).toBeVisible();

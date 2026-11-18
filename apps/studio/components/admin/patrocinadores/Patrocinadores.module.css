@@ -242,13 +242,13 @@
   .tabla tbody {
     display: block;
   }
-  /* Una fila por ficha: logo, nombre con el chip debajo y las dos acciones como iconos. */
+  /* Una fila por ficha: logo y nombre con el chip debajo; el nombre abre el editor. */
   .tabla tr {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-columns: 44px minmax(0, 1fr);
     grid-template-areas:
-      "logo nombre acciones"
-      "logo estado acciones";
+      "logo nombre"
+      "logo estado";
     align-items: center;
     gap: 2px 0.75rem;
     min-height: 64px;
@@ -333,4 +333,22 @@
   .grupo > * {
     min-width: 0;
   }
+}
+
+/* El nombre es el botón que abre el editor (borrar va dentro). */
+.abrir {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.abrir:hover strong {
+  color: var(--ui-accent);
 }

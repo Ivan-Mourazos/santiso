@@ -301,3 +301,16 @@
 .entreno .abrirEntreno:active {
   transform: none;
 }
+
+/* En móvil, «Adestramentos · Senior» ya está en la cabecera de la página y en su selector. */
+@media (max-width: 639px) {
+  .cabecera {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

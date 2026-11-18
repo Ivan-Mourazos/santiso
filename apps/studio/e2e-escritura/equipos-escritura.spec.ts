@@ -21,6 +21,8 @@ test("crear, editar, quitar, reincorporar y eliminar sin duplicar el equipo", as
   await editor.getByLabel("Nombre del equipo").fill("Nuevo Corregido");
   await editor.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(editor).toBeHidden();
+  // Quitar y eliminar van dentro del editor, no en la fila.
+  await page.getByRole("button", { name: "Editar a Nuevo Corregido", exact: true }).click();
   await page
     .getByRole("button", { name: "Quitar Nuevo Corregido de Liga 26/27", exact: true })
     .click();
@@ -33,6 +35,7 @@ test("crear, editar, quitar, reincorporar y eliminar sin duplicar el equipo", as
   await incorporar.getByRole("button", { name: "Añadir equipo", exact: true }).click();
   await expect(incorporar).toBeHidden();
   await expect(fila(page, "Nuevo Corregido")).toHaveCount(1);
+  await page.getByRole("button", { name: "Editar a Nuevo Corregido", exact: true }).click();
   await page
     .getByRole("button", { name: "Eliminar Nuevo Corregido de biblioteca", exact: true })
     .click();
@@ -60,6 +63,7 @@ test("homónimos muestran categoría y competiciones antes de incorporar", async
 
 test("un equipo con partidos ofrece quitar y conserva el historial", async ({ page }) => {
   await abrir(page);
+  await page.getByRole("button", { name: "Editar a Histórico Ficticio", exact: true }).click();
   await page
     .getByRole("button", { name: "Revisar baja de Histórico Ficticio", exact: true })
     .click();
@@ -70,6 +74,7 @@ test("un equipo con partidos ofrece quitar y conserva el historial", async ({ pa
   await expect(page.getByRole("dialog")).toContainText("El equipo y sus partidos se conservan");
   await page.getByRole("dialog").getByRole("button", { name: "Cancelar" }).click();
   await expect(fila(page, "Histórico Ficticio")).toBeVisible();
+  await page.getByRole("button", { name: "Editar a Histórico Ficticio", exact: true }).click();
   await page
     .getByRole("button", { name: "Revisar baja de Histórico Ficticio", exact: true })
     .click();

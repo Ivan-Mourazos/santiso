@@ -140,7 +140,7 @@ export default function AdminAdestramentos({
   }
   return (
     <div className={styles.panel}>
-      <header>
+      <header className={styles.cabecera}>
         <h3>Adestramentos · {categoria}</h3>
         <p>{datos.temporada.nombre} · Asistencia y multas automáticas</p>
       </header>

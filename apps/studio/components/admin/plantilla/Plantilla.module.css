@@ -329,8 +329,8 @@
 
 @media (max-width: 640px) {
   .tabla.staff tr {
-    grid-template-columns: 36px minmax(0, 1fr) auto;
-    grid-template-areas: "foto nombre acciones";
+    grid-template-columns: 36px minmax(0, 1fr);
+    grid-template-areas: "foto nombre";
   }
   .celdaNombre,
   .fotoControles,

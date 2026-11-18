@@ -96,3 +96,10 @@
     font-size: var(--ui-text-base);
   }
 }
+
+/* Cancelar y Crear usuario, en una fila. */
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+}

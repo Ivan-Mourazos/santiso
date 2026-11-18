@@ -29,8 +29,12 @@ test("poner una multa, cobrarla y gestionar gastos del bote a 360 px", async ({
   await expect(page.getByText("Multa apuntada")).toBeVisible();
 
   await page.getByRole("button", { name: "Cerrar diálogo", exact: true }).click();
-  const multas = page.getByRole("list", { name: "Multas" });
-  const fila = multas.getByRole("listitem").filter({ hasText: "Uno Aliñación Ficticio" });
+  // Una fila por persona: se despliega para ver sus multas.
+  const multas = page.getByRole("list", { name: "Multas por persona" });
+  await multas.getByRole("button", { name: /Uno Aliñación Ficticio/ }).click();
+  const fila = page
+    .getByRole("list", { name: "Multas de Uno Aliñación Ficticio" })
+    .getByRole("listitem");
   await expect(fila).toContainText("Non traer material: Peto, Medias 1ª");
   await expect(fila).toContainText("2,00 €");
 
@@ -97,9 +101,11 @@ test("poner una multa, cobrarla y gestionar gastos del bote a 360 px", async ({
   await alta.getByLabel("Importe (€)").fill("2,5");
   await alta.getByRole("button", { name: "Poner multa" }).click();
   await page.getByRole("button", { name: "Cerrar diálogo", exact: true }).click();
-  await expect(
-    page.getByRole("list", { name: "Multas" }).getByRole("listitem").filter({ hasText: "Dous" }),
-  ).toContainText("Non poñer bote no bar");
+  const porPersona = page.getByRole("list", { name: "Multas por persona" });
+  await porPersona.getByRole("button", { name: /Dous/ }).click();
+  await expect(porPersona.getByRole("list", { name: /^Multas de .*Dous/ })).toContainText(
+    "Non poñer bote no bar",
+  );
 
   // Las normas del club están cargadas y se pueden ampliar.
   await page.getByRole("tab", { name: "Normas" }).click();

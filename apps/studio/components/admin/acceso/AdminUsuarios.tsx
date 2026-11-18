@@ -30,6 +30,8 @@ export default function AdminUsuarios({ showToast, showConfirm }: Props) {
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [nuevo, setNuevo] = useState(VACIO);
+  // El alta va plegada: se abre con «Añadir usuario», como en el resto de listas.
+  const [alta, setAlta] = useState(false);
   const [errorAlta, setErrorAlta] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [conClave, setConClave] = useState<UsuarioDto | null>(null);
@@ -83,6 +85,7 @@ export default function AdminUsuarios({ showToast, showConfirm }: Props) {
     const hecho = await hacer("alta", () => crearUsuarioNuevo(nuevo), setErrorAlta);
     if (!hecho) return;
     setNuevo(VACIO);
+    setAlta(false);
     showToast("Usuario creado");
     await cargar();
   }
@@ -176,60 +179,80 @@ export default function AdminUsuarios({ showToast, showConfirm }: Props) {
           </ul>
         )}
       </section>
-      <section className={styles.tarjeta} aria-labelledby="usuarios-alta">
-        <h2 id="usuarios-alta">Nuevo usuario</h2>
-        <form onSubmit={crear} className={styles.formulario}>
-          <Field
-            label="Nombre"
-            value={nuevo.nombre}
-            onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })}
-            disabled={ocupado !== null}
-            required
-          />
-          <Field
-            label="Usuario"
-            hint="En minúsculas y sin espacios. Por ejemplo: dani"
-            value={nuevo.usuario}
-            onChange={(e) => setNuevo({ ...nuevo, usuario: e.target.value })}
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            autoComplete="off"
-            disabled={ocupado !== null}
-            required
-          />
-          <Field
-            label="Contraseña inicial"
-            hint={`Al menos ${LARGO_MINIMO_CLAVE} caracteres. Pásasela tú; luego puede cambiarla en «Mi cuenta».`}
-            value={nuevo.clave}
-            onChange={(e) => setNuevo({ ...nuevo, clave: e.target.value })}
-            autoComplete="off"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            minLength={LARGO_MINIMO_CLAVE}
-            disabled={ocupado !== null}
-            required
-          />
-          <Select
-            label="Tipo"
-            value={nuevo.rol}
-            onChange={(e) => setNuevo({ ...nuevo, rol: e.target.value as keyof typeof ROLES })}
-            disabled={ocupado !== null}
-          >
-            <option value="tecnico">{ROLES.tecnico}</option>
-            <option value="admin">{ROLES.admin}</option>
-          </Select>
-          {errorAlta && (
-            <p role="alert" className={styles.error}>
-              {errorAlta}
-            </p>
-          )}
-          <Button type="submit" pending={ocupado === "alta"} pendingLabel="Creando…">
-            Crear usuario
+      {!alta ? (
+        <div>
+          <Button variant="secondary" onClick={() => setAlta(true)}>
+            Añadir usuario
           </Button>
-        </form>
-      </section>
+        </div>
+      ) : (
+        <section className={styles.tarjeta} aria-labelledby="usuarios-alta">
+          <h2 id="usuarios-alta">Nuevo usuario</h2>
+          <form onSubmit={crear} className={styles.formulario}>
+            <Field
+              label="Nombre"
+              value={nuevo.nombre}
+              onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })}
+              disabled={ocupado !== null}
+              required
+            />
+            <Field
+              label="Usuario"
+              hint="En minúsculas y sin espacios. Por ejemplo: dani"
+              value={nuevo.usuario}
+              onChange={(e) => setNuevo({ ...nuevo, usuario: e.target.value })}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              autoComplete="off"
+              disabled={ocupado !== null}
+              required
+            />
+            <Field
+              label="Contraseña inicial"
+              hint={`Al menos ${LARGO_MINIMO_CLAVE} caracteres. Pásasela tú; luego puede cambiarla en «Mi cuenta».`}
+              value={nuevo.clave}
+              onChange={(e) => setNuevo({ ...nuevo, clave: e.target.value })}
+              autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              minLength={LARGO_MINIMO_CLAVE}
+              disabled={ocupado !== null}
+              required
+            />
+            <Select
+              label="Tipo"
+              value={nuevo.rol}
+              onChange={(e) => setNuevo({ ...nuevo, rol: e.target.value as keyof typeof ROLES })}
+              disabled={ocupado !== null}
+            >
+              <option value="tecnico">{ROLES.tecnico}</option>
+              <option value="admin">{ROLES.admin}</option>
+            </Select>
+            {errorAlta && (
+              <p role="alert" className={styles.error}>
+                {errorAlta}
+              </p>
+            )}
+            <div className={styles.botones}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setAlta(false);
+                  setNuevo(VACIO);
+                  setErrorAlta(null);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" pending={ocupado === "alta"} pendingLabel="Creando…">
+                Crear usuario
+              </Button>
+            </div>
+          </form>
+        </section>
+      )}
       <Dialog
         open={conClave !== null}
         onClose={() => setConClave(null)}

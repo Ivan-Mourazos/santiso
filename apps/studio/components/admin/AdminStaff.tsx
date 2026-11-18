@@ -217,7 +217,6 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
                 <th scope="col">Foto</th>
                 <th scope="col">Nombre</th>
                 <th scope="col">Cargo</th>
-                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -234,31 +233,20 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
                     )}
                   </td>
                   <td className={`${styles.nombre} ${styles.celdaNombre}`}>
-                    <strong>{m.nombre}</strong>
-                    {/* En móvil la columna de cargo se oculta: se ve aquí, bajo el nombre. */}
-                    <span className={styles.soloMovil}>{m.cargo}</span>
+                    {/* Toda la fila abre el editor; «Quitar» va dentro, no en cada fila. */}
+                    <button
+                      type="button"
+                      className={styles.abrirFicha}
+                      aria-haspopup="dialog"
+                      aria-label={`Editar a ${m.nombre} (${m.cargo})`}
+                      onClick={() => abrirEditor(m)}
+                    >
+                      <strong>{m.nombre}</strong>
+                      {/* En móvil la columna de cargo se oculta: se ve aquí, bajo el nombre. */}
+                      <span className={styles.soloMovil}>{m.cargo}</span>
+                    </button>
                   </td>
                   <td className={styles.celdaPosicion}>{m.cargo}</td>
-                  <td className={styles.celdaAcciones}>
-                    <div className={styles.filaAcciones}>
-                      <Button
-                        variant="secondary"
-                        onClick={() => abrirEditor(m)}
-                        size="sm"
-                        aria-label={`Editar a ${m.nombre} (${m.cargo})`}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        onClick={() => handleQuitar(m)}
-                        size="sm"
-                        aria-label={`Quitar a ${m.nombre} de ${temporadaNombre}`}
-                      >
-                        Quitar
-                      </Button>
-                    </div>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -314,6 +302,15 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
           miembro={editor.miembro}
           destino={{ temporadaId, temporadaNombre, tipo, categoria: categoriaDestino }}
           onCerrar={() => setEditor(null)}
+          onQuitar={
+            editor.miembro
+              ? () => {
+                  const m = editor.miembro!;
+                  setEditor(null);
+                  handleQuitar(m);
+                }
+              : undefined
+          }
           onGuardado={(guardado, alta) => {
             setEditor(null);
             showToast(

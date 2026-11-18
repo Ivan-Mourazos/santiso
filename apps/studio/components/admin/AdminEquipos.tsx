@@ -95,7 +95,7 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
     );
   if (!contexto.contextoListo) return <LoadingState title="Cargando contexto deportivo…" />;
   return (
-    <div className={styles.panel}>
+    <div className={styles.panel} data-mas={masFiltros}>
       <header className={styles.cabecera}>
         <div>
           <h3>Equipos · {categoria}</h3>
@@ -232,7 +232,6 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
                     Partidos
                   </th>
                   <th scope="col">Competiciones</th>
-                  <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -251,7 +250,16 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
                       )}
                     </td>
                     <td>
-                      <span className={styles.nombre}>{equipo.nombre}</span>
+                      {/* El nombre abre el editor; quitar y eliminar van dentro. */}
+                      <button
+                        type="button"
+                        className={styles.abrir}
+                        aria-haspopup="dialog"
+                        aria-label={`Editar a ${equipo.nombre}`}
+                        onClick={() => setDialogo({ tipo: "editor", equipo })}
+                      >
+                        <span className={styles.nombre}>{equipo.nombre}</span>
+                      </button>
                     </td>
                     <td className={styles.numero} aria-label={`Partidos: ${equipo.numeroPartidos}`}>
                       {equipo.numeroPartidos}
@@ -270,45 +278,6 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
                           .join("; ") || "Sin competiciones"}
                       </span>
                     </td>
-                    <td>
-                      <div className={styles.acciones}>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          aria-label={`Editar a ${equipo.nombre}`}
-                          onClick={() => setDialogo({ tipo: "editor", equipo })}
-                        >
-                          Editar
-                        </Button>
-                        {competicion &&
-                          equipo.competiciones.some((c) => c.id === competicion.id) && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              aria-label={`Quitar ${equipo.nombre} de ${competicion.nombre}`}
-                              onClick={() =>
-                                setDialogo({ tipo: "baja", id: equipo.id, modo: "quitar" })
-                              }
-                            >
-                              Quitar
-                            </Button>
-                          )}
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          aria-label={
-                            equipo.numeroPartidos > 0
-                              ? `Revisar baja de ${equipo.nombre}`
-                              : `Eliminar ${equipo.nombre} de biblioteca`
-                          }
-                          onClick={() =>
-                            setDialogo({ tipo: "baja", id: equipo.id, modo: "eliminar" })
-                          }
-                        >
-                          {equipo.numeroPartidos > 0 ? "Baja" : "Eliminar"}
-                        </Button>
-                      </div>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -326,6 +295,31 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
           }}
           onCerrar={() => setDialogo(null)}
           onGuardado={() => terminado("Equipo guardado")}
+          bajas={
+            dialogo.equipo
+              ? (() => {
+                  const e = dialogo.equipo;
+                  const enEsta =
+                    competicion && e.competiciones.some((c) => c.id === competicion.id);
+                  return {
+                    quitar: enEsta
+                      ? {
+                          etiqueta: `Quitar ${e.nombre} de ${competicion!.nombre}`,
+                          onClick: () => setDialogo({ tipo: "baja", id: e.id, modo: "quitar" }),
+                        }
+                      : undefined,
+                    eliminar: {
+                      etiqueta:
+                        e.numeroPartidos > 0
+                          ? `Revisar baja de ${e.nombre}`
+                          : `Eliminar ${e.nombre} de biblioteca`,
+                      texto: e.numeroPartidos > 0 ? "Baja" : "Eliminar",
+                      onClick: () => setDialogo({ tipo: "baja", id: e.id, modo: "eliminar" }),
+                    },
+                  };
+                })()
+              : undefined
+          }
         />
       )}
       {dialogo?.tipo === "incorporar" && competicion && (

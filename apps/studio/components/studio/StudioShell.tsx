@@ -120,6 +120,7 @@ export function StudioShell({
     "equipos",
     "federacion",
     "archivo",
+    "adestramentos",
   ].some((id) => id === section?.id);
   /** Dirección de una entrada: conserva la categoría y cambia solo lo suyo (la plantilla). */
   function rutaEntrada(entrada: EntradaMenu) {

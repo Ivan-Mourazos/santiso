@@ -529,3 +529,71 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* Una fila por persona; al abrirla, sus multas. */
+.grupos {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.grupo {
+  border-bottom: 1px solid var(--ui-line);
+}
+
+.cabeceraGrupo {
+  width: 100%;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 56px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+
+/* Flecha que gira al abrir. */
+.cabeceraGrupo::after {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--ui-accent);
+  border-bottom: 2px solid var(--ui-accent);
+  transform: rotate(45deg);
+  transition: transform 150ms ease;
+}
+
+.cabeceraGrupo[aria-expanded="true"]::after {
+  transform: rotate(225deg);
+}
+
+.cabeceraGrupo .quien {
+  cursor: inherit;
+}
+
+.grupo > .lista {
+  margin: 0 0 0.5rem 0.75rem;
+}
+
+.cobrarTodo {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0.5rem 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cabeceraGrupo::after {
+    transition: none;
+  }
+}
+
+/* `.quien` e `.importe` traen áreas con nombre de la fila de multa: aquí van en orden. */
+.cabeceraGrupo > * {
+  grid-area: auto;
+}

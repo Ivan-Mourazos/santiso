@@ -235,13 +235,13 @@
   .tabla thead {
     display: none;
   }
-  /* Una línea por equipo: escudo, nombre con sus partidos debajo y las acciones como iconos. */
+  /* Una línea por equipo: escudo y nombre con sus partidos debajo; el nombre abre el editor. */
   .tabla tr {
     display: grid;
-    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-columns: 36px minmax(0, 1fr);
     grid-template-areas:
-      "escudo nombre acciones"
-      "escudo partidos acciones";
+      "escudo nombre"
+      "escudo partidos";
     align-items: center;
     gap: 0 0.5rem;
     min-height: 56px;
@@ -276,8 +276,14 @@
   .tabla td:nth-child(4) {
     display: none;
   }
-  .tabla td:nth-child(5) {
-    grid-area: acciones;
+  .tabla .abrir {
+    min-height: 0;
+  }
+  .tabla .abrir .nombre {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .tabla .acciones {
     flex-wrap: nowrap;
@@ -406,9 +412,11 @@
   .masFiltros[aria-expanded="true"]::after {
     transform: rotate(180deg);
   }
-  /* Plegado: fuera «Sin escudo» y crear o eliminar competición (se usan una vez al año). */
+  /* Plegado: fuera «Sin escudo», crear o eliminar competición y añadir o crear equipo: los
+     equipos llegan de la federación y esto queda para amistosos y torneos. */
   .herramientas[data-mas="false"] .filtroExtra,
-  .barra[data-mas="false"] .contexto .acciones {
+  .barra[data-mas="false"] .contexto .acciones,
+  .panel[data-mas="false"] > .cabecera .acciones {
     display: none;
   }
 }
@@ -481,4 +489,22 @@
   color: var(--ui-text);
   font: inherit;
   font-size: 16px;
+}
+
+/* El nombre del equipo es el botón que abre su editor. */
+.abrir {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.abrir:hover .nombre {
+  color: var(--ui-accent);
 }

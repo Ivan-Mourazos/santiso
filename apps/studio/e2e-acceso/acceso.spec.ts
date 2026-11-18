@@ -80,6 +80,7 @@ test("el administrador crea al míster", async ({ browser }) => {
   await expect(page).toHaveURL(/\/admin\/inicio/);
   await page.getByRole("link", { name: "Usuarios" }).click();
   await expect(page.getByRole("heading", { name: "Quién puede entrar" })).toBeVisible();
+  await page.getByRole("button", { name: "Añadir usuario", exact: true }).click();
   await page.getByRole("textbox", { name: "Nombre", exact: true }).fill(MISTER.nombre);
   await page.getByRole("textbox", { name: "Usuario", exact: true }).fill(MISTER.usuario);
   await page.getByLabel("Contraseña inicial").fill(MISTER.clave);

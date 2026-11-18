@@ -30,12 +30,14 @@ interface Props {
   };
   onCerrar: () => void;
   onGuardado: (miembro: StaffDto, alta: boolean) => void;
+  /** Quitarlo de esta temporada: va aquí y no en cada fila de la lista. */
+  onQuitar?: () => void;
 }
 
 type Errores = Partial<Record<keyof BorradorStaff, string>>;
 
 /** Alta y edición de un papel del staff. Se monta con `key` desde el padre. */
-export default function EditorStaff({ miembro, destino, onCerrar, onGuardado }: Props) {
+export default function EditorStaff({ miembro, destino, onCerrar, onGuardado, onQuitar }: Props) {
   const { showConfirm } = useStudio();
   const alta = miembro === null;
   const [inicial] = useState(() => borradorDeStaff(miembro));
@@ -109,6 +111,16 @@ export default function EditorStaff({ miembro, destino, onCerrar, onGuardado }: 
       title={alta ? `Nuevo · ${grupo}` : `Editar a ${inicial.nombre}`}
       footer={
         <>
+          {!alta && onQuitar && (
+            <Button
+              variant="danger"
+              onClick={onQuitar}
+              disabled={pendiente}
+              aria-label={`Quitar a ${inicial.nombre} de ${destino.temporadaNombre}`}
+            >
+              Quitar
+            </Button>
+          )}
           <Button variant="secondary" onClick={cerrar} disabled={pendiente}>
             Cancelar
           </Button>

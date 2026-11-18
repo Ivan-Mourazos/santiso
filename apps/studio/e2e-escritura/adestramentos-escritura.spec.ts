@@ -159,10 +159,15 @@ test("crear entrenamiento, pasar lista y ver multa automática en móvil", async
   await page.getByRole("tab", { name: "Entrenos", exact: true }).click();
   await page.screenshot({ path: testInfo.outputPath("entrenos-1280.png"), fullPage: true });
   await page.goto("/admin/multas");
+  const abrirMultas = () =>
+    page
+      .getByRole("list", { name: "Multas por persona" })
+      .getByRole("button", { name: /Uno Aliñación Ficticio/ })
+      .click();
+  await abrirMultas();
   const multa = page
-    .getByRole("list", { name: "Multas" })
-    .getByRole("listitem")
-    .filter({ hasText: "Uno Aliñación Ficticio" });
+    .getByRole("list", { name: "Multas de Uno Aliñación Ficticio" })
+    .getByRole("listitem");
   await expect(multa).toContainText("Chegar tarde (inxustificado)");
   await expect(multa).toContainText("0,50 €");
   await multa.getByRole("button", { name: /^Cobrar a/ }).click();
@@ -187,6 +192,7 @@ test("crear entrenamiento, pasar lista y ver multa automática en móvil", async
   ).toBeGreaterThan(0);
   await page.goto("/admin/multas");
   await page.getByRole("button", { name: "Todas", exact: true }).click();
+  await abrirMultas();
   await multa.getByRole("button", { name: /^Ver la multa/ }).click();
   await page.getByRole("button", { name: /^Quitar la multa/ }).click();
   await page.getByRole("button", { name: "Confirmar", exact: true }).click();
