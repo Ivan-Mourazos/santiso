@@ -1,6 +1,5 @@
 "use client";
 import OtrosClubes from "./OtrosClubes";
-/* eslint-disable @next/next/no-img-element -- fotos de la media local */
 import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -15,7 +14,7 @@ import type { FichaCompletaDeJugador } from "@/lib/server/consultas/fichas-rfgf"
 import { CuadrosCifras, Resultado, fechaCorta } from "./comunes";
 import { traerCifrasDelJugadorRfgf } from "@/lib/server/acciones/rfgf";
 import styles from "./Fichas.module.css";
-import { iniciales } from "@/lib/iniciales";
+import { IdentidadJugador } from "./IdentidadJugador";
 
 /** «34 años», a día de hoy; `null` sin fecha de nacimiento. */
 function edad(nacimiento: string | null) {
@@ -66,6 +65,10 @@ export default function FichaJugadorPantalla({ jugadorId }: { jugadorId: string 
   const f = estado.ficha;
   if (!f) return <EmptyState title="Ese jugador ya no está." />;
   const j = f.jugador;
+  const inscripcionReciente = j.inscripciones[0];
+  const dorsal = inscripcionReciente && !j.inscripciones.some(
+    (i) => i.temporada === inscripcionReciente.temporada && i.dorsal !== inscripcionReciente.dorsal,
+  ) ? inscripcionReciente.dorsal : null;
   const admin = acceso?.rol !== "tecnico";
   const datosPersonales = [edad(j.fechaNacimiento), j.posicionesConocidas.join(", ")].filter(
     Boolean,
@@ -97,16 +100,14 @@ export default function FichaJugadorPantalla({ jugadorId }: { jugadorId: string 
 
   return (
     <article className={styles.ficha} aria-label={`Ficha de ${j.nombre}`}>
-      <header className={styles.cabecera}>
-        {j.fotoUrl ? (
-          <img className={styles.foto} src={j.fotoUrl} alt="" />
-        ) : (
-          <span className={styles.sinImagen} aria-hidden="true">
-            {iniciales(j.nombre)}
-          </span>
-        )}
-        <div className={styles.nombre}>
-          <h2>{j.apodo || j.nombre}</h2>
+      <header className={styles.cabeceraJugador}>
+        <IdentidadJugador
+          nombre={j.nombre}
+          nombreVisible={j.apodo || j.nombre}
+          fotoUrl={j.fotoUrl}
+          dorsal={dorsal}
+          completa
+        >
           <p>
             {j.apodo ? `${j.nombre} · ` : ""}
             {datosPersonales.join(" · ") || "Sin datos personales"}
@@ -119,7 +120,7 @@ export default function FichaJugadorPantalla({ jugadorId }: { jugadorId: string 
               </span>
             ))}
           </div>
-        </div>
+        </IdentidadJugador>
       </header>
 
       <section className={styles.bloque} aria-label="En la federación">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useStudio } from "@/components/studio/StudioContext";
+import { IconoMenu } from "@/components/studio/TarjetasMenu";
 import type { Seccion } from "@/lib/navigation/contexto";
 import { MENU } from "@/lib/navigation/menu";
 import styles from "./CatalogoCarteles.module.css";
@@ -10,6 +11,7 @@ interface Entrada {
   titulo: string;
   para: string;
   href: string;
+  icono: string;
   /** Solo del administrador (los técnicos no hacen carteles salvo convocatoria y once). */
   admin?: boolean;
 }
@@ -25,7 +27,7 @@ const GRUPOS: { titulo: string; entradas: Entrada[] }[] = (() => {
   const todas = MENU.flatMap((pestana) => (pestana.grupos ?? []).flatMap((g) => g.entradas));
   const conPantalla = EN_SU_PANTALLA.flatMap((seccion) => {
     const e = todas.find((x) => x.seccion === seccion && !x.extra);
-    return e ? [{ titulo: e.label, para: e.detalle ?? "", href: `/admin/${seccion}` }] : [];
+    return e ? [{ titulo: e.label, para: e.detalle ?? "", href: `/admin/${seccion}`, icono: e.icono }] : [];
   });
   const carteles = MENU.find((pestana) => pestana.id === "carteles")?.grupos ?? [];
   return carteles.map((grupo) => {
@@ -34,6 +36,7 @@ const GRUPOS: { titulo: string; entradas: Entrada[] }[] = (() => {
       return {
         titulo: e.label,
         para: e.detalle ?? "",
+        icono: e.icono,
         href: `/admin/${e.seccion}${consulta ? `?${consulta}` : ""}`,
         admin: e.admin,
       };
@@ -73,6 +76,7 @@ export default function CatalogoCarteles() {
                   href={conCategoria(e.href)}
                   transitionTypes={["nav-forward"]}
                 >
+                  <IconoMenu trazo={e.icono} />
                   <span className={styles.texto}>
                     <strong>{e.titulo}</strong>
                     <span>{e.para}</span>

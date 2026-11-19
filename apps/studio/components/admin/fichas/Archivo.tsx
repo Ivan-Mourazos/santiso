@@ -9,7 +9,8 @@ import {
 } from "@/lib/archivo-historico";
 import { sinConexion } from "@/lib/resultado";
 import { useEffect, useState } from "react";
-import { EmptyState, LoadingState } from "@/components/ui/foundation/States";
+import { Button } from "@/components/ui/foundation/Button";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import { cargarArchivoHistorico } from "@/lib/server/acciones/fichas-rfgf";
 import type { ArchivoHistorico } from "@/lib/server/consultas/fichas-rfgf";
 import { Resultado, fechaCorta } from "./comunes";
@@ -22,6 +23,7 @@ import styles from "./Fichas.module.css";
 export default function Archivo({ categoria }: { categoria: string }) {
   const [archivo, setArchivo] = useState<ArchivoHistorico | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [intento, setIntento] = useState(0);
   useEffect(() => {
     let vigente = true;
     void cargarArchivoHistorico()
@@ -34,9 +36,27 @@ export default function Archivo({ categoria }: { categoria: string }) {
     return () => {
       vigente = false;
     };
-  }, []);
+  }, [intento]);
 
-  if (error) return <EmptyState title={error} />;
+  if (error) {
+    return (
+      <ErrorState
+        title="No se pudo cargar el archivo"
+        detail={error}
+        action={
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setError(null);
+              setIntento((previo) => previo + 1);
+            }}
+          >
+            Reintentar
+          </Button>
+        }
+      />
+    );
+  }
   if (!archivo) return <LoadingState title="Cargando el archivo…" />;
   const temporadas = archivo
     .map((t) => ({ ...t, grupos: t.grupos.filter((g) => g.categoria === categoria) }))

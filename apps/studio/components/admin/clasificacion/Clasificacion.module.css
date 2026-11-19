@@ -437,11 +437,11 @@
   font-weight: 800;
   font-size: var(--ui-text-sm);
 }
-.forma li[data-r="G"] {
+.forma li[data-r="V"] {
   background: var(--ui-success);
   color: var(--ui-on-accent);
 }
-.forma li[data-r="P"] {
+.forma li[data-r="D"] {
   background: var(--ui-danger);
   color: var(--ui-on-accent);
 }

@@ -162,7 +162,7 @@ export default function FichaEquipoPantalla({ equipoId }: { equipoId: string | n
       </section>
 
       {!f.equipo.propio && (
-        <section className={styles.bloque} aria-label="Contra el Santiso">
+        <section className={`${styles.bloque} ${styles.enfrentamientos}`} aria-label="Contra el Santiso">
           <h3>Contra el Santiso</h3>
           {t.jugados === 0 ? (
             <p className={styles.nota}>Todavía no hay partidos contra el Santiso en el Studio.</p>
@@ -209,8 +209,8 @@ export default function FichaEquipoPantalla({ equipoId }: { equipoId: string | n
       )}
 
       {f.jugadoresVistos.length > 0 && (
-        <section className={styles.bloque} aria-label="Jugadores vistos en actas">
-          <h3>Sus jugadores esta temporada</h3>
+        <section className={`${styles.bloque} ${styles.plantilla}`} aria-label="Jugadores vistos en actas">
+          <h3>Plantilla · jugadores vistos en actas</h3>
           <Recortada
             filas={f.jugadoresVistos}
             primeras={5}
@@ -245,8 +245,9 @@ export default function FichaEquipoPantalla({ equipoId }: { equipoId: string | n
         const ultimos = ficha.jugados.slice(0, 5);
         const goleadores = ficha.goleadores.slice(0, 5);
         return (
-          <section key={competicionId} className={styles.bloque} aria-label={competicion}>
-            <h3>Esta temporada · {competicion}</h3>
+          <section key={competicionId} className={`${styles.bloque} ${styles.temporadaEquipo}`} aria-label={competicion}>
+            <h3>Esta temporada</h3>
+            <h4>{competicion}</h4>
             {ultimos.length > 0 && (
               <ul className={styles.lista} aria-label="Últimos partidos">
                 {ultimos.map((p) => {

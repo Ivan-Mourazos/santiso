@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import boton from "@/components/ui/foundation/Button.module.css";
 import { fechaPartido } from "@/lib/jornada/fecha";
 import { Dialog } from "@/components/ui/foundation/Dialog";
+import { LoadingState } from "@/components/ui/foundation/States";
 import type { FilaClasificacion } from "@/lib/dto";
 import { cargarFichaEquipo } from "@/lib/server/acciones/liga";
 import type { FichaEquipo as Ficha } from "@/lib/server/consultas/partidos-liga";
@@ -22,8 +23,9 @@ const DATOS: { clave: keyof FilaClasificacion; nombre: string }[] = [
 ];
 
 function letra(goles: number, golesRival: number) {
-  return goles > golesRival ? "G" : goles < golesRival ? "P" : "E";
+  return goles > golesRival ? "V" : goles < golesRival ? "D" : "E";
 }
+const RESULTADOS = { V: "Victoria", E: "Empate", D: "Derrota" };
 
 /**
  * Ficha de un equipo de la tabla, en una hoja: sus números, cómo llega (últimos cinco), lo que le
@@ -63,6 +65,7 @@ export default function FichaEquipo({
       title={fila?.nombre ?? "Equipo"}
       closeLabel="Cerrar ficha"
       mobilePresentation="sheet"
+      lightDismiss
       footer={
         <Link
           className={`${boton.button} ${boton.primary}`}
@@ -95,20 +98,21 @@ export default function FichaEquipo({
             </dl>
           </section>
           {datos === undefined ? (
-            <p className={styles.fichaNota} role="status">
-              Cargando partidos…
-            </p>
+            <LoadingState title="Cargando partidos…" />
           ) : datos === null ? null : (
             <>
               {datos.jugados.length > 0 && (
                 <section className={styles.fichaBloque} aria-label="Últimos resultados">
                   <h3>Últimos resultados</h3>
                   <ol className={styles.forma} aria-label="Forma">
-                    {datos.jugados.slice(0, 5).map((p) => (
-                      <li key={p.id} data-r={letra(p.goles, p.golesRival)}>
-                        {letra(p.goles, p.golesRival)}
-                      </li>
-                    ))}
+                    {datos.jugados.slice(0, 5).map((p) => {
+                      const resultado = letra(p.goles, p.golesRival);
+                      return (
+                        <li key={p.id} data-r={resultado} aria-label={RESULTADOS[resultado]}>
+                          {resultado}
+                        </li>
+                      );
+                    })}
                   </ol>
                   <ul className={styles.fichaPartidos}>
                     {datos.jugados.slice(0, 5).map((p) => (

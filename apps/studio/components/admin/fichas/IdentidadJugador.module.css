@@ -1,0 +1,56 @@
+.identidad {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ui-space-3);
+  min-width: 0;
+}
+.retrato {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: var(--ui-radius);
+  background: var(--ui-control);
+}
+.retrato img {
+  object-fit: cover;
+  object-position: top;
+}
+.iniciales {
+  color: var(--ui-muted);
+  font: 800 var(--ui-text-lg) / 1 var(--ui-font-body);
+}
+.texto {
+  display: grid;
+  gap: var(--ui-space-1);
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+  overflow-wrap: anywhere;
+}
+.texto p {
+  margin: 0;
+}
+.linea {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--ui-space-1) var(--ui-space-2);
+  color: var(--ui-text);
+  font-size: var(--ui-text-base);
+}
+.titular {
+  margin: 0;
+  font: 900 var(--ui-text-2xl) / 1 var(--ui-font-title);
+  text-transform: uppercase;
+}
+.dorsal {
+  padding: 2px var(--ui-space-2);
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-control);
+  color: var(--ui-accent);
+  font-size: var(--ui-text-xs);
+  font-weight: 800;
+  white-space: nowrap;
+}

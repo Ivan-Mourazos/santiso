@@ -385,6 +385,7 @@ export function StudioShell({
           title={abierta?.label ?? ""}
           closeLabel="Cerrar menú"
           mobilePresentation="sheet"
+          lightDismiss
         >
           {/* Solo montada mientras está abierta: si no, las entradas salen dos veces. */}
           {abierta && (

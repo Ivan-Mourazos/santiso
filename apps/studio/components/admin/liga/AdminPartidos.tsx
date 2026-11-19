@@ -358,6 +358,7 @@ function Detalle({
       title={jornada ? `Jornada ${jornada}` : "Partido"}
       closeLabel="Cerrar partido"
       mobilePresentation="sheet"
+      lightDismiss
     >
       {p && (
         <div className={styles.detalle}>

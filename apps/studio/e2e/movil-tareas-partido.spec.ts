@@ -26,6 +26,24 @@ test("Directo conserva el marcador justo bajo la cabecera al desplazar", async (
   }).toBeLessThanOrEqual(1);
 });
 
+test("Directo descarta el borrador con Escape pero conserva la edición al pulsar fuera", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/admin/partidos");
+  await page.locator("main button[data-propio]").first().click();
+  await page.getByRole("dialog").getByRole("link", { name: "Directo", exact: true }).click();
+  const gol = page.getByRole("button", { name: /Gol$/ });
+  await gol.click();
+  const editor = page.getByRole("dialog", { name: "Gol", exact: true });
+  await editor.getByRole("button", { name: "Rival", exact: true }).click();
+  const dorsal = editor.getByRole("spinbutton", { name: /dorsal del rival/ });
+  await expect(dorsal).toHaveAccessibleDescription("Déjalo vacío si no conoces el dorsal.");
+  await dorsal.fill("12");
+  await page.mouse.click(5, 5);
+  await expect(dorsal).toHaveValue("12");
+  await page.keyboard.press("Escape");
+  await expect(editor).toBeHidden();
+});
+
 test("Once inicial mantiene el último foco y el pie visibles con borrador", async ({ page }) => {
   await page.goto("/admin/alineacion");
   const suplente = page.getByRole("region", { name: "Banquillo" })

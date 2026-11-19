@@ -35,12 +35,11 @@
   height: 72px;
   object-fit: contain;
 }
-.foto {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--ui-control);
+.cabeceraJugador {
+  padding: var(--ui-space-4);
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
 }
 .sinImagen {
   display: grid;
@@ -99,6 +98,34 @@
   font: 800 var(--ui-text-xs) var(--ui-font-body);
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+.enfrentamientos > h3 {
+  color: var(--ui-text);
+  font: 900 var(--ui-text-xl) / 1.2 var(--ui-font-title);
+  letter-spacing: 0.02em;
+}
+.enfrentamientos .cuadros {
+  grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+}
+.enfrentamientos .cuadro {
+  padding: var(--ui-space-2);
+}
+.plantilla .lista li {
+  border-bottom-color: var(--ui-border);
+}
+.temporadaEquipo {
+  padding: var(--ui-space-3);
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+}
+.temporadaEquipo h3 {
+  padding: 0;
+}
+.temporadaEquipo h4 {
+  margin: 0;
+  font-size: var(--ui-text-base);
+  overflow-wrap: anywhere;
 }
 .datos {
   display: grid;
@@ -338,7 +365,6 @@
     grid-template-columns: 64px minmax(0, 1fr);
   }
   .imagen,
-  .foto,
   .sinImagen {
     width: 64px;
     height: 64px;

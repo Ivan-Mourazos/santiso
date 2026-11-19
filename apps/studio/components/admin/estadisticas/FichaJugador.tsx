@@ -1,6 +1,5 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- media local servida por el route handler */
 import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -16,7 +15,7 @@ import {
 } from "@/lib/estadisticas/ficha";
 import { filasDeHistorial } from "@/lib/plantilla/historial";
 import { cargarFichaJugador } from "@/lib/server/acciones/estadisticas";
-import { iniciales } from "@/lib/iniciales";
+import { IdentidadJugador } from "../fichas/IdentidadJugador";
 import styles from "./Estadisticas.module.css";
 
 /** «1 convocatoria · 0 de titular · …», con singular y plural. */
@@ -102,6 +101,7 @@ export default function FichaJugador({
       onClose={onCerrar}
       title={nombre}
       description={`Ficha · ${categoria}`}
+      lightDismiss
       footer={
         <Link
           className={`${boton.button} ${boton.primary}`}
@@ -118,28 +118,13 @@ export default function FichaJugador({
         <LoadingState title="Cargando ficha…" />
       ) : (
         <div className={styles.ficha}>
-          <header className={styles.fichaCabecera}>
-            {ficha.jugador.fotoUrl ? (
-              <img className={styles.fichaFoto} src={`${ficha.jugador.fotoUrl}?ancho=480`} alt="" />
-            ) : (
-              <span className={styles.fichaFoto} aria-hidden="true">
-                {iniciales(ficha.jugador.apodo || ficha.jugador.nombre)}
-              </span>
-            )}
-            <div>
-              <strong>{ficha.jugador.nombre}</strong>
-              <span>
-                {[
-                  ficha.jugador.apodo,
-                  ficha.jugador.dorsal === null ? null : `Dorsal ${ficha.jugador.dorsal}`,
-                  ficha.jugador.posicion,
-                  edad(ficha.jugador.fechaNacimiento),
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </span>
-            </div>
-          </header>
+          <IdentidadJugador
+            nombre={ficha.jugador.nombre}
+            fotoUrl={ficha.jugador.fotoUrl ? `${ficha.jugador.fotoUrl}?ancho=480` : null}
+            dorsal={ficha.jugador.dorsal}
+          >
+            <p>{[ficha.jugador.posicion, edad(ficha.jugador.fechaNacimiento)].filter(Boolean).join(" · ")}</p>
+          </IdentidadJugador>
 
           <dl className={styles.fichaTotales}>
             {(

@@ -4,10 +4,11 @@
   max-height: calc(100dvh - 2rem);
   margin: auto;
   padding: var(--ui-space-5);
-  overflow: auto;
+  overflow: hidden;
+  overscroll-behavior: contain;
   color: var(--ui-text);
   background: var(--ui-panel-face, var(--ui-surface, #171717));
-  box-shadow: var(--ui-panel-shadow, none);
+  box-shadow: var(--ui-shadow, none);
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
   font-family: var(--ui-font-body);
@@ -15,8 +16,12 @@
 }
 .dialog::backdrop {
   background: rgb(0 0 0 / 60%);
+  overflow: hidden;
+  overscroll-behavior: contain;
 }
 .dialog[open] {
+  display: flex;
+  flex-direction: column;
   animation: aparecer var(--ui-duration-md) var(--ui-ease);
 }
 @keyframes aparecer {
@@ -56,6 +61,15 @@
 }
 .content {
   min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--ui-space-1);
+}
+.header,
+.footer,
+.description {
+  flex-shrink: 0;
 }
 .footer {
   display: flex;
@@ -80,8 +94,6 @@
   border-color: var(--ui-danger);
   color: var(--ui-danger);
 }
-.button:focus-visible,
-.danger:focus-visible,
 /* El foco llega al título al abrir, para el lector de pantalla; a la vista no hace falta marco. */
 .title:focus,
 .title:focus-visible {
@@ -111,24 +123,11 @@
     padding: 0.75rem;
     overflow: hidden;
   }
-  .dialog[open] {
-    display: flex;
-    flex-direction: column;
-  }
-  .header,
-  .footer,
-  .description {
-    flex-shrink: 0;
-  }
   .title {
     font-size: var(--ui-text-xl);
   }
   .content {
     flex: 1;
-    min-height: 0;
-    overflow: auto;
-    overscroll-behavior: contain;
-    padding: 0.25rem;
   }
   /* Hoja desde abajo: entra deslizando, con asa arriba y esquinas solo arriba. */
   .dialog.sheet {

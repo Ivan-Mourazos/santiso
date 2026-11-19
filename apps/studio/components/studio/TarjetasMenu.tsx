@@ -16,9 +16,19 @@ function mascara(trazo: string) {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
+export function IconoMenu({ trazo }: { trazo: string }) {
+  return (
+    <span
+      className={styles.icono}
+      aria-hidden="true"
+      style={{ "--icono": mascara(trazo) } as CSSProperties}
+    />
+  );
+}
+
 /**
  * Los grupos de una pestaña en tarjetas de dos en dos (los ajustes, en pastillas). Lo usan la
- * hoja que abre cada pestaña y el catálogo de Carteles, para que se vean igual.
+ * hoja que abre cada pestaña.
  */
 export function TarjetasMenu({
   grupos,
@@ -69,13 +79,7 @@ export function TarjetasMenu({
                   if (!actual(entrada)) navigate(ruta(entrada), "nav-forward");
                 }}
               >
-                {grupo.forma !== "pastillas" && (
-                  <span
-                    className={styles.icono}
-                    aria-hidden="true"
-                    style={{ "--icono": mascara(entrada.icono) } as CSSProperties}
-                  />
-                )}
+                {grupo.forma !== "pastillas" && <IconoMenu trazo={entrada.icono} />}
                 <span className={styles.texto}>
                   {entrada.label}
                   {entrada.detalle && grupo.forma !== "pastillas" && (

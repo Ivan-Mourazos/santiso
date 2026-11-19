@@ -91,6 +91,21 @@
 }
 .tabla th[aria-sort] .ordenar {
   color: var(--ui-accent);
+  position: relative;
+}
+.tabla th[aria-sort] .ordenar::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-end: 2px;
+  width: 0;
+  height: 0;
+  border-inline: 4px solid transparent;
+  border-block-start: 4px solid currentColor;
+  translate: -50%;
+}
+.tabla th[aria-sort="ascending"] .ordenar::after {
+  rotate: 180deg;
 }
 .tabla td {
   padding: 0.35rem 0.6rem;
@@ -206,7 +221,7 @@
     overflow-wrap: anywhere;
   }
   /*
-   * Una línea por jugador: dorsal, nombre y las cuatro cifras que más se miran. El resto
+   * Dorsal, nombre y las cuatro cifras que más se miran. El resto
    * (titularidades, partidos, propia) está en la ficha, que se abre tocando el nombre.
    */
   .tablaEnvoltorio {
@@ -254,21 +269,21 @@
     font-size: var(--ui-text-xs);
     text-align: inherit;
   }
-  .tabla .jugador {
-    overflow: hidden;
-  }
-  /* Un nombre largo se corta con puntos; no ensancha la fila ni se sale de la pantalla. */
+  /* El nombre puede ocupar dos líneas sin mover las columnas de cifras. */
   .jugador .nombreFicha {
     width: 100%;
-    max-width: 100%;
-    overflow: hidden;
+    padding-inline-end: var(--ui-space-1);
+  }
+  .jugador .nombreFicha:focus-visible {
+    outline-offset: -2px;
   }
   .jugador strong {
-    display: block;
-    min-width: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    line-height: 1.2;
   }
   .jugador small {
     display: none;
@@ -305,35 +320,6 @@
   display: grid;
   gap: 0.9rem;
   min-width: 0;
-}
-.fichaCabecera {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-.fichaCabecera > div {
-  display: grid;
-  gap: 0.15rem;
-  min-width: 0;
-}
-.fichaCabecera span {
-  color: var(--ui-muted, #aaa);
-  font-size: var(--ui-text-sm);
-}
-.fichaFoto {
-  flex: none;
-  width: 4rem;
-  height: 4rem;
-  border-radius: var(--ui-radius);
-  object-fit: cover;
-  object-position: top;
-  background: var(--ui-raised, #242424);
-}
-span.fichaFoto {
-  display: grid;
-  place-items: center;
-  color: var(--ui-muted);
-  font: 800 1.25rem / 1 var(--ui-font-body, sans-serif);
 }
 .fichaTotales {
   display: grid;

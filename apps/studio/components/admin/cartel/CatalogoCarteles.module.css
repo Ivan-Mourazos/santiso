@@ -14,8 +14,7 @@
   display: grid;
   border: 1px solid var(--ui-line);
   border-radius: var(--ui-radius-lg);
-  background: var(--ui-panel-face);
-  box-shadow: var(--ui-panel-shadow);
+  background: var(--ui-surface);
   overflow: hidden;
 }
 .fila {

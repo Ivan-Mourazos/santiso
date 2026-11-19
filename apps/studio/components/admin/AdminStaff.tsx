@@ -193,6 +193,7 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
             onChange={(e) => setTexto(e.target.value)}
           />
           <p className={styles.contador} role="status">
+            {tipo === "Tecnico" && `Temporada ${temporadaNombre} · `}
             {visibles.length === staff.length
               ? `${staff.length} ${plural}`
               : `${visibles.length} de ${staff.length} ${plural}`}
@@ -211,6 +212,7 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
           <table
             className={`${styles.tabla} ${styles.staff}`}
             aria-label={`${titulo} ${temporadaNombre}`}
+            data-tecnicos={tipo === "Tecnico" || undefined}
           >
             <thead>
               <tr>

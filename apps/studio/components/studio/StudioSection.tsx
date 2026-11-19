@@ -8,6 +8,8 @@ import { EmptyState, LoadingState } from "@/components/ui/foundation/States";
 import { useStudio } from "./StudioContext";
 import styles from "./StudioShell.module.css";
 const loading = () => <LoadingState title="Cargando sección…" />;
+const loadingTable = () => <LoadingState title="Cargando estadísticas…" shape="table" />;
+const loadingScoreboard = () => <LoadingState title="Abriendo el directo…" shape="scoreboard" />;
 const Home = dynamic(() => import("@/components/admin/inicio/AdminInicio"), { loading });
 const Matches = dynamic(() => import("@/components/admin/liga/AdminPartidos"), { loading });
 const Calendar = dynamic(() => import("@/components/admin/calendario/AdminCalendario"), {
@@ -27,7 +29,9 @@ const Lineup = dynamic(() => import("@/components/admin/alineacion/AdminAlineaci
 const Callup = dynamic(() => import("@/components/admin/convocatoria/AdminConvocatoria"), {
   loading,
 });
-const Live = dynamic(() => import("@/components/admin/directo/AdminDirecto"), { loading });
+const Live = dynamic(() => import("@/components/admin/directo/AdminDirecto"), {
+  loading: loadingScoreboard,
+});
 const Training = dynamic(() => import("@/components/admin/adestramentos/AdminAdestramentos"), { loading });
 const Fines = dynamic(() => import("@/components/admin/multas/AdminMultas"), { loading });
 const Federation = dynamic(() => import("@/components/admin/federacion/AdminFederacion"), {
@@ -39,7 +43,7 @@ const PosterCatalog = dynamic(() => import("@/components/admin/cartel/CatalogoCa
 });
 const Graphics = dynamic(() => import("@/components/admin/ajustes/AjustesGraficos"), { loading });
 const Stats = dynamic(() => import("@/components/admin/estadisticas/AdminEstadisticas"), {
-  loading,
+  loading: loadingTable,
 });
 const LeagueTables = dynamic(() => import("@/components/admin/liga/AdminLiga"), { loading });
 const TeamCard = dynamic(() => import("@/components/admin/fichas/FichaEquipoPantalla"), {
@@ -75,7 +79,11 @@ export function StudioSection({ section }: { section: Seccion }) {
       : `${section}:${category}`;
   // Sin plantilla elegida, Carteles enseña el catálogo.
   const template = plantillaDeDireccion(params.get("plantilla"))?.id ?? null;
-  if (!hydrated) return <LoadingState title="Preparando sección…" />;
+  if (!hydrated) {
+    if (section === "directo") return loadingScoreboard();
+    if (section === "estadisticas") return loadingTable();
+    return <LoadingState title="Preparando sección…" />;
+  }
   return (
     <div key={key} className={styles.panel} data-desplazamiento-pagina={section === "directo" || undefined}>
       {section === "inicio" && <Home />}

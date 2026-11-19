@@ -211,6 +211,11 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  :is(.jugadores, [data-tecnicos]) .celdaNombre strong,
+  [data-tecnicos] .celdaNombre .soloMovil {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
   .celdaNombre span {
     display: none;
   }

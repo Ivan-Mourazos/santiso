@@ -296,7 +296,7 @@ export default function AdminPlayers({ showToast, showConfirm, categoria }: Admi
             }
           />
         ) : (
-          <table className={styles.tabla} aria-label={`Plantilla ${categoria} ${temporadaNombre}`}>
+          <table className={`${styles.tabla} ${styles.jugadores}`} aria-label={`Plantilla ${categoria} ${temporadaNombre}`}>
             <thead>
               <tr>
                 <th scope="col">Foto</th>

@@ -177,7 +177,7 @@ export default function AdminEstadisticas({ showToast, categoria }: Props) {
   if (cargando && pantalla.filas.length === 0 && pantalla.temporadas.length === 0) {
     return (
       <div className={styles.panel}>
-        <LoadingState title="Cargando estadísticas…" />
+        <LoadingState title="Cargando estadísticas…" shape="table" />
       </div>
     );
   }

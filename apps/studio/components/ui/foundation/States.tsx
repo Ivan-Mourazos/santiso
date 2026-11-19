@@ -17,10 +17,16 @@ export function EmptyState({
     </section>
   );
 }
-/** Esqueleto gris con forma de lista mientras llegan los datos. */
-export function LoadingState({ title = "Cargando…" }: { title?: string }) {
+/** Reserva el espacio de las primeras filas o del marcador mientras llegan los datos. */
+export function LoadingState({
+  title = "Cargando…",
+  shape = "list",
+}: {
+  title?: string;
+  shape?: "list" | "table" | "scoreboard";
+}) {
   return (
-    <div className={styles.loading} role="status">
+    <div className={styles.loading} data-shape={shape} role="status">
       <p>{title}</p>
       <span aria-hidden="true" />
       <span aria-hidden="true" />

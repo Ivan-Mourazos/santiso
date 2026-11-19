@@ -1,6 +1,27 @@
 import { expect, test } from "@playwright/test";
 import { vigilarSalidasAInternet } from "./red";
 
+test("la ficha de consulta cierra desde fuera y devuelve el foco", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/admin/estadisticas?categoria=Senior");
+  await expect(page.getByRole("heading", { name: "Estadísticas de Senior" })).toBeVisible();
+  const jugador = page.getByRole("button", { name: /^Ver ficha de / }).first();
+  test.skip((await jugador.count()) === 0, "Sin filas de estadísticas");
+  const ficha = page.getByRole("dialog");
+
+  await jugador.click();
+  await expect(ficha).toHaveAttribute("closedby", "any");
+  await page.mouse.click(5, 5);
+  await expect(ficha).toBeHidden();
+  await expect(jugador).toBeFocused();
+
+  await jugador.press("Enter");
+  await expect(ficha).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(ficha).toBeHidden();
+  await expect(jugador).toBeFocused();
+});
+
 /**
  * Estadísticas contra la base de datos real. **Solo lectura**. La base real solo guarda la
  * temporada activa, que puede no tener actas todavía: aquí se comprueba que la pantalla carga y

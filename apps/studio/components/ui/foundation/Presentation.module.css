@@ -73,6 +73,35 @@
 .loading span:nth-of-type(3) {
   opacity: 0.4;
 }
+.loading[data-shape="table"] {
+  gap: 0;
+}
+.loading[data-shape="table"] span {
+  height: var(--ui-row-table);
+  border-radius: 0;
+  border-bottom: 1px solid var(--ui-line);
+}
+.loading[data-shape="scoreboard"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-3);
+  max-width: 40rem;
+  width: 100%;
+  margin-inline: auto;
+}
+.loading[data-shape="scoreboard"] :is(p, span:first-of-type) {
+  grid-column: 1 / -1;
+}
+.loading[data-shape="scoreboard"] span:first-of-type {
+  height: 178px;
+}
+.loading[data-shape="scoreboard"] span:not(:first-of-type) {
+  height: var(--ui-row-table);
+}
+@media (max-width: 640px) {
+  .loading[data-shape="table"] span {
+    height: var(--ui-control-h);
+  }
+}
 @keyframes brillo {
   to {
     background-position: -150% 0;

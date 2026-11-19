@@ -15,6 +15,7 @@ export interface DialogProps {
   initialFocusRef?: RefObject<HTMLElement | null>;
   id?: string;
   mobilePresentation?: "fullscreen" | "sheet";
+  lightDismiss?: boolean;
 }
 
 export function Dialog({
@@ -29,6 +30,7 @@ export function Dialog({
   initialFocusRef,
   id: dialogId,
   mobilePresentation = "fullscreen",
+  lightDismiss = false,
 }: DialogProps) {
   const id = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -45,17 +47,20 @@ export function Dialog({
     const dialog = dialogRef.current;
     if (!open || !dialog) return;
     const previous = dialog.ownerDocument.activeElement;
+    // El fondo no se desplaza con el diálogo abierto: en iOS `overscroll-behavior` no basta.
     const body = dialog.ownerDocument.body;
     const previousOverflow = body.style.overflow;
     body.style.overflow = "hidden";
     abriendo.current = true;
     dialog.showModal();
     abriendo.current = false;
-    (focusRef.current?.current ?? headingRef.current)?.focus();
+    (focusRef.current?.current ?? headingRef.current)?.focus({ preventScroll: true });
     return () => {
       dialog.close();
       body.style.overflow = previousOverflow;
-      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+      if (previous instanceof HTMLElement && previous.isConnected) {
+        previous.focus({ preventScroll: true });
+      }
     };
   }, [open]);
 
@@ -80,6 +85,7 @@ export function Dialog({
 
   return (
     <dialog
+      {...(lightDismiss ? { closedby: "any" } : {})}
       id={dialogId}
       ref={dialogRef}
       className={`${styles.dialog} ${mobilePresentation === "sheet" ? styles.sheet : ""}`}

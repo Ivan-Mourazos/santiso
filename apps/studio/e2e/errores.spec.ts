@@ -1,5 +1,26 @@
 import { expect, test } from "@playwright/test";
 
+test("Archivo avisa del fallo de lectura y vuelve a consultar al reintentar", async ({ page }) => {
+  let cortar = true;
+  await page.route("**/admin/archivo**", async (ruta) => {
+    if (cortar && ruta.request().method() === "POST") return ruta.abort();
+    return ruta.fallback();
+  });
+  await page.goto("/admin/archivo");
+  const aviso = page.getByRole("alert").filter({ hasText: "No se pudo cargar el archivo" });
+  await expect(aviso).toBeVisible();
+  cortar = false;
+  const consulta = page.waitForResponse(
+    (r) => r.url().includes("/admin/archivo") && r.request().method() === "POST" && r.ok(),
+  );
+  await aviso.getByRole("button", { name: "Reintentar" }).click();
+  await consulta;
+  await expect(
+    page.locator("main details").first().or(page.getByText(/^Sin temporadas pasadas/)),
+  ).toBeVisible();
+  await expect(aviso).toBeHidden();
+});
+
 test("cuando la lectura falla, la pantalla lo dice en vez de inventarse datos", async ({
   page,
 }) => {

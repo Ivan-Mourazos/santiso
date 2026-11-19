@@ -3,6 +3,7 @@ import { DURACION_PARTE_MAX, DURACION_PARTE_MIN, type TipoEvento } from "@santis
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
+import { Field } from "@/components/ui/foundation/Fields";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import { aplicarLocal, compactar, enviarCola, escribirCola, leerCola } from "@/lib/directo/cola";
 import {
@@ -151,7 +152,9 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
     );
   }
   if (error) return <ErrorState title="No se pudo abrir el directo" detail={error} />;
-  if (!pantalla || !relojServidor) return <LoadingState title="Abriendo el directo…" />;
+  if (!pantalla || !relojServidor) {
+    return <LoadingState title="Abriendo el directo…" shape="scoreboard" />;
+  }
 
   const eventos = aplicarLocal(servidor, cola);
   const ultimoReloj = [...cola].reverse().find((o) => o.op === "reloj");
@@ -240,9 +243,9 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
         <div className={s.accionesReloj}>
           {reloj.estado === "previo" && (
             <>
-              <label className={s.duracion}>
-                Minutos por parte
-                <input
+              <div className={s.duracion}>
+                <Field
+                  label="Minutos por parte"
                   type="number"
                   inputMode="numeric"
                   min={DURACION_PARTE_MIN}
@@ -250,7 +253,7 @@ export default function AdminDirecto({ partidoId }: { partidoId: string | null }
                   value={duracion}
                   onChange={(e) => setDuracion(e.target.value)}
                 />
-              </label>
+              </div>
               <Button size="sm" onClick={() => moverReloj("empezar")}>
                 Empezar 1ª parte
               </Button>
