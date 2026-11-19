@@ -1,0 +1,14 @@
+# Copia del móvil
+
+**Instalar.** Desde la sesión habitual de Iván, doble clic en `instalar.cmd`. La primera instalación compila el slot a mientras sigue funcionando la copia estable. Si Windows deniega parar el servidor antiguo, cierra su ventana «Santiso Studio (movil)». El instalador espera hasta que se libera el puerto. Ctrl+C cancela la espera. Comprueba que el instalador muestra `activo`.
+
+**Desplegar.** Desde la raíz de desarrollo, ejecuta `powershell -NoProfile -ExecutionPolicy Bypass -File tools\movil\solicitar.ps1 -Sha <sha-de-main>`. No hace falta push. Espera el recibo antes de desplegar de nuevo. Si sale `aplazada`, vuelve a solicitar cuando la base esté en reposo.
+
+**Ver estado.** Lee `.movil\estado.json` (fecha, fase, slot y SHA confirmado), `.movil\recibos\<id>.json` y `..\santiso-movil\logs\<id>.log`. Los arranques y los PID ajenos quedan en `supervisor.log`. Si la fecha no avanza, revisa la tarea `SantisoMovilSupervisor`. Solo la cuenta de Iván debe poder escribir en estas carpetas.
+
+**Volver atrás.** Con servicio sano, lee `anterior.sha` en `..\santiso-movil\control.json` y solicítalo como otro despliegue después de comprobar que el esquema es compatible. Para reintentar el slot confirmado tras corregir la causa de una intervención, abre instalar.cmd y responde S. Si hubo migraciones, comprueba antes la compatibilidad de la base. Para elegir manualmente otro slot, detén la tarea, identifica el PID por puerto, ejecutable y ruta completa del slot y cierra solo ese servidor. Comprueba el SHA real y el BUILD_ID del slot que quieras recuperar. Con migraciones incompatibles, verifica y restaura primero una copia completa compatible siguiendo las instrucciones de restauración del proyecto. Guarda una copia de control.json, establece `confirmado` con el slot y SHA verificados, deja `fase` e `id` en null e `intervencion` en false. Arranca la tarea y comprueba estado y acceso desde el móvil.
+
+**Desinstalar.** Fuera de un despliegue, detén y elimina la tarea `SantisoMovilSupervisor` desde el Programador de tareas. Cierra el node identificado por la ruta del slot y el puerto 3100. Para volver al lanzador antiguo, comprueba primero compatibilidad de la BD con estable, devuelve al .cmd de Inicio su nombre sin `.desactivado` y ejecútalo. Conserva datos, secretos y logs mientras compruebas el servicio. Para retirar los slots, usa `git -c core.longpaths=true worktree remove --force` con la ruta absoluta de cada uno.
+
+**Pruebas.** Doble clic en `probar.cmd` o ejecuta `powershell -NoProfile -ExecutionPolicy Bypass -File tools\movil\pruebas.ps1`. Usa el puerto 3150, datos copiados, dependencias del lockfile en caché y la carpeta hermana `_prueba-movil`. Al terminar conserva logs. El observador mide una cota de corte entre respuestas correctas. `-SoloPuertoAjeno` ejecuta únicamente la prueba de puerto ocupado.
+
