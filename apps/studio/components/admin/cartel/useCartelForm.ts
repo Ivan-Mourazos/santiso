@@ -339,11 +339,15 @@ export function useCartelForm(
   }
 
   /** La foto se reduce al tamaño del cartel: una del móvil, por grande que sea, siempre entra. */
-  function handleJugadorFile(file: File) {
-    setJugFileName(file.name);
-    void prepararFotoSubida(file)
-      .then((url) => setForm((p) => ({ ...p, jugadorFotoUrl: url })))
-      .catch(() => setJugFileName(""));
+  async function handleJugadorFile(file: File) {
+    try {
+      const url = await prepararFotoSubida(file);
+      setForm((p) => ({ ...p, jugadorFotoUrl: url }));
+      setJugFileName(file.name);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   function updatePlayer(list: "titulares" | "suplentes", i: number, patch: Partial<Player>) {

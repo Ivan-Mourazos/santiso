@@ -208,9 +208,11 @@
 .cuadrante {
   max-width: 100%;
   min-width: 0;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  margin-top: 1rem;
+  overflow: auto;
+  max-block-size: min(32rem, 54dvh);
+  scroll-padding-block-start: 4rem;
+  overscroll-behavior-inline: contain;
+  margin-top: 0.5rem;
   border: 1px solid #333;
   border-radius: 0.5rem;
 }
@@ -231,7 +233,7 @@
 }
 .cuadrante th:first-child {
   position: sticky;
-  left: 0;
+  inset-inline-start: 0;
   z-index: 1;
   background: var(--ui-panel-face, #171717);
   box-sizing: border-box;
@@ -302,8 +304,7 @@
   padding: 0;
 }
 .panel .leyenda {
-  font-size: 0.72rem;
-  white-space: nowrap;
+  font-size: var(--ui-text-xs);
   margin-top: 0.4rem;
 }
 
@@ -323,4 +324,41 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
+}
+
+.cuadrante thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+  background: var(--ui-panel-face);
+}
+
+.cuadrante thead th:first-child {
+  z-index: 3;
+}
+
+.panel .pistaFechas {
+  margin: var(--ui-space-2) 0 0;
+  font-size: var(--ui-text-sm);
+}
+
+.pistaFechas span {
+  color: var(--ui-accent);
+}
+
+.pistaFechas[data-final="true"] {
+  visibility: hidden;
+}
+
+.cuadrante[data-desplazable="true"] {
+  border-inline-end-color: var(--ui-accent);
+}
+
+.soloLectura {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

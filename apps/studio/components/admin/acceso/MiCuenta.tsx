@@ -50,7 +50,7 @@ export default function MiCuenta({
   }
 
   return (
-    <div className={styles.layout}>
+    <div className={`${styles.layout} ${styles.cuenta}`}>
       <section className={styles.tarjeta} aria-labelledby="cuenta-clave">
         <h2 id="cuenta-clave">Cambiar mi contraseña</h2>
         <form onSubmit={guardar} className={styles.formulario}>

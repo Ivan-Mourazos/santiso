@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/foundation/Button";
 import { Tabs } from "@/components/ui/foundation/Tabs";
@@ -99,6 +99,34 @@ export default function VistaAdestramentos({
     () => cuadrante(datos.entrenamientos, datos.personas, registros, periodo, orden, hoyLocal()),
     [datos, registros, periodo, orden],
   );
+  const cuadro = useRef<HTMLDivElement>(null);
+  const leyendaId = useId();
+  const pistaId = useId();
+  const [pista, setPista] = useState<"fechas" | "totales" | "final" | null>(null);
+
+  useEffect(() => {
+    const region = cuadro.current;
+    const tablaVisible = region?.querySelector("table");
+    if (!region || !tablaVisible) return;
+    const ultimaFecha = tablaVisible.querySelector("[data-ultima-fecha]");
+    const actualizar = () => {
+      const recorrido = region.scrollWidth - region.clientWidth;
+      const borde = region.getBoundingClientRect().left + region.clientWidth;
+      if (recorrido <= 1) setPista(null);
+      else if (recorrido - region.scrollLeft <= 1) setPista("final");
+      else setPista(ultimaFecha && ultimaFecha.getBoundingClientRect().right > borde + 1 ? "fechas" : "totales");
+    };
+    const observador = new ResizeObserver(actualizar);
+    observador.observe(region);
+    observador.observe(tablaVisible);
+    region.addEventListener("scroll", actualizar, { passive: true });
+    actualizar();
+    return () => {
+      observador.disconnect();
+      region.removeEventListener("scroll", actualizar);
+    };
+  }, [vista, tabla.columnas.length]);
+
   const detalle = datos.entrenamientos.find((e) => e.id === detalleId);
   const nombre = (clave: string) => datos.personas.find((p) => p.clave === clave)?.nombre ?? clave;
   function cambiarVista(value: string) {
@@ -233,19 +261,31 @@ export default function VistaAdestramentos({
         </label>
         <Copiar texto={textoTabla(tabla)}>Copiar tabla</Copiar>
       </div>
+      {pista && (
+        <p id={pistaId} className={styles.pistaFechas} data-final={pista === "final"}>
+          Desliza para ver {pista === "fechas" ? "más fechas" : "los totales"} <span aria-hidden="true">→</span>
+        </p>
+      )}
       <div
+        ref={cuadro}
         className={styles.cuadrante}
+        data-desplazable={Boolean(pista && pista !== "final")}
         role="region"
         aria-label="Cuadrante desplazable"
+        aria-describedby={pista && pista !== "final" ? pistaId : undefined}
         tabIndex={0}
       >
-        <table aria-label="Cuadrante de asistencia">
+        <table aria-label="Cuadrante de asistencia" aria-describedby={leyendaId}>
           <thead>
             <tr>
               <th scope="col">Persona</th>
               {tabla.columnas.map((e, i) => (
-                <th scope="col" key={e.id} title={e.fecha}>
-                  {fechaCorta(e.fecha)}
+                <th
+                  scope="col"
+                  key={e.id}
+                  data-ultima-fecha={i === tabla.columnas.length - 1 || undefined}
+                >
+                  <time dateTime={e.fecha}>{fechaCorta(e.fecha)}</time>
                   <small>
                     {tabla.totales[i].presentes}/{tabla.totales[i].total}
                   </small>
@@ -282,10 +322,11 @@ export default function VistaAdestramentos({
                         data-estado={m?.estado}
                         data-justificado={m?.justificado}
                         title={descripcion(m)}
-                        aria-label={descripcion(m)}
+                        aria-hidden="true"
                       >
                         {m?.estado === "presente" ? "✓" : letra(m).toUpperCase()}
                       </span>
+                      <span className={styles.soloLectura}>{descripcion(m)}</span>
                     </td>
                   ))}
                   <td>{f.porcentaje === null ? "—" : `${f.porcentaje}%`}</td>
@@ -316,11 +357,8 @@ export default function VistaAdestramentos({
           </tbody>
         </table>
       </div>
-      <p
-        className={styles.leyenda}
-        title="✓ Presente · T Tarde · F Falta · · Sin marca. Borde punteado: justificado."
-      >
-        ✓ Pres. · T Tarde · F Falta · · Sin marca · ◌ Just.
+      <p id={leyendaId} className={styles.leyenda}>
+        ✓ Presente · T Tarde · F Falta · · Sin marca · Borde punteado: justificado
       </p>
     </>
   );

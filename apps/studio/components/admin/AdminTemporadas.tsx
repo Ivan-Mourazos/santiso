@@ -160,7 +160,7 @@ export default function AdminTemporadas({ showToast, showConfirm }: AdminTempora
         <form onSubmit={create} className={styles.form}>
           <Field
             label="Nombre de temporada"
-            hint={`Formato: ${propuesta}`}
+            hint={`Año de inicio y dos últimas cifras del siguiente, como ${propuesta}.`}
             placeholder={propuesta}
             value={nombre}
             onChange={(event) => {

@@ -15,6 +15,7 @@ import { cargarPatrocinadores, guardarPatrocinador } from "@/lib/server/acciones
 import EditorPatrocinador from "./patrocinadores/EditorPatrocinador";
 import EliminarPatrocinador from "./patrocinadores/EliminarPatrocinador";
 import OrdenLogos from "./patrocinadores/OrdenLogos";
+import fila from "./FilaCatalogo.module.css";
 import styles from "./patrocinadores/Patrocinadores.module.css";
 
 interface AdminSponsorsProps {
@@ -177,21 +178,21 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
                   <td className={styles.celdaLogo}>
                     {p.logo_url ? (
                       // eslint-disable-next-line @next/next/no-img-element -- media local servida por el route handler
-                      <img className={styles.logo} src={p.logo_url} alt="" />
+                      <img className={`${styles.logo} ${fila.imagen}`} src={p.logo_url} alt="" />
                     ) : (
-                      <span className={styles.logo} aria-hidden="true" />
+                      <span className={`${styles.logo} ${fila.imagen}`} aria-hidden="true" />
                     )}
                   </td>
                   <td className={`${styles.nombre} ${styles.celdaNombre}`}>
                     {/* El nombre abre el editor; «Eliminar» va dentro, no en cada fila. */}
                     <button
                       type="button"
-                      className={styles.abrir}
+                      className={`${styles.abrir} ${fila.edicion}`}
                       aria-haspopup="dialog"
                       aria-label={`Editar ${p.nombre}`}
                       onClick={() => abrirEditor(p)}
                     >
-                      <strong>{p.nombre}</strong>
+                      <strong className={fila.nombre}>{p.nombre}</strong>
                     </button>
                     {p.web_url && (
                       <a href={p.web_url} target="_blank" rel="noreferrer noopener">

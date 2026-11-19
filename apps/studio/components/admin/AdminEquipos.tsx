@@ -11,6 +11,7 @@ import EditorEquipo from "./equipos/EditorEquipo";
 import IncorporarEquipo from "./equipos/IncorporarEquipo";
 import EliminarEquipo from "./equipos/EliminarEquipo";
 import PorEnlazar from "./equipos/PorEnlazar";
+import fila from "./FilaCatalogo.module.css";
 import styles from "./equipos/Equipos.module.css";
 
 interface Props {
@@ -241,24 +242,24 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
                       {equipo.escudo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element -- escudo local del catálogo
                         <img
-                          className={styles.escudo}
+                          className={`${styles.escudo} ${fila.imagen}`}
                           src={equipo.escudo_url}
                           alt={`Escudo de ${equipo.nombre}`}
                         />
                       ) : (
-                        <span className={styles.escudo} role="img" aria-label="Sin escudo" />
+                        <span className={`${styles.escudo} ${fila.imagen}`} role="img" aria-label="Sin escudo" />
                       )}
                     </td>
                     <td>
                       {/* El nombre abre el editor; quitar y eliminar van dentro. */}
                       <button
                         type="button"
-                        className={styles.abrir}
+                        className={`${styles.abrir} ${fila.edicion}`}
                         aria-haspopup="dialog"
                         aria-label={`Editar a ${equipo.nombre}`}
                         onClick={() => setDialogo({ tipo: "editor", equipo })}
                       >
-                        <span className={styles.nombre}>{equipo.nombre}</span>
+                        <span className={`${styles.nombre} ${fila.nombre}`}>{equipo.nombre}</span>
                       </button>
                     </td>
                     <td className={styles.numero} aria-label={`Partidos: ${equipo.numeroPartidos}`}>

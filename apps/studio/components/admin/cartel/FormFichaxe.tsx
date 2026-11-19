@@ -5,6 +5,7 @@
 import React from "react";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
 import { Deslizador } from "./Common";
+import { ImagenFormularioCartel } from "./ImagenFormularioCartel";
 import styles from "./Formularios.module.css";
 import type { FormState } from "./types";
 
@@ -12,11 +13,11 @@ interface Props {
   form: FormState;
   set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
   jugFileName: string;
-  handleJugadorFile: (file: File) => void;
+  handleJugadorFile: (file: File) => Promise<boolean>;
 }
 
 export const FormFichaxe: React.FC<Props> = ({ form, set, jugFileName, handleJugadorFile }) => (
-  <>
+  <div className={styles.formularioEditorial}>
     <Select
       label="Qué es"
       value={form.fichaxeTipo}
@@ -26,7 +27,7 @@ export const FormFichaxe: React.FC<Props> = ({ form, set, jugFileName, handleJug
       <option value="renovacion">Renovación</option>
       <option value="volta">Volve a casa</option>
     </Select>
-    <div className={styles.pareja}>
+    <div className={styles.dosCampos}>
       <Field
         label="Nombre"
         placeholder="Hugo"
@@ -53,22 +54,13 @@ export const FormFichaxe: React.FC<Props> = ({ form, set, jugFileName, handleJug
       onChange={(e) => set("fichaxeFrase", e.target.value)}
     />
 
-    <div className={styles.campo}>
-      <span className={styles.etiqueta}>Foto</span>
-      <label className="file-input-label">
-        {jugFileName ? `Cambiar foto (${jugFileName})` : "Subir la foto del jugador"}
-        <input
-          type="file"
-          className="hidden-input"
-          accept="image/*"
-          onChange={(e) => {
-            const fichero = e.target.files?.[0];
-            e.target.value = "";
-            if (fichero) handleJugadorFile(fichero);
-          }}
-        />
-      </label>
-    </div>
+    <ImagenFormularioCartel
+      etiqueta="Foto"
+      subir="Subir la foto del jugador"
+      url={form.jugadorFotoUrl}
+      nombre={jugFileName}
+      onFile={handleJugadorFile}
+    />
     {form.jugadorFotoUrl && (
       <div className={styles.encuadre}>
         <h5>Encuadre de la foto</h5>
@@ -100,5 +92,5 @@ export const FormFichaxe: React.FC<Props> = ({ form, set, jugFileName, handleJug
         />
       </div>
     )}
-  </>
+  </div>
 );

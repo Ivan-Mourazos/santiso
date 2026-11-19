@@ -148,7 +148,7 @@ export default function AjustesGraficos({ showToast }: Props) {
               return (
                 <Button
                   key={o.valor}
-                  variant={activo ? "primary" : "secondary"}
+                  variant="secondary"
                   aria-pressed={activo}
                   aria-label={o.nombre}
                   disabled={cambiandoOrden}

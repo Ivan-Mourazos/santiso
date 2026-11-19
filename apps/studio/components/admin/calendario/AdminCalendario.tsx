@@ -278,7 +278,9 @@ export default function AdminCalendario({ showToast, showConfirm, categoria }: P
             className={styles.bloque}
             aria-label={`Partidos de la ${nombreJornada(jornada)}`}
           >
-            <h3 className={styles.titulo}>Partidos · {nombreJornada(jornada)}</h3>
+            <h3 className={styles.titulo}>
+              Partidos · <strong className={styles.fase}>{nombreJornada(jornada)}</strong>
+            </h3>
             {c.partidos.length === 0 ? (
               <p className={styles.nota}>No hay partidos registrados en esta jornada.</p>
             ) : (

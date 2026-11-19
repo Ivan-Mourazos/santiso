@@ -71,7 +71,7 @@ export function TarjetasMenu({
                   entrada.detalle && grupo.forma !== "pastillas" ? `${base}-${g}-${e}` : undefined
                 }
                 aria-current={actual(entrada) ? "page" : undefined}
-                data-ancha={entrada.seccion === "adestramentos" || undefined}
+                data-ancha={["adestramentos", "federacion", "calendario"].includes(entrada.seccion) || undefined}
                 className={grupo.forma === "pastillas" ? styles.pastilla : styles.tarjeta}
                 onNavigate={(event) => {
                   event.preventDefault();

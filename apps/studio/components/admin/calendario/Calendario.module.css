@@ -349,9 +349,12 @@
     justify-content: flex-end;
   }
   .equipo span {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   .goles {
     display: contents;
@@ -402,9 +405,7 @@
     margin: 0;
     color: var(--ui-muted, #aaa);
     font-size: var(--ui-text-xs);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
   .campo {
     grid-area: campo;
@@ -514,4 +515,10 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--ui-accent);
+}
+
+.fase,
+.resumenFila strong {
+  color: var(--ui-text);
+  font-weight: 800;
 }

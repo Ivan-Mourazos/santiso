@@ -85,7 +85,9 @@ test("el administrador crea al míster", async ({ browser }) => {
   await page.getByRole("textbox", { name: "Usuario", exact: true }).fill(MISTER.usuario);
   await page.getByLabel("Contraseña inicial").fill(MISTER.clave);
   await page.getByRole("button", { name: "Crear usuario" }).click();
-  await expect(page.getByText(`${MISTER.usuario} · Cuerpo técnico`)).toBeVisible();
+  const ficha = page.getByRole("listitem").filter({ hasText: MISTER.nombre });
+  await expect(ficha.getByText(MISTER.usuario, { exact: true })).toBeVisible();
+  await expect(ficha.getByText("Cuerpo técnico", { exact: true })).toBeVisible();
   await contexto.close();
 });
 
@@ -202,8 +204,10 @@ test("quitar el acceso echa al momento a quien estaba dentro", async ({ browser 
   const admin = await sesionDe(browser, ADMIN);
   await admin.page.getByRole("link", { name: "Usuarios" }).click();
   await admin.page.getByRole("button", { name: `Quitar el acceso a ${MISTER.nombre}` }).click();
-  await admin.page.getByRole("dialog").getByRole("button").last().click();
-  await expect(admin.page.getByText("· sin acceso")).toBeVisible();
+  const confirmacion = admin.page.getByRole("dialog");
+  await expect(confirmacion.getByText(new RegExp(`¿Quitar acceso a ${MISTER.nombre}`))).toBeVisible();
+  await confirmacion.getByRole("button").last().click();
+  await expect(admin.page.getByText("Sin acceso", { exact: true })).toBeVisible();
 
   expect((await mister.contexto.request.get("/api/estado")).status()).toBe(401);
   await mister.page.goto("/admin/multas");

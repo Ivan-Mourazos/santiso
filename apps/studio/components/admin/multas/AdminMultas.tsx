@@ -439,112 +439,119 @@ function Registro({
 
   return (
     <div className={styles.seccion}>
-      {sinCobrar.length > 0 && (
-        <p className={styles.cifra}>
-          <strong>{euros(pendienteCentimos)}</strong>
-          <span>
-            pendiente de cobrar · {sinCobrar.length} {sinCobrar.length === 1 ? "multa" : "multas"}
-          </span>
-        </p>
-      )}
-      {!movil && nueva}
+      <div className={styles.multasListado}>
+        {sinCobrar.length > 0 && (
+          <p className={styles.cifra}>
+            <strong>{euros(pendienteCentimos)}</strong>
+            <span>
+              pendiente de cobrar · {sinCobrar.length} {sinCobrar.length === 1 ? "multa" : "multas"}
+            </span>
+          </p>
+        )}
 
-      <div className={styles.filtros}>
-        <div className={styles.segmento} role="group" aria-label="Qué multas se ven">
-          <button
-            type="button"
-            aria-pressed={soloPendientes}
-            onClick={() => setSoloPendientes(true)}
-          >
-            Pendientes
-          </button>
-          <button
-            type="button"
-            aria-pressed={!soloPendientes}
-            onClick={() => setSoloPendientes(false)}
-          >
-            Todas
-          </button>
+        <div className={styles.filtros}>
+          <div className={styles.segmento} role="group" aria-label="Qué multas se ven">
+            <button
+              type="button"
+              aria-pressed={soloPendientes}
+              onClick={() => setSoloPendientes(true)}
+            >
+              Pendientes
+            </button>
+            <button
+              type="button"
+              aria-pressed={!soloPendientes}
+              onClick={() => setSoloPendientes(false)}
+            >
+              Todas
+            </button>
+          </div>
         </div>
-      </div>
 
-      {visibles.length === 0 ? (
-        <p className={styles.vacio}>
-          {pantalla.multas.length === 0
-            ? "Todavía no hay multas esta temporada."
-            : "No hay multas con ese filtro."}
-        </p>
-      ) : (
-        <ul className={styles.grupos} aria-label="Multas por persona">
-          {porPersona.map(([clave, g]) => (
-            <li key={clave}>
-              <div className={styles.grupo}>
-                <button
-                  type="button"
-                  className={styles.cabeceraGrupo}
-                  aria-expanded={desplegadas.has(clave)}
-                  onClick={() => alternar(clave)}
-                >
-                  <span className={styles.quien}>
-                    <strong>{g.persona}</strong>
-                    <span>
-                      {g.multas.length} {g.multas.length === 1 ? "multa" : "multas"}
+        {visibles.length === 0 ? (
+          <p className={styles.vacio}>
+            {pantalla.multas.length === 0
+              ? "Todavía no hay multas esta temporada."
+              : "No hay multas con ese filtro."}
+          </p>
+        ) : (
+          <ul className={styles.grupos} aria-label="Multas por persona">
+            {porPersona.map(([clave, g]) => (
+              <li key={clave}>
+                <div className={styles.grupo}>
+                  <button
+                    type="button"
+                    className={styles.cabeceraGrupo}
+                    aria-expanded={desplegadas.has(clave)}
+                    onClick={() => alternar(clave)}
+                  >
+                    <span className={styles.quien}>
+                      <strong>{g.persona}</strong>
+                      <span>
+                        {g.multas.length} {g.multas.length === 1 ? "multa" : "multas"}
+                      </span>
                     </span>
-                  </span>
-                  <span className={styles.importe}>
-                    {euros(g.pendiente || g.multas.reduce((n, m) => n + m.importeCentimos, 0))}
-                  </span>
-                </button>
-                {desplegadas.has(clave) && g.multas.filter((m) => !m.pagadaEn).length > 1 && (
-                  <div className={styles.cobrarTodo}>
-                    <Button size="sm" onClick={() => void cobrarTodo(g.persona, g.multas)}>
-                      Cobrar todo ({euros(g.pendiente)})
-                    </Button>
-                  </div>
-                )}
-                {desplegadas.has(clave) && (
-                <ul className={styles.lista} aria-label={`Multas de ${g.persona}`}>
-                  {g.multas.map((m) => (
-                    <li key={m.id} data-pagada={Boolean(m.pagadaEn)}>
-                      <button
-                        type="button"
-                        className={styles.quien}
-                        aria-haspopup="dialog"
-                        aria-label={`Ver la multa de ${m.persona}: ${m.concepto}`}
-                        onClick={() => setAbiertaId(m.id)}
-                      >
-                        <strong>{m.concepto}</strong>
-                        <span>
-                          {fechaCorta(m.fecha)}
-                          {m.nota ? ` · ${m.nota}` : ""}
-                        </span>
-                      </button>
-                      <span className={styles.importe}>{euros(m.importeCentimos)}</span>
-                      <div className={styles.accionesFila}>
-                        <Button
-                          size="sm"
-                          variant={m.pagadaEn ? "ghost" : "secondary"}
-                          aria-pressed={Boolean(m.pagadaEn)}
-                          aria-label={
-                            m.pagadaEn
-                              ? `Pagada: ${m.persona}, ${m.concepto}. Volver a pendiente`
-                              : `Cobrar a ${m.persona}: ${m.concepto}`
-                          }
-                          onClick={() => void cobrar(m)}
+                    <span className={styles.importe}>
+                      {euros(g.pendiente || g.multas.reduce((n, m) => n + m.importeCentimos, 0))}
+                    </span>
+                  </button>
+                  {desplegadas.has(clave) && g.multas.filter((m) => !m.pagadaEn).length > 1 && (
+                    <div className={styles.cobrarTodo}>
+                      <Button size="sm" onClick={() => void cobrarTodo(g.persona, g.multas)}>
+                        Cobrar todo ({euros(g.pendiente)})
+                      </Button>
+                    </div>
+                  )}
+                  {desplegadas.has(clave) && (
+                  <ul className={styles.lista} aria-label={`Multas de ${g.persona}`}>
+                    {g.multas.map((m) => (
+                      <li key={m.id} data-pagada={Boolean(m.pagadaEn)}>
+                        <button
+                          type="button"
+                          className={styles.quien}
+                          aria-haspopup="dialog"
+                          aria-label={`Ver la multa de ${m.persona}: ${m.concepto}`}
+                          onClick={() => setAbiertaId(m.id)}
                         >
-                          {m.pagadaEn ? `Pagada ${fechaCorta(m.pagadaEn)}` : "Cobrar"}
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+                          <strong>{m.concepto}</strong>
+                          <span>
+                            {fechaCorta(m.fecha)}
+                            {m.nota ? ` · ${m.nota}` : ""}
+                          </span>
+                        </button>
+                        <span className={styles.importe}>{euros(m.importeCentimos)}</span>
+                        <div className={styles.accionesFila}>
+                          <Button
+                            size="sm"
+                            variant={m.pagadaEn ? "ghost" : "secondary"}
+                            aria-pressed={Boolean(m.pagadaEn)}
+                            aria-label={
+                              m.pagadaEn
+                                ? `Pagada: ${m.persona}, ${m.concepto}. Volver a pendiente`
+                                : `Cobrar a ${m.persona}: ${m.concepto}`
+                            }
+                            onClick={() => void cobrar(m)}
+                          >
+                            {m.pagadaEn ? `Pagada ${fechaCorta(m.pagadaEn)}` : "Cobrar"}
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
 
+      </div>
+      {!movil && (
+        <section className={styles.altaLateral} aria-labelledby="multas-alta">
+          <h4 id="multas-alta">Nueva multa</h4>
+          {nueva}
+        </section>
+      )}
       {movil && nueva}
 
       <Dialog

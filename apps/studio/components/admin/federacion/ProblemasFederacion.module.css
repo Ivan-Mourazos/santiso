@@ -428,12 +428,14 @@ button.acceso {
   list-style: none;
 }
 .rfgfAviso li {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--ui-space-2, 0.5rem);
+  gap: var(--ui-space-2) var(--ui-space-4);
+  padding-block-start: var(--ui-space-2);
+  border-block-start: 1px solid color-mix(in srgb, var(--ui-warning) 30%, transparent);
 }
+
 .rfgfAviso p,
 .rfgfNota {
   margin: 0;
@@ -587,4 +589,30 @@ button.acceso {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+}
+
+.incidenciaMeta {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 3ch 6ch minmax(0, 1fr);
+  gap: var(--ui-space-2);
+  color: var(--ui-warning);
+  font-size: var(--ui-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.incidenciaTexto {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rfgfAcciones button {
+  min-height: 44px;
+  min-width: 7.5rem;
+}
+
+@media (max-width: 640px) {
+  .rfgfAviso li {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

@@ -150,10 +150,6 @@
   text-align: right;
 }
 .escudo {
-  display: block;
-  width: 30px;
-  height: 30px;
-  object-fit: contain;
   background: var(--ui-raised, #242424);
   border-radius: var(--ui-radius-sm);
 }
@@ -235,81 +231,30 @@
   .tabla thead {
     display: none;
   }
-  /* Una línea por equipo: escudo y nombre con sus partidos debajo; el nombre abre el editor. */
   .tabla tr {
     display: grid;
-    grid-template-columns: 36px minmax(0, 1fr);
-    grid-template-areas:
-      "escudo nombre"
-      "escudo partidos";
+    grid-template-columns: 44px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 0 0.5rem;
-    min-height: 56px;
-    border-bottom: 1px solid var(--ui-border, #666);
+    gap: var(--ui-space-2);
+    min-height: 64px;
+    border-bottom: 1px solid var(--ui-border);
   }
   .tabla td {
     padding: 0;
     border: 0;
     min-width: 0;
   }
-  .tabla td:nth-child(1) {
-    grid-area: escudo;
-  }
-  .tabla td:nth-child(2) {
-    grid-area: nombre;
-    align-self: end;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   .tabla td:nth-child(3) {
-    grid-area: partidos;
-    align-self: start;
     width: auto;
-    text-align: left;
-    color: var(--ui-muted, #aaa);
+    color: var(--ui-muted);
     font-size: var(--ui-text-xs);
+    font-variant-numeric: tabular-nums;
   }
   .tabla td:nth-child(3)::before {
     content: "Partidos: ";
   }
   .tabla td:nth-child(4) {
     display: none;
-  }
-  .tabla .abrir .nombre {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .tabla .acciones {
-    flex-wrap: nowrap;
-    gap: 0.25rem;
-  }
-  /* El texto sigue en el nombre accesible del botón; a la vista queda el icono. */
-  .tabla .acciones button {
-    width: 44px;
-    min-width: 44px;
-    padding: 0;
-    font-size: 0;
-  }
-  .tabla .acciones button::before {
-    content: "";
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    background: currentColor;
-    mask: var(--icono-quitar) center / contain no-repeat;
-  }
-  .tabla .acciones button:first-child::before {
-    mask-image: var(--icono-editar);
-  }
-  .tabla .acciones button:nth-child(2):not(:last-child)::before {
-    mask-image: var(--icono-retirar);
-  }
-  .escudo {
-    width: 36px;
-    height: 36px;
   }
   .contexto {
     display: grid;
@@ -490,7 +435,6 @@
 
 /* El nombre del equipo es el botón que abre su editor. */
 .abrir {
-  display: block;
   width: 100%;
   min-height: 44px;
   padding: 0;

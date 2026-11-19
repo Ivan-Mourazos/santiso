@@ -26,7 +26,7 @@ export const FormComunicado: React.FC<Props> = ({ form, set }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- solo cuando falta
   }, [sinFecha]);
   return (
-    <>
+    <div className={styles.formularioEditorial}>
       <Select
         label="Qué es"
         value={form.comunicadoTipo}
@@ -49,7 +49,7 @@ export const FormComunicado: React.FC<Props> = ({ form, set }) => {
         value={form.comunicadoTexto}
         onChange={(e) => set("comunicadoTexto", e.target.value)}
       />
-      <div className={styles.pareja}>
+      <div className={styles.dosCampos}>
         <Field
           label="Fecha"
           type="date"
@@ -62,6 +62,6 @@ export const FormComunicado: React.FC<Props> = ({ form, set }) => {
           onChange={(e) => set("comunicadoFirma", e.target.value)}
         />
       </div>
-    </>
+    </div>
   );
 };

@@ -599,3 +599,35 @@ span.foto {
   color: var(--ui-muted);
   font: 800 0.95rem / 1 var(--ui-font-body, sans-serif);
 }
+
+.staff:not([data-tecnicos]) .celdaFoto .foto {
+  width: 44px;
+  height: 44px;
+}
+
+.abrirFicha.editarDirectiva {
+  display: grid;
+}
+
+.editarDirectiva::after {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.editarDirectiva > strong {
+  grid-column: 1;
+  white-space: normal;
+  display: -webkit-box;
+}
+
+@media (max-width: 640px) {
+  .tabla.staff:not([data-tecnicos]) tr {
+    grid-template-columns: 44px minmax(0, 1fr);
+    min-height: 64px;
+  }
+  .editarDirectiva {
+    column-gap: var(--ui-space-2);
+    row-gap: 0;
+    align-content: center;
+  }
+}

@@ -351,9 +351,9 @@ button.partidoElegido:focus-visible {
 }
 
 .ayudaImagenes {
-  margin-bottom: var(--ui-space-4);
+  margin: 0;
   color: var(--ui-muted);
-  font-size: var(--ui-text-xs);
+  font-size: var(--ui-text-sm);
 }
 
 .nota {
@@ -362,15 +362,159 @@ button.partidoElegido:focus-visible {
   font-size: var(--ui-text-sm);
 }
 
-.filaClasificacion > label {
-  display: contents;
+.clasificacionManual {
+  margin-block-end: var(--ui-space-4);
 }
 
-.filaClasificacion input {
-  border-color: var(--ui-field-border);
+.listaClasificacion {
+  display: grid;
+  gap: var(--ui-space-2);
+  container-type: inline-size;
 }
-.etiquetaMovil {
-  display: none;
+
+.filaClasificacion {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1.6fr) minmax(0, 0.65fr) minmax(0, 0.9fr) 44px;
+  align-items: end;
+  gap: var(--ui-space-2);
+  background: var(--ui-raised);
+  padding: var(--ui-space-2);
+  border-radius: var(--ui-radius-sm);
+}
+
+.posicionClasificacion {
+  align-self: center;
+  font-size: var(--ui-text-sm);
+  font-weight: 800;
+  color: var(--ui-accent);
+}
+
+.filaClasificacion > button {
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 0;
+}
+
+.nombreClasificacion textarea {
+  display: block;
+  min-height: var(--ui-control-h);
+  padding: var(--ui-space-2);
+  overflow-wrap: anywhere;
+  resize: vertical;
+}
+
+.filaClasificacion .cifraClasificacion {
+  min-height: var(--ui-control-h);
+  padding-inline: var(--ui-space-2);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+@container (width < 390px) {
+  .filaClasificacion {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nombreClasificacion {
+    grid-column: 1 / -1;
+  }
+  .filaClasificacion > button {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+}
+
+.formularioEditorial {
+  display: grid;
+  gap: var(--ui-space-3);
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.dosCampos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-3);
+}
+
+@container (width < 280px) {
+  .dosCampos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.grupoEditorial {
+  display: grid;
+  gap: var(--ui-space-3);
+  min-width: 0;
+  margin: 0;
+  padding: var(--ui-space-3);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+
+.grupoEditorial legend {
+  padding-inline: var(--ui-space-1);
+  font-weight: 800;
+}
+
+.filaImagen {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.filaImagen > label {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.filaImagen input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.filaImagen button {
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 0;
+}
+
+.miniaturaImagen {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  background: var(--ui-raised);
+  border-radius: var(--ui-radius-sm);
+}
+
+.estadoImagen {
+  min-width: 0;
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+  overflow-wrap: anywhere;
+}
+
+.estadoImagen:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.estadoImagen[data-error="true"] {
+  color: var(--ui-danger);
 }
 
 /* O Noso 11: una fila por jugador (dorsal, nombre, capitán y orden). */
@@ -462,27 +606,7 @@ button.partidoElegido:focus-visible {
   .filaEventoDatos {
     grid-template-columns: minmax(0, 1fr) !important;
   }
-  .filaClasificacion {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-  .filaClasificacion > label {
-    display: grid;
-    gap: 0.25rem;
-    min-width: 0;
-  }
-  .filaClasificacion > label:first-of-type {
-    grid-column: 1 / -1;
-  }
-  .filaClasificacion > button {
-    grid-column: 2;
-    grid-row: 1;
-    justify-self: end;
-  }
-  .etiquetaMovil {
-    display: block;
-    font-size: var(--ui-text-sm);
-    font-weight: 700;
-  }
+
 }
 .elegirPartido > .seccion {
   margin-top: 0;

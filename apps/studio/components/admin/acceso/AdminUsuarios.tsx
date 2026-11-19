@@ -137,11 +137,12 @@ export default function AdminUsuarios({ showToast, showConfirm }: Props) {
               <li key={usuario.id} className={styles.fila} data-inactivo={!usuario.activo}>
                 <div className={styles.quien}>
                   <strong>{usuario.nombre}</strong>
-                  <span>
-                    {usuario.usuario} · {ROLES[usuario.rol]}
-                    {!usuario.activo && " · sin acceso"}
-                  </span>
+                  <span>{usuario.usuario}</span>
                 </div>
+                <p className={styles.rol}>
+                  {ROLES[usuario.rol]}
+                  {!usuario.activo && <small>Sin acceso</small>}
+                </p>
                 <div className={styles.acciones}>
                   <Button
                     size="sm"
@@ -165,7 +166,7 @@ export default function AdminUsuarios({ showToast, showConfirm }: Props) {
                     onClick={() =>
                       usuario.activo
                         ? showConfirm(
-                            `${usuario.nombre} dejará de poder entrar y se cerrará su sesión. Sus datos no se borran y puedes devolverle el acceso cuando quieras.`,
+                            `¿Quitar acceso a ${usuario.nombre}? Se cerrará su sesión. Sus datos no se borran y puedes devolverle el acceso cuando quieras.`,
                             () => cambiarAcceso(usuario, false),
                           )
                         : void cambiarAcceso(usuario, true)

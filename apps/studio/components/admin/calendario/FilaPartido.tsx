@@ -49,18 +49,16 @@ const FECHA_CORTA = new Intl.DateTimeFormat("es-ES", {
 });
 
 /** «dom, 18/10, 17:00 · A Merced · Finalizado»: lo que en móvil se ve sin desplegar la fila. */
-function resumenDe(partido: LeagueMatch, campos: CampoDto[]): string {
+function resumenDe(partido: LeagueMatch, campos: CampoDto[]) {
   const local = matchDateTimeLocalInput(partido.fecha);
   const fecha = local ? new Date(local) : null;
   const campo = campos.find((c) => c.id === partido.campo_id)?.nombre;
   const estado = ESTADOS.find((e) => e.valor === partido.estado)?.etiqueta;
-  return [
-    fecha && !Number.isNaN(fecha.getTime()) ? FECHA_CORTA.format(fecha) : "Sin fecha",
-    campo ?? "Sin campo",
-    partido.estado && partido.estado !== "programado" ? estado : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  return {
+    cuando: fecha && !Number.isNaN(fecha.getTime()) ? FECHA_CORTA.format(fecha) : "Sin fecha",
+    campo: campo ?? "Sin campo",
+    estado: partido.estado && partido.estado !== "programado" ? estado : null,
+  };
 }
 
 const golesAlCampo = (valor: unknown): string =>
@@ -90,6 +88,7 @@ export default function FilaPartido({
   /** En móvil campo, fecha y estado están plegados; en escritorio siempre se ven. */
   const [abierta, setAbierta] = useState(false);
   const enCurso = useRef(false);
+  const resumen = resumenDe(p, campos);
   const nombre = `${local} - ${visitante}`;
   const movilPropio = useEsMovil() && contexto !== undefined;
 
@@ -215,7 +214,11 @@ export default function FilaPartido({
           <path d="m6 9 6 6 6-6" />
         </svg>
       </button>
-      <p className={styles.resumenFila}>{resumenDe(p, campos)}</p>
+      <p className={styles.resumenFila}>
+        <strong>{resumen.cuando}</strong>
+        {" · "}{resumen.campo}
+        {resumen.estado && ` · ${resumen.estado}`}
+      </p>
       <div className={styles.campo}>
         <Select
           label="Campo"
@@ -297,7 +300,9 @@ export default function FilaPartido({
               {local} · {visitante}
             </strong>
             <span>
-              {contexto} · {resumenDe(p, campos)}
+              <b className={styles.fase}>{contexto}</b>
+              {" · "}{resumen.cuando}{" · "}{resumen.campo}
+              {resumen.estado && ` · ${resumen.estado}`}
             </span>
           </span>
           <strong className={styles.marcadorPropio}>

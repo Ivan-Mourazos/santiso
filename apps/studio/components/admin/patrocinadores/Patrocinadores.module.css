@@ -59,17 +59,11 @@
   vertical-align: middle;
 }
 .logo {
-  width: 56px;
-  height: 40px;
-  object-fit: contain;
-  display: block;
   background: var(--ui-raised, #242424);
   border-radius: var(--ui-radius-sm);
 }
-.nombre strong {
-  display: block;
-}
 .nombre a {
+  overflow-wrap: anywhere;
   color: var(--ui-muted, #aaa);
   font-size: var(--ui-text-sm);
 }
@@ -242,17 +236,12 @@
   .tabla tbody {
     display: block;
   }
-  /* Una fila por ficha: logo y nombre con el chip debajo; el nombre abre el editor. */
   .tabla tr {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr);
-    grid-template-areas:
-      "logo nombre"
-      "logo estado";
+    grid-template-columns: 44px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 2px 0.75rem;
+    gap: var(--ui-space-2);
     min-height: 64px;
-    padding-block: 6px;
     border-bottom: 1px solid var(--ui-border);
   }
   .tabla td {
@@ -260,54 +249,11 @@
     border: 0;
     min-width: 0;
   }
-  .celdaLogo {
-    grid-area: logo;
-  }
-  .celdaLogo .logo {
-    width: 44px;
-    height: 36px;
-  }
-  .celdaNombre {
-    grid-area: nombre;
-  }
-  .celdaNombre strong {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  /* La web de cada patrocinador está en su editor; en la lista solo alarga la fila. */
   .nombre a {
     display: none;
   }
-  .celdaEstado {
-    grid-area: estado;
-    align-self: start;
-  }
-  .celdaAcciones {
-    grid-area: acciones;
-  }
-  .filaAcciones {
-    gap: 0.25rem;
-  }
-  /* El texto sigue en el nombre accesible del botón; a la vista queda el icono. */
-  .filaAcciones button {
-    width: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0;
-    font-size: 0;
-  }
-  .filaAcciones button::before {
-    content: "";
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    background: currentColor;
-    mask: var(--icono-editar) center / contain no-repeat;
-  }
-  .filaAcciones button:last-child::before {
-    mask-image: var(--icono-quitar);
+  .estado {
+    padding-inline: var(--ui-space-1);
   }
   .posicion {
     display: grid;
@@ -337,7 +283,6 @@
 
 /* El nombre es el botón que abre el editor (borrar va dentro). */
 .abrir {
-  display: block;
   width: 100%;
   min-height: 44px;
   padding: 0;
@@ -351,4 +296,8 @@
 
 .abrir:hover strong {
   color: var(--ui-accent);
+}
+
+.celdaEstado {
+  text-align: right;
 }

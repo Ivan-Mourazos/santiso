@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { Field, Select } from "@/components/ui/foundation/Fields";
+import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
 import { getClasificacionData } from "@/lib/cartel/clasificacion-data";
 import { useCompeticiones } from "@/lib/useCompeticiones";
 import AvisoError from "../AvisoError";
@@ -177,7 +177,7 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
       <AvisoError mensaje={errorCompeticiones} />
 
       {modoManual ? (
-        <div style={{ marginBottom: "1.5rem" }}>
+        <div className={styles.clasificacionManual}>
           <div className={styles.campo}>
             <Field
               label="Nombre de la competición"
@@ -204,81 +204,42 @@ export const FormClasificacion: React.FC<Props> = ({ form, set }) => {
           </div>
 
           <SectionLabel>Equipos en la tabla</SectionLabel>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.5rem",
-              marginBottom: "1rem",
-            }}
-          >
+          <div className={styles.listaClasificacion}>
             {filasManuales().map((eq, idx) => (
-              <div
-                key={eq.id || idx}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "36px 1fr 50px 50px 32px",
-                  gap: "0.4rem",
-                  alignItems: "center",
-                  background: "rgba(255,255,255,0.03)",
-                  padding: "0.4rem 0.6rem",
-                  borderRadius: "8px",
-                }}
-                className={styles.filaClasificacion}
-              >
-                <span
-                  style={{
-                    fontSize: "0.75rem",
-                    fontWeight: 800,
-                    color: "var(--primary)",
-                    textAlign: "center",
-                  }}
-                >
-                  #{idx + 1}
-                </span>
-                <label>
-                  <span className={styles.etiquetaMovil}>Equipo</span>
-                  <input
-                    type="text"
-                    value={eq.nombre || ""}
-                    onChange={(e) => handleUpdateManualTeam(idx, "nombre", e.target.value)}
+              <div key={eq.id || idx} className={styles.filaClasificacion}>
+                <span className={styles.posicionClasificacion}>#{idx + 1}</span>
+                <div className={styles.nombreClasificacion}>
+                  <Textarea
+                    label="Equipo"
                     aria-label={`Nombre del equipo ${idx + 1}`}
-                    placeholder="Nombre equipo"
-                    style={{ padding: "0.3rem 0.5rem", fontSize: "0.75rem" }}
+                    rows={2}
+                    value={eq.nombre || ""}
+                    onChange={(e) => handleUpdateManualTeam(idx, "nombre", e.target.value.replace(/\n/g, " "))}
                   />
-                </label>
-                <label>
-                  <span className={styles.etiquetaMovil}>Puntos</span>
-                  <input
-                    type="number"
-                    value={eq.pts ?? 0}
-                    onChange={(e) =>
-                      handleUpdateManualTeam(idx, "pts", parseInt(e.target.value) || 0)
-                    }
-                    aria-label={`Puntos del equipo ${idx + 1}`}
-                    placeholder="Pts"
-                    title="Puntos"
-                    style={{ padding: "0.3rem 0.3rem", fontSize: "0.75rem", textAlign: "center" }}
-                  />
-                </label>
-                <label>
-                  <span className={styles.etiquetaMovil}>Partidos jugados</span>
-                  <input
-                    type="number"
-                    value={eq.pj ?? 0}
-                    onChange={(e) =>
-                      handleUpdateManualTeam(idx, "pj", parseInt(e.target.value) || 0)
-                    }
-                    aria-label={`Partidos jugados del equipo ${idx + 1}`}
-                    placeholder="PJ"
-                    title="Partidos Jugados"
-                    style={{ padding: "0.3rem 0.3rem", fontSize: "0.75rem", textAlign: "center" }}
-                  />
-                </label>
-                <Button size="sm" variant="danger"
+                </div>
+                <Field
+                  label="Puntos"
+                  aria-label={`Puntos del equipo ${idx + 1}`}
+                  className={styles.cifraClasificacion}
+                  type="number"
+                  inputMode="numeric"
+                  value={eq.pts ?? 0}
+                  onChange={(e) => handleUpdateManualTeam(idx, "pts", parseInt(e.target.value) || 0)}
+                />
+                <Field
+                  label="Partidos jugados"
+                  aria-label={`Partidos jugados del equipo ${idx + 1}`}
+                  className={styles.cifraClasificacion}
+                  type="number"
+                  inputMode="numeric"
+                  value={eq.pj ?? 0}
+                  onChange={(e) => handleUpdateManualTeam(idx, "pj", parseInt(e.target.value) || 0)}
+                />
+                <Button
+                  size="sm"
+                  variant="danger"
+                  aria-label={`Eliminar equipo ${idx + 1}`}
                   onClick={() => handleRemoveManualTeam(idx)}
-                  
-                  title="Eliminar"
                 >
                   ✕
                 </Button>

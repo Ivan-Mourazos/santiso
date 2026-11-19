@@ -17,6 +17,7 @@ import { useCompeticiones } from "@/lib/useCompeticiones";
 import BarraTemporada from "./plantilla/BarraTemporada";
 import EditorStaff from "./plantilla/EditorStaff";
 import IncorporarDeTemporada, { type Elegido } from "./plantilla/IncorporarDeTemporada";
+import fila from "./FilaCatalogo.module.css";
 import styles from "./plantilla/Plantilla.module.css";
 import { iniciales } from "@/lib/iniciales";
 
@@ -238,12 +239,12 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
                     {/* Toda la fila abre el editor; «Quitar» va dentro, no en cada fila. */}
                     <button
                       type="button"
-                      className={styles.abrirFicha}
+                      className={tipo === "Tecnico" ? styles.abrirFicha : `${styles.abrirFicha} ${styles.editarDirectiva} ${fila.edicion}`}
                       aria-haspopup="dialog"
                       aria-label={`Editar a ${m.nombre} (${m.cargo})`}
                       onClick={() => abrirEditor(m)}
                     >
-                      <strong>{m.nombre}</strong>
+                      <strong className={tipo === "Tecnico" ? undefined : fila.nombre}>{m.nombre}</strong>
                       {/* En móvil la columna de cargo se oculta: se ve aquí, bajo el nombre. */}
                       <span className={styles.soloMovil}>{m.cargo}</span>
                     </button>

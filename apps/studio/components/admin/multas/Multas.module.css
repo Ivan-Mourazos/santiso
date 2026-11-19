@@ -207,6 +207,9 @@
     background: none;
     box-shadow: none;
   }
+  .alta :is(input, select, button) {
+    min-height: 44px;
+  }
   .lista {
     gap: 0;
   }
@@ -449,6 +452,7 @@
   display: grid;
 }
 .nueva button {
+  min-height: 44px;
   box-shadow: 0 6px 20px rgb(0 0 0 / 55%);
 }
 /* Hueco al final para que el botón fijo no tape la última multa. */
@@ -596,4 +600,65 @@
 /* `.quien` e `.importe` traen áreas con nombre de la fila de multa: aquí van en orden. */
 .cabeceraGrupo > * {
   grid-area: auto;
+}
+
+.panel:has(.altaLateral) {
+  max-width: 64rem;
+  container-type: inline-size;
+}
+
+.multasListado {
+  display: grid;
+  min-width: 0;
+  gap: var(--ui-space-3);
+}
+
+.altaLateral {
+  min-width: 0;
+  padding: var(--ui-space-3);
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-panel-face);
+}
+
+.altaLateral h4 {
+  margin: 0 0 var(--ui-space-3);
+  font: 800 var(--ui-text-lg) var(--ui-font-title);
+}
+
+.altaLateral .alta {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+@container (width >= 700px) {
+  .seccion:has(> .altaLateral) {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.grupo .importe,
+.cobrarTodo button,
+.detalleImporte {
+  font-variant-numeric: tabular-nums;
+}
+
+.cabeceraGrupo .importe {
+  color: var(--ui-text);
+  font-weight: 800;
+}
+
+.lista .importe {
+  color: var(--ui-muted);
+  font-weight: 600;
+}
+
+.cobrarTodo button {
+  min-height: 44px;
+}
+
+.seccion:has(.nueva) .multasListado :is(button, a) {
+  scroll-margin-block-end: calc(var(--studio-barra-abajo) + 4rem);
 }

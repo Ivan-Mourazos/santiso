@@ -1,0 +1,38 @@
+.imagen {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: var(--ui-radius-sm);
+}
+
+.nombre {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.edicion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: var(--ui-space-2);
+  min-height: 44px;
+}
+
+.edicion::after {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background: var(--ui-muted);
+  mask: var(--icono-editar) center / contain no-repeat;
+}
+
+.edicion:is(:hover, :focus-visible)::after {
+  background: var(--ui-accent);
+}

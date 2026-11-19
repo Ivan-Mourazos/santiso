@@ -112,14 +112,16 @@ function Opcion({
   texto,
   ultima,
   children,
+  destacada = false,
 }: {
+  destacada?: boolean;
   titulo: string;
   texto: string;
   ultima?: string;
   children: ReactNode;
 }) {
   return (
-    <div className={s.opcion}>
+    <div className={s.opcion} data-destacada={destacada || undefined}>
       <div>
         <strong>{titulo}</strong>
         <span>{texto}</span>
@@ -257,6 +259,13 @@ export default function AdminFederacion({
   const jornadas = estado?.jornadas ?? [];
   const jugadas = jornadas.filter((j) => j.estado !== "por_jugar");
   const completas = jugadas.filter((j) => j.estado === "completa").length;
+  const pendientes = jugadas.reduce((total, jornada) => total + jornada.pendientes, 0);
+  const alDiaDestacado = Boolean(actual.enlace && (pendientes > 0 || porRevisar.length > 0));
+  const contextoActas = new Map(jornadas.flatMap((j) =>
+    j.encuentros.flatMap((p) => p.acta.codActa
+      ? [[p.acta.codActa, { jornada: j.numero, fecha: p.fecha ?? j.fecha }] as const]
+      : []),
+  ));
   const comparacion = estado?.competicion.clasificacion ?? null;
   const sinPartidos = estado !== null && jornadas.every((j) => j.partidos === 0);
   // Por defecto, la última jornada jugada (la que más se suele querer repasar).
@@ -290,6 +299,25 @@ export default function AdminFederacion({
         Guardar
       </Button>
     </div>
+  );
+
+  const incidencias = (
+    <ProblemasFederacion
+      actas={porRevisar}
+      contexto={contextoActas}
+      reintentando={trayendo?.startsWith("reintentar:") ? trayendo.slice(11) : null}
+      ocupado={ocupado}
+      onReintentar={(codActa) =>
+        void traer(
+          `reintentar:${codActa}`,
+          async () => {
+            const preparado = await reintentarActaRfgf(codActa);
+            return preparado.ok ? comprobarRfgfAhora() : preparado;
+          },
+          (texto) => texto,
+        )
+      }
+    />
   );
 
   return (
@@ -334,31 +362,22 @@ export default function AdminFederacion({
         )}
       </header>
 
-      <ProblemasFederacion
-        actas={porRevisar}
-        ocupado={ocupado}
-        onReintentar={(codActa) =>
-          void traer(
-            `reintentar:${codActa}`,
-            async () => {
-              const preparado = await reintentarActaRfgf(codActa);
-              return preparado.ok ? comprobarRfgfAhora() : preparado;
-            },
-            (texto) => texto,
-          )
-        }
-      />
-
       {actual.enlace && (
         <section className={s.traer} aria-label="Volver a traer">
           <h3>Volver a traer</h3>
+          <div className={s.progreso}>
+            {ocupado && <progress aria-label="Actualizando datos de la federación" />}
+          </div>
           <Opcion
             titulo="Ponerse al día"
-            texto="Lo que se hace sola cada noche, ahora, para Senior y Veteranos: marcadores, horarios, cruces de copa, árbitros, goles y tarjetas que falten, la clasificación y unos pocos jugadores."
+            destacada={alDiaDestacado}
+            texto={pendientes > 0
+              ? `${pendientes} ${pendientes === 1 ? "partido pendiente" : "partidos pendientes"}. Actualiza los datos de Senior y Veteranos.`
+              : "Actualiza resultados, horarios, actas, clasificación y cifras de jugadores de Senior y Veteranos."}
             ultima={momento(actual.comprobadoEn)}
           >
             <Button
-              variant="secondary"
+              variant={alDiaDestacado ? "primary" : "secondary"}
               pending={trayendo === "todo"}
               pendingLabel="Trayendo…"
               disabled={ocupado}
@@ -367,10 +386,11 @@ export default function AdminFederacion({
               Ponerse al día
             </Button>
           </Opcion>
+          {incidencias}
           <TraerCalendario
             key={actual.competicionId}
             competicionId={actual.competicionId}
-            sinPartidos={sinPartidos}
+            sinPartidos={sinPartidos && !alDiaDestacado}
             bloqueado={ocupado && trayendo !== "calendario"}
             onOcupado={(si) => setTrayendo(si ? "calendario" : null)}
             onHecho={async () => {
@@ -542,6 +562,8 @@ export default function AdminFederacion({
         </section>
       )}
 
+      {!actual.enlace && incidencias}
+
       <section aria-label="Jornadas">
         <details className={s.bloque}>
           <summary>
@@ -556,7 +578,7 @@ export default function AdminFederacion({
                   <details className={s.jornada} data-estado={j.estado}>
                     <summary>
                       <span className={s.numero}>J{j.numero}</span>
-                      <span className={s.fecha}>{fecha(j.fecha)}</span>
+                      <span className={s.fecha}>{fecha(j.fecha) || "—"}</span>
                       <span className={s.resumen}>
                         {j.estado === "por_jugar"
                           ? `${j.partidos} partidos`
