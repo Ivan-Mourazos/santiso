@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useStudio } from "@/components/studio/StudioContext";
 import { fechaPartido } from "@/lib/jornada/fecha";
 import { Button } from "@/components/ui/foundation/Button";
-import { ErrorState } from "@/components/ui/foundation/States";
+import { EmptyState, ErrorState, StateLink } from "@/components/ui/foundation/States";
 import { TITULARES } from "@/lib/alineacion/modelo";
-import { hoyLocal } from "@/lib/jornada/semana";
+import { hoyLocal, semanaDe } from "@/lib/jornada/semana";
+import { reservada } from "@/lib/navigation/contexto";
 import { marcador, partidoEnMesa, preparaConvocatoria, trasPartido } from "@/lib/jornada/vestiario";
 import { cargarPantallaJornada } from "@/lib/server/acciones/jornada";
 import type { PantallaJornada, PartidoDeLaSemana } from "@/lib/server/consultas/jornada";
@@ -14,12 +16,14 @@ import styles from "./Inicio.module.css";
 
 interface Datos {
   momento: string;
+  semana: PantallaJornada["semana"];
   partidos: { categoria: string; partido: PartidoDeLaSemana }[];
 }
 
 function datosDe(pantalla: PantallaJornada): Datos {
   return {
     momento: pantalla.momento,
+    semana: pantalla.semana,
     // Por fecha, no por categoría: el que se juega antes, arriba. Sin fecha, al final.
     partidos: pantalla.categorias
       .flatMap((c) => {
@@ -41,6 +45,28 @@ function tarea(p: PartidoDeLaSemana, categoria: string, despues: boolean) {
   if (titulares > 0) return `Once inicial · ${titulares}/${TITULARES}`;
   return convocatoria ? `${convocatoria} convocados` : null;
 }
+
+function accionDelDia(
+  p: PartidoDeLaSemana,
+  categoria: string,
+  despues: boolean,
+  puedeHacerCarteles: boolean,
+) {
+  const contexto = `categoria=${encodeURIComponent(categoria)}&partido=${encodeURIComponent(p.id)}`;
+  if (p.estado === "en_juego")
+    return { href: `/admin/directo?${contexto}`, texto: "Abrir directo" };
+  if (despues && marcador(p) && !p.cierreHecho && puedeHacerCarteles)
+    return { href: `/admin/carteles?plantilla=despues&${contexto}`, texto: "Preparar resultado" };
+  if (despues || p.estado === "aplazado" || p.estado === "cancelado" || !preparaConvocatoria(categoria))
+    return null;
+  if (!p.preparacion.convocatoria)
+    return { href: `/admin/convocatoria?${contexto}`, texto: "Preparar convocatoria" };
+  if (p.preparacion.titulares < TITULARES)
+    return { href: `/admin/alineacion?${contexto}`, texto: "Preparar once inicial" };
+  return null;
+}
+
+const formatoSemana = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long" });
 
 /**
  * La portada: el partido que toca de cada equipo, nada más. Tocarlo abre su detalle en
@@ -64,49 +90,74 @@ export default function NuestrosPartidos() {
     };
   }, [intento]);
 
-  if (fallo)
-    return (
-      <ErrorState
-        title="No se pudieron cargar los partidos de la semana"
-        detail="Comprueba la conexión y vuelve a intentarlo. El calendario entero está en Liga → Partidos."
-        action={
-          <Button
-            onClick={() => {
-              setFallo(false);
-              setDatos(null);
-              setIntento((n) => n + 1);
-            }}
-          >
-            Reintentar
-          </Button>
-        }
-      />
-    );
-  if (!datos)
-    return (
-      <div className={styles.partidos} role="status" aria-label="Cargando los partidos">
-        <span className={styles.esqueleto} />
-        <span className={styles.esqueleto} />
-      </div>
-    );
-  if (datos.partidos.length === 0)
-    return (
-      <p className={styles.vacio}>
-        Sin partidos esta semana. El calendario entero está en{" "}
-        <Link href="/admin/partidos" transitionTypes={["nav-forward"]}>
-          Liga → Partidos
-        </Link>
-        .
-      </p>
-    );
+  const semana = datos?.semana ?? semanaDe(hoyLocal());
+  const fecha = formatoSemana.formatRange(
+    new Date(`${semana.desde}T12:00`),
+    new Date(`${semana.hasta}T12:00`),
+  );
+  return (
+    <>
+      <header className={styles.semana}>
+        <h2>Esta semana</h2>
+        <p>{fecha}</p>
+      </header>
+      {fallo ? (
+        <ErrorState
+          title="No se pudieron cargar los partidos de la semana"
+          detail="Comprueba la conexión y vuelve a intentarlo. El calendario entero está en Liga → Partidos."
+          action={
+            <Button
+              onClick={() => {
+                setFallo(false);
+                setDatos(null);
+                setIntento((n) => n + 1);
+              }}
+            >
+              Reintentar
+            </Button>
+          }
+        />
+      ) : !datos ? (
+        <div className={styles.partidos} role="status">
+          <p className={styles.espera}>Cargando los partidos de la semana…</p>
+          <span className={styles.esqueleto} aria-hidden="true" />
+          <span className={styles.esqueleto} aria-hidden="true" />
+        </div>
+      ) : datos.partidos.length === 0 ? (
+        <EmptyState
+          title="Sin partidos esta semana"
+          detail="Consulta las próximas jornadas o revisa las anteriores en Liga."
+          action={<StateLink href="/admin/partidos">Ver jornadas</StateLink>}
+        />
+      ) : (
+        <TarjetasPartidos datos={datos} />
+      )}
+    </>
+  );
+}
+
+function TarjetasPartidos({ datos }: { datos: Datos }) {
+  const { acceso } = useStudio();
+  const puedeHacerCarteles = !reservada("carteles", acceso);
+  const partidos = datos.partidos.map(({ categoria, partido }) => {
+    const despues = trasPartido(partido, datos.momento);
+    return {
+      categoria,
+      partido,
+      despues,
+      accion: accionDelDia(partido, categoria, despues, puedeHacerCarteles),
+    };
+  });
+  const destacada = Math.max(0, partidos.findIndex(({ accion }) => accion));
   return (
     <div className={styles.partidos}>
-      {datos.partidos.map(({ categoria, partido: p }) => {
-        const despues = trasPartido(p, datos.momento);
+      {partidos.map(({ categoria, partido: p, despues, accion }, indice) => {
+        const destacadaEsta = indice === destacada;
+        const principal = destacadaEsta ? accion : null;
         const abrir = `/admin/partidos?categoria=${encodeURIComponent(categoria)}&partido=${encodeURIComponent(p.id)}`;
         const cuando = fechaPartido(p.fecha);
         const cat = encodeURIComponent(categoria);
-        // Local arriba, como en el acta; el Santiso siempre en amarillo.
+        // Local arriba, como en el acta.
         const equipos = [
           {
             nombre: p.santiso,
@@ -123,6 +174,7 @@ export default function NuestrosPartidos() {
           <section
             key={p.id}
             className={styles.tarjeta}
+            data-destacada={destacadaEsta || undefined}
             aria-label={`${categoria}: ${despues ? "último partido" : "próximo partido"}`}
           >
             <article className={styles.partido} data-partido-inicio>
@@ -159,19 +211,34 @@ export default function NuestrosPartidos() {
                 </ul>
                 {!resultado && <p className={styles.hora}>{cuando.hora || "—"}</p>}
               </div>
+              {estadoTarea && <p className={styles.tarea}>{estadoTarea}</p>}
               <p className={styles.partidoCuando}>
                 <Link
                   href={abrir}
                   transitionTypes={["nav-forward"]}
-                  aria-label={`Abrir el partido de ${categoria} contra ${p.rival.nombre}: ${cuando.dia}${p.campo ? `, ${p.campo}` : ""}`}
+                  aria-label={`Ver partido de ${categoria} contra ${p.rival.nombre}: ${cuando.dia}${p.campo ? `, ${p.campo}` : ""}`}
                   data-abrir-partido
                 >
                   <span>{cuando.dia}</span>
                   {p.campo && <span className={styles.campo}>{p.campo}</span>}
+                  {!principal && (
+                    <span className={styles.accion}>
+                      Ver partido <span aria-hidden="true">→</span>
+                    </span>
+                  )}
                 </Link>
               </p>
-              {estadoTarea && <p className={styles.tarea}>{estadoTarea}</p>}
             </article>
+            {principal && (
+              <Link
+                className={styles.accion}
+                data-accion-principal
+                href={principal.href}
+                transitionTypes={["nav-forward"]}
+              >
+                {principal.texto} <span aria-hidden="true">→</span>
+              </Link>
+            )}
           </section>
         );
       })}

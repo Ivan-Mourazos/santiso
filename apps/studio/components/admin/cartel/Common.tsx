@@ -10,6 +10,7 @@ import Link from "next/link";
 import React, { useId } from "react";
 import { useOptionalStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
+import { EmptyState, StateLink } from "@/components/ui/foundation/States";
 import { porJugarDeCategoria } from "@/lib/jornada/proximos";
 import { formatLiteralMatchDate } from "@/lib/match-date-time";
 import cartel from "./Cartel.module.css";
@@ -335,11 +336,28 @@ const ElegirPartido: React.FC<{
     queToca?.categoria ??
     "Senior";
   const deLaCategoria = lista.filter((x) => x.categoria === categoria);
-  if (lista.length === 0) return <>{children}</>;
+  const sugerido = deLaCategoria[0];
+  if (lista.length === 0)
+    return soloSelector ? null : (
+      <>
+        <EmptyState
+          title="Sin partidos disponibles"
+          detail={porJugar ? "Consulta la próxima jornada en Liga o rellena los datos de un amistoso." : "El resultado necesita un partido jugado. Consulta las jornadas en Liga."}
+          action={<StateLink href={`/admin/partidos?categoria=${encodeURIComponent(categoria)}`}>Ver jornadas</StateLink>}
+        />
+        {children}
+      </>
+    );
   return (
     <>
       <section className={styles.elegirPartido} aria-label="Elige el partido">
-        <h4 className={styles.seccion}>¿De qué partido?</h4>
+        <h4 className={styles.selectorTitulo}>{soloSelector ? "Cambiar partido" : "Elige el partido."}</h4>
+        {sugerido && !soloSelector && (
+          <p className={styles.sugerencia}>
+            Elige una jornada. Sugerida: J{sugerido.jornada?.numero ?? "–"}
+            {sugerido.fecha ? ` · ${formatLiteralMatchDate(sugerido.fecha)}` : ""}.
+          </p>
+        )}
         {/* Una sola fila: la categoría y, al lado, su jornada. Cabe con una temporada entera. */}
         <div className={styles.elegirFila}>
           <div className={styles.categorias} role="group" aria-label="Categoría">
@@ -357,7 +375,7 @@ const ElegirPartido: React.FC<{
               </button>
             ))}
           </div>
-          {deLaCategoria.length === 0 ? (
+          {!sugerido ? (
             <p className={styles.partidoElegidoContexto}>
               Sin partidos {porJugar ? "por jugar" : "jugados"} en {categoria}.
             </p>
@@ -373,7 +391,7 @@ const ElegirPartido: React.FC<{
               <option value="">Jornada…</option>
               {deLaCategoria.map((x) => (
                 <option key={x.id} value={x.id}>
-                  {etiquetaJornada(x)}
+                  {etiquetaJornada(x)}{x.id === sugerido.id ? " (sugerida)" : ""}
                 </option>
               ))}
             </select>

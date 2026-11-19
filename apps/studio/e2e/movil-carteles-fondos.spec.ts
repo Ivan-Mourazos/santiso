@@ -41,18 +41,15 @@ for (const pantalla of ["convocatoria", "alineacion"] as const) {
       "Hay cambios sin guardar: generar los guardaría.",
     );
     await boton.click();
-    const capacidad = page.getByText(
-      "El contenido no cabe con letra legible. Reduce datos o prepara dos láminas.",
-      { exact: true },
-    );
-    const generico = page.getByText("No se pudo generar el cartel. Vuelve a intentarlo.", {
-      exact: true,
-    });
-    await expect(capacidad.or(generico)).toBeVisible();
+    const aviso = panel.getByRole("alert");
+    await expect(aviso).toBeVisible();
     // Sin el «Guardar» flotante (16/11/2026), generar guarda antes lo que falte: la barrera la
     // corta y sale el aviso genérico. No es un fallo de la pantalla, solo que aquí no se prueba.
     test.skip(escrituras.length > 0, "Generar guardaría antes: hay cambios sin guardar.");
-    await expect(capacidad).toBeVisible();
+    await expect(aviso).toHaveText(
+      "El contenido no cabe con letra legible. Reduce datos o prepara dos láminas.",
+    );
+    await expect(panel.getByRole("button", { name: "Reintentar generación" })).toBeEnabled();
   });
 }
 for (const ancho of [360, 390]) {

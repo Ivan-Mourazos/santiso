@@ -44,8 +44,20 @@
   font: 700 var(--ui-text-lg) var(--ui-font-title);
   margin: 0;
 }
-.state button {
+.stateAction {
   margin-top: 1rem;
+}
+.stateLink {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--ui-control-h);
+  padding: var(--ui-space-2) var(--ui-space-4);
+  border: 1px solid var(--ui-field-border);
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-text);
+  background: var(--ui-raised);
+  font-weight: 800;
+  text-decoration: none;
 }
 .error {
   border-color: var(--ui-danger);

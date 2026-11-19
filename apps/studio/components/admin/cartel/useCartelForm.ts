@@ -197,6 +197,8 @@ export function useCartelForm(
   const [jugadoresPartidoId, setJugadoresPartidoId] = useState<string | null>(null);
   const [dbMatches, setDbMatches] = useState<SelectorMatch[]>([]);
   const [errorDatos, setErrorDatos] = useState<string | null>(null);
+  const [cargandoDatos, setCargandoDatos] = useState(true);
+  const [intentoDatos, setIntentoDatos] = useState(0);
   const [campos, setCampos] = useState<CartelField[]>([]);
   const [competicionesCatalog, setCompeticionesCatalog] = useState<CompetenciaRow[]>([]);
   const catalogRef = useRef<CompetenciaRow[]>([]);
@@ -249,10 +251,12 @@ export function useCartelForm(
         setDbMatches([]);
         setEquipos([]);
         setErrorDatos("No se pudieron cargar los datos. Revisa la base de datos.");
+      } finally {
+        setCargandoDatos(false);
       }
     }
     loadData();
-  }, []);
+  }, [intentoDatos]);
 
   useEffect(() => {
     // El registro de escudos por partido se modifica en el sitio, nunca se reasigna: capturarlo
@@ -557,6 +561,11 @@ export function useCartelForm(
     updateMatch,
     handleMatchRivalFile,
     dbMatches,
+    cargandoDatos,
+    reintentarDatos: () => {
+      setCargandoDatos(true);
+      setIntentoDatos((n) => n + 1);
+    },
     jugadoresPartidoId: eventosPartidoId === jugadoresPartidoId ? jugadoresPartidoId : null,
     campos,
     loadMatchFromDb,

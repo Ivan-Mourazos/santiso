@@ -56,7 +56,11 @@
 }
 .manual > summary > svg {
   flex: none;
-  transition: transform var(--ui-duration) var(--ui-ease);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .manual > summary > svg {
+    transition: transform var(--ui-duration) var(--ui-ease);
+  }
 }
 .manual[open] > summary > svg {
   transform: rotate(180deg);
@@ -149,9 +153,9 @@ button.partidoElegido:focus-visible {
 }
 .partidoElegidoCruce > b {
   /* A la altura de los escudos. */
-  line-height: 56px;
   color: var(--ui-accent);
-  font-size: var(--ui-text-lg);
+  font: 850 var(--ui-text-xl) / 56px var(--ui-font-title);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 /* Tarjeta del partido con el lápiz en la esquina: abre «Cambiar partido o editar datos». */
@@ -608,7 +612,16 @@ button.partidoElegido:focus-visible {
   }
 
 }
-.elegirPartido > .seccion {
+.selectorTitulo {
+  margin: 0;
+  font: 850 var(--ui-text-xl) / 1.15 var(--ui-font-title);
+}
+.sugerencia {
+  margin: var(--ui-space-1) 0 var(--ui-space-2);
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.elegirPartido > .selectorTitulo {
   margin-top: 0;
 }
 /* Senior | Veteranos del selector de partido: dos mitades, la elegida en amarillo. */

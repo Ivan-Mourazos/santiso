@@ -3,10 +3,11 @@
 .pantalla {
   display: grid;
   gap: var(--ui-space-4, 1rem);
+  container-type: inline-size;
 }
 .columnas {
   display: grid;
-  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--ui-space-5, 1.5rem);
   align-items: start;
 }
@@ -165,10 +166,12 @@
   flex: 1;
 }
 
-@media (max-width: 960px) {
+@container (min-width: 51rem) {
   .columnas {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
   }
+}
+@container (width < 51rem) {
   .marco {
     position: static;
   }
@@ -285,7 +288,12 @@
 .seccion > summary > svg,
 .seccionInterior > summary > svg {
   flex: none;
-  transition: transform var(--ui-duration) var(--ui-ease);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .seccion > summary > svg,
+  .seccionInterior > summary > svg {
+    transition: transform var(--ui-duration) var(--ui-ease);
+  }
 }
 .seccion[open] > summary > svg,
 .seccionInterior[open] > summary > svg {

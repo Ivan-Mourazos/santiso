@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Field } from "@/components/ui/foundation/Fields";
-import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
+import { EmptyState, ErrorState, LoadingState, StateLink } from "@/components/ui/foundation/States";
 import type { StaffDto } from "@/lib/dto";
+import { reservada } from "@/lib/navigation/contexto";
 import { filtrarStaff } from "@/lib/plantilla/modelo";
 import {
   cargarCandidatosStaff,
@@ -32,7 +33,7 @@ interface AdminStaffProps {
 type EstadoEditor = { clave: number; miembro: StaffDto | null } | null;
 
 export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: AdminStaffProps) {
-  const { setParams } = useStudio();
+  const { acceso, setParams } = useStudio();
   // La temporada que se consulta sale de la URL (`?temporada=`); sin ella, la activa.
   const {
     temporadas,
@@ -148,7 +149,10 @@ export default function AdminStaff({ showToast, showConfirm, tipo, categoria }: 
     contenido = (
       <EmptyState
         title="Todavía no hay ninguna temporada."
-        detail="Crea la temporada en Ajustes › Temporadas y vuelve aquí."
+        detail={reservada("temporadas", acceso)
+          ? "Pide al administrador que cree una temporada para poder vincular al personal."
+          : "Crea una temporada para poder vincularle el cuerpo técnico y la directiva."}
+        action={!reservada("temporadas", acceso) && <StateLink href="/admin/temporadas">Ir a Temporadas</StateLink>}
       />
     );
   } else if (errorCarga) {

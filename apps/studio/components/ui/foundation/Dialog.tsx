@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode, type RefObject } from "react";
+import { useId, useLayoutEffect, useRef, type ReactNode, type RefObject } from "react";
 import styles from "./Dialog.module.css";
 
 export interface DialogProps {
@@ -39,11 +39,11 @@ export function Dialog({
   // control y la lista aparecía desplazada hasta abajo.
   const abriendo = useRef(false);
   const focusRef = useRef(initialFocusRef);
-  useEffect(() => {
+  useLayoutEffect(() => {
     focusRef.current = initialFocusRef;
   }, [initialFocusRef]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dialog = dialogRef.current;
     if (!open || !dialog) return;
     const previous = dialog.ownerDocument.activeElement;

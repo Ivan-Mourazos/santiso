@@ -56,6 +56,7 @@ export function CartelesDelPaso({
 }) {
   const [guardados, setGuardados] = useState(iniciales);
   const [generando, setGenerando] = useState(false);
+  const [fallo, setFallo] = useState<string | null>(null);
   const [viendo, setViendo] = useState<CartelGuardado | null>(null);
   // Los PNG ya descargados como fichero: compartir en iOS solo funciona justo tras el toque,
   // sin esperar a la red, así que se bajan antes.
@@ -88,6 +89,7 @@ export function CartelesDelPaso({
 
   async function generar() {
     setGenerando(true);
+    setFallo(null);
     try {
       const preparadas = await preparar();
       if (!preparadas) return;
@@ -99,7 +101,7 @@ export function CartelesDelPaso({
       });
       if (!respuesta.ok) {
         const aviso = (await respuesta.json().catch(() => null)) as { error?: string } | null;
-        showToast(aviso?.error ?? "No se pudo generar el cartel. Vuelve a intentarlo.", "error");
+        setFallo(aviso?.error ?? "No se pudo generar el cartel.");
         return;
       }
       const nuevos = (await respuesta.json()) as CartelGuardado[];
@@ -107,7 +109,7 @@ export function CartelesDelPaso({
       onCambio?.(nuevos);
       showToast(estado === "pendiente" ? "Cartel generado y guardado" : "Cartel actualizado");
     } catch {
-      showToast("No se pudo generar el cartel. Vuelve a intentarlo.", "error");
+      setFallo("No se pudo generar el cartel.");
     } finally {
       setGenerando(false);
     }
@@ -143,13 +145,17 @@ export function CartelesDelPaso({
   return (
     <section className={s.panel} aria-label={`${nombre}: carteles guardados`} data-estado={estado}>
       <p className={s.estado} role="status">
-        {estado === "pendiente" && "Todavía sin generar."}
-        {estado === "hecho" && `✓ Generado ${cuando(guardados[0]!.generadoEn)}.`}
-        {estado === "desactualizado" &&
+        {generando && "Generando el cartel. Puedes seguir consultando la vista previa."}
+        {!generando && estado === "pendiente" && "Todavía sin generar."}
+        {!generando && estado === "hecho" && `✓ Generado ${cuando(guardados[0]!.generadoEn)}.`}
+        {!generando && estado === "desactualizado" &&
           (cambios
             ? `⚠ ${cambios} Sigue guardado el anterior hasta que lo actualices.`
             : "⚠ Han cambiado los datos desde que se generó. Sigue guardado el anterior hasta que lo actualices.")}
       </p>
+      {!generando && estado === "pendiente" && !motivo && !fallo && (
+        <p className={s.motivo}>Genera el cartel para tener sus formatos listos para compartir.</p>
+      )}
       {/* Sin miniaturas: la vista previa ya enseña el cartel. «Ver» lo abre en grande. */}
       {guardados.length > 0 && (
         <ul className={s.formatos} aria-label="Carteles guardados">
@@ -204,6 +210,7 @@ export function CartelesDelPaso({
         )}
       </Dialog>
       {motivo && <p className={s.motivo}>{motivo}</p>}
+      {fallo && <p className={s.motivo} role="alert">{fallo}</p>}
       <Button
         className={s.generar}
         variant={generarSecundario || estado === "hecho" ? "secondary" : "primary"}
@@ -212,7 +219,7 @@ export function CartelesDelPaso({
         disabled={Boolean(motivo)}
         onClick={() => void generar()}
       >
-        {estado === "pendiente"
+        {fallo ? "Reintentar generación" : estado === "pendiente"
           ? "Generar cartel"
           : estado === "desactualizado"
             ? "Actualizar cartel"

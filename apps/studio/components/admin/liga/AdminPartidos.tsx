@@ -3,6 +3,7 @@
 import { sinConexion } from "@/lib/resultado";
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useId, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { fechaPartido } from "@/lib/jornada/fecha";
 import { useStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
@@ -85,7 +86,7 @@ function MarcadorPartido({ partido: p, enlazar = false }: { partido: PartidoDeLi
   const resultado = marcadorDe(p);
   const hora = fechaPartido(p.fecha).hora;
   return (
-    <span className={styles.cruce}>
+    <span className={styles.cruce} data-marcador-partido={enlazar ? "detalle" : "fila"}>
       <span className={styles.marcador}>
         <EquipoMarcador equipo={p.local} enlazar={enlazar} />
         {resultado && <strong className={styles.tantos}>{p.golesLocal}</strong>}
@@ -118,6 +119,7 @@ function Fila({ partido: p, onAbrir }: { partido: PartidoDeLiga; onAbrir: () => 
       type="button"
       className={styles.fila}
       data-propio={p.local.propio || p.visitante.propio || undefined}
+      data-id-partido={p.id}
       onClick={onAbrir}
       aria-label={`${p.local.nombre} ${marcadorDe(p) ?? "contra"} ${p.visitante.nombre}`}
       aria-describedby={contextoId}
@@ -206,7 +208,12 @@ function CartelesDelPartidoLiga({
           </Button>
         </p>
       ) : !deEste ? (
-        <p className={styles.nota}>Buscando los carteles guardados…</p>
+        <div role="status">
+          <p className={`${styles.nota} ${styles.cartelesCarga}`}>Buscando los carteles guardados…</p>
+          {pasos.slice(1).map((paso) => (
+            <span key={paso} className={styles.cartelEsqueleto} aria-hidden="true" />
+          ))}
+        </div>
       ) : (
         <ul>
           {pasos.map((paso) => {
@@ -329,6 +336,7 @@ function Eventos({
 
 function Detalle({
   partido: p,
+  abierto,
   jornada,
   categoria,
   competicion,
@@ -336,6 +344,7 @@ function Detalle({
   onClose,
 }: {
   partido: PartidoDeLiga | null;
+  abierto: boolean;
   jornada: number | null;
   categoria: string;
   competicion: PartidosDeLiga["competicion"];
@@ -353,7 +362,7 @@ function Detalle({
   const tarjetas = p?.eventos.filter((e) => e.tipo !== "gol" && e.tipo !== "gol_propia") ?? [];
   return (
     <Dialog
-      open={p !== null}
+      open={abierto}
       onClose={onClose}
       title={jornada ? `Jornada ${jornada}` : "Partido"}
       closeLabel="Cerrar partido"
@@ -380,7 +389,7 @@ function Detalle({
               )}
             </div>
           )}
-          {propio && <CartelesDelPartidoLiga partido={p} categoria={categoria} />}
+          {propio && <CartelesDelPartidoLiga key={p.id} partido={p} categoria={categoria} />}
           <Eventos titulo="Goles" eventos={goles} partido={p} />
           <Eventos titulo="Tarjetas" eventos={tarjetas} partido={p} />
           {p.eventos.length === 0 && marcadorDe(p) && (
@@ -415,8 +424,73 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
   const partidoPedido = params.get("partido");
   const [datos, setDatos] = useState<PartidosDeLiga | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [abierto, setAbierto] = useState<PartidoDeLiga | null>(null);
+  // Conserva el contenido hasta terminar la salida nativa de la hoja.
+  const [detallePartido, setDetallePartido] = useState<{
+    partido: PartidoDeLiga;
+    abierto: boolean;
+    apertura: number;
+  } | null>(null);
+  const pantallaRef = useRef<HTMLDivElement>(null);
+  const transicionPartido = useRef<ViewTransition | null>(null);
   const generacion = useRef(0);
+
+  function cambiarDetalle(partido: PartidoDeLiga | null) {
+    const actualizar = () => {
+      setDetallePartido((actual) =>
+        partido
+          ? { partido, abierto: true, apertura: (actual?.apertura ?? 0) + 1 }
+          : actual && { ...actual, abierto: false },
+      );
+    };
+    const pantalla = pantallaRef.current;
+    const id = (partido ?? detallePartido?.partido)?.id;
+    if (
+      !pantalla || !id || !document.startViewTransition ||
+      typeof ViewTransition === "undefined" || !("types" in ViewTransition.prototype) ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      actualizar();
+      return;
+    }
+    if (transicionPartido.current) {
+      transicionPartido.current.skipTransition();
+      void transicionPartido.current.finished.then(actualizar, actualizar);
+      return;
+    }
+    const fila = () =>
+      pantalla.querySelector<HTMLElement>(
+        `[data-id-partido="${CSS.escape(id)}"] [data-marcador-partido="fila"]`,
+      );
+    const detalle = () =>
+      pantalla.querySelector<HTMLElement>('dialog[open] [data-marcador-partido="detalle"]');
+    const origen = partido ? fila() : detalle();
+    if (!origen || !fila()) {
+      actualizar();
+      return;
+    }
+
+    // Solo participa el marcador que cambia de sitio. El diálogo sigue siendo modal nativo.
+    const nombre = "marcador-partido";
+    origen.style.viewTransitionName = nombre;
+    let destino: HTMLElement | null = null;
+    const transicion = document.startViewTransition({
+      types: ["partido"],
+      update: () => {
+        origen.style.viewTransitionName = "";
+        flushSync(actualizar);
+        destino = partido ? detalle() : fila();
+        if (destino) destino.style.viewTransitionName = nombre;
+      },
+    });
+    transicionPartido.current = transicion;
+    // El navegador puede saltarse la animación si se oculta la página durante el cambio.
+    void transicion.ready.catch(() => {});
+    void transicion.finished.finally(() => {
+      origen.style.viewTransitionName = "";
+      if (destino) destino.style.viewTransitionName = "";
+      transicionPartido.current = null;
+    }).catch(() => {});
+  }
 
   const cargar = useCallback(async (competicionId: string, numero: number | null) => {
     const esta = ++generacion.current;
@@ -461,7 +535,11 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
     const encontrado = datos.partidos.find((p) => p.id === partidoPedido);
     if (!encontrado) return;
     const id = window.setTimeout(() => {
-      setAbierto(encontrado);
+      setDetallePartido((actual) => ({
+        partido: encontrado,
+        abierto: true,
+        apertura: (actual?.apertura ?? 0) + 1,
+      }));
       setParams({ partido: null }, true);
     }, 0);
     return () => window.clearTimeout(id);
@@ -508,7 +586,7 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
   );
 
   return (
-    <div className={styles.pantalla}>
+    <div className={styles.pantalla} ref={pantallaRef}>
       {competicionesEnCategoria.length > 1 && (
         <Select
           label="Competición"
@@ -564,7 +642,7 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
             return (
               <Fragment key={p.id}>
                 {nuevoDia && <h3 className={styles.dia}>{dia}</h3>}
-                <Fila partido={p} onAbrir={() => setAbierto(p)} />
+                <Fila partido={p} onAbrir={() => cambiarDetalle(p)} />
               </Fragment>
             );
           })}
@@ -573,12 +651,14 @@ export default function AdminPartidos({ categoria }: { categoria: string }) {
         <EmptyState title="Esta jornada no tiene partidos." />
       )}
       <Detalle
-        partido={abierto ? (datos.partidos.find((p) => p.id === abierto.id) ?? abierto) : null}
+        key={detallePartido?.apertura}
+        abierto={detallePartido?.abierto ?? false}
+        partido={datos.partidos.find((p) => p.id === detallePartido?.partido.id) ?? detallePartido?.partido ?? null}
         jornada={datos.numero}
         categoria={categoria}
         competicion={datos.competicion}
         onNovedades={() => void cargar(selectedCompetitionId, pedida)}
-        onClose={() => setAbierto(null)}
+        onClose={() => cambiarDetalle(null)}
       />
     </div>
   );

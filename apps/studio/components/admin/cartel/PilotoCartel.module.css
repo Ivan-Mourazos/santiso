@@ -30,6 +30,20 @@
   color: var(--ui-muted);
   font-size: var(--ui-text-sm);
 }
+.estadoPrevia {
+  display: contents;
+}
+.estadoPrevia p {
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: var(--ui-text-sm);
+}
+.estadoPrevia p:empty {
+  position: absolute;
+}
+.estadoPrevia [role="alert"] {
+  color: var(--ui-danger);
+}
 
 .opciones {
   display: grid;

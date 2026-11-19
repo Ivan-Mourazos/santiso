@@ -207,6 +207,13 @@ export default function AdminEquipos({ categoria, showToast }: Props) {
                   ? "Crea el primer equipo de esta categoría."
                   : "Añade un equipo de la biblioteca o crea uno nuevo."
               }
+              action={
+                verBiblioteca ? (
+                  <Button onClick={() => setDialogo({ tipo: "editor", equipo: null })}>Crear primer equipo</Button>
+                ) : (
+                  <Button onClick={() => setDialogo({ tipo: "incorporar" })}>Añadir desde biblioteca</Button>
+                )
+              }
             />
           ) : visibles.length === 0 ? (
             <EmptyState

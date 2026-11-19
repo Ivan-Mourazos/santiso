@@ -147,6 +147,7 @@ export default function PilotoCartel({
   const [hueco, setHueco] = useState({ ancho: 0, alto: 0 });
   const [enPantalla, setEnPantalla] = useState(false);
   const [exportando, setExportando] = useState(false);
+  const [errorPng, setErrorPng] = useState<{ clave: string; mensaje: string } | null>(null);
   const [png, setPng] = useState<{ clave: string; archivo: File } | null>(null);
   const [compartiendo, setCompartiendo] = useState(false);
   const compartiendoRef = useRef(false);
@@ -255,11 +256,13 @@ export default function PilotoCartel({
   const nombrePng = `${peticion.plantilla}-${form.fecha || "cartel"}${medidas.alto === 1920 ? "-historia" : ""}.png`;
   const clavePng = JSON.stringify([peticion, nombrePng]);
   const pngActual = png?.clave === clavePng ? png.archivo : null;
+  const falloPng = errorPng?.clave === clavePng ? errorPng.mensaje : null;
 
   async function generar(): Promise<File | null> {
     if (previas.cargando || previas.error) return null;
     const clave = clavePng;
     setExportando(true);
+    setErrorPng(null);
     try {
       const respuesta = await fetch("/api/carteles/png", {
         method: "POST",
@@ -269,7 +272,7 @@ export default function PilotoCartel({
       if (respuesta.status === 422) {
         falloAlPreparar.current = clave;
         const aviso = (await respuesta.json()) as { error: string };
-        showToast(aviso.error, "error");
+        setErrorPng({ clave, mensaje: aviso.error });
         return null;
       }
       if (!respuesta.ok) throw new Error(String(respuesta.status));
@@ -279,7 +282,7 @@ export default function PilotoCartel({
     } catch {
       // Con este fallo apuntado, el móvil no vuelve a intentarlo solo: queda el botón.
       falloAlPreparar.current = clave;
-      showToast("No se pudo generar el PNG. Vuelve a intentarlo.", "error");
+      setErrorPng({ clave, mensaje: "No se pudo preparar el PNG." });
       return null;
     } finally {
       setExportando(false);
@@ -445,7 +448,7 @@ export default function PilotoCartel({
                 onClick={() => void generar()}
                 disabled={exportando || previas.cargando || !!previas.error}
               >
-                {exportando ? "Preparando…" : "Preparar"}
+                {exportando ? "Preparando…" : falloPng ? "Reintentar preparación" : "Preparar"}
               </Button>
             )}
           </div>
@@ -456,13 +459,25 @@ export default function PilotoCartel({
               onClick={() => void descargar()}
               disabled={exportando || compartiendo || previas.cargando || !!previas.error}
             >
-              {exportando ? "Generando…" : "Descargar"}
+              {exportando ? "Generando…" : falloPng ? "Reintentar descarga" : "Descargar"}
             </Button>
           </div>
             </>
           )}
         </div>
       </div>
+      )}
+      {!soloVista && (
+        <div className={styles.estadoPrevia}>
+          <p role="status">
+            {exportando
+              ? "Preparando el PNG. Puedes seguir viendo la previa."
+              : previas.cargando
+                ? "Cargando datos del partido…"
+                : null}
+          </p>
+          {falloPng && <p role="alert">{falloPng} La vista previa sigue disponible.</p>}
+        </div>
       )}
       {!soloVista && foto && (tipo === "partido" || tipo === "resumo" || tipo === "cronoloxia") && (
         <details className={styles.encuadre}>

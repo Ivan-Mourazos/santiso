@@ -15,29 +15,63 @@
   overflow-wrap: anywhere;
 }
 .dialog::backdrop {
-  background: rgb(0 0 0 / 60%);
+  background-color: transparent;
   overflow: hidden;
   overscroll-behavior: contain;
 }
 .dialog[open] {
   display: flex;
   flex-direction: column;
-  animation: aparecer var(--ui-duration-md) var(--ui-ease);
 }
-@keyframes aparecer {
-  from {
+.dialog[open]::backdrop {
+  background-color: rgb(0 0 0 / 60%);
+}
+.dialog:not([open]),
+.dialog:not([open])::backdrop {
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dialog {
     opacity: 0;
+    translate: 0 var(--ui-space-3);
+    transition-property: opacity, translate;
+    transition-duration: var(--ui-duration-md);
+    transition-timing-function: var(--ui-ease);
   }
-}
-@keyframes subir {
-  from {
-    transform: translateY(100%);
+  .dialog::backdrop {
+    transition-property: background-color;
+    transition-duration: var(--ui-duration-md);
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  .dialog[open],
-  .dialog.sheet {
-    animation: none;
+  @supports (overlay: auto) {
+    .dialog {
+      transition-property: opacity, translate, display, overlay;
+      transition-behavior: allow-discrete;
+    }
+    .dialog::backdrop {
+      transition-property: background-color, display, overlay;
+      transition-behavior: allow-discrete;
+    }
+  }
+  .dialog[open] {
+    opacity: 1;
+    translate: none;
+  }
+  @starting-style {
+    .dialog[open] {
+      opacity: 0;
+      translate: 0 var(--ui-space-3);
+    }
+    .dialog[open]::backdrop {
+      background-color: transparent;
+    }
+  }
+  /* Durante el cambio de vista, la hoja entra y sale como parte de las capturas del navegador. */
+  :global(html:active-view-transition-type(partido)) .dialog,
+  :global(html:active-view-transition-type(partido)) .dialog::backdrop {
+    transition: none;
+  }
+  :global(html:active-view-transition-type(partido)) .dialog[open]:has([data-marcador-partido]) {
+    view-transition-name: hoja-partido;
   }
 }
 .header {
@@ -143,7 +177,6 @@
     padding-left: max(0.75rem, env(safe-area-inset-left));
     border-radius: var(--ui-radius-lg) var(--ui-radius-lg) 0 0;
     border-width: 1px 0 0;
-    animation: subir var(--ui-duration-lg) var(--ui-ease-enter);
   }
   .dialog.sheet::before {
     content: "";

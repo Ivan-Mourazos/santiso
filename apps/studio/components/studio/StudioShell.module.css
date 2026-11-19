@@ -238,6 +238,10 @@
   display: none;
   view-transition-name: pestanas;
 }
+/* El fondo de la hoja oscurece también la cabecera y la barra, en su sitio. */
+:global(html:active-view-transition-type(partido)) :is(.header, .tabs) {
+  view-transition-name: none;
+}
 .aviso {
   margin: 0;
   padding: 1rem;

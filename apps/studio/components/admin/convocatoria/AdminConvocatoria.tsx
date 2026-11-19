@@ -7,7 +7,7 @@ import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext"
 import { Button } from "@/components/ui/foundation/Button";
 import { Field, Select, Textarea } from "@/components/ui/foundation/Fields";
 import { AvisosPartido, avisoDe, MarcaAviso } from "@/components/admin/liga/AvisosPartido";
-import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
+import { EmptyState, ErrorState, LoadingState, StateLink } from "@/components/ui/foundation/States";
 import { nombreDeCartel } from "@/lib/alineacion/modelo";
 import { aHex, COLOR_RIVAL_RESERVA } from "@/lib/cartel2/color";
 import { fechaCorta } from "@/lib/cartel2/modelo";
@@ -152,7 +152,8 @@ export default function AdminConvocatoria({
     return (
       <EmptyState
         title={`${categoria} no tiene partidos por jugar.`}
-        detail="Aparecerán al añadirlos al Calendario."
+        detail="Necesitas un partido pendiente para escoger quién va. Consulta en Liga la jornada de esta categoría."
+        action={<StateLink href={`/admin/partidos?categoria=${encodeURIComponent(categoria)}`}>Ver jornadas</StateLink>}
       />
     );
   const texto = textoWhatsApp(partido, pantalla.jugadores, c);

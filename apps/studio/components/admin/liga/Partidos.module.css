@@ -293,6 +293,24 @@
   padding: 0;
   list-style: none;
 }
+/* Reserva las filas que ya se conocen para que el marcador no cambie de sitio al cargar. */
+.cartelesCarga,
+.cartelEsqueleto {
+  display: grid;
+  align-items: center;
+  min-height: calc(44px + 2 * var(--ui-space-2));
+}
+.cartelEsqueleto {
+  box-sizing: content-box;
+  border-top: 1px solid var(--ui-line);
+}
+.cartelEsqueleto::before {
+  content: "";
+  width: 40%;
+  height: 0.75rem;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-control);
+}
 /* Una línea por cartel: nombre a la izquierda; descargar y rehacer, en pequeño, a la derecha. */
 .carteles li {
   display: grid;

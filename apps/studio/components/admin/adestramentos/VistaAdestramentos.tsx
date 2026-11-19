@@ -2,6 +2,7 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/foundation/Button";
+import { EmptyState } from "@/components/ui/foundation/States";
 import { Tabs } from "@/components/ui/foundation/Tabs";
 import {
   cuadrante,
@@ -134,7 +135,13 @@ export default function VistaAdestramentos({
     url.searchParams.set("vista", value);
     window.history.replaceState(null, "", url);
   }
-  const listado = (
+  const listado = datos.entrenamientos.length === 0 ? (
+    <EmptyState
+      title="Todavía no hay entrenamientos."
+      detail="Crea el primero para anotar la asistencia de la plantilla."
+      action={<Button onClick={onCrear}>Crear entrenamiento</Button>}
+    />
+  ) : (
     <div className={styles.listadoEntrenos}>
       <Button onClick={onCrear}>Crear entrenamiento</Button>
       <ul className={styles.lista} aria-label="Entrenamientos">
@@ -166,7 +173,6 @@ export default function VistaAdestramentos({
           );
         })}
       </ul>
-      {!datos.entrenamientos.length && <p>No hay entrenamientos todavía.</p>}
     </div>
   );
   const contenidoDetalle = detalle && (

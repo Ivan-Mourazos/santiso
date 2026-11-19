@@ -7,7 +7,7 @@ import { EditorTactico } from "@/components/admin/cartel/EditorTactico";
 import { useStudio, useUnsavedChanges } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
 import { Select } from "@/components/ui/foundation/Fields";
-import { EmptyState, ErrorState, LoadingState } from "@/components/ui/foundation/States";
+import { EmptyState, ErrorState, LoadingState, StateLink } from "@/components/ui/foundation/States";
 import {
   ALINEACION_VACIA,
   aplicarColocacion,
@@ -180,7 +180,8 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
     return (
       <EmptyState
         title={`${categoria} no tiene partidos por jugar.`}
-        detail="Aparecen aquí en cuanto estén en el Calendario."
+        detail="Necesitas un partido pendiente para colocar a los titulares. Consulta en Liga la jornada de esta categoría."
+        action={<StateLink href={`/admin/partidos?categoria=${encodeURIComponent(categoria)}`}>Ver jornadas</StateLink>}
       />
     );
   }
@@ -228,7 +229,8 @@ export default function AdminAlineacion({ categoria, partidoInicial, showToast }
       {pantalla.jugadores.length === 0 ? (
         <EmptyState
           title={`La plantilla de ${categoria} está vacía.`}
-          detail="Da de alta a los jugadores en Plantilla › Jugadores."
+          detail="Añade jugadores a la plantilla para poder formar el once."
+          action={<StateLink href={`/admin/jugadores?categoria=${encodeURIComponent(categoria)}`}>Ir a Plantilla</StateLink>}
         />
       ) : (
         <>

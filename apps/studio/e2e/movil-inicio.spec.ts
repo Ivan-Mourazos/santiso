@@ -17,10 +17,11 @@ for (const [ancho, alto] of [
     await page.setViewportSize({ width: ancho, height: alto });
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/admin\/inicio/);
-    // Solo los partidos: cada tarjeta, entera a la vista, sin pasos ni tareas.
+    // La portada destaca como máximo una tarea y conserva el acceso por tarjeta.
     const partido = page.locator("[data-partido-inicio]").first();
     await expect(partido).toBeVisible();
-    await expect(page.locator("[data-accion-principal]")).toHaveCount(0);
+    await expect(page.locator("[data-destacada]")).toHaveCount(1);
+    expect(await page.locator("[data-accion-principal]").count()).toBeLessThanOrEqual(1);
     const abrir = page.locator("[data-abrir-partido]");
     if (alto >= 800) {
       for (const tarjeta of await page.locator("[data-partido-inicio]").all()) {

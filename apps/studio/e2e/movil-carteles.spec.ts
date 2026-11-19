@@ -35,9 +35,14 @@ async function vista(page: Page) {
     .filter({ hasText: /^\s*Carteles\s*$/ });
   if ((await carteles.count()) > 0) await carteles.first().tap();
   const primera = page.locator("[data-vista-cartel]").first();
-  const sinPartido = page.getByText("Elige el partido.", { exact: true });
-  await expect(primera.or(sinPartido).first()).toBeVisible({ timeout: 20000 });
-  if (await sinPartido.isVisible()) return false;
+  const despues = new URL(page.url()).searchParams.get("plantilla") === "despues";
+  if (despues) {
+    const sinPartido = page.getByRole("heading", { name: /^(Elige el partido\.|Sin partidos disponibles)$/ });
+    await expect(primera.or(sinPartido).first()).toBeVisible({ timeout: 20000 });
+    if (await sinPartido.isVisible()) return false;
+  } else {
+    await expect(primera).toBeVisible({ timeout: 20000 });
+  }
   // El carrusel de después enseña dos vistas previas: basta con la primera.
   await primera.scrollIntoViewIfNeeded();
   await expect(page.locator("[data-vista-cartel] [data-cartel]").first()).toBeVisible();
@@ -256,10 +261,10 @@ test("carteles: exportación fallida permite reintentar", async ({ page }) => {
   await abrir(page);
   await vista(page);
   // La preparación automática falla: se avisa y no se reintenta sola, queda el botón.
-  const preparar = page.getByRole("button", { name: "Preparar", exact: true });
-  await expect(
-    page.getByText("No se pudo generar el PNG. Vuelve a intentarlo.", { exact: true }),
-  ).toBeVisible();
+  const previa = page.getByRole("region", { name: "Previsualización del cartel" });
+  const preparar = previa.getByRole("button", { name: "Reintentar preparación", exact: true });
+  await expect(previa.getByRole("alert")).toContainText("No se pudo preparar el PNG");
+  await expect(previa.locator("[data-vista-cartel]")).toBeVisible();
   await expect(preparar).toBeEnabled();
   await page.waitForTimeout(2500);
   expect(peticiones).toBe(1);

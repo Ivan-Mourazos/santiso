@@ -12,7 +12,7 @@ export default function AdminInicio() {
   return (
     <section className={styles.inicio} aria-label="Inicio">
       <p className={styles.firma}>
-        <Image src="/logos/app-192.png" alt="" width={24} height={24} />
+        <Image src="/logos/app-192.png" alt="" width={38} height={38} />
         U.D. Santiso
       </p>
       <NuestrosPartidos />

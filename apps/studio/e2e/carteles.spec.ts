@@ -121,6 +121,13 @@ test("«Próximos encuentros» tiene dos huecos y con ?rellenar=1 se rellena sol
 test("el cartel se previsualiza y se descarga en PNG a 2160×2700", async ({ page }) => {
   test.setTimeout(120000);
   await page.goto("/admin/carteles?plantilla=partido");
+  // Abre con la jornada sugerida. Limpiar deja el cartel manual, que exporta sin guardar.
+  await expect(
+    page.getByRole("region", { name: "Partido del cartel" }).or(
+      page.getByRole("heading", { name: "Sin partidos disponibles" }),
+    ),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Limpiar datos", exact: true }).click();
   const piloto = page.getByRole("region", { name: "Previsualización del cartel" });
   await expect(piloto).toBeVisible({ timeout: 30000 });
   await expect(piloto.locator("[data-vista-cartel] [data-cartel]")).toBeVisible();
@@ -129,9 +136,11 @@ test("el cartel se previsualiza y se descarga en PNG a 2160×2700", async ({ pag
   await expect(piloto.getByRole("group", { name: "Composición" })).toHaveCount(0);
   await expect(piloto.locator("[data-cartel]")).toHaveClass(/diagonal/);
 
-  const descarga = page.waitForEvent("download", { timeout: 90000 });
-  await piloto.getByRole("button", { name: "Descargar" }).click();
-  const fichero = await (await descarga).createReadStream();
+  const [descarga] = await Promise.all([
+    page.waitForEvent("download", { timeout: 90000 }),
+    piloto.getByRole("button", { name: "Descargar", exact: true }).click(),
+  ]);
+  const fichero = await descarga.createReadStream();
   const trozos: Buffer[] = [];
   for await (const trozo of fichero) trozos.push(trozo as Buffer);
   const png = Buffer.concat(trozos);

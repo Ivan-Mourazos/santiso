@@ -9,7 +9,7 @@ import { TEMAS_MULTIUSOS, TEMPLATES, type MultiusosTema, type TemplateId } from 
 import { useCartelForm } from "./cartel/useCartelForm";
 import { useOptionalStudio } from "@/components/studio/StudioContext";
 import { Button } from "@/components/ui/foundation/Button";
-import { LoadingState } from "@/components/ui/foundation/States";
+import { ErrorState, LoadingState } from "@/components/ui/foundation/States";
 import AvisoError from "./AvisoError";
 import styles from "./cartel/Cartel.module.css";
 import { useCartelAssets } from "./cartel/useCartelAssets";
@@ -82,6 +82,8 @@ export default function GeneradorCartel({
     resetForm,
     competicionesCatalog,
     errorDatos,
+    cargandoDatos,
+    reintentarDatos,
   } = useCartelForm(partidoInicial, {
     // Desde el catálogo o Inicio el enlace trae la categoría: el formulario empieza por ella.
     categoria: studio?.params.get("categoria"),
@@ -210,11 +212,22 @@ export default function GeneradorCartel({
     </section>
   );
 
+  if ((tipo === "despues" || tipo === "partido") && cargandoDatos)
+    return <LoadingState title="Buscando los partidos de la temporada…" />;
+
+  const errorPartidos = errorDatos && (
+    <ErrorState
+      title="No se pudieron cargar los partidos"
+      detail="Vuelve a leer la temporada para poder elegir una jornada."
+      action={<Button onClick={reintentarDatos}>Reintentar</Button>}
+    />
+  );
+
   if (tipo === "despues") {
+    if (errorDatos) return errorPartidos;
     const conPartido = Boolean(despues.partidoId);
     return (
       <div className={styles.pantalla}>
-        <AvisoError mensaje={errorDatos} />
         <div className={styles.despues}>
           <FormCronoloxia
             form={form}
@@ -231,7 +244,6 @@ export default function GeneradorCartel({
             tipo="cronoloxia"
             conEventos={false}
           />
-          {despues.motivo && !conPartido && <p role="status">{despues.motivo}</p>}
           {conPartido && (
             <>
               <details className={styles.seccion} name="despues">
@@ -323,7 +335,7 @@ export default function GeneradorCartel({
 
   return (
     <div className={styles.pantalla}>
-      <AvisoError mensaje={errorDatos} />
+      {tipo === "partido" ? errorPartidos : <AvisoError mensaje={errorDatos} />}
       <div className={styles.columnas}>
         <section className={styles.formulario} aria-label="Datos del cartel">
           {/* Template-specific fields */}

@@ -38,7 +38,7 @@
   text-align: right;
 }
 .marcador strong {
-  font-size: 1.75rem;
+  font: 850 1.875rem / 1 var(--ui-font-title);
   font-variant-numeric: tabular-nums;
   color: var(--ui-accent);
 }
@@ -53,8 +53,7 @@
 }
 .tiempo {
   margin-left: auto;
-  font-size: 1.5rem;
-  font-weight: 800;
+  font: 850 1.5rem / 1 var(--ui-font-title);
   font-variant-numeric: tabular-nums;
 }
 .tiempo[data-pausado] {

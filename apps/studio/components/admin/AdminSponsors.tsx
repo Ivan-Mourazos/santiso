@@ -115,7 +115,7 @@ export default function AdminSponsors({ showToast, showConfirm }: AdminSponsorsP
     contenido = (
       <EmptyState
         title="Todavía no hay patrocinadores ni logos."
-        detail="Añade aquí tanto a quien patrocina como los logos que se pintan en los carteles."
+        detail="Añade una ficha para guardar su web, su imagen y decidir si el logo aparece en los carteles."
         action={<Button onClick={() => abrirEditor(null)}>Añadir patrocinador o logo</Button>}
       />
     );
