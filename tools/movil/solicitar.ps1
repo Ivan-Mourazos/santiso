@@ -1,6 +1,9 @@
 ﻿param([Parameter(Mandatory)][string]$Sha,[string]$Motivo='Despliegue solicitado',
-    [string]$Repo=(Split-Path (Split-Path $PSScriptRoot)),[string]$Bandeja,[int]$EsperaMinutos=60)
-. "$PSScriptRoot\comun.ps1"
+    [string]$Repo,[string]$Bandeja,[int]$EsperaMinutos=60)
+# `$PSScriptRoot` puede llegar vacío a los valores por defecto de `param`: se resuelve aquí.
+$aqui=if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+if (!$Repo) { $Repo=Split-Path (Split-Path $aqui) }
+. "$aqui\comun.ps1"
 if (!$Bandeja) { $Bandeja="$Repo\.movil" }
 if ($Sha -notmatch '^[0-9a-f]{7,40}$') { throw 'Indique un SHA de Git' }
 [IO.Directory]::CreateDirectory("$Bandeja\solicitudes") | Out-Null
